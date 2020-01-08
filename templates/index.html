@@ -1,0 +1,12 @@
+<!doctype html>
+<title>Cell Growth</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='core.css') }}">
+{% for massOverTime in massOverTimeCollection %}
+    <div class='test'>
+        {% for row in massOverTime %}
+            {% if loop.index is lt(25) %}
+                {{row}}<br>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endfor %}

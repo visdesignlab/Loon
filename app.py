@@ -1,18 +1,24 @@
 import os
+
 import flask
 from flask.helpers import url_for
+
 import google.oauth2.credentials
 import googleapiclient.discovery
 import google_auth_oauthlib.flow
 
+from scipy.io import loadmat
+
 CLIENT_SECRETS_FILENAME = 'config/credentials.json'
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
-
+TEMP_FILES_FOLDER = 'tmp/'
 app = flask.Flask(__name__)
 app.secret_key = "TODO: replace dev key in production"
 
 @app.route('/')
 def index():
+    # flask.session.clear()
+    print('@index - ' + str(flask.session))
     if 'credentials' not in flask.session:
         return flask.redirect('auth')
     
@@ -33,7 +39,19 @@ def index():
         items = results.get('files', [])
         massOverTimeIds.append(items[0]['id'])
 
-    return ", ".join(massOverTimeIds)
+    massOverTimeCollection = []
+    for fileId in massOverTimeIds:
+        matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
+        massOverTimeCollection.append(matlabDict['tracks'])
+
+    return flask.render_template('index.html', massOverTimeCollection=massOverTimeCollection)
+
+def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> dict:
+    tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
+    f = open(tempFilename, 'wb')
+    f.write(service.files().get_media(fileId=googleFileId).execute())
+    f.close()
+    return loadmat(tempFilename)
 
 
 @app.route('/auth')

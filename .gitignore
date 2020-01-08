@@ -2,3 +2,4 @@ credentials.json
 .venv
 .vscode
 config
+tmp

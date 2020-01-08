@@ -1,0 +1,7 @@
+.test {
+    background: firebrick;
+    border: solid black 4px;
+    margin: 8px;
+    min-width: 100px;
+    min-height: 100px;
+}
