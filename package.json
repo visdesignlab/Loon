@@ -1,0 +1,34 @@
+{
+  "name": "cell-growth",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {
+    "@types/d3": "^5.7.2",
+    "browserfy": "^1.0.0",
+    "browserify": "^16.5.0",
+    "d3": "^5.15.0",
+    "fancy-log": "^1.3.3",
+    "gulp": "^4.0.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
+    "tsc": "^1.20150623.0",
+    "tsify": "^4.0.1",
+    "typescript": "^3.7.4",
+    "vinyl-source-stream": "^2.0.0",
+    "watchify": "^3.11.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/visdesignlab/cell-growth.git"
+  },
+  "author": "Devin Lange",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/visdesignlab/cell-growth/issues"
+  },
+  "homepage": "https://github.com/visdesignlab/cell-growth#readme"
+}

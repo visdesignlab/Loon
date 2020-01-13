@@ -18,33 +18,33 @@ app.secret_key = "TODO: replace dev key in production"
 @app.route('/')
 def index():
     # flask.session.clear()
+
     print('@index - ' + str(flask.session))
     if 'credentials' not in flask.session:
         return flask.redirect('auth')
     
-    credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
-    service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
-
     # Hardcoded example folders
     adherentFolderId = '1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96'
     nonAdherentFolderId = '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'
+    foldersOfInterest = [adherentFolderId, nonAdherentFolderId]
+
+    flask.session['foldersOfInterest'] = foldersOfInterest
+    return flask.render_template('index.html', folderIndices=range(len(foldersOfInterest)))
+
+def getMassOverTime(folderId: str):
     massOverTimeFilename = 'data_allframes.mat'
-    
-    massOverTimeIds = []
-    for folderId in [adherentFolderId, nonAdherentFolderId]:
-        query = "'" + folderId + "' in parents and name='" + massOverTimeFilename + "'"
-        responseFields = "nextPageToken, files(id, name)"
+    credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
+    service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
+  
+    query = "'" + folderId + "' in parents and name='" + massOverTimeFilename + "'"
+    responseFields = "nextPageToken, files(id, name)"
 
-        results = service.files().list(q=query, fields=responseFields).execute()
-        items = results.get('files', [])
-        massOverTimeIds.append(items[0]['id'])
+    results = service.files().list(q=query, fields=responseFields).execute()
+    items = results.get('files', [])
+    fileId = items[0]['id']
+    matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
 
-    massOverTimeCollection = []
-    for fileId in massOverTimeIds:
-        matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
-        massOverTimeCollection.append(matlabDict['tracks'])
-
-    return flask.render_template('index.html', massOverTimeCollection=massOverTimeCollection)
+    return matlabDict['tracks']
 
 def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> dict:
     tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
@@ -74,6 +74,10 @@ def authCallback():
     flow.fetch_token(authorization_response=flask.request.url)
 
     creds = flow.credentials
+    # print("@authCallback, refresh_token: " + creds.refresh_token)
+    print("creds yo")
+    # print(creds)
+    print('###################################')
     flask.session['credentials'] = {
         'token': creds.token,
         'refresh_token': creds.refresh_token,
@@ -83,6 +87,21 @@ def authCallback():
         'scopes': creds.scopes
     }
     return flask.redirect(url_for('index'))
+
+@app.route('/data/massOverTime-<int:index>.csv')
+def dataTest(index: int):
+    # print('~~~~~~~~~~~~~~~  dataTest  ~~~~~~~~~~~~~~~')
+    # print('index = ' + str(index))
+
+    folderId = flask.session['foldersOfInterest'][index]
+
+    # print('folderId = ' + folderId)
+    massOverTime = getMassOverTime(folderId)
+
+    returnStr = 'x,y,mass,time,id,meanValue,shapeFactor\n'
+    for row in massOverTime:
+        returnStr += ",".join(map(str, row)) + '\n'
+    return returnStr
 
 
 if __name__ == '__main__':

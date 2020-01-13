@@ -3,3 +3,5 @@ credentials.json
 .vscode
 config
 tmp
+*.code-workspace
+node_modules
