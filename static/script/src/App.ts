@@ -84,8 +84,8 @@ export class App<DataType> {
 					// {displayName: "Firework Simulation", callback: () => this.fetchCsv('firework.csv')}
 					// {displayName: "Klein Bottle", callback: () => this.fetchCsv('klein.csv')},
 					// {displayName: "Tutorial", callback: async () => this.runStorySteps() },
-					{displayName: "Non Adherent", callback: () => this.fetchCsv('massOverTime-1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX.csv') },
-					{displayName: "Adherent", callback: () => this.fetchCsv('massOverTime-1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96.csv') }
+					{displayName: "Non Adherent", callback: () => this.fetchCsv('1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/massOverTime.csv') },
+					{displayName: "Adherent", callback: () => this.fetchCsv('1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96/massOverTime.csv') }
 				];
 
 				newComponent = new Toolbar(container, (data: string) => this.loadFromCsvString(data), buttonList);

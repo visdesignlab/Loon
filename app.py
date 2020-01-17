@@ -89,19 +89,26 @@ def authCallback():
     }
     return flask.redirect(url_for('index'))
 
-@app.route('/data/massOverTime-<string:folderId>.csv')
-def dataTest(folderId: str):
-    # print('~~~~~~~~~~~~~~~  dataTest  ~~~~~~~~~~~~~~~')
-    # print('index = ' + str(index))
+@app.route('/data/<string:folderId>/massOverTime.csv')
+def dataTest(folderId: str) -> str:
+    cachePath = './static/cache/' + folderId
+    filePath = cachePath + '/' + 'massOverTime.csv'
+    if os.path.exists(filePath):
+        return flask.redirect(filePath[1:]) # don't want '.' here
 
-    # folderId = flask.session['foldersOfInterest'][index]
-
-    # print('folderId = ' + folderId)
+    # generate data
     massOverTime = getMassOverTime(folderId)
-
     returnStr = 'x,y,mass,time,id,meanValue,shapeFactor\n'
     for row in massOverTime:
         returnStr += ",".join(map(str, row)) + '\n'
+
+    # cache file
+    if not os.path.exists(cachePath):
+        os.mkdir(cachePath)
+    cache = open(cachePath + '/' + 'massOverTime.csv', 'w')
+    cache.write(returnStr)
+    cache.close()
+
     return returnStr
 
 

@@ -5,3 +5,9 @@ config
 tmp
 *.code-workspace
 node_modules
+
+static/cache/*
+!cache/README
+
+.DS_Store
+media
