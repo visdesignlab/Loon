@@ -1,0 +1,28 @@
+{
+	"direction": "col",
+	"inside": [
+		{
+			"direction": "row",
+			"minSize": 40,
+			"maxSize": 40,
+			"fraction": 0,
+			"inside": "Toolbar"
+		},
+		{
+			"direction": "row",
+			"fraction": 1,
+			"inside": [
+				{
+					"direction": "col",
+					"fraction": 1,
+					"inside": "Plot2dPathsWidget"
+				},
+				{
+					"direction": "col",
+					"fraction": 2,
+					"inside": "MetricDistributionWidget"
+				}
+			]
+		}
+	]
+}

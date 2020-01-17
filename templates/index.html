@@ -1,10 +1,17 @@
 <!doctype html>
 <title>Cell Growth</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='core.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/core.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/LayoutFramework.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/MetricDistributionWidget.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/mtat.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/Plot2dPathsWidget.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='script/src/devlib/DevlibUtil.css') }}">
+<link href="https://fonts.googleapis.com/css?family=Montserrat&amp;display=swap" rel="stylesheet">
+<script src="https://kit.fontawesome.com/de8d467ef5.js"></script>
 
-<div id='metaContainer' class='metaContainer'>
+<div id='metaContainer' class='metaContainer fullpage'>
     {% for id in folderIndices %}
-    <div id={{id}} class="container">
+    <div id={{id}} class="container fullpage">
         
     </div>
     {% endfor %}

@@ -10,6 +10,7 @@ import google_auth_oauthlib.flow
 from scipy.io import loadmat
 
 CLIENT_SECRETS_FILENAME = 'config/credentials.json'
+REFRESH_TOKEN = 'TODO: dev token'
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 TEMP_FILES_FOLDER = 'tmp/'
 app = flask.Flask(__name__)
@@ -24,12 +25,12 @@ def index():
         return flask.redirect('auth')
     
     # Hardcoded example folders
-    adherentFolderId = '1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96'
-    nonAdherentFolderId = '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'
-    foldersOfInterest = [adherentFolderId, nonAdherentFolderId]
+    # adherentFolderId = '1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96'
+    # nonAdherentFolderId = '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'
+    # foldersOfInterest = [nonAdherentFolderId]
 
-    flask.session['foldersOfInterest'] = foldersOfInterest
-    return flask.render_template('index.html', folderIndices=range(len(foldersOfInterest)))
+    # flask.session['foldersOfInterest'] = foldersOfInterest
+    return flask.render_template('index.html', folderIndices=[0])
 
 def getMassOverTime(folderId: str):
     massOverTimeFilename = 'data_allframes.mat'
@@ -80,7 +81,7 @@ def authCallback():
     print('###################################')
     flask.session['credentials'] = {
         'token': creds.token,
-        'refresh_token': creds.refresh_token,
+        'refresh_token': REFRESH_TOKEN,
         'token_uri': creds.token_uri,
         'client_id': creds.client_id,
         'client_secret': creds.client_secret,
@@ -88,12 +89,12 @@ def authCallback():
     }
     return flask.redirect(url_for('index'))
 
-@app.route('/data/massOverTime-<int:index>.csv')
-def dataTest(index: int):
+@app.route('/data/massOverTime-<string:folderId>.csv')
+def dataTest(folderId: str):
     # print('~~~~~~~~~~~~~~~  dataTest  ~~~~~~~~~~~~~~~')
     # print('index = ' + str(index))
 
-    folderId = flask.session['foldersOfInterest'][index]
+    # folderId = flask.session['foldersOfInterest'][index]
 
     # print('folderId = ' + folderId)
     massOverTime = getMassOverTime(folderId)

@@ -1,0 +1,172 @@
+.wrapperContainer {
+	/*display: flex;*/
+	/*background: bisque;*/
+	/*border: solid black 1px;*/
+	/*flex-direction: row;*/
+	flex-grow: 1;
+}
+
+.toggleButtonContainer {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.toggleButton.on {
+    color: white;
+    background: black;
+}
+.toggleButton:hover {
+    border: solid gray 1px;
+}
+
+.toggleButton {
+    margin-bottom: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: solid white 1px;
+    font-size: 8pt;
+    background: white;
+}
+
+.matrixWrapperContainer {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+    margin-left: 14px;
+}
+.matrixRightWrapperContainer {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    margin-left: 6px;
+}
+
+.yAxisMatrixContainer {
+    display: flex;
+    flex-direction: column;
+}
+
+.xAxisMatrixContainer {
+    flex-grow: 1;
+}
+
+.axisButton {
+    border: solid black 1px;
+    border-right-width: 3px;
+    box-sizing: border-box;
+    border-radius: 3px;
+    cursor: pointer;
+    text-align: right;
+    background: white;
+}
+
+.x.axisButton {
+    position: absolute;
+}
+
+.y.axisButton {
+    margin: 1px;
+}
+
+.axisButton.hovered {
+    background: lightsteelblue;
+}
+
+.matrixContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.rowContainer {
+    display: flex;
+}
+
+.squareButton {
+    width: 18px;
+    height: 18px;
+    background: wheat;
+    border-radius: 1px;
+    border-width: 0;
+    padding: 0;
+    margin: 1px;
+    cursor: pointer;
+}
+
+.squareButton:focus {
+    outline-width: 2px;
+    outline-style: solid;
+}
+
+.squareButton.on {
+    background: black;
+    border-radius: 1;
+}
+
+.squareButton.hovered {
+    background: #C8B692;
+}
+
+.squareButton.on.hovered {
+    background: #2D2821;
+}
+
+.overflow-scroll {
+    overflow: auto;
+}
+
+.collapseContainer {
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+}
+
+.collapseButton {
+    padding: 10px 20px;
+}
+
+.expandButton {
+    position: absolute;
+    padding: 2px 3px
+}
+
+.distributionPlotContainer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.histogramContainer {
+    height: 112px;
+    width: 200px;
+}
+
+.histogramBar {
+    fill: #272727;
+    stroke: #272727;
+    stroke-width: .5px;
+}
+
+.axisLabel {
+    text-anchor: middle;
+}
+
+.scatterPlotOuterContainer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.scatterPlotContainer {
+    height: 224px;
+    width: 224px;
+}
+
+
+.scatterPoint {
+    fill: #282828;
+    r: .5;
+    stroke: none;
+}
