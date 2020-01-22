@@ -1,13 +1,18 @@
-import os
+import os, io, math
 
+# web framework
 import flask
 from flask.helpers import url_for
 
+# Google authentication
 import google.oauth2.credentials
 import googleapiclient.discovery
 import google_auth_oauthlib.flow
 
+# working with matlab (.mat) files
 from scipy.io import loadmat
+from PIL import Image
+import numpy as np
 
 CLIENT_SECRETS_FILENAME = 'config/credentials.json'
 REFRESH_TOKEN = 'TODO: dev token'
@@ -31,29 +36,6 @@ def index():
 
     # flask.session['foldersOfInterest'] = foldersOfInterest
     return flask.render_template('index.html', folderIndices=[0])
-
-def getMassOverTime(folderId: str):
-    massOverTimeFilename = 'data_allframes.mat'
-    credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
-    service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
-  
-    query = "'" + folderId + "' in parents and name='" + massOverTimeFilename + "'"
-    responseFields = "nextPageToken, files(id, name)"
-
-    results = service.files().list(q=query, fields=responseFields).execute()
-    items = results.get('files', [])
-    fileId = items[0]['id']
-    matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
-
-    return matlabDict['tracks']
-
-def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> dict:
-    tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
-    f = open(tempFilename, 'wb')
-    f.write(service.files().get_media(fileId=googleFileId).execute())
-    f.close()
-    return loadmat(tempFilename)
-
 
 @app.route('/auth')
 def auth():
@@ -90,14 +72,14 @@ def authCallback():
     return flask.redirect(url_for('index'))
 
 @app.route('/data/<string:folderId>/massOverTime.csv')
-def dataTest(folderId: str) -> str:
+def getMassOverTimeCsv(folderId: str) -> str:
     cachePath = './static/cache/' + folderId
     filePath = cachePath + '/' + 'massOverTime.csv'
     if os.path.exists(filePath):
         return flask.redirect(filePath[1:]) # don't want '.' here
 
     # generate data
-    massOverTime = getMassOverTime(folderId)
+    massOverTime = getMassOverTimeArray(folderId)
     returnStr = 'x,y,mass,time,id,meanValue,shapeFactor\n'
     for row in massOverTime:
         returnStr += ",".join(map(str, row)) + '\n'
@@ -111,6 +93,77 @@ def dataTest(folderId: str) -> str:
 
     return returnStr
 
+
+def getMassOverTimeArray(folderId: str):
+    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', 'tracks')
+
+@app.route('/data/<string:folderId>/img_<int:frameId>.png')
+def getImageStack(folderId: str, frameId: int):
+    imageStackArray = getImageStackArray(folderId, frameId)
+
+    fileObject = getTiledImage(imageStackArray)
+
+    response = flask.send_file(fileObject, mimetype='image/png')
+
+    return response
+
+def getImageStackArray(folderId: str, frameId: int):
+    imageFilename = 'Copy of data' + str(frameId) + '.mat'
+    return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'D_stored')
+
+def getTiledImage(imageStackArray) -> io.BytesIO:
+    size = np.shape(imageStackArray)
+    smallH, smallW, numImages = size
+
+    numImageW = 10
+    numImageH = math.ceil(numImages / float(numImageW))
+
+
+    (bigWidth, bigHeight) = (numImageW * smallW, numImageH * smallH)
+    bigImg = Image.new('F', (bigWidth, bigHeight))
+
+    for timeIndex in range(numImages):
+        smallImg = imageStackArray[:, :, timeIndex]
+        smallImg = Image.fromarray(smallImg, 'F')
+
+        x = timeIndex % numImageW
+        y = math.floor(timeIndex / numImageW)
+        top = y * smallH
+        left = x * smallW
+        bigImg.paste(smallImg, (left, top))
+
+    bigImg = bigImg.convert('RGB')
+
+    fileObject = io.BytesIO()
+
+    bigImg.save(fileObject, "png")
+    fileObject.seek(0)
+
+    return fileObject
+
+def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str):
+    fileId, service = getFileId(folderId, filename)
+    matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
+    return matlabDict[matlabKey]
+
+def getFileId(folderId: str, filename: str):
+    credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
+    service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
+    
+    query = "'" + folderId + "' in parents and name='" + filename + "'"
+    responseFields = "nextPageToken, files(id, name)"
+    
+    results = service.files().list(q=query, fields=responseFields).execute()
+    items = results.get('files', [])
+    fileId = items[0]['id']
+    return fileId, service
+
+def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> dict:
+    tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
+    f = open(tempFilename, 'wb')
+    f.write(service.files().get_media(fileId=googleFileId).execute())
+    f.close()
+    return loadmat(tempFilename)
 
 if __name__ == '__main__':
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
