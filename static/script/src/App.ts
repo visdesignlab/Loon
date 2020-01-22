@@ -7,6 +7,7 @@ import {Plot2dPathsWidget} from './Components/Plot2dPathsWidget';
 // import {TableWidget} from './TableWidget';
 // import {LevelOfDetailWidget} from './LevelOfDetailWidget';
 import {MetricDistributionWidget} from './Components/MetricDistributionWidget';
+import {ImageStackWidget} from './Components/ImageStackWidget'
 // import {Overlay} from './Overlay';
 import {LayoutFramework} from './LayoutFramework';
 import {Frame, ComponentType} from './types';
@@ -104,6 +105,15 @@ export class App<DataType> {
 			// 	break;
 			case ComponentType.MetricDistributionWidget:
 				newComponent = new MetricDistributionWidget(container);
+				break;
+			case ComponentType.ImageStackWidget:
+				// TODO - remove hard code for initial testing
+				const imgWidth = 400;
+				const imgHeight = 300;
+				const numImg = 290;
+				const numCol = 10;
+				const imgPath = 'http://localhost:8080/data/1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/img_7.png'
+				newComponent = new ImageStackWidget(container, imgWidth, imgHeight, numImg, numCol, imgPath);
 				break;
 			default:
 				console.error(`Cannot Initialize Component of type: ${compontentType}`);

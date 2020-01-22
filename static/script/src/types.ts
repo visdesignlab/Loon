@@ -18,7 +18,8 @@ export enum ComponentType {
 	Plot2dPathsWidget = "Plot2dPathsWidget",
 	// TableWidget = "TableWidget",
 	// LevelOfDetailWidget = "LevelOfDetailWidget",
-	MetricDistributionWidget = "MetricDistributionWidget"
+	MetricDistributionWidget = "MetricDistributionWidget",
+	ImageStackWidget = "ImageStackWidget"
 }
 
 export enum MetricDistributionSubComponentTypes {

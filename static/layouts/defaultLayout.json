@@ -15,12 +15,23 @@
 				{
 					"direction": "col",
 					"fraction": 1,
-					"inside": "Plot2dPathsWidget"
+					"inside": [
+						{
+							"direction": "row",
+							"fraction": 2,
+							"inside": "MetricDistributionWidget"
+						}, 
+						{
+							"direction": "row",
+							"fraction": 1,
+							"inside": "Plot2dPathsWidget"
+						}
+					]
 				},
 				{
 					"direction": "col",
 					"fraction": 2,
-					"inside": "MetricDistributionWidget"
+					"inside": "ImageStackWidget"
 				}
 			]
 		}
