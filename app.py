@@ -29,7 +29,7 @@ def auth():
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(CLIENT_SECRETS_FILENAME, scopes=SCOPES)
     flow.redirect_uri = url_for('authCallback', _external=True)
 
-    authUrl, state = flow.authorization_url()#access_type='offline', include_granted_scopes='true')
+    authUrl, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
 
     flask.session['state'] = state
     return flask.redirect(authUrl)
@@ -52,12 +52,12 @@ def authCallback():
 
     creds = flow.credentials
     # print("@authCallback, refresh_token: " + creds.refresh_token)
-    print("creds yo")
+    # print("creds yo")
     # print(creds)
     print('###################################')
     flask.session['credentials'] = {
         'token': creds.token,
-        # 'refresh_token': REFRESH_TOKEN,
+        'refresh_token': REFRESH_TOKEN,
         'token_uri': creds.token_uri,
         'client_id': creds.client_id,
         'client_secret': creds.client_secret,
@@ -68,19 +68,8 @@ def authCallback():
 @app.route('/')
 @authRequired
 def index():
-#     # flask.session.clear()
-
-#     # print('@index - ' + str(flask.session))
-#     # if not credentialsValid():
-#     #     return flask.redirect('auth')
-    
-#     # Hardcoded example folders
-#     # adherentFolderId = '1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96'
-#     # nonAdherentFolderId = '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'
-#     # foldersOfInterest = [nonAdherentFolderId]
-
-#     # flask.session['foldersOfInterest'] = foldersOfInterest
-    return flask.render_template('index.html', folderIndices=[0])
+    # flask.session.clear()
+    return flask.render_template('index.html')
 
 @app.route('/data/<string:folderId>/massOverTime.csv')
 @authRequired
@@ -175,7 +164,11 @@ def credentialsValid() -> bool:
     if 'credentials' not in flask.session:
         return False
     credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
-    return credentials.valid
+    print('@credentialsValid')
+    print(credentials)
+    print(credentials.valid)
+    print(credentials.expired)
+    return credentials.valid and not credentials.expired
 
 def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> dict:
     tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
