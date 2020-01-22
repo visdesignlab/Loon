@@ -202,7 +202,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this.stopAnimation();
 		this.updateScales();
 		this.updatePaths();
-		this.playControlsSelect.classed("noDisp", false);
+		// this.playControlsSelect.classed("noDisp", false);
 	}
 
 	private updateScales(): void
