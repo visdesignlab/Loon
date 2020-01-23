@@ -37,6 +37,7 @@ def auth():
 def authRequired(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        # flask.session.clear()
         if not credentialsValid():
             return flask.redirect(url_for('auth', next=flask.request.url))
         return f(*args, **kwargs)
@@ -68,7 +69,6 @@ def authCallback():
 @app.route('/')
 @authRequired
 def index():
-    # flask.session.clear()
     return flask.render_template('index.html')
 
 @app.route('/data/<string:folderId>/massOverTime.csv')

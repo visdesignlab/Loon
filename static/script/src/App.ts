@@ -107,10 +107,10 @@ export class App<DataType> {
 				newComponent = new MetricDistributionWidget(container);
 				break;
 			case ComponentType.ImageStackWidget:
-				// TODO - remove hard code for initial testing
+				// TODO - remove hard code after initial testing is done
 				const imgWidth = 400;
 				const imgHeight = 300;
-				const numImg = 290;
+				const numImg = 281;
 				const numCol = 10;
 				const imgPath = 'http://localhost:8080/data/1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/img_7.png'
 				newComponent = new ImageStackWidget(container, imgWidth, imgHeight, numImg, numCol, imgPath);

@@ -1,0 +1,15 @@
+.thumbnailsContainer {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.imageStackThumbnail {
+    
+}
+
+.imageStackThumbnail.selected {
+    outline: solid firebrick 2px;
+    z-index: 1000;
+}
