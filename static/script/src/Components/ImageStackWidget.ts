@@ -68,11 +68,15 @@ export class ImageStackWidget extends BaseWidget<PointCollection> {
 	}
 	
 	
+	private _innerContainer : HtmlSelection;
+	public get innerContainer() : HtmlSelection {
+		return this._innerContainer;
+	}
+
 	private _selectedImageContainer : HtmlSelection;
 	public get selectedImageContainer() : HtmlSelection {
 		return this._selectedImageContainer;
 	}
-	
 	
 	private _thumbnailsContainer : HtmlSelection;
 	public get thumbnailsContainer() : HtmlSelection {
@@ -88,9 +92,15 @@ export class ImageStackWidget extends BaseWidget<PointCollection> {
 	public init(): void
 	{
 		const containerSelect = d3.select(this.container);
-		this._selectedImageContainer = containerSelect.append('div');
+		this._innerContainer = containerSelect.append('div')
+			.classed('innerContainer', true);
 
-		this._thumbnailsContainer = containerSelect.append('div')
+		this.innerContainer.attr('style', `max-height: ${this.vizHeight}px;`)
+
+		this._selectedImageContainer = this.innerContainer.append('div')
+			.classed('selectedImageContainer', true);
+
+		this._thumbnailsContainer = this.innerContainer.append('div')
 			.classed('thumbnailsContainer', true);
 
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
@@ -111,6 +121,8 @@ export class ImageStackWidget extends BaseWidget<PointCollection> {
 	private drawAllThumbnails(): void
 	{
 		let indices: number[] = [...Array(this.numImages).keys()];
+
+		this.thumbnailsContainer.attr('style', `max-width: ${this.imageWidth}px;`);
 
 		this.thumbnailsContainer.selectAll('div')
 			.data(indices)
