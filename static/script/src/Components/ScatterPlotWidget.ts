@@ -117,7 +117,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 
 		this._brush = d3.brush()
 			.extent([[0, 0], [this.vizWidth, this.vizHeight]])
-			.on("start brush end", () => { this.brushHandler() });
+			.on("end", () => { this.brushHandler() });
 	
 		this.brushGroupSelect.call(this.brush);
 	}
