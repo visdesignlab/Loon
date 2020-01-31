@@ -112,7 +112,7 @@ export class App<DataType> {
 				const imgHeight = 300;
 				const numImg = 281;
 				const numCol = 10;
-				const imgPath = 'http://localhost:8080/data/1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/img_7.png'
+				const imgPath = 'http://localhost:8080/data/1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/img_7.jpg'
 				newComponent = new ImageStackWidget(container, imgWidth, imgHeight, numImg, numCol, imgPath);
 				break;
 			default:

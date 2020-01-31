@@ -13,7 +13,11 @@ import google_auth_oauthlib.flow
 # working with matlab (.mat) files
 from scipy.io import loadmat
 from PIL import Image
+import piexif
 import numpy as np
+
+# for saving structured exif data
+import json
 
 CLIENT_SECRETS_FILENAME = 'config/credentials.json'
 REFRESH_TOKEN = 'TODO: dev token'
@@ -55,7 +59,7 @@ def authCallback():
     # print("@authCallback, refresh_token: " + creds.refresh_token)
     # print("creds yo")
     # print(creds)
-    print('###################################')
+    # print('###################################')
     flask.session['credentials'] = {
         'token': creds.token,
         'refresh_token': REFRESH_TOKEN,
@@ -98,47 +102,64 @@ def getMassOverTimeCsv(folderId: str) -> str:
 def getMassOverTimeArray(folderId: str):
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', 'tracks')
 
-@app.route('/data/<string:folderId>/img_<int:frameId>.png')
+@app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
+def getImageStackMetaData(folderId: str, locationId: int):
+    # todo
+    return
+
+@app.route('/data/<string:folderId>/img_<int:locationId>.jpg')
 @authRequired
-def getImageStack(folderId: str, frameId: int):
-    imageStackArray = getImageStackArray(folderId, frameId)
+def getImageStack(folderId: str, locationId: int):
+    imageStackArray = getImageStackArray(folderId, locationId)
 
     fileObject = getTiledImage(imageStackArray)
 
-    response = flask.send_file(fileObject, mimetype='image/png')
+    response = flask.send_file(fileObject, mimetype='image/jpg')
 
     return response
 
-def getImageStackArray(folderId: str, frameId: int):
-    imageFilename = 'Copy of data' + str(frameId) + '.mat'
+def getImageStackArray(folderId: str, locationId: int):
+    imageFilename = 'Copy of data' + str(locationId) + '.mat'
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'D_stored')
 
 def getTiledImage(imageStackArray) -> io.BytesIO:
     size = np.shape(imageStackArray)
     smallH, smallW, numImages = size
+    numberOfColumns = 10
+    tiledImgMetaData = {
+        'tileWidth': smallW,
+        'tileHeight': smallH,
+        'numberOfColumns': numberOfColumns,
+        'numberOfTiles': numImages
+    }
 
-    numImageW = 10
-    numImageH = math.ceil(numImages / float(numImageW))
+    numImageH = math.ceil(numImages / float(numberOfColumns))
 
 
-    (bigWidth, bigHeight) = (numImageW * smallW, numImageH * smallH)
+    (bigWidth, bigHeight) = (numberOfColumns * smallW, numImageH * smallH)
     bigImg = Image.new('F', (bigWidth, bigHeight))
 
     for timeIndex in range(numImages):
         smallImg = imageStackArray[:, :, timeIndex]
         smallImg = Image.fromarray(smallImg, 'F')
 
-        x = timeIndex % numImageW
-        y = math.floor(timeIndex / numImageW)
+        x = timeIndex % numberOfColumns
+        y = math.floor(timeIndex / numberOfColumns)
         top = y * smallH
         left = x * smallW
         bigImg.paste(smallImg, (left, top))
 
     bigImg = bigImg.convert('RGB')
 
+    metaDataString: str = json.dumps(tiledImgMetaData)
+    exifDict = {}
+    exifDict['Exif'] = {}
+    exifDict['Exif'][piexif.ExifIFD.MakerNote] = bytes(metaDataString, 'utf-8')
+    print('exif = ' + str(exifDict))
+
     fileObject = io.BytesIO()
 
-    bigImg.save(fileObject, "png")
+    bigImg.save(fileObject, "JPEG", exif=piexif.dump(exifDict))
     fileObject.seek(0)
 
     return fileObject
