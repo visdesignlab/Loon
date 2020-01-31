@@ -1,5 +1,6 @@
 import os, io, math
 from functools import wraps
+from typing import Dict
 
 # web framework
 import flask
@@ -84,10 +85,26 @@ def getMassOverTimeCsv(folderId: str) -> str:
         return flask.redirect(filePath[1:]) # don't want '.' here
 
     # generate data
-    massOverTime = getMassOverTimeArray(folderId)
-    returnStr = 'x,y,mass,time,id,meanValue,shapeFactor\n'
+    data_allframes = getData_AllFrames(folderId)
+    massOverTime = getMassOverTimeArray(folderId, data_allframes)
+    timeArray = getTimeIndexArray(folderId, data_allframes)
+    locationArray = getLocationArray(folderId, data_allframes)
+    frameArray = getFrameArray(folderId, data_allframes)
+    timeToIndex = {}
+    for index, time in enumerate(timeArray):
+        # weird [0] indexing here is a result of weird
+        # array structure that has nested arrays at 
+        # surprising places
+        time = time[0]
+        locId = locationArray[0][index]
+        frameId = frameArray[index, 0]
+        timeToIndex[time] = (locId, frameId)
+
+    returnStr = 'x,y,mass,time,id,meanValue,shapeFactor,locationId,frameId\n'
     for row in massOverTime:
-        returnStr += ",".join(map(str, row)) + '\n'
+        time = row[3]
+        locationId, frameId = timeToIndex[time]
+        returnStr += ",".join(map(str, row)) + ',' + str(locationId) + ',' + str(frameId) + '\n'
 
     # cache file
     if not os.path.exists(cachePath):
@@ -98,9 +115,33 @@ def getMassOverTimeCsv(folderId: str) -> str:
 
     return returnStr
 
+def getData_AllFrames(folderId: str) -> Dict:
+    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat')
 
-def getMassOverTimeArray(folderId: str):
-    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', 'tracks')
+
+def getMassOverTimeArray(folderId: str, matlabDict = None):
+    key = 'tracks'
+    if matlabDict != None and key in matlabDict:
+        return matlabDict[key]
+    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    
+def getTimeIndexArray(folderId: str, matlabDict = None):
+    key = 't_stored'
+    if matlabDict != None and key in matlabDict:
+        return matlabDict[key]
+    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    
+def getLocationArray(folderId: str, matlabDict = None):
+    key = 'Loc_stored'
+    if matlabDict != None and key in matlabDict:
+        return matlabDict[key]
+    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    
+def getFrameArray(folderId: str, matlabDict = None):
+    key = 'ii_stored'
+    if matlabDict != None and key in matlabDict:
+        return matlabDict[key]
+    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
 
 @app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
 def getImageStackMetaData(folderId: str, locationId: int):
@@ -164,10 +205,15 @@ def getTiledImage(imageStackArray) -> io.BytesIO:
 
     return fileObject
 
-def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str):
+def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str = None):
     fileId, service = getFileId(folderId, filename)
     matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
-    return matlabDict[matlabKey]
+    # print('------ matlabDict!!!')
+    # for key in matlabDict.keys():
+    #     print(key)
+    if matlabKey != None:
+        return matlabDict[matlabKey]
+    return matlabDict
 
 def getFileId(folderId: str, filename: str):
     credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
