@@ -6,12 +6,6 @@ import {PointCollection} from '../DataModel/PointCollection';
 import {ImageMetaData} from '../DataModel/ImageMetaData';
 
 export class ImageSelectionWidget extends BaseWidget<PointCollection> {
-	
-	// constructor(container: HTMLElement)
-	// {
-
-	// }
-
     
     private _imageMetaData : ImageMetaData;
     public get imageMetaData() : ImageMetaData {
@@ -70,13 +64,6 @@ export class ImageSelectionWidget extends BaseWidget<PointCollection> {
         this._imageStackContainer = this.innerContainer.append('div')
             .attr('style', `max-height: ${this.vizHeight}px;`)
             .classed('imageStackContainer', true);
-
-        // const imgWidth = 400;
-        // const imgHeight = 300;
-        // const numImg = 281;
-        // const numCol = 10;
-        // const folderId = '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX';
-        // // const imgPath = `/data/${this.data.sourceKey}/img_${this.selectedLocationId}.jpg`
         this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.vizHeight);
 
 	}
@@ -85,26 +72,19 @@ export class ImageSelectionWidget extends BaseWidget<PointCollection> {
 	{
         this._imageMetaData = ImageMetaData.fromPointCollection(this.data);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
-        
-        // let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        // this.imageStackWidget.setImageLocation(currentLocation);
         this.setImageStackWidget()
         this.OnBrushChange()
     }
     
     public setImageStackWidget(): void
     {
-        // TODO - get imgWidth x imgHeight dynamically
+        // TODO - get imgWidth x imgHeight and numCol dynamically
         const imgWidth = 400;
         const imgHeight = 300;
-        // const numImg = 281;
         const numCol = 10;
         const newUrl = `/data/${this.data.sourceKey}/img_${this.selectedLocationId}.jpg`
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
         this.imageStackWidget.SetData(newUrl, currentLocation, imgWidth, imgHeight, numCol);
-        // this.imageStackWidget.setImageLocation(currentLocation);
-        // this.imageStackWidget.setImageUrl(newUrl);
-
     }
 
 	protected OnResize(): void
@@ -128,22 +108,21 @@ export class ImageSelectionWidget extends BaseWidget<PointCollection> {
             .attr('id', d => 'imageLocation-' + d)
             .on('click', d => 
             {
-                // TODO - refactor when not tired.
-                let lastSelected = d3.select("#imageLocation-" + this.selectedLocationId);
-                lastSelected.classed('selected', false);
-                this._selectedLocationId = d;
+                this.changeLocationSelection(d);
                 this.setImageStackWidget();
-                // const folderId = '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX';
-                // const newUrl = `/data/${this.data.sourceKey}/img_${this.selectedLocationId}.jpg`
-                // let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-                // this.imageStackWidget.setImageLocation(currentLocation);
-                // this.imageStackWidget.setImageUrl(newUrl);
-                let newSelected = d3.select("#imageLocation-" + this.selectedLocationId);
-                newSelected.classed('selected', true);
             });
-        // let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        // this.imageStackWidget.setImageLocation(currentLocation);
-        this.imageStackWidget.draw(); // TODO - make this more specific
+        this.imageStackWidget.draw();
+    }
+
+    private changeLocationSelection(newId: number): void
+    {
+        let lastSelected = d3.select("#imageLocation-" + this.selectedLocationId);
+        lastSelected.classed('selected', false);
+
+        this._selectedLocationId = newId;
+
+        let newSelected = d3.select("#imageLocation-" + this.selectedLocationId);
+        newSelected.classed('selected', true);
     }
 
 }

@@ -1,11 +1,7 @@
 import * as d3 from 'd3';
-// import {SvgSelection} from '../devlib/DevLibTypes';
 import {HtmlSelection} from '../devlib/DevlibTypes'
 import {BaseWidget} from './BaseWidget';
 import {ImageLocation} from '../DataModel/ImageLocation';
-import { style } from 'd3';
-// import {PointND} from '../DataModel/PointND';
-// import {valueFilter} from '../DataModel/PointCollection';
 
 export class ImageStackWidget {
 	
@@ -14,17 +10,10 @@ export class ImageStackWidget {
 		this._container = container;
 		this._maxHeight = maxHeight;
 		this.init();
-		// this._imageWidth = imageWidth;
-		// this._imageHeight = imageHeight;
-		// this._numImages = numImages;
-		// this._numColumns = numColumns;
 		this._imageStackUrl = '';
 		this._selectedImgIndex = 0;
 		console.log(d3);
 		console.log(this);
-		// this._imageStackWidth = numColumns * imageWidth;
-		// const numRows: number = Math.ceil(numImages / numColumns);
-		// this._imageStackHeight = numRows * imageHeight;
 		this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
 	}
 	
