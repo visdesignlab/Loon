@@ -9,22 +9,22 @@ import { style } from 'd3';
 
 export class ImageStackWidget {
 	
-	constructor(container: HTMLElement, maxHeight: number, imageWidth: number, imageHeight: number, numImages: number, numColumns: number, imageStackUrl: string)
+	constructor(container: HTMLElement, maxHeight: number)
 	{
 		this._container = container;
 		this._maxHeight = maxHeight;
 		this.init();
-		this._imageWidth = imageWidth;
-		this._imageHeight = imageHeight;
-		this._numImages = numImages;
-		this._numColumns = numColumns;
-		this._imageStackUrl = imageStackUrl;
+		// this._imageWidth = imageWidth;
+		// this._imageHeight = imageHeight;
+		// this._numImages = numImages;
+		// this._numColumns = numColumns;
+		this._imageStackUrl = '';
 		this._selectedImgIndex = 0;
 		console.log(d3);
 		console.log(this);
-		this._imageStackWidth = numColumns * imageWidth;
-		const numRows: number = Math.ceil(numImages / numColumns);
-		this._imageStackHeight = numRows * imageHeight;
+		// this._imageStackWidth = numColumns * imageWidth;
+		// const numRows: number = Math.ceil(numImages / numColumns);
+		// this._imageStackHeight = numRows * imageHeight;
 		this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
 	}
 	
@@ -126,17 +126,20 @@ export class ImageStackWidget {
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
 	}
 
-	public setImageUrl(url: string): void
+	public SetData(url: string, imageLocation: ImageLocation, imageWidth: number, imageHeight: number, numColumns: number): void
 	{
 		this._imageStackUrl = url;
 		this._selectedImgIndex = 0;
-		this.draw();
-	}
-
-	public setImageLocation(imageLocation: ImageLocation)
-	{
 		this._imageLocation = imageLocation;
-		// this.draw();
+		
+		this._imageWidth = imageWidth;
+		this._imageHeight = imageHeight;
+		this._numImages = imageLocation.frameList.length;
+		this._numColumns = numColumns;
+		this._imageStackWidth = numColumns * imageWidth;
+		const numRows: number = Math.ceil(this.numImages / numColumns);
+		this._imageStackHeight = numRows * imageHeight;
+		this.draw();
 	}
 
 	public draw(): void

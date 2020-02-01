@@ -19,6 +19,22 @@ export abstract class PointCollection implements Iterable<PointND>, ArrayLike<Po
 
 	abstract [Symbol.iterator](): Iterator<PointND>;
 
+	private _sourceKey : string;
+	public get sourceKey() : string {
+		return this._sourceKey;
+	}
+	public set sourceKey(v: string) {
+		this._sourceKey = v;
+	}
+	
+	private _postfixKey : string;
+	public get postfixKey() : string {
+		return this._postfixKey;
+	}
+	public set postfixKey(v : string) {
+		this._postfixKey = v;
+	}
+
 	protected _length : number;
 	public get length() : number {
 		return this._length;

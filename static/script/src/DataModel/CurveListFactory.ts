@@ -15,13 +15,13 @@ export class CurveListFactory {
 	// 	// code...
 	// }
 
-	public static CreateCurveListFromCSV(csvString: string, idkey: string = "id", tKeyOptions: string[] = ["time", "t"]): CurveList
+	public static CreateCurveListFromCSV(csvString: string, sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["time", "t"]): CurveList
 	{
 		let rawValueArray: d3.DSVRowArray<string> = d3.csvParse(csvString);
-		return CurveListFactory.CreateCurveListFromCSVObject(rawValueArray, idkey, tKeyOptions);
+		return CurveListFactory.CreateCurveListFromCSVObject(rawValueArray, sourceKey, postfixKey, idkey, tKeyOptions);
 	}
 
-	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, idkey: string = "id", tKeyOptions: string[] = ["time", "t"]): CurveList
+	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["time", "t"]): CurveList
 	{
 		console.log(csvObject);
 		const curveList: CurveND[] = [];
@@ -109,6 +109,8 @@ export class CurveListFactory {
 		// console.log(curveList);
 		const curveListObj = new CurveList(curveList);
 		curveListObj.setInputKey(tKey);
+		curveListObj.sourceKey = sourceKey;
+		curveListObj.postfixKey = postfixKey;
 		return curveListObj;
 	}
 

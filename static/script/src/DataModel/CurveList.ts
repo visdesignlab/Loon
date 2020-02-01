@@ -44,6 +44,7 @@ export class CurveList extends PointCollection
 		}
 		return this._minMaxMap;
 	}
+	
 
 	private updateMinMaxMap()
 	{

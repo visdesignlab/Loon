@@ -17,7 +17,7 @@ import {DataEvents} from './DataModel/DataEvents';
 
 export class App<DataType> {
 	
-	constructor(container: HTMLElement, fromCsv: (data: string) => DataType, fromCsvObject: (data: d3.DSVRowArray<string>) => DataType) {
+	constructor(container: HTMLElement, fromCsv: (data: string, sourceKey: string, postfixKey: string) => DataType, fromCsvObject: (data: d3.DSVRowArray<string>, sourceKey: string, postfixKey: string) => DataType) {
 		this._container = container;
 		this._componentList = [];
 		this._layoutFramework = new LayoutFramework(container);
@@ -47,13 +47,13 @@ export class App<DataType> {
 		return this._componentContainers;
 	}
 
-	private _dataFromCSV : (data: string) => DataType;
-	public get dataFromCSV() : (data: string) => DataType{
+	private _dataFromCSV : (data: string, sourceKey: string, postfixKey: string) => DataType;
+	public get dataFromCSV() : (data: string, sourceKey: string, postfixKey: string) => DataType{
 		return this._dataFromCSV;
 	}
 
-	private _dataFromCSVObject : (data: d3.DSVRowArray<string>) => DataType;
-	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>) => DataType{
+	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, sourceKey: string, postfixKey: string) => DataType;
+	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, sourceKey: string, postfixKey: string) => DataType{
 		return this._dataFromCSVObject;
 	}
 
@@ -85,8 +85,8 @@ export class App<DataType> {
 					// {displayName: "Firework Simulation", callback: () => this.fetchCsv('firework.csv')}
 					// {displayName: "Klein Bottle", callback: () => this.fetchCsv('klein.csv')},
 					// {displayName: "Tutorial", callback: async () => this.runStorySteps() },
-					{displayName: "Non Adherent", callback: () => this.fetchCsv('1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/massOverTime.csv') },
-					{displayName: "Adherent", callback: () => this.fetchCsv('1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96/massOverTime.csv') }
+					{displayName: "Non Adherent", callback: () => this.fetchCsv('1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/massOverTime.csv', '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX') },
+					{displayName: "Adherent", callback: () => this.fetchCsv('1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96/massOverTime.csv', '1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96') }
 				];
 
 				newComponent = new Toolbar(container, (data: string) => this.loadFromCsvString(data), buttonList);
@@ -127,16 +127,16 @@ export class App<DataType> {
 
 	private loadFromCsvString(data: string): void
 	{
-		let newData: DataType = this.dataFromCSV(data);
+		let newData: DataType = this.dataFromCSV(data, 'csvString', '');
 		this.SetData(newData);
 	}
 
-	private async fetchCsv(filename: string): Promise<void>
+	private async fetchCsv(filename: string, sourceKey: string, postfixKey: string = ''): Promise<void>
 	{
 		await d3.csv("../../../data/" + filename).then(data =>
 		{
 			// console.log(data);
-			let newData: DataType = this.dataFromCSVObject(data);
+			let newData: DataType = this.dataFromCSVObject(data, sourceKey, postfixKey);
 			// console.log(newData);
 			this.SetData(newData)
 		});
