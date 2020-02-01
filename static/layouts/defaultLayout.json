@@ -31,7 +31,7 @@
 				{
 					"direction": "col",
 					"fraction": 2,
-					"inside": "ImageStackWidget"
+					"inside": "ImageSelectionWidget"
 				}
 			]
 		}

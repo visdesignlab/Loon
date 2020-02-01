@@ -7,11 +7,13 @@ import { style } from 'd3';
 // import {PointND} from '../DataModel/PointND';
 // import {valueFilter} from '../DataModel/PointCollection';
 
-export class ImageStackWidget extends BaseWidget<PointCollection> {
+export class ImageStackWidget {
 	
-	constructor(container: HTMLElement, imageWidth: number, imageHeight: number, numImages: number, numColumns: number, imageStackUrl: string)
+	constructor(container: HTMLElement, maxHeight: number, imageWidth: number, imageHeight: number, numImages: number, numColumns: number, imageStackUrl: string)
 	{
-		super(container);
+		this._container = container;
+		this._maxHeight = maxHeight;
+		this.init();
 		this._imageWidth = imageWidth;
 		this._imageHeight = imageHeight;
 		this._numImages = numImages;
@@ -26,6 +28,18 @@ export class ImageStackWidget extends BaseWidget<PointCollection> {
 		this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
 	}
 	
+	
+	private _container : HTMLElement;
+	public get container() : HTMLElement {
+		return this._container;
+	}
+	
+	private _maxHeight : number;
+	public get maxHeight() : number {
+		return this._maxHeight;
+	}
+	
+
 	private _imageWidth : number;
 	public get imageWidth() : number {
 		return this._imageWidth;
@@ -95,7 +109,7 @@ export class ImageStackWidget extends BaseWidget<PointCollection> {
 		this._innerContainer = containerSelect.append('div')
 			.classed('innerContainer', true);
 
-		this.innerContainer.attr('style', `max-height: ${this.vizHeight}px;`)
+		this.innerContainer.attr('style', `max-height: ${this.maxHeight}px;`)
 
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('selectedImageContainer', true);
@@ -122,7 +136,7 @@ export class ImageStackWidget extends BaseWidget<PointCollection> {
 	{
 		let indices: number[] = [...Array(this.numImages).keys()];
 
-		this.thumbnailsContainer.attr('style', `max-width: ${this.imageWidth}px;`);
+		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
 
 		this.thumbnailsContainer.selectAll('div')
 			.data(indices)
@@ -174,9 +188,10 @@ export class ImageStackWidget extends BaseWidget<PointCollection> {
 		return styleString;
 	}
 
-	protected OnResize(): void
+	public OnResize(newMaxHeight: number): void
 	{
-		// TODO
+		this._maxHeight = this.maxHeight;
+		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
 	}
 
 }

@@ -1,0 +1,15 @@
+.imageSelectionContainer {
+    display: flex;
+    flex-direction: row;
+}
+
+.locationSelectionContainer {
+    min-width: 200px;
+    max-width: 200px;
+}
+
+.imageStackContainer {
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 100%;
+}

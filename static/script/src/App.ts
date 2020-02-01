@@ -5,8 +5,8 @@ import {Toolbar} from './Components/Toolbar';
 import {Plot2dPathsWidget} from './Components/Plot2dPathsWidget';
 // import {Console} from './Console';
 // import {TableWidget} from './TableWidget';
-// import {LevelOfDetailWidget} from './LevelOfDetailWidget';
 import {MetricDistributionWidget} from './Components/MetricDistributionWidget';
+import {ImageSelectionWidget} from './Components/ImageSelectionWidget';
 import {ImageStackWidget} from './Components/ImageStackWidget'
 // import {Overlay} from './Overlay';
 import {LayoutFramework} from './LayoutFramework';
@@ -106,15 +106,18 @@ export class App<DataType> {
 			case ComponentType.MetricDistributionWidget:
 				newComponent = new MetricDistributionWidget(container);
 				break;
-			case ComponentType.ImageStackWidget:
-				// TODO - remove hard code after initial testing is done
-				const imgWidth = 400;
-				const imgHeight = 300;
-				const numImg = 281;
-				const numCol = 10;
-				const imgPath = 'http://localhost:8080/data/1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/img_7.jpg'
-				newComponent = new ImageStackWidget(container, imgWidth, imgHeight, numImg, numCol, imgPath);
+			case ComponentType.ImageSelectionWidget:
+				newComponent = new ImageSelectionWidget(container);
 				break;
+			// case ComponentType.ImageStackWidget:
+			// 	// TODO - remove hard code after initial testing is done
+			// 	const imgWidth = 400;
+			// 	const imgHeight = 300;
+			// 	const numImg = 281;
+			// 	const numCol = 10;
+			// 	const imgPath = 'http://localhost:8080/data/1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/img_7.jpg'
+			// 	newComponent = new ImageStackWidget(container, imgWidth, imgHeight, numImg, numCol, imgPath);
+			// 	break;
 			default:
 				console.error(`Cannot Initialize Component of type: ${compontentType}`);
 				break;
