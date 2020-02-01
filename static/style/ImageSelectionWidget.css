@@ -13,3 +13,12 @@
     flex-shrink: 1;
     height: 100%;
 }
+
+.locationButton {
+    background: wheat;
+}
+
+.locationButton.selected {
+    color: white;
+    background: black;
+}

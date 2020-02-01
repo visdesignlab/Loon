@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 // import {SvgSelection} from '../devlib/DevLibTypes';
 import {HtmlSelection} from '../devlib/DevlibTypes'
 import {BaseWidget} from './BaseWidget';
-import {PointCollection} from '../DataModel/PointCollection';
+import {ImageLocation} from '../DataModel/ImageLocation';
 import { style } from 'd3';
 // import {PointND} from '../DataModel/PointND';
 // import {valueFilter} from '../DataModel/PointCollection';
@@ -37,6 +37,12 @@ export class ImageStackWidget {
 	private _maxHeight : number;
 	public get maxHeight() : number {
 		return this._maxHeight;
+	}
+	
+	
+	private _imageLocation : ImageLocation;
+	public get imageLocation() : ImageLocation {
+		return this._imageLocation;
 	}
 	
 
@@ -120,7 +126,20 @@ export class ImageStackWidget {
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
 	}
 
-	public OnDataChange()
+	public setImageUrl(url: string): void
+	{
+		this._imageStackUrl = url;
+		this._selectedImgIndex = 0;
+		this.draw();
+	}
+
+	public setImageLocation(imageLocation: ImageLocation)
+	{
+		this._imageLocation = imageLocation;
+		// this.draw();
+	}
+
+	public draw(): void
 	{
 		this.drawSelectedImage();
 		this.drawAllThumbnails();
@@ -134,18 +153,19 @@ export class ImageStackWidget {
 
 	private drawAllThumbnails(): void
 	{
-		let indices: number[] = [...Array(this.numImages).keys()];
+		// let indices: number[] = [...Array(this.numImages).keys()];
 
 		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
 
 		this.thumbnailsContainer.selectAll('div')
-			.data(indices)
+			.data(this.imageLocation.frameList)
 		  .join('div')
-			.attr('style', d => this.getImageInlineStyle(d, 0.1))
+			.attr('style', (d, index) => this.getImageInlineStyle(index, 0.1))
 			.classed('imageStackThumbnail', true)
-			.classed('selected', d => d === this.selectedImgIndex)
-			.on('click', (d) => {
-				this.changeSelectedImage(d);
+			.classed('selected', (d, index) => index === this.selectedImgIndex)
+			.classed('brushed', d => d.inBrush)
+			.on('click', (d, index) => {
+				this.changeSelectedImage(index);
 			});
 
 	}
@@ -153,7 +173,7 @@ export class ImageStackWidget {
 	private changeSelectedImage(newIndex: number): void
 	{
 		this._selectedImgIndex = newIndex;
-		this.OnDataChange();
+		this.draw();
 	}
 
 	private handleKeyDown(event: KeyboardEvent): void

@@ -75,8 +75,8 @@ export class ImageSelectionWidget extends BaseWidget<PointCollection> {
         const imgHeight = 300;
         const numImg = 281;
         const numCol = 10;
-        const imgPath = '/data/1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/img_7.jpg'
-
+        const folderId = '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX';
+        const imgPath = `/data/${folderId}/img_${this.selectedLocationId}.jpg`
         this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.vizHeight, imgWidth, imgHeight, numImg, numCol, imgPath);
 
 	}
@@ -85,14 +85,14 @@ export class ImageSelectionWidget extends BaseWidget<PointCollection> {
 	{
         this._imageMetaData = ImageMetaData.fromPointCollection(this.data);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
+        
+        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+        this.imageStackWidget.setImageLocation(currentLocation);
         this.OnBrushChange()
-
-        this.imageStackWidget.OnDataChange(); // todo - put this elsewhere
 	}
 
 	protected OnResize(): void
 	{
-        // TODO
         this.imageStackWidget.OnResize(this.vizHeight);
 	}
 
@@ -107,7 +107,26 @@ export class ImageSelectionWidget extends BaseWidget<PointCollection> {
             .data(brushedLocationList)
             .join('button')
             .text(d => d)
-            .classed('selected', d => d == this.selectedLocationId);
+            .classed('locationButton', true)
+            .classed('selected', d => d == this.selectedLocationId)
+            .attr('id', d => 'imageLocation-' + d)
+            .on('click', d => 
+            {
+                // TODO - refactor when not tired.
+                let lastSelected = d3.select("#imageLocation-" + this.selectedLocationId);
+                lastSelected.classed('selected', false);
+                this._selectedLocationId = d;
+                const folderId = '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX';
+                const newUrl = `/data/${folderId}/img_${this.selectedLocationId}.jpg`
+                let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+                this.imageStackWidget.setImageLocation(currentLocation);
+                this.imageStackWidget.setImageUrl(newUrl);
+                let newSelected = d3.select("#imageLocation-" + this.selectedLocationId);
+                newSelected.classed('selected', true);
+            });
+        // let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+        // this.imageStackWidget.setImageLocation(currentLocation);
+        this.imageStackWidget.draw(); // TODO - make this more specific
     }
 
 }
