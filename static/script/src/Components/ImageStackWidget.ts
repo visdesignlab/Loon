@@ -192,7 +192,7 @@ export class ImageStackWidget {
 			`
 			background-position-x: ${-left * scale}px;
 			background-position-y: ${-top * scale}px;
-			background: #ebebeb;
+			background-color: #ebebeb;
 			background-image: url(${this.imageStackUrl});
 			width: ${this.imageWidth * scale}px;
 			height: ${this.imageHeight * scale}px;
