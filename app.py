@@ -5,6 +5,7 @@ from typing import Dict
 # web framework
 import flask
 from flask.helpers import url_for
+from flask import abort
 
 # Google authentication
 import google.oauth2.credentials
@@ -224,6 +225,8 @@ def getFileId(folderId: str, filename: str):
     
     results = service.files().list(q=query, fields=responseFields).execute()
     items = results.get('files', [])
+    if len(items) == 0:
+        abort(404)
     fileId = items[0]['id']
     return fileId, service
 
@@ -243,6 +246,11 @@ def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.di
     f.write(service.files().get_media(fileId=googleFileId).execute())
     f.close()
     return loadmat(tempFilename)
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return flask.redirect('/static/404.jpg')    
 
 if __name__ == '__main__':
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'

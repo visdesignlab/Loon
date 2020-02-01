@@ -188,15 +188,18 @@ export class ImageStackWidget {
 	{
 		const left: number = (index % this.numColumns) * this.imageWidth;
 		const top: number = Math.floor(index / this.numColumns) * this.imageHeight;
-		const styleString: string =
+		let styleString: string =
 			`
 			background-position-x: ${-left * scale}px;
 			background-position-y: ${-top * scale}px;
 			background-image: url(${this.imageStackUrl});
 			width: ${this.imageWidth * scale}px;
 			height: ${this.imageHeight * scale}px;
-			background-size: ${this.imageStackWidth * scale}px ${this.imageStackHeight * scale}px;
 			`;
+		if (scale !== 1)
+		{
+			styleString += `background-size: ${this.imageStackWidth * scale}px ${this.imageStackHeight * scale}px;`
+		}
 		return styleString;
 	}
 
