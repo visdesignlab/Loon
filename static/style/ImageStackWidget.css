@@ -40,3 +40,13 @@
 .imageStackThumbnail:not(.brushed) {
     opacity: 0.1;
 }
+
+.centroidIndicator {
+    fill-opacity: 0;
+    r: 3;
+}
+
+.centroidIndicator.inBrush {
+    fill-opacity: 1;
+    fill: #eb2828;
+}

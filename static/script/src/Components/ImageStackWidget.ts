@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
-import {HtmlSelection} from '../devlib/DevlibTypes'
-import {BaseWidget} from './BaseWidget';
+import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes'
+import {PointND} from '../DataModel/PointND'
 import {ImageLocation} from '../DataModel/ImageLocation';
 
 export class ImageStackWidget {
@@ -86,6 +86,13 @@ export class ImageStackWidget {
 	public get selectedImageContainer() : HtmlSelection {
 		return this._selectedImageContainer;
 	}
+
+	
+	private _selectedImageOverlay : SvgSelection;
+	public get selectedImageOverlay() : SvgSelection {
+		return this._selectedImageOverlay;
+	}
+	
 	
 	private _thumbnailsContainer : HtmlSelection;
 	public get thumbnailsContainer() : HtmlSelection {
@@ -96,6 +103,13 @@ export class ImageStackWidget {
 	public get thumbnailScale() : number {
 		return this._thumbnailScale;
 	}
+
+	
+	private _data : PointND[];
+	public get data() : PointND[] {
+		return this._data;
+	}
+	
 	
 
 	public init(): void
@@ -109,20 +123,27 @@ export class ImageStackWidget {
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('selectedImageContainer', true);
 
+		this._selectedImageOverlay = this.selectedImageContainer.append('svg');
+
 		this._thumbnailsContainer = this.innerContainer.append('div')
 			.classed('thumbnailsContainer', true);
 
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
 	}
 
-	public SetData(url: string, imageLocation: ImageLocation, imageWidth: number, imageHeight: number, numColumns: number): void
+	public SetData(data: PointND[], url: string, imageLocation: ImageLocation, imageWidth: number, imageHeight: number, numColumns: number): void
 	{
+		this._data = data;
 		this._imageStackUrl = url;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
 		
 		this._imageWidth = imageWidth;
 		this._imageHeight = imageHeight;
+		this.selectedImageOverlay
+			.attr('width', imageWidth)
+			.attr('height', imageHeight);
+
 		this._numImages = imageLocation.frameList.length;
 		this._numColumns = numColumns;
 		this._imageStackWidth = numColumns * imageWidth;
@@ -141,6 +162,16 @@ export class ImageStackWidget {
 	{
 		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex);
 		this.selectedImageContainer.attr("style", styleString)
+		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
+		let thisFramesData = this.data.filter(d => d.get('frameId') === currentFrameId)
+		this.selectedImageOverlay.selectAll('circle')
+		  .data(thisFramesData)
+			.join('circle')
+			.attr('cx', d => d.get('x'))
+			.attr('cy', d => d.get('y'))
+			.classed('centroidIndicator', true)
+			.classed('inBrush', d => d.inBrush)
+
 	}
 
 	private drawAllThumbnails(): void
