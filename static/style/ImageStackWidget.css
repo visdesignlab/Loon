@@ -43,7 +43,7 @@
 
 .centroidIndicator {
     fill-opacity: 0;
-    r: 3;
+    r: 2;
 }
 
 .centroidIndicator.inBrush {

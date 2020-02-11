@@ -1,4 +1,4 @@
-import os, io, math
+import os, io, math, random
 from functools import wraps
 from typing import Dict
 
@@ -149,14 +149,50 @@ def getImageStackMetaData(folderId: str, locationId: int):
     # todo
     return
 
-@app.route('/data/<string:folderId>/img_<int:locationId>.jpg')
+@app.route('/data/<string:folderId>/img_<int:locationId>.png')
 @authRequired
 def getImageStack(folderId: str, locationId: int):
     imageStackArray = getImageStackArray(folderId, locationId)
+    
+    shape = np.shape(imageStackArray)
+    print("image stack shape = " + str(shape))
 
-    fileObject = getTiledImage(imageStackArray)
+    fileObject = getTiledImage(imageStackArray, 'F')
 
-    response = flask.send_file(fileObject, mimetype='image/jpg')
+    response = flask.send_file(fileObject, mimetype='image/png')
+
+    return response
+
+@app.route('/data/<string:folderId>/imgLabel_<int:locationId>.png')
+@authRequired
+def getLabeledImageStack(folderId: str, locationId: int):
+    imageStackArray = getLabeledImageStackArray(folderId, locationId)
+
+
+    shape = np.shape(imageStackArray)
+    print("Labeled image stack shape = " + str(shape))
+
+    fileObject = getTiledImage(imageStackArray, 'I;16')
+
+    response = flask.send_file(fileObject, mimetype='image/png')
+
+    return response
+
+@app.route('/data/<string:folderId>/imgLabelColored_<int:locationId>.png')
+@authRequired
+def getLabeledColoredImageStack(folderId: str, locationId: int):
+    imageStackArray = getLabeledImageStackArray(folderId, locationId)
+
+    shape = np.shape(imageStackArray)
+    print("Labeled Colored image stack shape = " + str(shape))
+    print(type(imageStackArray))
+
+    # outfile = open('./tmp/debug.txt')
+    # np.save(outfile, imageStackArray)
+
+    fileObject = getTiledImage(imageStackArray, 'I;16', True)
+
+    response = flask.send_file(fileObject, mimetype='image/png')
 
     return response
 
@@ -164,7 +200,11 @@ def getImageStackArray(folderId: str, locationId: int):
     imageFilename = 'Copy of data' + str(locationId) + '.mat'
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'D_stored')
 
-def getTiledImage(imageStackArray) -> io.BytesIO:
+def getLabeledImageStackArray(folderId: str, locationId: int):
+    imageFilename = 'Copy of data' + str(locationId) + '.mat'
+    return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'L_stored')
+
+def getTiledImage(imageStackArray, imageType: str, colorize = False) -> io.BytesIO:
     size = np.shape(imageStackArray)
     smallH, smallW, numImages = size
     numberOfColumns = 10
@@ -179,12 +219,15 @@ def getTiledImage(imageStackArray) -> io.BytesIO:
 
 
     (bigWidth, bigHeight) = (numberOfColumns * smallW, numImageH * smallH)
-    bigImg = Image.new('F', (bigWidth, bigHeight))
+    bigImg = Image.new('RGB', (bigWidth, bigHeight))
 
+    if colorize:
+        colorLookup = {0: (0,0,0)}
     for timeIndex in range(numImages):
         smallImg = imageStackArray[:, :, timeIndex]
-        smallImg = Image.fromarray(smallImg, 'F')
-
+        smallImg = Image.fromarray(smallImg, imageType)
+        if colorize:
+            smallImg = getColorMappedImage(smallImg, colorLookup)
         x = timeIndex % numberOfColumns
         y = math.floor(timeIndex / numberOfColumns)
         top = y * smallH
@@ -201,10 +244,32 @@ def getTiledImage(imageStackArray) -> io.BytesIO:
 
     fileObject = io.BytesIO()
 
-    bigImg.save(fileObject, "JPEG", exif=piexif.dump(exifDict))
+    bigImg.save(fileObject, "PNG", exif=piexif.dump(exifDict))
     fileObject.seek(0)
 
     return fileObject
+
+
+def getColorMappedImage(labeledValueImg, lookup):
+    random.seed(500)  # static seed so colors can be reproduced or compared
+    outputImg = Image.new('RGB', labeledValueImg.size)
+    coloredImgData = labeledValueImg.getdata()
+    outputImgData = [getColor(x, lookup) for x in coloredImgData]
+    outputImg.putdata(outputImgData)
+
+    return outputImg
+
+def getColor(label, lookup):
+    if label in lookup:
+        return lookup[label]
+    # keep colors above 64 to help keep it distinguishable from black
+    r = random.randint(64, 255)
+    g = random.randint(64, 255)
+    b = random.randint(64, 255)
+    color = (r, g, b)
+    lookup[label] = color
+    return color
+
 
 def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str = None):
     fileId, service = getFileId(folderId, filename)
