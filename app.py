@@ -148,8 +148,9 @@ def getFrameArray(folderId: str, matlabDict = None):
 
 @app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
 def getImageStackMetaData(folderId: str, locationId: int):
-    # todo
-    return
+    labeledImageStack = getLabeledImageStackArray(folderId, locationId)
+    metadata = getTiledImageMetaData(labeledImageStack)
+    return json.dumps(metadata, indent=4)
 
 @app.route('/data/<string:folderId>/img_<int:locationId>.png')
 @authRequired
@@ -196,15 +197,11 @@ def getTiledImageFileObject(imageStackArray, imageType: str, colorize = False, g
     return getImageFileObject(tiledImg, metaData)
 
 def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline = False) -> Tuple[any, Dict]:
-    size = np.shape(imageStackArray)
-    smallH, smallW, numImages = size
-    numberOfColumns = 10
-    tiledImgMetaData = {
-        'tileWidth': smallW,
-        'tileHeight': smallH,
-        'numberOfColumns': numberOfColumns,
-        'numberOfTiles': numImages
-    }
+    tiledImgMetaData = getTiledImageMetaData(imageStackArray)
+    smallW = tiledImgMetaData['tileWidth']
+    smallH = tiledImgMetaData['tileHeight']
+    numberOfColumns = tiledImgMetaData['numberOfColumns']
+    numImages = tiledImgMetaData['numberOfTiles']
 
     numImageH = math.ceil(numImages / float(numberOfColumns))
 
@@ -230,6 +227,18 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline 
         bigImg = ImageChops.difference(bigImg, bigImgEroded)
 
     return bigImg, tiledImgMetaData
+
+def getTiledImageMetaData(imageStackArray) -> Dict:
+    size = np.shape(imageStackArray)
+    smallH, smallW, numImages = size
+    numberOfColumns = 10
+    tiledImgMetaData = {
+        'tileWidth': smallW,
+        'tileHeight': smallH,
+        'numberOfColumns': numberOfColumns,
+        'numberOfTiles': numImages
+    }
+    return tiledImgMetaData
 
 def getImageFileObject(img, tiledImgMetaData):
     metaDataString: str = json.dumps(tiledImgMetaData)
