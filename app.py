@@ -165,41 +165,6 @@ def getImageStack(folderId: str, locationId: int):
 
     return response
 
-@app.route('/data/<string:folderId>/imgLabel_<int:locationId>.png')
-@authRequired
-def getLabeledImageStack(folderId: str, locationId: int):
-    imageStackArray = getLabeledImageStackArray(folderId, locationId)
-
-    fileObject = getTiledImageFileObject(imageStackArray, 'I;16')
-
-    response = flask.send_file(fileObject, mimetype='image/png')
-
-    return response
-
-@app.route('/data/<string:folderId>/imgLabelColored_<int:locationId>.png')
-@authRequired
-def getLabeledColoredImageStack(folderId: str, locationId: int):
-    imageStackArray = getLabeledImageStackArray(folderId, locationId)
-
-    fileObject = getTiledImageFileObject(imageStackArray, 'I;16', True)
-
-    response = flask.send_file(fileObject, mimetype='image/png')
-
-    return response
-
-
-@app.route('/data/<string:folderId>/imgLabelOutline_<int:locationId>.png')
-@authRequired
-def getLabeledOutlineImageStack(folderId: str, locationId: int):
-    imageStackArray = getLabeledImageStackArray(folderId, locationId)
-    imageStackArray = imageStackArray.astype(np.int32)
-
-    fileObject = getTiledImageFileObject(imageStackArray, 'I', True, True)
-
-    response = flask.send_file(fileObject, mimetype='image/png')
-
-    return response
-
 @app.route('/data/<string:folderId>/imgWithOutline_<int:locationId>.png')
 @authRequired
 def getImageStackWithOutline(folderId: str, locationId: int):
