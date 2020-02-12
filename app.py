@@ -243,20 +243,17 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline 
 
     numImageH = math.ceil(numImages / float(numberOfColumns))
 
-
-    (bigWidth, bigHeight) = (numberOfColumns * smallW, numImageH * smallH)
-    
+    (bigWidth, bigHeight) = (numberOfColumns * smallW, numImageH * smallH)    
 
     bigImageType = 'RGB'
     bigImg = Image.new(bigImageType, (bigWidth, bigHeight))
 
-    if colorize:
-        colorLookup = {0: (0,0,0,0)}
     for timeIndex in range(numImages):
         smallImg = imageStackArray[:, :, timeIndex]
         smallImg = Image.fromarray(smallImg, imageType)
         if colorize:
-            smallImg = getColorMappedImage(smallImg, colorLookup)
+            firebrick = (178, 34, 34) # css named color
+            smallImg = getColoredImage(smallImg, firebrick)
         x = timeIndex % numberOfColumns
         y = math.floor(timeIndex / numberOfColumns)
         top = y * smallH
@@ -270,7 +267,6 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline 
     return bigImg, tiledImgMetaData
 
 def getImageFileObject(img, tiledImgMetaData):
-
     metaDataString: str = json.dumps(tiledImgMetaData)
     exifDict = {}
     exifDict['Exif'] = {}
@@ -284,37 +280,17 @@ def getImageFileObject(img, tiledImgMetaData):
 
     return fileObject
 
-
-def getColorMappedImage(labeledValueImg, lookup):
-    random.seed(500)  # static seed so colors can be reproduced or compared
+def getColoredImage(labeledValueImg, nonZeroColor):
     outputImg = Image.new('RGB', labeledValueImg.size)
     coloredImgData = labeledValueImg.getdata()
-    outputImgData = [getColor(x, lookup) for x in coloredImgData]
+    backColor = (0,0,0) # black
+    outputImgData = [nonZeroColor if x != 0 else backColor for x in coloredImgData]
     outputImg.putdata(outputImgData)
-
     return outputImg
-
-def getColor(label, lookup):
-    if label in lookup:
-        return lookup[label]
-    # keep colors above 64 to help keep it distinguishable from black
-    # r = random.randint(64, 255)
-    # g = random.randint(64, 255)
-    # b = random.randint(64, 255)
-    # color = (r, g, b, 255)
-
-    firebrick = (178, 34, 34)
-
-    lookup[label] = firebrick
-    return firebrick
-
 
 def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str = None):
     fileId, service = getFileId(folderId, filename)
     matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
-    # print('------ matlabDict!!!')
-    # for key in matlabDict.keys():
-    #     print(key)
     if matlabKey != None:
         return matlabDict[matlabKey]
     return matlabDict
