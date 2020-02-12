@@ -1,6 +1,6 @@
 import os, io, math, random
 from functools import wraps
-from typing import Dict
+from typing import Dict, Tuple
 
 # web framework
 import flask
@@ -12,9 +12,11 @@ import google.oauth2.credentials
 import googleapiclient.discovery
 import google_auth_oauthlib.flow
 
-# working with matlab (.mat) files
+# working with matlab (.mat) files, especially images
 from scipy.io import loadmat
 from PIL import Image
+from PIL import ImageFilter
+from PIL import ImageChops
 import piexif
 import numpy as np
 
@@ -157,7 +159,7 @@ def getImageStack(folderId: str, locationId: int):
     shape = np.shape(imageStackArray)
     print("image stack shape = " + str(shape))
 
-    fileObject = getTiledImage(imageStackArray, 'F')
+    fileObject = getTiledImageFileObject(imageStackArray, 'F')
 
     response = flask.send_file(fileObject, mimetype='image/png')
 
@@ -168,11 +170,7 @@ def getImageStack(folderId: str, locationId: int):
 def getLabeledImageStack(folderId: str, locationId: int):
     imageStackArray = getLabeledImageStackArray(folderId, locationId)
 
-
-    shape = np.shape(imageStackArray)
-    print("Labeled image stack shape = " + str(shape))
-
-    fileObject = getTiledImage(imageStackArray, 'I;16')
+    fileObject = getTiledImageFileObject(imageStackArray, 'I;16')
 
     response = flask.send_file(fileObject, mimetype='image/png')
 
@@ -183,14 +181,38 @@ def getLabeledImageStack(folderId: str, locationId: int):
 def getLabeledColoredImageStack(folderId: str, locationId: int):
     imageStackArray = getLabeledImageStackArray(folderId, locationId)
 
-    shape = np.shape(imageStackArray)
-    print("Labeled Colored image stack shape = " + str(shape))
-    print(type(imageStackArray))
+    fileObject = getTiledImageFileObject(imageStackArray, 'I;16', True)
 
-    # outfile = open('./tmp/debug.txt')
-    # np.save(outfile, imageStackArray)
+    response = flask.send_file(fileObject, mimetype='image/png')
 
-    fileObject = getTiledImage(imageStackArray, 'I;16', True)
+    return response
+
+
+@app.route('/data/<string:folderId>/imgLabelOutline_<int:locationId>.png')
+@authRequired
+def getLabeledOutlineImageStack(folderId: str, locationId: int):
+    imageStackArray = getLabeledImageStackArray(folderId, locationId)
+    imageStackArray = imageStackArray.astype(np.int32)
+
+    fileObject = getTiledImageFileObject(imageStackArray, 'I', True, True)
+
+    response = flask.send_file(fileObject, mimetype='image/png')
+
+    return response
+
+@app.route('/data/<string:folderId>/imgWithOutline_<int:locationId>.png')
+@authRequired
+def getImageStackWithOutline(folderId: str, locationId: int):
+    imageStackArray = getImageStackArray(folderId, locationId)
+    labeledImageStackArray = getLabeledImageStackArray(folderId, locationId)
+    labeledImageStackArray = labeledImageStackArray.astype(np.int32)
+
+    imageStack, metaData1 = getTiledImage(imageStackArray, 'F')
+    imageOutlineStack, metaData2 = getTiledImage(labeledImageStackArray, 'I', True, True)
+    # metaData1 should equal metaData2
+
+    combinedImg = ImageChops.add(imageStack, imageOutlineStack)
+    fileObject = getImageFileObject(combinedImg, metaData1)
 
     response = flask.send_file(fileObject, mimetype='image/png')
 
@@ -204,7 +226,11 @@ def getLabeledImageStackArray(folderId: str, locationId: int):
     imageFilename = 'Copy of data' + str(locationId) + '.mat'
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'L_stored')
 
-def getTiledImage(imageStackArray, imageType: str, colorize = False) -> io.BytesIO:
+def getTiledImageFileObject(imageStackArray, imageType: str, colorize = False, getOutline = False) -> io.BytesIO:
+    tiledImg, metaData = getTiledImage(imageStackArray, imageType, colorize, getOutline)
+    return getImageFileObject(tiledImg, metaData)
+
+def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline = False) -> Tuple[any, Dict]:
     size = np.shape(imageStackArray)
     smallH, smallW, numImages = size
     numberOfColumns = 10
@@ -219,10 +245,13 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False) -> io.Bytes
 
 
     (bigWidth, bigHeight) = (numberOfColumns * smallW, numImageH * smallH)
-    bigImg = Image.new('RGB', (bigWidth, bigHeight))
+    
+
+    bigImageType = 'RGB'
+    bigImg = Image.new(bigImageType, (bigWidth, bigHeight))
 
     if colorize:
-        colorLookup = {0: (0,0,0)}
+        colorLookup = {0: (0,0,0,0)}
     for timeIndex in range(numImages):
         smallImg = imageStackArray[:, :, timeIndex]
         smallImg = Image.fromarray(smallImg, imageType)
@@ -234,7 +263,13 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False) -> io.Bytes
         left = x * smallW
         bigImg.paste(smallImg, (left, top))
 
-    bigImg = bigImg.convert('RGB')
+    if getOutline:
+        bigImgEroded = bigImg.filter(ImageFilter.MinFilter(3))
+        bigImg = ImageChops.difference(bigImg, bigImgEroded)
+
+    return bigImg, tiledImgMetaData
+
+def getImageFileObject(img, tiledImgMetaData):
 
     metaDataString: str = json.dumps(tiledImgMetaData)
     exifDict = {}
@@ -244,7 +279,7 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False) -> io.Bytes
 
     fileObject = io.BytesIO()
 
-    bigImg.save(fileObject, "PNG", exif=piexif.dump(exifDict))
+    img.save(fileObject, "PNG", exif=piexif.dump(exifDict))
     fileObject.seek(0)
 
     return fileObject
@@ -263,12 +298,15 @@ def getColor(label, lookup):
     if label in lookup:
         return lookup[label]
     # keep colors above 64 to help keep it distinguishable from black
-    r = random.randint(64, 255)
-    g = random.randint(64, 255)
-    b = random.randint(64, 255)
-    color = (r, g, b)
-    lookup[label] = color
-    return color
+    # r = random.randint(64, 255)
+    # g = random.randint(64, 255)
+    # b = random.randint(64, 255)
+    # color = (r, g, b, 255)
+
+    firebrick = (178, 34, 34)
+
+    lookup[label] = firebrick
+    return firebrick
 
 
 def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str = None):

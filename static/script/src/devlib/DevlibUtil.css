@@ -2,6 +2,15 @@
 	display: none !important;
 }
 
+.noShrink {
+    flex-shrink: 0;
+}
+
+.willChange {
+    /* Can help prevent change in certain situations. */
+    will-change: transform;
+}
+
 .devlibButton {
     background: hsl(232, 100%, 97%);
     border: solid black 1px;

@@ -5,9 +5,9 @@
     align-items: center;
 }
 
-.selectedImageContainer {
+/* .selectedImageContainer {
     flex-shrink: 0;
-}
+} */
 
 .thumbnailsContainer {
     display: flex;

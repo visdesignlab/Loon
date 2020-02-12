@@ -60,6 +60,10 @@ export class ImageStackWidget {
 		return this._imageStackUrl;
 	}
 
+	// private _imageOutlineStackUrl : string;
+	// public get imageOutlineStackUrl() : string {
+	// 	return this._imageOutlineStackUrl;
+	// }
 	
 	private _imageStackWidth : number;
 	public get imageStackWidth() : number {
@@ -86,8 +90,12 @@ export class ImageStackWidget {
 	public get selectedImageContainer() : HtmlSelection {
 		return this._selectedImageContainer;
 	}
-
 	
+	// private _selectedImageOutlineContainer : HtmlSelection;
+	// public get selectedImageOutlineContainer() : HtmlSelection {
+	// 	return this._selectedImageOutlineContainer;
+	// }	
+
 	private _selectedImageOverlay : SvgSelection;
 	public get selectedImageOverlay() : SvgSelection {
 		return this._selectedImageOverlay;
@@ -110,8 +118,6 @@ export class ImageStackWidget {
 		return this._data;
 	}
 	
-	
-
 	public init(): void
 	{
 		const containerSelect = d3.select(this.container);
@@ -121,9 +127,17 @@ export class ImageStackWidget {
 		this.innerContainer.attr('style', `max-height: ${this.maxHeight}px;`)
 
 		this._selectedImageContainer = this.innerContainer.append('div')
-			.classed('selectedImageContainer', true);
+			.classed('noShrink', true);
 
-		this._selectedImageOverlay = this.selectedImageContainer.append('svg');
+		// this._selectedImageOutlineContainer = this.selectedImageContainer.append('div')
+		// 	.classed('noShrink', true)
+		// 	.classed('willChange', true);
+			// The willChange helps prevent compositing between the multiple background
+			// images and therefore helps prevent jank when quickly changing
+			// images.
+
+
+		this._selectedImageOverlay = this._selectedImageContainer.append('svg');
 
 		this._thumbnailsContainer = this.innerContainer.append('div')
 			.classed('thumbnailsContainer', true);
@@ -135,6 +149,7 @@ export class ImageStackWidget {
 	{
 		this._data = data;
 		this._imageStackUrl = url;
+		// this._imageOutlineStackUrl = outlineUrl;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
 		
@@ -158,12 +173,30 @@ export class ImageStackWidget {
 		this.drawAllThumbnails();
 	}
 
+	public drawUpdate(): void
+	{
+		this.updateBackgroundPosition(this.selectedImgIndex);
+		this.drawBrushedCentroids();
+		this.changeSelectedThumbnail();
+
+	}
+
 	private drawSelectedImage(): void
 	{
-		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex);
+		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackUrl);
 		this.selectedImageContainer.attr("style", styleString)
+
+		// const outlineStyleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageOutlineStackUrl, false);
+		// this.selectedImageOutlineContainer.attr('style', outlineStyleString)
+
+		this.drawBrushedCentroids();
+	}
+
+	private drawBrushedCentroids()
+	{
 		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
 		let thisFramesData = this.data.filter(d => d.get('frameId') === currentFrameId)
+
 		this.selectedImageOverlay.selectAll('circle')
 		  .data(thisFramesData)
 			.join('circle')
@@ -171,32 +204,36 @@ export class ImageStackWidget {
 			.attr('cy', d => d.get('y'))
 			.classed('centroidIndicator', true)
 			.classed('inBrush', d => d.inBrush)
-
 	}
 
 	private drawAllThumbnails(): void
 	{
-		// let indices: number[] = [...Array(this.numImages).keys()];
-
 		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
 
 		this.thumbnailsContainer.selectAll('div')
 			.data(this.imageLocation.frameList)
 		  .join('div')
-			.attr('style', (d, index) => this.getImageInlineStyle(index, 0.1))
+			.attr('style', (d, index) => this.getImageInlineStyle(index, this.imageStackUrl, true, 0.1))
 			.classed('imageStackThumbnail', true)
 			.classed('selected', (d, index) => index === this.selectedImgIndex)
 			.classed('brushed', d => d.inBrush)
 			.on('click', (d, index) => {
 				this.changeSelectedImage(index);
 			});
+	}
 
+	private changeSelectedThumbnail(): void
+	{
+		this.thumbnailsContainer.selectAll('div')
+			.data(this.imageLocation.frameList)
+		//   .join('div')
+		  .classed('selected', (d, index) => index === this.selectedImgIndex)
 	}
 
 	private changeSelectedImage(newIndex: number): void
 	{
 		this._selectedImgIndex = newIndex;
-		this.draw();
+		this.drawUpdate();
 	}
 
 	private handleKeyDown(event: KeyboardEvent): void
@@ -206,16 +243,16 @@ export class ImageStackWidget {
 		{
 			case 37: // left
 				newIndex = Math.max(0, this.selectedImgIndex - 1);
-				this.changeSelectedImage(newIndex);
+				window.requestAnimationFrame(() => this.changeSelectedImage(newIndex));
 				break;
 			case 39: // right
 				newIndex = Math.min(this.numImages - 1, this.selectedImgIndex + 1);
-				this.changeSelectedImage(newIndex);
+				window.requestAnimationFrame(() => this.changeSelectedImage(newIndex));
 				break;
 		}
 	}
 
-	private getImageInlineStyle(index: number, scale: number = 1): string
+	private getImageInlineStyle(index: number, imageUrl: string, includeFallback = true,  scale: number = 1): string
 	{
 		const left: number = (index % this.numColumns) * this.imageWidth;
 		const top: number = Math.floor(index / this.numColumns) * this.imageHeight;
@@ -223,16 +260,34 @@ export class ImageStackWidget {
 			`
 			background-position-x: ${-left * scale}px;
 			background-position-y: ${-top * scale}px;
-			background-color: #ebebeb;
 			background-image: url(${this.imageStackUrl});
 			width: ${this.imageWidth * scale}px;
 			height: ${this.imageHeight * scale}px;
 			`;
+
+		if (includeFallback)
+		{
+			styleString += 'background-color: #ebebeb;';
+		}
 		if (scale !== 1)
 		{
 			styleString += `background-size: ${this.imageStackWidth * scale}px ${this.imageStackHeight * scale}px;`
 		}
 		return styleString;
+	}
+
+	private updateBackgroundPosition(index: number, )
+	{
+		const left: number = (index % this.numColumns) * this.imageWidth;
+		const top: number = Math.floor(index / this.numColumns) * this.imageHeight;
+		
+		// this.selectedImageOutlineContainer.node().style.backgroundPositionX =  -left + 'px';
+		// this.selectedImageOutlineContainer.node().style.backgroundPositionY = -top + 'px';
+
+		this.selectedImageContainer.node().style.backgroundPositionX =  -left + 'px';
+		this.selectedImageContainer.node().style.backgroundPositionY = -top + 'px';
+
+
 	}
 
 	public OnResize(newMaxHeight: number): void
