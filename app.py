@@ -89,10 +89,13 @@ def getMassOverTimeCsv(folderId: str) -> str:
 
     # generate data
     data_allframes = getData_AllFrames(folderId)
+
     massOverTime = getMassOverTimeArray(folderId, data_allframes)
     timeArray = getTimeIndexArray(folderId, data_allframes)
     locationArray = getLocationArray(folderId, data_allframes)
     frameArray = getFrameArray(folderId, data_allframes)
+    xShiftArray = getXShiftArray(folderId, data_allframes)
+    yShiftArray = getYShiftArray(folderId, data_allframes);
     timeToIndex = {}
     for index, time in enumerate(timeArray):
         # weird [0] indexing here is a result of weird
@@ -101,13 +104,22 @@ def getMassOverTimeCsv(folderId: str) -> str:
         time = time[0]
         locId = locationArray[0][index]
         frameId = frameArray[index, 0]
-        timeToIndex[time] = (locId, frameId)
+        timeToIndex[time] = (locId, frameId, index)
 
-    returnStr = 'x,y,mass,time,id,meanValue,shapeFactor,locationId,frameId\n'
-    for row in massOverTime:
+    returnStr = 'x,y,mass,time,id,meanValue,shapeFactor,locationId,frameId,xShift,yShift\n'
+    for index, row in enumerate(massOverTime):
         time = row[3]
-        locationId, frameId = timeToIndex[time]
-        returnStr += ",".join(map(str, row)) + ',' + str(locationId) + ',' + str(frameId) + '\n'
+        locationId, frameId, jj = timeToIndex[time]
+        xShift = xShiftArray[jj][0]
+        yShift = yShiftArray[jj][0]
+        # this corrects the xShift/yShift problem.
+        # row[0] += xShift
+        # row[1] += yShift
+
+        returnStr += ",".join(map(str, row))
+        returnStr += ',' + str(locationId) + ',' + str(frameId)
+        returnStr += ',' + str(xShift) + ',' + str(yShift)
+        returnStr += '\n'
 
     # cache file
     if not os.path.exists(cachePath):
@@ -145,6 +157,19 @@ def getFrameArray(folderId: str, matlabDict = None):
     if matlabDict != None and key in matlabDict:
         return matlabDict[key]
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    
+def getXShiftArray(folderId: str, matlabDict = None):
+    key = 'xshift_store'
+    if matlabDict != None and key in matlabDict:
+        return matlabDict[key]
+    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+  
+def getYShiftArray(folderId: str, matlabDict = None):
+    key = 'yshift_store'
+    if matlabDict != None and key in matlabDict:
+        return matlabDict[key]
+    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+
 
 @app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
 def getImageStackMetaData(folderId: str, locationId: int):

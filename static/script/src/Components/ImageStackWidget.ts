@@ -177,8 +177,8 @@ export class ImageStackWidget {
 		this.selectedImageOverlay.selectAll('circle')
 		  .data(thisFramesData)
 			.join('circle')
-			.attr('cx', d => d.get('x'))
-			.attr('cy', d => d.get('y'))
+			.attr('cx', d => d.get('x') + d.get('xShift'))
+			.attr('cy', d => d.get('y') + d.get('yShift'))
 			.classed('centroidIndicator', true)
 			.classed('inBrush', d => d.inBrush)
 	}
