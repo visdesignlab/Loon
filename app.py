@@ -133,43 +133,28 @@ def getMassOverTimeCsv(folderId: str) -> str:
 def getData_AllFrames(folderId: str) -> Dict:
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat')
 
-
 def getMassOverTimeArray(folderId: str, matlabDict = None):
-    key = 'tracks'
-    if matlabDict != None and key in matlabDict:
-        return matlabDict[key]
-    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    return getMatlabObjectFromKey(folderId, 'tracks',  matlabDict)
     
 def getTimeIndexArray(folderId: str, matlabDict = None):
-    key = 't_stored'
-    if matlabDict != None and key in matlabDict:
-        return matlabDict[key]
-    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    return getMatlabObjectFromKey(folderId, 't_stored',  matlabDict)
     
 def getLocationArray(folderId: str, matlabDict = None):
-    key = 'Loc_stored'
-    if matlabDict != None and key in matlabDict:
-        return matlabDict[key]
-    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    return getMatlabObjectFromKey(folderId, 'Loc_stored',  matlabDict)
     
 def getFrameArray(folderId: str, matlabDict = None):
-    key = 'ii_stored'
-    if matlabDict != None and key in matlabDict:
-        return matlabDict[key]
-    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    return getMatlabObjectFromKey(folderId, 'ii_stored',  matlabDict)
     
 def getXShiftArray(folderId: str, matlabDict = None):
-    key = 'xshift_store'
-    if matlabDict != None and key in matlabDict:
-        return matlabDict[key]
-    return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+    return getMatlabObjectFromKey(folderId, 'xshift_store',  matlabDict)
   
 def getYShiftArray(folderId: str, matlabDict = None):
-    key = 'yshift_store'
+    return getMatlabObjectFromKey(folderId, 'yshift_store',  matlabDict)
+
+def getMatlabObjectFromKey(folderId: str, key: str, matlabDict = None):
     if matlabDict != None and key in matlabDict:
         return matlabDict[key]
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
-
 
 @app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
 def getImageStackMetaData(folderId: str, locationId: int):
