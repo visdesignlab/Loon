@@ -7,11 +7,12 @@ import {DevlibTSUtil} from '../devlib/DevlibTSUtil';
 
 export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	
-	constructor(container: Element, xKey: string, yKey: string)
+	constructor(container: Element, xKey: string, yKey: string, squareAspectRatio: boolean = true)
 	{
 		super(container);
 		this._xKey = xKey;
 		this._yKey = yKey;
+		this._squareAspectRatio = squareAspectRatio;
 	}
 
 	private _svgSelect : SvgSelection;
@@ -48,7 +49,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	public get yKey() : string {
 		return this._yKey;
 	}
-
+	
+	private _squareAspectRatio : boolean;
+	public get squareAspectRatio() : boolean {
+		return this._squareAspectRatio;
+	}
+	
 	private _animationTime : number;
 	public get animationTime() : number {
 		return this._animationTime;
@@ -207,11 +213,25 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 
 	private updateScales(): void
 	{
+		let [minX, maxX] = this.data.minMaxMap.get(this.xKey);
+		let [minY, maxY] = this.data.minMaxMap.get(this.yKey);
+		if (this.squareAspectRatio)
+		{
+			this.makeSquareAspectRatioScales(minX, maxX, minY, maxY);
+		}
+		else
+		{
+			this.makeStretchedAspectRatioScales(minX, maxX, minY, maxY);
+		}
+
+	
+	}
+
+	private makeSquareAspectRatioScales(minX: number, maxX: number, minY: number, maxY: number): void
+	{
 		// this code keeps the data aspect ratio square and keeps it centered and as large
 		// as possible in it's container
 		let containerRatio = this.vizHeight / this.vizWidth;
-		let [minX, maxX] = this.data.minMaxMap.get(this.xKey);
-		let [minY, maxY] = this.data.minMaxMap.get(this.yKey);
 		let dataRatio = (maxY - minY) / (maxX - minX);
 		if (containerRatio > dataRatio)
 		{
@@ -242,6 +262,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 				.domain([minX, maxX])
 				.range([scaledMaxX + offset, scaledMinX + offset]);
 		}
+	}
+
+	private makeStretchedAspectRatioScales(minX: number, maxX: number, minY: number, maxY: number): void
+	{
+		this._scaleX = d3.scaleLinear()
+			.domain([minX, maxX])
+			.range([0, this.vizWidth]);
+
+		this._scaleY = d3.scaleLinear()
+			.domain([minY, maxY])
+			.range([this.vizHeight, 0]);
 	}
 
 	private updatePaths(): void

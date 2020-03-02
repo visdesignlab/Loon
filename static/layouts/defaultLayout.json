@@ -18,13 +18,22 @@
 					"inside": [
 						{
 							"direction": "row",
-							"fraction": 2,
-							"inside": "MetricDistributionWidget"
-						}, 
+							"fraction": 1,
+							"inside": 
+							{
+								"type": "Plot2dPathsWidget",
+								"initArgs":
+								{
+									"xAxis": "time",
+									"yAxis": "mass",
+									"squareAspectRatio": false
+								}
+							}
+						},
 						{
 							"direction": "row",
-							"fraction": 1,
-							"inside": "Plot2dPathsWidget"
+							"fraction": 2,
+							"inside": "MetricDistributionWidget"
 						}
 					]
 				},

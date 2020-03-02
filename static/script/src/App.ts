@@ -10,7 +10,7 @@ import {ImageSelectionWidget} from './Components/ImageSelectionWidget';
 import {ImageStackWidget} from './Components/ImageStackWidget'
 // import {Overlay} from './Overlay';
 import {LayoutFramework} from './LayoutFramework';
-import {Frame, ComponentType} from './types';
+import {Frame, ComponentType, ComponentInitInfo, Arguments} from './types';
 import {ButtonProps} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
 // import {LabelPosition} from './types';
@@ -42,8 +42,8 @@ export class App<DataType> {
 		return this._layoutFramework;
 	}
 
-	private _componentContainers : Map<HTMLElement, ComponentType>;
-	public get componentContainers() : Map<HTMLElement, ComponentType> {
+	private _componentContainers : Map<HTMLElement, ComponentInitInfo | ComponentType>;
+	public get componentContainers() : Map<HTMLElement, ComponentInitInfo | ComponentType> {
 		return this._componentContainers;
 	}
 
@@ -65,21 +65,32 @@ export class App<DataType> {
 	// 	this._overlay = v;
 	// }
 
-	public InitializeLayout(frame: Frame<ComponentType>): void
+	public InitializeLayout(frame: Frame<ComponentInitInfo | ComponentType>): void
 	{
 		// console.log(frame);
 
 		this._componentContainers = this.layoutFramework.InitializeLayout(frame);
-		for (let [container, componentType] of this.componentContainers)
+		for (let [container, componentInfo] of this.componentContainers)
 		{
-			this.InitializeComponent(componentType, container);
+			this.InitializeComponent(componentInfo, container);
 		}
 	}
 
-	private InitializeComponent(compontentType: ComponentType, container: HTMLElement): void
+	private InitializeComponent(compontentInfo: ComponentInitInfo | ComponentType, container: HTMLElement): void
 	{
 		let newComponent: BaseComponent;
-		switch (compontentType) {
+		let componentType: ComponentType;
+		let initArgs: Arguments | null = null;
+		if (typeof(compontentInfo) === "string")
+		{
+			componentType = compontentInfo;
+		}
+		else
+		{
+			componentType = compontentInfo.type;
+			initArgs = compontentInfo.initArgs;
+		}
+		switch (componentType) {
 			case ComponentType.Toolbar:
 				let buttonList: ButtonProps[] = [
 					// {displayName: "Firework Simulation", callback: () => this.fetchCsv('firework.csv')}
@@ -92,7 +103,12 @@ export class App<DataType> {
 				newComponent = new Toolbar(container, (data: string) => this.loadFromCsvString(data), buttonList);
 				break;
 			case ComponentType.Plot2dPathsWidget:
-				newComponent = new Plot2dPathsWidget(container, 'x', 'y');
+				let squareAspectRatio = true;
+				if (typeof(initArgs.squareAspectRatio) !== 'undefined')
+				{
+					squareAspectRatio = initArgs.squareAspectRatio;
+				}
+				newComponent = new Plot2dPathsWidget(container, initArgs.xAxis, initArgs.yAxis, squareAspectRatio);
 				break;
 			// case ComponentType.Console:
 			// 	newComponent = new Console(container);
@@ -119,7 +135,7 @@ export class App<DataType> {
 			// 	newComponent = new ImageStackWidget(container, imgWidth, imgHeight, numImg, numCol, imgPath);
 			// 	break;
 			default:
-				console.error(`Cannot Initialize Component of type: ${compontentType}`);
+				console.error(`Cannot Initialize Component of type: ${componentType}`);
 				break;
 		}
 		this.componentList.push(newComponent);

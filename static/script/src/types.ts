@@ -3,13 +3,17 @@ export interface Frame<T> {
 	minSize?: number,
 	maxSize?: number,
 	direction: Direction,
-
 	inside: Frame<T>[] | T
 }
 
 export enum Direction {
 	row = "row",
 	column = "col"
+}
+
+export interface ComponentInitInfo {
+	type: ComponentType,
+	initArgs: Arguments
 }
 
 export enum ComponentType {
@@ -20,6 +24,10 @@ export enum ComponentType {
 	MetricDistributionWidget = "MetricDistributionWidget",
 	ImageSelectionWidget = "ImageSelectionWidget",
 	ImageStackWidget = "ImageStackWidget"
+}
+
+export interface Arguments {
+	[argName: string]: any
 }
 
 export enum MetricDistributionSubComponentTypes {
