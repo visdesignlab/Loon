@@ -1,6 +1,6 @@
 import os, io, math, random
 from functools import wraps
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Set
 
 # web framework
 import flask
@@ -127,7 +127,6 @@ def getMassOverTimeCsv(folderId: str) -> str:
     cache = open(cachePath + '/' + 'massOverTime.csv', 'w')
     cache.write(returnStr)
     cache.close()
-
     return returnStr
 
 def getData_AllFrames(folderId: str) -> Dict:
@@ -157,10 +156,12 @@ def getMatlabObjectFromKey(folderId: str, key: str, matlabDict = None):
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
 
 @app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
-def getImageStackMetaData(folderId: str, locationId: int):
+def getImageStackMetaData(folderId: str, locationId: int) -> str:
     labeledImageStack = getLabeledImageStackArray(folderId, locationId)
     metadata = getTiledImageMetaData(labeledImageStack)
-    return json.dumps(metadata, indent=4)
+    addFrameInformation(metadata, labeledImageStack)
+    metaDataJson = json.dumps(metadata)
+    return metaDataJson
 
 @app.route('/data/<string:folderId>/img_<int:locationId>.png')
 @authRequired
@@ -249,6 +250,52 @@ def getTiledImageMetaData(imageStackArray) -> Dict:
         'numberOfTiles': numImages
     }
     return tiledImgMetaData
+
+def addFrameInformation(metadata, imageStackArray):
+    numImages = metadata['numberOfTiles']
+    frames = []
+    for frameIndex in range(numImages):
+        frameImg = imageStackArray[:, :, frameIndex]
+        frameRegions = getFrameRegions(frameImg)
+        frames.append(frameRegions)
+
+
+    metadata['frames'] = frames
+    return
+
+def getFrameRegions(frameImg) -> Dict:
+    height, width = np.shape(frameImg)
+    regions = {} #<value, {'centroid': (x,y), 'pixels': dict>
+    for y in range(height):
+        for x in range(width):
+            key = int(frameImg[y][x])
+            if key == 0:
+                continue
+            position = str(x) + ':' + str(y)
+            if key not in regions:
+                regions[key] = {'pixels': {}}
+            regions[key]['pixels'][position] = True
+    addCentroids(regions)
+    # removePixelArrays(regions)
+    return regions
+
+def addCentroids(regions: Dict) -> None:
+    for key, value in regions.items():
+        centroid = calculateCentroid(value['pixels'])
+        regions[key]['centroid'] = centroid
+    return
+
+def calculateCentroid(positions: Dict[str, bool]) -> Tuple[float, float]:
+    zippedPos = [[int(v) for v in key.split(':')] for key in positions.keys()]
+    unzipped = zip(*zippedPos)
+    averages = [sum(posList) / float(len(posList)) for posList in unzipped]
+    return (averages[0], averages[1])
+
+def removePixelArrays(regions: Dict) -> None:
+    for key in regions:
+        regions[key].pop('pixels')
+    return
+
 
 def getImageFileObject(img, tiledImgMetaData):
     metaDataString: str = json.dumps(tiledImgMetaData)
