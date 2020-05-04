@@ -10,7 +10,21 @@
 		},
 		{
 			"direction": "row",
-			"fraction": 1,
+			"fraction": 15,
+			"inside": 
+			{
+				
+				"type": "DetailedDistribution",
+				"initArgs":
+				{
+					"metricDistributionCollectionLevel": "Curve",
+					"attributeKey": "averageMass"
+				}
+			}
+		},
+		{
+			"direction": "row",
+			"fraction": 85,
 			"inside": [
 				{
 					"direction": "col",

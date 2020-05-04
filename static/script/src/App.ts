@@ -13,6 +13,7 @@ import {LayoutFramework} from './LayoutFramework';
 import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData} from './types';
 import {ButtonProps, DerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
+import { DetailedDistribution } from './Components/DetailedDistribution';
 // import {LabelPosition} from './types';
 
 export class App<DataType extends AppData> {
@@ -75,15 +76,6 @@ export class App<DataType extends AppData> {
 	public set derivationFunctions(v : [string, DerivationFunction][]) {
 		this._derivationFunctions = v;
 	}
-	
-
-	// private _overlay : Overlay;
-	// public get overlay() : Overlay {
-	// 	return this._overlay;
-	// }
-	// public set overlay(v : Overlay) {
-	// 	this._overlay = v;
-	// }
 
 	public InitializeLayout(frame: Frame<ComponentInitInfo | ComponentType>): void
 	{
@@ -113,9 +105,6 @@ export class App<DataType extends AppData> {
 		switch (componentType) {
 			case ComponentType.Toolbar:
 				let buttonList: ButtonProps[] = [
-					// {displayName: "Firework Simulation", callback: () => this.fetchCsv('firework.csv')}
-					// {displayName: "Klein Bottle", callback: () => this.fetchCsv('klein.csv')},
-					// {displayName: "Tutorial", callback: async () => this.runStorySteps() },
 					{displayName: "Non Adherent", callback: () => this.fetchCsv('1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/massOverTime.csv', '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX') },
 					{displayName: "Adherent", callback: () => this.fetchCsv('1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96/massOverTime.csv', '1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96') }
 				];
@@ -130,30 +119,15 @@ export class App<DataType extends AppData> {
 				}
 				newComponent = new Plot2dPathsWidget(container, initArgs.xAxis, initArgs.yAxis, squareAspectRatio);
 				break;
-			// case ComponentType.Console:
-			// 	newComponent = new Console(container);
-			// 	break;
-			// case ComponentType.TableWidget:
-			// 	newComponent = new TableWidget(container);
-			// 	break;
-			// case ComponentType.LevelOfDetailWidget:
-			// 	newComponent = new LevelOfDetailWidget(container);
-			// 	break;
 			case ComponentType.MetricDistributionWidget:
 				newComponent = new MetricDistributionWidget(container, initArgs.metricDistributionCollectionLevel);
 				break;
 			case ComponentType.ImageSelectionWidget:
 				newComponent = new ImageSelectionWidget(container);
 				break;
-			// case ComponentType.ImageStackWidget:
-			// 	// TODO - remove hard code after initial testing is done
-			// 	const imgWidth = 400;
-			// 	const imgHeight = 300;
-			// 	const numImg = 281;
-			// 	const numCol = 10;
-			// 	const imgPath = 'http://localhost:8080/data/1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/img_7.jpg'
-			// 	newComponent = new ImageStackWidget(container, imgWidth, imgHeight, numImg, numCol, imgPath);
-			// 	break;
+			case ComponentType.DetailedDistribution:
+				newComponent = new DetailedDistribution(container, initArgs.metricDistributionCollectionLevel, initArgs.attributeKey);
+				break;
 			default:
 				console.error(`Cannot Initialize Component of type: ${componentType}`);
 				break;

@@ -18,12 +18,11 @@ export interface ComponentInitInfo {
 
 export enum ComponentType {
 	Toolbar = "Toolbar",
-	// Console = "Console",
 	Plot2dPathsWidget = "Plot2dPathsWidget",
-	// TableWidget = "TableWidget",
 	MetricDistributionWidget = "MetricDistributionWidget",
 	ImageSelectionWidget = "ImageSelectionWidget",
-	ImageStackWidget = "ImageStackWidget"
+	ImageStackWidget = "ImageStackWidget",
+	DetailedDistribution = "DetailedDistribution"
 }
 
 export interface Arguments {
