@@ -95,7 +95,7 @@ def getMassOverTimeCsv(folderId: str) -> str:
     locationArray = getLocationArray(folderId, data_allframes)
     frameArray = getFrameArray(folderId, data_allframes)
     xShiftArray = getXShiftArray(folderId, data_allframes)
-    yShiftArray = getYShiftArray(folderId, data_allframes);
+    yShiftArray = getYShiftArray(folderId, data_allframes)
     timeToIndex = {}
     for index, time in enumerate(timeArray):
         # weird [0] indexing here is a result of weird
@@ -104,14 +104,14 @@ def getMassOverTimeCsv(folderId: str) -> str:
         time = time[0]
         locId = locationArray[0][index]
         frameId = frameArray[index, 0]
-        timeToIndex[time] = (locId, frameId, index)
+        xShift = xShiftArray[index][0]
+        yShift = yShiftArray[index][0]
+        timeToIndex[time] = (locId, frameId, xShift, yShift)
 
     returnStr = 'x,y,mass,time,id,meanValue,shapeFactor,locationId,frameId,xShift,yShift\n'
     for index, row in enumerate(massOverTime):
         time = row[3]
-        locationId, frameId, jj = timeToIndex[time]
-        xShift = xShiftArray[jj][0]
-        yShift = yShiftArray[jj][0]
+        locationId, frameId, xShift, yShift = timeToIndex[time]
         # this corrects the xShift/yShift problem.
         # row[0] += xShift
         # row[1] += yShift

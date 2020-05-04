@@ -11,18 +11,22 @@ import {ImageStackWidget} from './Components/ImageStackWidget'
 // import {Overlay} from './Overlay';
 import {LayoutFramework} from './LayoutFramework';
 import {Frame, ComponentType, ComponentInitInfo, Arguments} from './types';
-import {ButtonProps} from './devlib/DevLibTypes';
+import {ButtonProps, DerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
 // import {LabelPosition} from './types';
 
 export class App<DataType> {
 	
-	constructor(container: HTMLElement, fromCsv: (data: string, sourceKey: string, postfixKey: string) => DataType, fromCsvObject: (data: d3.DSVRowArray<string>, sourceKey: string, postfixKey: string) => DataType) {
+	constructor(container: HTMLElement,
+				fromCsv: (data: string, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
+				fromCsvObject: (data: d3.DSVRowArray<string>, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
+				derivedDataFunctions: [string, DerivationFunction][]) {
 		this._container = container;
 		this._componentList = [];
 		this._layoutFramework = new LayoutFramework(container);
 		this._dataFromCSV = fromCsv;
 		this._dataFromCSVObject = fromCsvObject;
+		this._derivationFunctions = derivedDataFunctions;
 		document.addEventListener(DataEvents.brushChange, (e: Event) => {this.onBrushChange()});
 		// this._overlay = new Overlay("overlayContainer");
 	}
@@ -47,15 +51,25 @@ export class App<DataType> {
 		return this._componentContainers;
 	}
 
-	private _dataFromCSV : (data: string, sourceKey: string, postfixKey: string) => DataType;
-	public get dataFromCSV() : (data: string, sourceKey: string, postfixKey: string) => DataType{
+	private _dataFromCSV : (data: string, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType;
+	public get dataFromCSV() : (data: string, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType{
 		return this._dataFromCSV;
 	}
 
-	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, sourceKey: string, postfixKey: string) => DataType;
-	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, sourceKey: string, postfixKey: string) => DataType{
+	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType;
+	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType{
 		return this._dataFromCSVObject;
 	}
+
+	
+	private _derivationFunctions : [string, DerivationFunction][];
+	public get derivationFunctions() : [string, DerivationFunction][] {
+		return this._derivationFunctions;
+	}
+	public set derivationFunctions(v : [string, DerivationFunction][]) {
+		this._derivationFunctions = v;
+	}
+	
 
 	// private _overlay : Overlay;
 	// public get overlay() : Overlay {
@@ -143,7 +157,7 @@ export class App<DataType> {
 
 	private loadFromCsvString(data: string): void
 	{
-		let newData: DataType = this.dataFromCSV(data, 'csvString', '');
+		let newData: DataType = this.dataFromCSV(data, this.derivationFunctions, 'csvString', '');
 		this.SetData(newData);
 	}
 
@@ -152,7 +166,7 @@ export class App<DataType> {
 		await d3.csv("../../../data/" + filename).then(data =>
 		{
 			// console.log(data);
-			let newData: DataType = this.dataFromCSVObject(data, sourceKey, postfixKey);
+			let newData: DataType = this.dataFromCSVObject(data, this.derivationFunctions, sourceKey, postfixKey);
 			// console.log(newData);
 			this.SetData(newData)
 		});

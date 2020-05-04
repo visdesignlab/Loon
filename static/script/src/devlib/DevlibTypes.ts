@@ -2,6 +2,12 @@ export interface StringToStringObj {
     [key: string]: string;
 }
 
+export interface DerivationFunction
+{
+    (pointList: StringToNumberObj[]): number;
+}
+
+
 export interface StringToNumberObj {
     [key: string]: number;
 }

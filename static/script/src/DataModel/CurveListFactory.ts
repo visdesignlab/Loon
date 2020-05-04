@@ -3,7 +3,7 @@ import { DevlibMath } from '../devlib/DevlibMath';
 import { CurveList } from './CurveList';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
-import { StringToStringObj, StringToNumberObj } from '../devlib/DevLibTypes'
+import { StringToStringObj, StringToNumberObj, DerivationFunction } from '../devlib/DevLibTypes'
 
 interface StringToNumberOrList {
     [key: string]: number | StringToNumberObj[];
@@ -15,13 +15,13 @@ export class CurveListFactory {
 	// 	// code...
 	// }
 
-	public static CreateCurveListFromCSV(csvString: string, sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["time", "t"]): CurveList
+	public static CreateCurveListFromCSV(csvString: string, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["time", "t"]): CurveList
 	{
 		let rawValueArray: d3.DSVRowArray<string> = d3.csvParse(csvString);
-		return CurveListFactory.CreateCurveListFromCSVObject(rawValueArray, sourceKey, postfixKey, idkey, tKeyOptions);
+		return CurveListFactory.CreateCurveListFromCSVObject(rawValueArray, derivedDataFunctions, sourceKey, postfixKey, idkey, tKeyOptions);
 	}
 
-	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["time", "t"]): CurveList
+	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["time", "t"]): CurveList
 	{
 		console.log(csvObject);
 		const curveList: CurveND[] = [];
@@ -83,6 +83,10 @@ export class CurveListFactory {
 				// points.sort(sortFunction);
 
 				values.points = points;
+				for (let [attrName, func] of derivedDataFunctions)
+				{
+					values[attrName] = func(points)
+				}
 				return values;
 			})
 			.entries(csvObject);
