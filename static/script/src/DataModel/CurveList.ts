@@ -5,6 +5,7 @@ import { PointND } from './PointND';
 import { PointCollection } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
+import { thresholdFreedmanDiaconis } from 'd3';
 
 export class CurveList extends PointCollection
 {
@@ -56,6 +57,20 @@ export class CurveList extends PointCollection
 		return this._minMaxMap;
 	}
 	
+
+	public OnBrushChange(): void
+	{
+		for (let curve of this.curveList)
+		{
+			curve.inBrush = true;
+			for (let point of curve.pointList)
+			{
+				point.inBrush = true;
+			}
+		}
+		this.SetBrushValues();
+		this.curveCollection.SetBrushValues();
+	}
 
 	private updateMinMaxMap()
 	{

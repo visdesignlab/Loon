@@ -10,12 +10,12 @@ import {ImageSelectionWidget} from './Components/ImageSelectionWidget';
 import {ImageStackWidget} from './Components/ImageStackWidget'
 // import {Overlay} from './Overlay';
 import {LayoutFramework} from './LayoutFramework';
-import {Frame, ComponentType, ComponentInitInfo, Arguments} from './types';
+import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData} from './types';
 import {ButtonProps, DerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
 // import {LabelPosition} from './types';
 
-export class App<DataType> {
+export class App<DataType extends AppData> {
 	
 	constructor(container: HTMLElement,
 				fromCsv: (data: string, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
@@ -30,6 +30,12 @@ export class App<DataType> {
 		document.addEventListener(DataEvents.brushChange, (e: Event) => {this.onBrushChange()});
 		// this._overlay = new Overlay("overlayContainer");
 	}
+
+	
+	private _data : DataType;
+	public get data() : DataType {
+		return this._data;
+	}	
 
 	private _container : HTMLElement;
 	public get container() : HTMLElement {
@@ -177,6 +183,7 @@ export class App<DataType> {
 	{
 		console.log("App.SetData: ");
 		console.log(newData);
+		this._data = newData;
 		for (let component of this.componentList)
 		{
 			if (component instanceof BaseWidget)
@@ -196,6 +203,8 @@ export class App<DataType> {
 
 	private onBrushChange(): void
 	{
+
+		this.data.OnBrushChange();
 		for (let component of this.componentList)
 		{
 			if (component instanceof BaseWidget)

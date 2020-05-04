@@ -30,6 +30,8 @@ export interface Arguments {
 	[argName: string]: any
 }
 
+
+
 export enum MetricDistributionSubComponentTypes {
 	BasisSelect = "BasisSelect",
 	ScatterplotSelect = "ScatterplotSelect",
@@ -41,6 +43,10 @@ export enum MetricDistributionCollectionLevel {
 	Point = "Point",
 	Curve = "Curve"
 }
+export interface AppData {
+	OnBrushChange: () => void;
+}
+
 
 // export interface Label
 // {

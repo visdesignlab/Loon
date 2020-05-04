@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes'
-import {PointND} from '../DataModel/PointND'
+// import {PointND} from '../DataModel/PointND' 
+import {NDim} from '../devlib/DevlibTypes';
 import {ImageLocation} from '../DataModel/ImageLocation';
 
 export class ImageStackWidget {
@@ -103,8 +104,8 @@ export class ImageStackWidget {
 	}
 
 	
-	private _data : PointND[];
-	public get data() : PointND[] {
+	private _data : NDim[];
+	public get data() : NDim[] {
 		return this._data;
 	}
 	
@@ -127,7 +128,7 @@ export class ImageStackWidget {
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
 	}
 
-	public SetData(data: PointND[], url: string, imageLocation: ImageLocation, imageWidth: number, imageHeight: number, numColumns: number): void
+	public SetData(data: NDim[], url: string, imageLocation: ImageLocation, imageWidth: number, imageHeight: number, numColumns: number): void
 	{
 		this._data = data;
 		this._imageStackUrl = url;

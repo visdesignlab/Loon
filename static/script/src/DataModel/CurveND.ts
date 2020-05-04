@@ -42,6 +42,10 @@ export class CurveND extends PointCollection implements NDim {
 
 	public set inBrush(v: boolean) {
 		this._inBrush = v;
+		for (let point of this.pointList)
+		{
+			point.inBrush = v;
+		}
 	}
 
 	public addValue(key: string, value: number)

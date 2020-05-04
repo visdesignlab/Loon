@@ -131,11 +131,10 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		this.updateBrush();
 	}
 
-	private updateBrush(): void
+	public SetBrushValues(): void
 	{
 		for (let point of this)
 		{
-			point.inBrush = true;
 			for (let valueFilterMap of this.brushList.values())
 			{
 				for (let [key, bound] of valueFilterMap)
@@ -149,6 +148,26 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 				}
 			}
 		}
+	}
+
+	private updateBrush(): void
+	{
+		// for (let point of this)
+		// {
+		// 	point.inBrush = true;
+		// 	for (let valueFilterMap of this.brushList.values())
+		// 	{
+		// 		for (let [key, bound] of valueFilterMap)
+		// 		{
+		// 			let v: number = point.get(key);
+		// 			let [low, high] = bound;
+		// 			if (v < low || high < v)
+		// 			{
+		// 				point.inBrush = false;
+		// 			}
+		// 		}
+		// 	}
+		// }
 		let event = new Event(DataEvents.brushChange);
 		document.dispatchEvent(event);
 	}
