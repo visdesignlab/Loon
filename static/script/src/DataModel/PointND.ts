@@ -1,6 +1,6 @@
-import { StringToNumberObj } from '../devlib/DevlibTypes'
+import { StringToNumberObj, NDim } from '../devlib/DevlibTypes'
 
-export class PointND {
+export class PointND implements NDim {
 
 	constructor(pojo?: StringToNumberObj)
 	{

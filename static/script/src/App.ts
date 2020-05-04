@@ -134,7 +134,7 @@ export class App<DataType> {
 			// 	newComponent = new LevelOfDetailWidget(container);
 			// 	break;
 			case ComponentType.MetricDistributionWidget:
-				newComponent = new MetricDistributionWidget(container);
+				newComponent = new MetricDistributionWidget(container, initArgs.metricDistributionCollectionLevel);
 				break;
 			case ComponentType.ImageSelectionWidget:
 				newComponent = new ImageSelectionWidget(container);

@@ -2,7 +2,9 @@ import * as d3 from 'd3';
 import {SvgSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
 import {PointCollection, valueFilter} from '../DataModel/PointCollection';
-import {PointND} from '../DataModel/PointND';
+// import {PointND} from '../DataModel/PointND';
+import { NDim } from '../devlib/DevlibTypes';
+
 
 export class HistogramWidget extends BaseWidget<PointCollection> {
 	
@@ -62,6 +64,7 @@ export class HistogramWidget extends BaseWidget<PointCollection> {
 	public get brush() : d3.BrushBehavior<any> {
 		return this._brush;
 	}
+	
 
 	protected setMargin(): void
 	{
@@ -118,11 +121,11 @@ export class HistogramWidget extends BaseWidget<PointCollection> {
 			.domain(minMax)
 			.nice(count);
 
-		let bins = d3.histogram<PointND, number>()
+		let bins = d3.histogram<NDim, number>()
 			.domain(x.domain() as [number, number])
 			.thresholds(x.ticks(count))
 			.value(d => d.get(this.valueKey))
-			(this.data);
+			(this.data.Array);
 
 		// account for degenerate last bin -_-
 		let ultimateBin = bins[bins.length - 1];
@@ -165,7 +168,7 @@ export class HistogramWidget extends BaseWidget<PointCollection> {
 			this.drawAxis();
 	}
 
-	private updateScales(bins: d3.Bin<PointND, number>[]): void
+	private updateScales(bins: d3.Bin<NDim, number>[]): void
 	{
 		let minBinBoundary = bins[0].x0;
 		let maxBinBoundary = bins[bins.length - 1].x1;

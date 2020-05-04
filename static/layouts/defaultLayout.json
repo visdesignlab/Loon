@@ -33,13 +33,38 @@
 						{
 							"direction": "row",
 							"fraction": 2,
-							"inside": "MetricDistributionWidget"
+							"inside": [
+								{
+									"direction": "col",
+									"fraction": 1,
+									"inside": 
+									{
+										"type": "MetricDistributionWidget",
+										"initArgs":
+										{
+											"metricDistributionCollectionLevel": "Point"
+										}
+									}
+								},
+								{
+									"direction": "col",
+									"fraction": 1,
+									"inside": 
+									{
+										"type": "MetricDistributionWidget",
+										"initArgs":
+										{
+											"metricDistributionCollectionLevel": "Curve"
+										}
+									}
+								}
+							]
 						}
 					]
 				},
 				{
 					"direction": "col",
-					"fraction": 2,
+					"fraction": 1,
 					"inside": "ImageSelectionWidget"
 				}
 			]

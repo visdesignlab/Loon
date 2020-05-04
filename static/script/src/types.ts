@@ -37,6 +37,11 @@ export enum MetricDistributionSubComponentTypes {
 	Scatterplot = "Scatterplot"
 }
 
+export enum MetricDistributionCollectionLevel {
+	Point = "Point",
+	Curve = "Curve"
+}
+
 // export interface Label
 // {
 // 	padSize: [number, number],

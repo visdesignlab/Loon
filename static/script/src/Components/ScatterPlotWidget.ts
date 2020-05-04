@@ -2,7 +2,8 @@ import * as d3 from 'd3';
 import {SvgSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
 import {PointCollection} from '../DataModel/PointCollection';
-import {PointND} from '../DataModel/PointND';
+// import {PointND} from '../DataModel/PointND';
+import { NDim } from '../devlib/DevlibTypes';
 import {valueFilter} from '../DataModel/PointCollection';
 
 export class ScatterPlotWidget extends BaseWidget<PointCollection> {
@@ -158,7 +159,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 		this.updateScales();
 		// console.log("on data change...");
 		this.mainGroupSelect.selectAll("circle")
-			.data<PointND>(this.data.Array)
+			.data<NDim>(this.data.Array)
 		  .join("circle")
 			.attr("cx", d => this.scaleX(d.get(this.xKey)))
 			.attr("cy", d => this.scaleY(d.get(this.yKey)))
@@ -236,7 +237,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 
 		// hide dynamically
 		this.mainGroupSelect.selectAll("circle")
-			.data<PointND>(this.data.Array)
+			.data<NDim>(this.data.Array)
 		  .join("circle")
 			.classed("noDisp", d => !d.inBrush);
 	}

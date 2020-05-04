@@ -1,4 +1,5 @@
-import { PointND } from './PointND';
+// import { PointND } from './PointND';
+import { NDim } from '../devlib/DevlibTypes'
 import { DataEvents } from './DataEvents';
 
 export interface valueFilter {
@@ -6,7 +7,7 @@ export interface valueFilter {
 	bound: [number, number]
 }
 
-export abstract class PointCollection implements Iterable<PointND>, ArrayLike<PointND> {
+export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim> {
 	
 	constructor()
 	{
@@ -17,7 +18,7 @@ export abstract class PointCollection implements Iterable<PointND>, ArrayLike<Po
 		this._brushList = new Map<string, Map<string, [number, number]>>();
 	}
 
-	abstract [Symbol.iterator](): Iterator<PointND>;
+	abstract [Symbol.iterator](): Iterator<NDim>;
 
 	private _sourceKey : string;
 	public get sourceKey() : string {
@@ -40,7 +41,7 @@ export abstract class PointCollection implements Iterable<PointND>, ArrayLike<Po
 		return this._length;
 	}
 
-	[n: number]: PointND;
+	[n: number]: NDim;
 
 	private _attributeList : string[];
 	public get attributeList() : string[] {
@@ -52,8 +53,8 @@ export abstract class PointCollection implements Iterable<PointND>, ArrayLike<Po
 	}
 
 
-	private _Array : PointND[];
-	public get Array() : PointND[] {
+	private _Array : NDim[];
+	public get Array() : NDim[] {
 		if (this._Array.length === 0)
 		{
 			this._Array = Array.from(this);

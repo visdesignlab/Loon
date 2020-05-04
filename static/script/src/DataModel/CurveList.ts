@@ -4,6 +4,7 @@ import { CurveND } from './CurveND';
 import { PointND } from './PointND';
 import { PointCollection } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
+import { CurveCollection } from './CurveCollection';
 
 export class CurveList extends PointCollection
 {
@@ -24,12 +25,22 @@ export class CurveList extends PointCollection
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
+		this._curveCollection = new CurveCollection(this);
 	}
 
 	private _curveList : CurveND[];
 	public get curveList() : CurveND[] {
 		return this._curveList;
 	}
+
+	private _curveCollection : CurveCollection;
+	public get curveCollection() : CurveCollection {
+		return this._curveCollection;
+	}
+	public set curveCollection(v : CurveCollection) {
+		this._curveCollection = v;
+	}
+	
 
 	private _inputKey : string;
 	public get inputKey() : string {
@@ -73,7 +84,7 @@ export class CurveList extends PointCollection
 	{
 		for (let curve of this.curveList)
 		{
-			curve.set(key, value);
+			curve.addValue(key, value);
 		}
 	}
 
@@ -140,7 +151,7 @@ export class CurveList extends PointCollection
 			{
 				const depthContribution = this.getDepthContribution(curve, band, valueKey);
 				const oldDepth = curve.get(depthKey);
-				curve.set(depthKey, oldDepth + depthContribution);
+				curve.addValue(depthKey, oldDepth + depthContribution);
 			}
 		}
 

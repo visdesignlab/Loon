@@ -1,16 +1,18 @@
+import { NDim } from '../devlib/DevlibTypes'
 import { PointND } from './PointND';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { PointCollection } from './PointCollection';
 import { CurveIterator } from './CurveIterator';
 
-export class CurveND extends PointCollection {
+export class CurveND extends PointCollection implements NDim {
 	
 	constructor(id: string) {
 		super();
 		this._id = id;
 		this._valueMap = new Map<string, number>();
 		this._pointList = [];
+		this._inBrush = true;
 	}
 
 	private _id : string;
@@ -33,9 +35,18 @@ export class CurveND extends PointCollection {
 		return this._pointList;
 	}
 
-	public set(key: string, value: number): void
+	private _inBrush : boolean;
+	public get inBrush() : boolean {
+		return this._inBrush;
+	}
+
+	public set inBrush(v: boolean) {
+		this._inBrush = v;
+	}
+
+	public addValue(key: string, value: number)
 	{
-		this._valueMap.set(key, value);
+		this.valueMap.set(key, value);
 	}
 
 	public get(key: string): number | undefined

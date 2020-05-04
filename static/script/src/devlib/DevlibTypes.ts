@@ -7,6 +7,12 @@ export interface DerivationFunction
     (pointList: StringToNumberObj[]): number;
 }
 
+export interface NDim {
+	valueMap: Map<string, number>,
+	inBrush: boolean,
+	addValue: (key: string, value: number) => void,
+	get: (key: string) => number | undefined
+}
 
 export interface StringToNumberObj {
     [key: string]: number;

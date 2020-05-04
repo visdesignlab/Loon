@@ -99,7 +99,7 @@ export class CurveListFactory {
 				let value = plainCurve.value[key];
 				if (typeof value === "number")
 				{
-					curve.set(key, value);
+					curve.addValue(key, value);
 					continue;
 				}
 				for (let pojoPoint of value)

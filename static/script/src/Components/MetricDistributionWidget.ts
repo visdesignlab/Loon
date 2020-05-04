@@ -3,18 +3,28 @@ import {HtmlSelection} from '../devlib/DevLibTypes';
 import {DevlibTSUtil} from '../devlib/DevlibTSUtil';
 import {BaseWidget} from './BaseWidget';
 import {PointCollection} from '../DataModel/PointCollection';
+import {CurveList} from '../DataModel/CurveList';
 import {LayoutFramework} from '../LayoutFramework';
 import {HistogramWidget} from './HistogramWidget';
 import {ScatterPlotWidget} from './ScatterPlotWidget';
-import {Frame, MetricDistributionSubComponentTypes, Direction} from '../types';
+import {Frame, MetricDistributionSubComponentTypes, Direction, MetricDistributionCollectionLevel} from '../types';
 
 interface boolWithIndex {
 	value: boolean,
 	index: [number, number],
 }
 
-export class MetricDistributionWidget extends BaseWidget<PointCollection> {
+
+export class MetricDistributionWidget extends BaseWidget<CurveList> {
 	
+
+	constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel)
+	{
+		super(container);
+		this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
+		// todo
+		// 	update defaultLayout.json
+	}
 
 	private _wrapperContainer : HTMLDivElement;
 	public get wrapperContainer() : HTMLDivElement {
@@ -95,6 +105,17 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 	public get scatterPlotWidgets() : ScatterPlotWidget[] {
 		return this._scatterPlotWidgets;
 	}
+
+	private _pointCollection : PointCollection;
+	public get pointCollection() : PointCollection {
+		return this._pointCollection;
+	}
+
+	private _metricDistributionCollectionLevel : MetricDistributionCollectionLevel;
+	public get metricDistributionCollectionLevel() : MetricDistributionCollectionLevel {
+		return this._metricDistributionCollectionLevel;
+	}
+	
 
 	protected init(): void
 	{
@@ -235,11 +256,24 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 		this.expandButtonSelect.node().appendChild(icon);
 	}
 
-
 	public OnDataChange(): void
 	{
+		switch (this.metricDistributionCollectionLevel)
+		{
+			case MetricDistributionCollectionLevel.Point:
+				this._pointCollection = this.data as PointCollection;
+				break;
+			case MetricDistributionCollectionLevel.Curve:
+				this._pointCollection = this.data.curveCollection as PointCollection;
+				break;
+			default:
+				this._pointCollection = null;
+				throw new Error('MetricDistributionCollectionLevel not set.')
+				break;
+		}
+
 		this._attributeToIndex = new Map<string, number>();
-		for (let [index, attr] of this.data.attributeList.entries())
+		for (let [index, attr] of this.pointCollection.attributeList.entries())
 		{
 			this.attributeToIndex.set(attr, index);
 		}
@@ -272,11 +306,11 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 
 		const maxDefaultMatrixSize = 15
 		this._scatterplotSelectionBooleans = [];
-		for (let [rowIndex, attr1] of this.data.attributeList.entries())
+		for (let [rowIndex, attr1] of this.pointCollection.attributeList.entries())
 		{
 			this.basisSelectionBooleans.push(rowIndex < maxDefaultMatrixSize);
 			let row: boolWithIndex[] = [];
-			for (let [colIndex, attr2] of this.data.attributeList.entries())
+			for (let [colIndex, attr2] of this.pointCollection.attributeList.entries())
 			{
 				row.push({
 					value: attr1 === attr2,
@@ -294,7 +328,7 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 		let flatData = this.getScatterOptionsMatrix();
 		this.basisSelectContainerSelection
 			.selectAll("button")
-			.data(this.data.attributeList)
+			.data(this.pointCollection.attributeList)
 			.join("button")
 			.text(d => d)
 			.classed("toggleButton", true)
@@ -439,7 +473,7 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 
 	private getCurrentOptions(): string[]
 	{
-		return this.data.attributeList.filter((d, i) => this.basisSelectionBooleans[i]);
+		return this.pointCollection.attributeList.filter((d, i) => this.basisSelectionBooleans[i]);
 	}
 
 	private afterMultipleMatrixChanges(): void
@@ -500,8 +534,8 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 				let buttonSelect = d3.select(this);
 				buttonSelect.classed("hovered", true);
 				let options = thisWidget.getCurrentOptions();
-				let rowName = thisWidget.data.attributeList[rowIdx];
-				let colName = thisWidget.data.attributeList[colIdx];
+				let rowName = thisWidget.pointCollection.attributeList[rowIdx];
+				let colName = thisWidget.pointCollection.attributeList[colIdx];
 				thisWidget.yAxisMatrixSelect.selectAll("button")
 					.data(options)
 					.classed("hovered", d => d === rowName);
@@ -538,7 +572,7 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 		this.distributionPlotContainerSelection.html(null)
 			.classed("noDisp", false)
 			.selectAll("div")
-			.data(this.data.attributeList)
+			.data(this.pointCollection.attributeList)
 		  .join("div")
 			.classed("histogramContainer", true)
 			.attr("id", d => "MetricDistributionWidget-histogramContainer-" + d)
@@ -558,7 +592,7 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 		let allHidden = true;
 		this.distributionPlotContainerSelection
 			.selectAll("div")
-			.data(this.data.attributeList)
+			.data(this.pointCollection.attributeList)
 			.classed("histogramContainer", true)
 			.classed("noDisp", (d, i) => 
 			{
@@ -575,7 +609,7 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 				let histogramWidget = thisWidget.histogramWidgets[i];
 				if (!thisWidget.shouldHide(i) && !histogramWidget.data)
 				{
-					histogramWidget.SetData(thisWidget.data)
+					histogramWidget.SetData(thisWidget.pointCollection)
 				}
 			});
 
@@ -615,8 +649,8 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 			.each(function(d)
 			{
 				let container = this as HTMLDivElement;
-				let xKey = thisWidget.data.attributeList[d.index[1]];
-				let yKey = thisWidget.data.attributeList[d.index[0]];
+				let xKey = thisWidget.pointCollection.attributeList[d.index[1]];
+				let yKey = thisWidget.pointCollection.attributeList[d.index[0]];
 				let newWidget = new ScatterPlotWidget(container, xKey, yKey);
 				thisWidget.scatterPlotWidgets.push(newWidget);
 			});
@@ -646,7 +680,7 @@ export class MetricDistributionWidget extends BaseWidget<PointCollection> {
 				let scatterWidget = thisWidget.scatterPlotWidgets[i];
 				if (!thisWidget.shouldHide(d) && !scatterWidget.data)
 				{
-					scatterWidget.SetData(thisWidget.data)
+					scatterWidget.SetData(thisWidget.pointCollection)
 				}
 			});
 		let parentElement = this.scatterPlotContainerSelection.node().parentElement;
