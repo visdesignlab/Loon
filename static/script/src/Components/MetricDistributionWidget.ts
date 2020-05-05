@@ -22,8 +22,6 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 	{
 		super(container);
 		this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
-		// todo
-		// 	update defaultLayout.json
 	}
 
 	private _wrapperContainer : HTMLDivElement;
@@ -175,7 +173,8 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 					let collapseExpandList: HTMLElement[] = [
 						this.basisSelectContainerSelection.node().parentElement,
 						wrapper.node().parentElement
-					];					
+					];
+					this.hideElements(collapseExpandList); // collapsed by default
 					this.initCollapseButton(rightWrapper, collapseExpandList);
 					this.initExpandButton(collapseExpandList);
 					break;
@@ -209,15 +208,11 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 		  .append('button')
 			.classed('collapseButton', true)
 			.classed('devlibButton', true)
-			.classed('noDisp', true)
 			.attr("id", "MetricDistributionWidget-collapseButton")
 			.text('Collapse')
 			.on('click', () =>
 			{
-				for (let element of toHide)
-				{
-					element.classList.add("noDisp");
-				}
+				this.hideElements(toHide);
 				this.expandButtonSelect.classed('noDisp', false);
 			})
 			.on('mouseenter', () =>
@@ -234,6 +229,14 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 					element.classList.remove("hoveredArea");
 				}
 			});
+	}
+
+	private hideElements(toHide: HTMLElement[]): void
+	{
+		for (let element of toHide)
+		{
+			element.classList.add("noDisp");
+		}
 	}
 
 	private initExpandButton(toShow: HTMLElement[]): void
@@ -282,7 +285,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 		this.drawBasisSelect();
 		this.drawScatterPlotSelectContainerSelection();
 		this.drawMatrixAxis();
-		this.collapseButtonSelect.classed('noDisp', false);
+		this.expandButtonSelect.classed('noDisp', false);
 		this.drawHistograms();
 		this.drawScatterPlots(this.getScatterOptionsMatrix());
 	}
