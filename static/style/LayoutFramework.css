@@ -10,3 +10,11 @@
 .dir-col {
 	flex-direction: column;
 }
+
+.frame.with-border.dir-row {
+	border-bottom: solid rgb(190, 190, 190) 1px;
+}
+
+.frame.with-border.dir-col {
+	border-right: solid rgb(190, 190, 190) 1px;
+}

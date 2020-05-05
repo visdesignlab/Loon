@@ -121,7 +121,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 		this.wrapperContainer.classList.add("frame", "dir-row", "wrapperContainer");
 		this.container.appendChild(this.wrapperContainer);
 
-		this._layoutFramework = new LayoutFramework(this.wrapperContainer);
+		this._layoutFramework = new LayoutFramework(this.wrapperContainer, false);
 		let layout: Frame<MetricDistributionSubComponentTypes> = {
 			direction: Direction.row,
 			inside: [
