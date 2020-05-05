@@ -95,15 +95,32 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         }
 
         this.updateScales();
-        this.mainGroupSelect.selectAll('circle')
-            .data<NDim>(this.pointCollection.Array)
-        .join('circle')
-            .attr('cx', d => this.scaleX(d.get(this.attributeKey)))
-            .attr('cy', (d, i) => this.scaleY(this.randomNoiseList[i]))
-            .classed('detailedPoint', true);
-
+        this.draw();
     }
     
+    private draw(): void
+    {
+        this.mainGroupSelect.selectAll('circle')
+            .data<NDim>(this.pointCollection.Array)
+          .join('circle')
+            .attr('cx', d => this.scaleX(d.get(this.attributeKey)))
+            .attr('cy', (d, i) => this.scaleY(this.randomNoiseList[i]))
+            .classed('detailedPoint', true)
+            .classed('noDisp', d => !d.inBrush);
+
+    }
+
+    public OnResize(): void
+    {
+        this.updateScales();
+        this.draw();
+    }
+
+    public OnBrushChange(): void
+    {
+        this.draw();
+    }
+
     private updateScales(): void
     {
         let distributionMinMax = this.pointCollection.getMinMax(this.attributeKey);

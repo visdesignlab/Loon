@@ -68,7 +68,28 @@ export class CurveList extends PointCollection
 				point.inBrush = true;
 			}
 		}
+		// sets filter values at point level
 		this.SetBrushValues();
+
+		// set track to false if all the points in a track are also false
+		for (let curve of this.curveList)
+		{
+			let allPointsHidden = true;
+			for (let point of curve.pointList)
+			{
+				if (point.inBrush)
+				{
+					allPointsHidden = false;
+					break;
+				}
+			}
+			if (allPointsHidden)
+			{
+				curve.inBrush = false;
+			}
+		}
+
+		// sets filter values at track level
 		this.curveCollection.SetBrushValues();
 	}
 
