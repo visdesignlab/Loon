@@ -74,7 +74,7 @@ export class ImageMetaData
         }
     }
     
-    static fromPointCollection(pointList: PointCollection, locationIdKey: string = 'locationId', frameIdKey: string = 'frameId'): ImageMetaData
+    static fromPointCollection(pointList: PointCollection, locationIdKey: string = 'Location ID', frameIdKey: string = 'Frame ID'): ImageMetaData
     {
         let imgMetaData = new ImageMetaData();
         imgMetaData._locationIdKey = locationIdKey;

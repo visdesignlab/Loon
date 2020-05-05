@@ -173,13 +173,13 @@ export class ImageStackWidget {
 	private drawBrushedCentroids()
 	{
 		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
-		let thisFramesData = this.data.filter(d => d.get('frameId') === currentFrameId)
+		let thisFramesData = this.data.filter(d => d.get('Frame ID') === currentFrameId)
 
 		this.selectedImageOverlay.selectAll('circle')
 		  .data(thisFramesData)
 			.join('circle')
-			.attr('cx', d => d.get('x') + d.get('xShift'))
-			.attr('cy', d => d.get('y') + d.get('yShift'))
+			.attr('cx', d => d.get('X') + d.get('xShift'))
+			.attr('cy', d => d.get('Y') + d.get('yShift'))
 			.classed('centroidIndicator', true)
 			.classed('inBrush', d => d.inBrush)
 	}

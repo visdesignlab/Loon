@@ -14,6 +14,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         super(container);
         this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
         this._attributeKey = attributeKey;
+        this.setLabel();
     }
 
     
@@ -61,6 +62,42 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 		return this._mainGroupSelect;
     }
 
+	private _brushGroupSelect : SvgSelection;
+	public get brushGroupSelect() : SvgSelection {
+		return this._brushGroupSelect;
+	}
+
+	private _axisPadding :  number;
+	public get axisPadding() :  number {
+		return this._axisPadding;
+	}
+
+	private _xAxisGroupSelect : SvgSelection;
+	public get xAxisGroupSelect() : SvgSelection {
+		return this._xAxisGroupSelect;
+	}
+
+	private _xLabelTextSelect : SvgSelection;
+	public get xLabelTextSelect() : SvgSelection {
+		return this._xLabelTextSelect;
+	}
+
+	private _brush : d3.BrushBehavior<any>;
+	public get brush() : d3.BrushBehavior<any> {
+		return this._brush;
+	}
+	
+
+	protected setMargin(): void
+	{
+		this._margin = {
+			top: 8,
+			right: 8,
+			bottom: 56,
+			left: 8
+		}
+	}
+
     public init(): void
     {
         this._svgSelect = d3.select(this.container).append("svg")
@@ -69,7 +106,31 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
         this._mainGroupSelect = this.svgSelect.append("g")
             .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
+        this._brushGroupSelect = this.svgSelect.append("g")
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+			.classed("brushContainer", true);
+
+        this._axisPadding = 4;
+        this._xAxisGroupSelect = this.svgSelect.append('g')
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight + this.axisPadding})`)
+            .classed("labelColor", true);
+        }
+
+    private setLabel(): void
+	{	
+		const bufferForAxis = 32 + this.axisPadding;
+		this._xLabelTextSelect = this.svgSelect.append('text')
+			.attr('transform', `translate(${this.margin.left + this.vizWidth / 2}, ${this.margin.top + this.vizHeight + bufferForAxis})`)
+			.classed('axisLabel', true)
+            .classed('labelColor', true)
+            .classed('noDisp', true)
+			.text(this.attributeKey);
+    }
     
+    private showLabel(): void
+    {
+        this.xLabelTextSelect.classed('noDisp', false);
     }
 
     public OnDataChange(): void
@@ -96,6 +157,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
         this.updateScales();
         this.draw();
+        this.showLabel();
     }
     
     private draw(): void
@@ -108,7 +170,16 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .classed('detailedPoint', true)
             .classed('noDisp', d => !d.inBrush || isNaN(d.get(this.attributeKey)));
 
+            this.drawAxis();
+
     }
+
+	private drawAxis(): void
+	{
+		this.xAxisGroupSelect
+			.call(d3.axisBottom(this.scaleX));
+
+	}
 
     public OnResize(): void
     {

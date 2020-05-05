@@ -84,7 +84,7 @@ export class ImageSelectionWidget extends BaseWidget<PointCollection> {
         const numCol = 10;
         const newUrl = `/data/${this.data.sourceKey}/imgWithOutline_${this.selectedLocationId}.png`
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        let pointsAtLocation = this.data.Array.filter(d => d.get('locationId') === currentLocation.locationId);
+        let pointsAtLocation = this.data.Array.filter(d => d.get('Location ID') === currentLocation.locationId);
         this.imageStackWidget.SetData(pointsAtLocation, newUrl, currentLocation, imgWidth, imgHeight, numCol);
     }
 

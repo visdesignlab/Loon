@@ -108,7 +108,7 @@ def getMassOverTimeCsv(folderId: str) -> str:
         yShift = yShiftArray[index][0]
         timeToIndex[time] = (locId, frameId, xShift, yShift)
 
-    returnStr = 'x,y,mass,time,id,meanValue,shapeFactor,locationId,frameId,xShift,yShift\n'
+    returnStr = 'X,Y,Mass,Time,id,Mean Value,Shape Factor,Location ID,Frame ID,xShift,yShift\n'
     for index, row in enumerate(massOverTime):
         time = row[3]
         locationId, frameId, xShift, yShift = timeToIndex[time]
