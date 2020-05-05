@@ -27,6 +27,8 @@
     border: solid white 1px;
     font-size: 8pt;
     background: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .matrixWrapperContainer {
@@ -59,6 +61,8 @@
     cursor: pointer;
     text-align: right;
     background: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .x.axisButton {

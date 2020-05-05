@@ -334,6 +334,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 			.data(this.pointCollection.attributeList)
 			.join("button")
 			.text(d => d)
+			.attr('title', d => d)
 			.classed("toggleButton", true)
 			.classed("on", (d, i) => this.basisSelectionBooleans[i])
 			.attr("id", d => "MetricDistributionWidget-varSelect-" + d)
@@ -364,6 +365,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 				width: ${buttonWidth}px;
 				height: ${buttonHeight}px;`)
 			.text(d => d)
+			.attr('title', d => d)
 			.on("click", (d) => {
 				let rowIndex = this.attributeToIndex.get(d);
 				let row: boolWithIndex[] = this.scatterplotSelectionBooleans[rowIndex];
@@ -424,6 +426,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 				height: ${buttonHeight}px;
 				transform: translate( ${stepSize * (i + 1) + xOffset}px, ${yOffset}px) rotate(${rotate}deg);`)
 			.text(d => d)
+			.attr('title', d => d)
 			.on("click", (d) => {
 				let colIndex = this.attributeToIndex.get(d);
 				let allTrue = true;
