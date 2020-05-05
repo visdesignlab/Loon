@@ -106,7 +106,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .attr('cx', d => this.scaleX(d.get(this.attributeKey)))
             .attr('cy', (d, i) => this.scaleY(this.randomNoiseList[i]))
             .classed('detailedPoint', true)
-            .classed('noDisp', d => !d.inBrush);
+            .classed('noDisp', d => !d.inBrush || isNaN(d.get(this.attributeKey)));
 
     }
 
