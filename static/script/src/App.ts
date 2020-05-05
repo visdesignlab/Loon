@@ -19,9 +19,9 @@ import { DetailedDistribution } from './Components/DetailedDistribution';
 export class App<DataType extends AppData> {
 	
 	constructor(container: HTMLElement,
-				fromCsv: (data: string, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
-				fromCsvObject: (data: d3.DSVRowArray<string>, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
-				derivedDataFunctions: [string, DerivationFunction][]) {
+				fromCsv: (data: string, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
+				fromCsvObject: (data: d3.DSVRowArray<string>, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
+				derivedDataFunctions: [string[], DerivationFunction][]) {
 		this._container = container;
 		this._componentList = [];
 		this._layoutFramework = new LayoutFramework(container);
@@ -58,22 +58,22 @@ export class App<DataType extends AppData> {
 		return this._componentContainers;
 	}
 
-	private _dataFromCSV : (data: string, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType;
-	public get dataFromCSV() : (data: string, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType{
+	private _dataFromCSV : (data: string, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType;
+	public get dataFromCSV() : (data: string, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType{
 		return this._dataFromCSV;
 	}
 
-	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType;
-	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, derivedDataFunctions: [string, DerivationFunction][], sourceKey: string, postfixKey: string) => DataType{
+	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType;
+	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType{
 		return this._dataFromCSVObject;
 	}
 
 	
-	private _derivationFunctions : [string, DerivationFunction][];
-	public get derivationFunctions() : [string, DerivationFunction][] {
+	private _derivationFunctions : [string[], DerivationFunction][];
+	public get derivationFunctions() : [string[], DerivationFunction][] {
 		return this._derivationFunctions;
 	}
-	public set derivationFunctions(v : [string, DerivationFunction][]) {
+	public set derivationFunctions(v : [string[], DerivationFunction][]) {
 		this._derivationFunctions = v;
 	}
 
