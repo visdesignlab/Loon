@@ -141,7 +141,7 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 				{
 					let v: number = point.get(key);
 					let [low, high] = bound;
-					if (v < low || high < v)
+					if (v < low || high < v || isNaN(v))
 					{
 						point.inBrush = false;
 					}
