@@ -140,9 +140,11 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 			{
 				for (let [key, bound] of valueFilterMap)
 				{
-					let v: number = point.get(key);
-					let [low, high] = bound;
-					if (v < low || high < v || isNaN(v))
+					let valueFilter = {
+						key: key,
+						bound: bound
+					}
+					if (!PointCollection.IsInBrush(point, valueFilter))
 					{
 						point.inBrush = false;
 						brushApplied = true;
@@ -153,24 +155,15 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		return brushApplied;
 	}
 
-	private updateBrush(): void
+	public static IsInBrush(point: NDim, valueFilter: valueFilter): boolean
 	{
-		// for (let point of this)
-		// {
-		// 	point.inBrush = true;
-		// 	for (let valueFilterMap of this.brushList.values())
-		// 	{
-		// 		for (let [key, bound] of valueFilterMap)
-		// 		{
-		// 			let v: number = point.get(key);
-		// 			let [low, high] = bound;
-		// 			if (v < low || high < v)
-		// 			{
-		// 				point.inBrush = false;
-		// 			}
-		// 		}
-		// 	}
-		// }
+		let v: number = point.get(valueFilter.key);
+		let [low, high] = valueFilter.bound;
+		return low <= v && v <= high && !isNaN(v);
+	}
+
+	public updateBrush(): void
+	{
 		let event = new Event(DataEvents.brushChange);
 		document.dispatchEvent(event);
 	}

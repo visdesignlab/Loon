@@ -3,7 +3,7 @@ import {BaseWidget} from './BaseWidget';
 import {CurveList} from '../DataModel/CurveList';
 import {PointND} from '../DataModel/PointND';
 import {Margin, SvgSelection, HtmlSelection} from '../devlib/DevLibTypes';
-import {DevlibTSUtil} from '../devlib/DevlibTSUtil';
+import { valueFilter } from '../DataModel/PointCollection';
 
 export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	
@@ -24,6 +24,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	private _mainGroupSelect : SvgSelection;
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
+	}
+
+	private _brushGroupSelect : SvgSelection;
+	public get brushGroupSelect() : SvgSelection {
+		return this._brushGroupSelect;
 	}
 
 	private _xAxisGroupSelect : SvgSelection;
@@ -72,6 +77,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		return this._squareAspectRatio;
 	}
 
+	private _brush : d3.BrushBehavior<any>;
+	public get brush() : d3.BrushBehavior<any> {
+		return this._brush;
+	}
+
 	protected setMargin(): void
 	{
 		this._margin = {
@@ -89,8 +99,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
-		this.mainGroupSelect
-			.attr("transform", `translate(${this.margin.left}, ${this.margin.top})`);
+		this._brushGroupSelect = this.svgSelect.append("g")
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+			.classed("brushContainer", true);
 
 		this.svgSelect.attr("style", 'width: 100%; height: 100%;');
 
@@ -102,6 +113,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.classed("labelColor", true);
 
+		this._brush = d3.brush()
+			.extent([[0, 0], [this.vizWidth, this.vizHeight]])
+			.on("end", () => { this.brushHandler() });
+
+		this.brushGroupSelect.call(this.brush);
 	}
 
 	private setLabel(): void
@@ -259,6 +275,39 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		}
 	}
 
+	private brushHandler(): void
+	{
+		const selection: [[number, number], [number, number]] | null  | undefined = d3.event.selection;
+		if (typeof selection === "undefined" || selection === null)
+		{
+			this.data.removeCurveBrush(this.getUniqueKey());
+			return;
+		}
+
+		let [[left, top], [right, bottom]] = selection;
+
+		let minX = this.scaleX.invert(left);
+		let maxX = this.scaleX.invert(right);
+		let xValueFilter: valueFilter = {
+			key: this.xKey,
+			bound: [minX, maxX]
+		}
+
+		let minY = this.scaleY.invert(bottom);
+		let maxY = this.scaleY.invert(top);
+		let yValueFilter: valueFilter = {
+			key: this.yKey,
+			bound: [minY, maxY]
+		}
+		this.data.addCurveBrush(this.getUniqueKey(), [xValueFilter, yValueFilter]);
+
+	}
+
+	private getUniqueKey(): string
+	{
+		return this.constructor.name + "." + this.xKey + "." + this.yKey;
+	}
+	
 	public OnBrushChange(): void
 	{
 		this.updatePaths();

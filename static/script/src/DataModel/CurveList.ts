@@ -2,7 +2,7 @@ import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
-import { PointCollection } from './PointCollection';
+import { PointCollection, valueFilter } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
 import { thresholdFreedmanDiaconis } from 'd3';
@@ -27,6 +27,7 @@ export class CurveList extends PointCollection
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
 		this._curveCollection = new CurveCollection(this);
+		this._curveBrushList = new Map<string, valueFilter[]>();
 	}
 
 	private _curveList : CurveND[];
@@ -64,6 +65,12 @@ export class CurveList extends PointCollection
 	public set brushApplied(v : boolean) {
 		this._brushApplied = v;
 	}
+
+	
+	private _curveBrushList : Map<string, valueFilter[]>;
+	public get curveBrushList() : Map<string, valueFilter[]> {
+		return this._curveBrushList;
+	}	
 	
 
 	public OnBrushChange(): void
@@ -98,8 +105,47 @@ export class CurveList extends PointCollection
 		}
 
 		// sets filter values at track level
-		const curveBrushApplied: boolean = this.curveCollection.SetBrushValues();
-		this._brushApplied = pointBrushApplied || curveBrushApplied;
+		const curveCollectionBrushApplied: boolean = this.curveCollection.SetBrushValues();
+		const curveBrushApplied: boolean = this.setCurveBrushValues();
+		this._brushApplied = pointBrushApplied || curveBrushApplied || curveCollectionBrushApplied;
+	}
+
+	private setCurveBrushValues(): boolean
+	{
+		let brushApplied = false;
+		for (let curve of this.curveList)
+		{
+			let allPointsOutOfBrush = true;
+			for (let point of curve.pointList)
+			{
+				if (this.isPointInCurveBrushList(point))
+				{
+					allPointsOutOfBrush = false;
+					break;
+				}
+			}
+			if (allPointsOutOfBrush)
+			{
+				curve.inBrush = false;
+				brushApplied = true
+			}
+		}
+		return brushApplied;
+	}
+
+	private isPointInCurveBrushList(point: PointND): boolean
+	{
+		for (let valueFilterList of this.curveBrushList.values())
+		{
+			for (let valueFilter of valueFilterList)
+			{
+				if (!PointCollection.IsInBrush(point, valueFilter))
+				{
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 
 	private updateMinMaxMap()
@@ -153,6 +199,18 @@ export class CurveList extends PointCollection
 		{
 			curve.sort(key);
 		}
+	}
+
+	public removeCurveBrush(brushKey: string): void
+	{
+		this.curveBrushList.delete(brushKey);
+		this.updateBrush();
+	}
+
+	public addCurveBrush(brushKey: string, filters: valueFilter[]): void
+	{
+		this.curveBrushList.set(brushKey, filters);
+		this.updateBrush();
 	}
 
 	public sort(key: string, ascend: boolean = true): void
