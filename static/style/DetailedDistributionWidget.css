@@ -24,3 +24,9 @@
     stroke: #1565c0;
     stroke-width: 2px;
 }
+
+.boxplotStatsPopup {
+    position: absolute;
+    background: #e4e4e4;
+    padding: 10px;
+}

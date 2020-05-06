@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { PointCollection } from '../DataModel/PointCollection';
 import { BaseWidget } from './BaseWidget';
 import { MetricDistributionCollectionLevel } from '../types';
-import { SvgSelection, NDim } from '../devlib/DevLibTypes';
+import { SvgSelection, NDim, HtmlSelection } from '../devlib/DevLibTypes';
 import { CurveList } from '../DataModel/CurveList';
 import { BaseComponent } from './BaseComponent';
 
@@ -79,7 +79,16 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 	private _brushGroupSelect : SvgSelection;
 	public get brushGroupSelect() : SvgSelection {
 		return this._brushGroupSelect;
-	}
+    }
+    
+    private _boxplotStatsPopupSelect : HtmlSelection;
+    public get boxplotStatsPopupSelect() : HtmlSelection {
+        return this._boxplotStatsPopupSelect;
+    }
+    public set boxplotStatsPopupSelect(v : HtmlSelection) {
+        this._boxplotStatsPopupSelect = v;
+    }
+    
 
 	private _axisPadding :  number;
 	public get axisPadding() :  number {
@@ -119,7 +128,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
     private _betweenBoxplotPadding : number;
     public get betweenBoxplotPadding() : number {
         return this._betweenBoxplotPadding;
-    }    
+    }
 
 	protected setMargin(): void
 	{
@@ -136,6 +145,11 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         this._svgSelect = d3.select(this.container).append("svg")
             .attr("width", this.width)
             .attr("height", this.height);
+
+        this._boxplotStatsPopupSelect = d3.select(this.container).append('div')
+            .classed('boxplotStatsPopup', true);
+
+        this.hideBoxplotStatsPopup();
 
         this._scatterplotPadding = 8;
         this._mainGroupSelect = this.svgSelect.append("g")
@@ -318,7 +332,15 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .attr('x', d => this.scaleX(d[0]))
             .attr('y', top)
             .attr('width', d => this.scaleX(d[1]) - this.scaleX(d[0]))
-            .attr('height', height);
+            .attr('height', height)
+            .on('mouseover', () =>
+            {
+                this.showBoxplotStatsPopup(boxplotStats);
+            })
+            .on('mouseout', () => 
+            {
+                this.hideBoxplotStatsPopup()
+            })
 
         // Horizontal whisker lines
         const vertMiddle = top + (height / 2);
@@ -344,7 +366,31 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .attr('x2', d => this.scaleX(d))
             .attr('y2', top + height - padSize)
             .classed('boxplotWhiskerEnds', true);
-        }
+    }
+
+    private showBoxplotStatsPopup(boxplotStats: BoxplotStats): void
+    {
+        this.boxplotStatsPopupSelect.html(null);
+
+        this.boxplotStatsPopupSelect.append('div')
+            .attr('id', 'boxplotStatsPopup-q1')
+            .text('Q1: ' + boxplotStats.quartileRange[0].toFixed(4));
+
+        this.boxplotStatsPopupSelect.append('div')
+            .attr('id', 'boxplotStatsPopup-median')
+            .text('Median: ' + boxplotStats.median.toFixed(4));
+
+        this.boxplotStatsPopupSelect.append('div')
+            .attr('id', 'boxplotStatsPopup-q3')
+            .text('Q3: ' + boxplotStats.quartileRange[1].toFixed(4));
+
+        this.boxplotStatsPopupSelect.classed('noDisp', false);
+    }
+
+    private hideBoxplotStatsPopup(): void
+    {
+        this.boxplotStatsPopupSelect.classed('noDisp', true);
+    }
 
 	private drawAxis(): void
 	{
