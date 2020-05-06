@@ -300,17 +300,6 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
     private drawBoxplot(containerSelect: SvgSelection, boxplotStats: BoxplotStats, top: number, height: number): void
     {
-        const transitionDuration = 1000;
-        // IQR Box
-        containerSelect.selectAll('rect')
-            .data<[number, number]>([boxplotStats.quartileRange])
-          .join('rect')
-            .classed('IQR-Box', true)
-            .attr('x', d => this.scaleX(d[0]))
-            .attr('y', top)
-            .attr('width', d => this.scaleX(d[1]) - this.scaleX(d[0]))
-            .attr('height', height);
-
         // Median
         containerSelect.selectAll('.boxplotMedianLine')
             .data<number>([boxplotStats.median])
@@ -320,6 +309,16 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .attr('x2', d => this.scaleX(d))
             .attr('y2', top + height)
             .classed('boxplotMedianLine', true);
+
+        // IQR Box
+        containerSelect.selectAll('rect')
+            .data<[number, number]>([boxplotStats.quartileRange])
+          .join('rect')
+            .classed('IQR-Box', true)
+            .attr('x', d => this.scaleX(d[0]))
+            .attr('y', top)
+            .attr('width', d => this.scaleX(d[1]) - this.scaleX(d[0]))
+            .attr('height', height);
 
         // Horizontal whisker lines
         const vertMiddle = top + (height / 2);
