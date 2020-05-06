@@ -1,3 +1,26 @@
 .detailedPoint {
     r: .5;
+    opacity: .6;
+}
+
+.IQR-Box {
+    stroke: #1565c0;
+    stroke-width: 2px;
+    /* fill:blue; */
+    fill-opacity: 0;
+}
+
+.boxplotMedianLine {
+    stroke: firebrick;
+    stroke-width: 2px;
+}
+
+.boxplotWhiskers {
+    stroke: #1565c0;
+    stroke-width: 1px;
+}
+
+.boxplotWhiskerEnds {
+    stroke: #1565c0;
+    stroke-width: 2px;
 }
