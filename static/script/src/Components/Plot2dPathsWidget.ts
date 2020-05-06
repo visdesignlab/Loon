@@ -13,6 +13,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this._xKey = xKey;
 		this._yKey = yKey;
 		this._squareAspectRatio = squareAspectRatio;
+		this.setLabel();
 	}
 
 	private _svgSelect : SvgSelection;
@@ -23,6 +24,27 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	private _mainGroupSelect : SvgSelection;
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
+	}
+
+	private _xAxisGroupSelect : SvgSelection;
+	public get xAxisGroupSelect() : SvgSelection {
+		return this._xAxisGroupSelect;
+	}
+
+	private _xLabelTextSelect : SvgSelection;
+	public get xLabelTextSelect() : SvgSelection {
+		return this._xLabelTextSelect;
+	}
+
+
+	private _yAxisGroupSelect : SvgSelection;
+	public get yAxisGroupSelect() : SvgSelection {
+		return this._yAxisGroupSelect;
+	}
+
+	private _yLabelTextSelect : SvgSelection;
+	public get yLabelTextSelect() : SvgSelection {
+		return this._yLabelTextSelect;
 	}
 
 	private _scaleX : d3.ScaleLinear<number, number>;
@@ -50,21 +72,84 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		return this._squareAspectRatio;
 	}
 
+	protected setMargin(): void
+	{
+		this._margin = {
+			top: 8,
+			right: 8,
+			bottom: 48,
+			left: 64
+		}
+	}
+
 	protected init(): void
 	{
 
 		this._svgSelect = d3.select(this.container).append("svg")
-		this._mainGroupSelect = this.svgSelect.append("g");
+		this._mainGroupSelect = this.svgSelect.append("g")
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
 		this.mainGroupSelect
 			.attr("transform", `translate(${this.margin.left}, ${this.margin.top})`);
 
 		this.svgSelect.attr("style", 'width: 100%; height: 100%;');
+
+		this._xAxisGroupSelect = this.svgSelect.append('g')
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight})`)
+			.classed("labelColor", true);
+
+		this._yAxisGroupSelect = this.svgSelect.append('g')
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+			.classed("labelColor", true);
+
+	}
+
+	private setLabel(): void
+	{
+		this._xLabelTextSelect = this.svgSelect.append('text')
+			.classed('axisLabel', true)
+			.classed('labelColor', true)
+			.classed('noDisp', true)
+			.text(this.xKey);
+
+		this._yLabelTextSelect = this.svgSelect.append('text')
+			.classed('axisLabel', true)
+			.classed('labelColor', true)
+			.classed('noDisp', true)
+			.text(this.yKey);
+
+		this.positionLabels();
+	}
+
+	private positionLabels(): void
+	{
+		// X-Axis
+		let bufferForAxis = 32;
+		this.xLabelTextSelect
+			.attr('transform', `translate(${this.margin.left + this.vizWidth / 2}, ${this.margin.top + this.vizHeight + bufferForAxis})`);
+
+		bufferForAxis = 40;
+		// Y-Axis
+		let transX = this.margin.left - bufferForAxis;
+		let transY = this.margin.top + this.vizHeight / 2;
+		let transformText: string;
+		if (this.yKey.length === 1)
+		{
+			transformText = `translate(${transX}, ${transY})`;
+		}
+		else
+		{
+			transformText = `rotate(-90) translate(${-transY}, ${transX})`;
+		}
+		this.yLabelTextSelect.attr('transform', transformText);
 	}
 
 	public OnDataChange(): void
 	{
 		this.updateScales();
 		this.updatePaths();
+		this.drawAxis();
+        this.showLabel();
 	}
 
 	private updateScales(): void
@@ -145,6 +230,23 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			.classed("trajectoryPath", true);
 	}
 
+	private drawAxis(): void
+	{
+		this.xAxisGroupSelect
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight})`)
+			.call(d3.axisBottom(this.scaleX).ticks(5));
+
+		this.yAxisGroupSelect
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+			.call(d3.axisLeft(this.scaleY).ticks(5));
+	}
+
+    private showLabel(): void
+    {
+        this.xLabelTextSelect.classed('noDisp', false);
+        this.yLabelTextSelect.classed('noDisp', false);
+    }
+
 	protected OnResize(): void
 	{
 		// this.setVizWidthHeight();
@@ -152,6 +254,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		{
 			this.updateScales();
 			this.updatePaths();
+			this.positionLabels();
+			this.drawAxis();
 		}
 	}
 

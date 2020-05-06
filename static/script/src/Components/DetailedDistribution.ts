@@ -148,14 +148,22 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
     private setLabel(): void
 	{	
-		const bufferForAxis = 32 + this.axisPadding;
 		this._xLabelTextSelect = this.svgSelect.append('text')
-			.attr('transform', `translate(${this.margin.left + this.vizWidth / 2}, ${this.margin.top + this.vizHeight + bufferForAxis})`)
 			.classed('axisLabel', true)
             .classed('labelColor', true)
             .classed('noDisp', true)
-			.text(this.attributeKey);
+            .text(this.attributeKey);
+        this.positionLabels();
     }
+
+    private positionLabels(): void
+    {
+		let bufferForAxis = 32 + this.axisPadding;;
+		this.xLabelTextSelect
+			.attr('transform', `translate(${this.margin.left + this.vizWidth / 2}, ${this.margin.top + this.vizHeight + bufferForAxis})`);
+    }
+
+
 
     public OnDataChange(): void
     {
@@ -232,6 +240,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
         this.drawBoxplot();       
         this.drawAxis();
+        this.positionLabels();
     }
 
 
@@ -288,7 +297,8 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
 	private drawAxis(): void
 	{
-		this.xAxisGroupSelect
+        this.xAxisGroupSelect
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight + this.axisPadding})`)
 			.call(d3.axisBottom(this.scaleX));
 	}
 

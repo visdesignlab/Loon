@@ -147,11 +147,8 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 		this._yLabelTextSelect = this.svgSelect.append('text')
 			.attr('transform', transformText)
 			.classed('axisLabel', true)
-			// .classed('verticalLabel', true)
 			.classed('labelColor', true)
 			.text(this.yKey);
-
-		// console.log(this.yLabelTextSelect);
 	}
 
 	public OnDataChange()
