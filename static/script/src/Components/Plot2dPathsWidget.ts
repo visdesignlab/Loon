@@ -77,7 +77,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this._margin = {
 			top: 8,
 			right: 8,
-			bottom: 48,
+			bottom: 42,
 			left: 64
 		}
 	}
