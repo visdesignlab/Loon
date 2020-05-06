@@ -4,7 +4,13 @@ import { BaseWidget } from './BaseWidget';
 import { MetricDistributionCollectionLevel } from '../types';
 import { SvgSelection, NDim } from '../devlib/DevLibTypes';
 import { CurveList } from '../DataModel/CurveList';
+import { BaseComponent } from './BaseComponent';
 
+interface BoxplotStats {
+    median: number,
+    quartileRange: [number, number],
+    whiskerRange: [number, number]
+}
 
 export class DetailedDistribution extends BaseWidget<CurveList> {
 
@@ -27,7 +33,6 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         return this._attributeKey;
     }
 
-    
     private _pointCollection : PointCollection;
     public get pointCollection() : PointCollection {
         return this._pointCollection;
@@ -91,27 +96,16 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 		return this._brush;
     }
     
-    private _median : number;
-    public get median() : number {
-        return this._median;
-    }
-
-    private _quartileRange : [number, number];
-    public get quartileRange() : [number, number] {
-        return this._quartileRange;
-    }
-
-    private _whiskerRange : [number, number];
-    public get whiskerRange() : [number, number] {
-        return this._whiskerRange;
-    }
     
+    private _totalBoxplotStats : BoxplotStats;
+    public get totalBoxplotStats() : BoxplotStats {
+        return this._totalBoxplotStats;
+    }
     
     private _scatterplotPadding : number;
     public get scatterplotPadding() : number {
         return this._scatterplotPadding;
     }
-    
 
 	protected setMargin(): void
 	{
@@ -199,15 +193,28 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
                             .filter(d => !isNaN(d)) // filter out NaN values.
                             .sort(); // d3.quantile requires it to be sorted. This could technically be done faster without sorting.
 
-        this._median = d3.median(validNumbers);
-        let lowQuartile = d3.quantile(validNumbers, 0.25);
-        let highQuartile = d3.quantile(validNumbers, 0.75);
-        this._quartileRange = [lowQuartile, highQuartile];
+        this._totalBoxplotStats = DetailedDistribution.calculateBoxplotStats(validNumbers);
+    }
+
+    private static calculateBoxplotStats(numbers: number[]): BoxplotStats
+    {
+        const median = d3.median(numbers);
+        let lowQuartile = d3.quantile(numbers, 0.25);
+        let highQuartile = d3.quantile(numbers, 0.75);
+        const quartileRange: [number, number] = [lowQuartile, highQuartile];
         
         let interQuartileRange = highQuartile - lowQuartile;
         let lowWhisker  = lowQuartile  - 1.5 * interQuartileRange;
         let highWhisker = highQuartile + 1.5 * interQuartileRange;
-        this._whiskerRange = [lowWhisker, highWhisker];
+        const whiskerRange: [number, number] = [lowWhisker, highWhisker];
+
+        let boxplotStats: BoxplotStats = {
+            median: median,
+            quartileRange: quartileRange,
+            whiskerRange: whiskerRange
+        }
+        return boxplotStats;
+
     }
 
     private updateScales(): void
@@ -253,7 +260,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
     {
         // IQR Box
         this.boxplotContainerSelect.selectAll('rect')
-            .data<[number, number]>([this.quartileRange])
+            .data<[number, number]>([this.totalBoxplotStats.quartileRange])
           .join('rect')
             .attr('x', d => this.scaleX(d[0]))
             .attr('y', 0)
@@ -263,7 +270,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
         // Median
         this.boxplotContainerSelect.selectAll('.boxplotMedianLine')
-            .data<number>([this.median])
+            .data<number>([this.totalBoxplotStats.median])
           .join('line')
             .attr('x1', d => this.scaleX(d))
             .attr('y1', 0)
@@ -274,7 +281,9 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         // Horizontal whisker lines
         const vertMiddle = this.vizHeight / 2;
         this.boxplotContainerSelect.selectAll('.boxplotWhiskers')
-            .data<[number, number]>([[this.whiskerRange[0], this.quartileRange[0]], [this.whiskerRange[1], this.quartileRange[1]]])
+            .data<[number, number]>([
+                [this.totalBoxplotStats.whiskerRange[0], this.totalBoxplotStats.quartileRange[0]],
+                [this.totalBoxplotStats.whiskerRange[1], this.totalBoxplotStats.quartileRange[1]]])
           .join('line')
             .attr('x1', d => this.scaleX(d[0]))
             .attr('y1', vertMiddle)
@@ -286,7 +295,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         const relativeSize = 0.66; // height of whisker endpoints compared to box height
         const padSize = this.vizHeight * (1 - relativeSize) / 2;
         this.boxplotContainerSelect.selectAll('.boxplotWhiskerEnds')
-            .data<number>(this.whiskerRange)
+            .data<number>(this.totalBoxplotStats.whiskerRange)
           .join('line')
             .attr('x1', d => this.scaleX(d))
             .attr('y1', padSize)
