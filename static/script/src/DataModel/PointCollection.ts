@@ -131,8 +131,9 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		this.updateBrush();
 	}
 
-	public SetBrushValues(): void
+	public SetBrushValues(): boolean
 	{
+		let brushApplied = false;
 		for (let point of this)
 		{
 			for (let valueFilterMap of this.brushList.values())
@@ -144,10 +145,12 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 					if (v < low || high < v || isNaN(v))
 					{
 						point.inBrush = false;
+						brushApplied = true;
 					}
 				}
 			}
 		}
+		return brushApplied;
 	}
 
 	private updateBrush(): void

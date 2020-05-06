@@ -56,6 +56,14 @@ export class CurveList extends PointCollection
 		}
 		return this._minMaxMap;
 	}
+
+	private _brushApplied : boolean;
+	public get brushApplied() : boolean {
+		return this._brushApplied;
+	}
+	public set brushApplied(v : boolean) {
+		this._brushApplied = v;
+	}
 	
 
 	public OnBrushChange(): void
@@ -69,7 +77,7 @@ export class CurveList extends PointCollection
 			}
 		}
 		// sets filter values at point level
-		this.SetBrushValues();
+		const pointBrushApplied: boolean = this.SetBrushValues();
 
 		// set track to false if all the points in a track are also false
 		for (let curve of this.curveList)
@@ -90,7 +98,8 @@ export class CurveList extends PointCollection
 		}
 
 		// sets filter values at track level
-		this.curveCollection.SetBrushValues();
+		const curveBrushApplied: boolean = this.curveCollection.SetBrushValues();
+		this._brushApplied = pointBrushApplied || curveBrushApplied;
 	}
 
 	private updateMinMaxMap()

@@ -66,9 +66,14 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 		return this._mainGroupSelect;
     }
 
-    private _boxplotContainerSelect : SvgSelection;
-    public get boxplotContainerSelect() : SvgSelection {
-        return this._boxplotContainerSelect;
+    private _totalBoxplotContainerSelect : SvgSelection;
+    public get totalBoxplotContainerSelect() : SvgSelection {
+        return this._totalBoxplotContainerSelect;
+    }  
+
+    private _filteredBoxplotContainerSelect : SvgSelection;
+    public get filteredBoxplotContainerSelect() : SvgSelection {
+        return this._filteredBoxplotContainerSelect;
     }    
 
 	private _brushGroupSelect : SvgSelection;
@@ -96,16 +101,25 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 		return this._brush;
     }
     
-    
     private _totalBoxplotStats : BoxplotStats;
     public get totalBoxplotStats() : BoxplotStats {
         return this._totalBoxplotStats;
+    }
+
+    private _filteredBoxplotStats : BoxplotStats;
+    public get filteredBoxplotStats() : BoxplotStats {
+        return this._filteredBoxplotStats;
     }
     
     private _scatterplotPadding : number;
     public get scatterplotPadding() : number {
         return this._scatterplotPadding;
     }
+
+    private _betweenBoxplotPadding : number;
+    public get betweenBoxplotPadding() : number {
+        return this._betweenBoxplotPadding;
+    }    
 
 	protected setMargin(): void
 	{
@@ -126,19 +140,24 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         this._scatterplotPadding = 8;
         this._mainGroupSelect = this.svgSelect.append("g")
             .attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.scatterplotPadding})`);
+            
+        this._totalBoxplotContainerSelect = this.svgSelect.append('g')
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
-        this._boxplotContainerSelect = this.svgSelect.append('g')
-        .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
-
+        this._filteredBoxplotContainerSelect = this.svgSelect.append('g')
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+            
         this._brushGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.classed("brushContainer", true);
-
+            
         this._axisPadding = 4;
         this._xAxisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight + this.axisPadding})`)
             .classed("labelColor", true);
-        }
+
+        this._betweenBoxplotPadding = 4;
+    }
 
     private setLabel(): void
 	{	
@@ -180,20 +199,31 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         {
             this.randomNoiseList.push(Math.random());
         }
-        this.updateBoxplotStats();
+        this.updateTotalBoxplotStats();
         this.updateScales();
         this.draw();
         this.showLabel();
     }
 
-    private updateBoxplotStats(): void
+    private updateTotalBoxplotStats(): void
     {
         let validNumbers: number[] = this.pointCollection.Array
                             .map(d => d.get(this.attributeKey)) // get actual value
                             .filter(d => !isNaN(d)) // filter out NaN values.
-                            .sort(); // d3.quantile requires it to be sorted. This could technically be done faster without sorting.
+                            .sort((a, b) => a - b); // d3.quantile requires it to be sorted. This could technically be done faster without sorting.
 
         this._totalBoxplotStats = DetailedDistribution.calculateBoxplotStats(validNumbers);
+    }
+
+    private updateFilteredBoxplotStats(): void
+    {
+        let validBrushedNumbers: number[] = this.pointCollection.Array
+            .filter(d => d.inBrush)
+            .map(d => d.get(this.attributeKey)) // get actual value
+            .filter(d => !isNaN(d)) // filter out NaN values.
+            .sort((a, b) => a - b); // d3.quantile requires it to be sorted. This could technically be done faster without sorting.
+
+        this._filteredBoxplotStats = DetailedDistribution.calculateBoxplotStats(validBrushedNumbers);
     }
 
     private static calculateBoxplotStats(numbers: number[]): BoxplotStats
@@ -245,7 +275,19 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .classed('detailedPoint', true)
             .classed('noDisp', d => !d.inBrush);
 
-        this.drawBoxplot();       
+        if (this.data.brushApplied)
+        {
+            const smallBoxplotHeight = (this.vizHeight - this.betweenBoxplotPadding) / 2;
+            this.drawBoxplot(this.totalBoxplotContainerSelect, this.totalBoxplotStats, 0, smallBoxplotHeight);       
+            this.drawBoxplot(this.filteredBoxplotContainerSelect, this.filteredBoxplotStats, smallBoxplotHeight + this.betweenBoxplotPadding, smallBoxplotHeight)
+            this.filteredBoxplotContainerSelect.classed('noDisp', false);
+        }
+        else
+        {
+            this.drawBoxplot(this.totalBoxplotContainerSelect, this.totalBoxplotStats, 0, this.vizHeight);       
+            this.filteredBoxplotContainerSelect.classed('noDisp', true);
+        }
+
         this.drawAxis();
         this.positionLabels();
     }
@@ -256,34 +298,35 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
         this.xLabelTextSelect.classed('noDisp', false);
     }
 
-    private drawBoxplot(): void
+    private drawBoxplot(containerSelect: SvgSelection, boxplotStats: BoxplotStats, top: number, height: number): void
     {
+        const transitionDuration = 1000;
         // IQR Box
-        this.boxplotContainerSelect.selectAll('rect')
-            .data<[number, number]>([this.totalBoxplotStats.quartileRange])
+        containerSelect.selectAll('rect')
+            .data<[number, number]>([boxplotStats.quartileRange])
           .join('rect')
+            .classed('IQR-Box', true)
             .attr('x', d => this.scaleX(d[0]))
-            .attr('y', 0)
+            .attr('y', top)
             .attr('width', d => this.scaleX(d[1]) - this.scaleX(d[0]))
-            .attr('height', this.vizHeight)
-            .classed('IQR-Box', true);
+            .attr('height', height);
 
         // Median
-        this.boxplotContainerSelect.selectAll('.boxplotMedianLine')
-            .data<number>([this.totalBoxplotStats.median])
+        containerSelect.selectAll('.boxplotMedianLine')
+            .data<number>([boxplotStats.median])
           .join('line')
             .attr('x1', d => this.scaleX(d))
-            .attr('y1', 0)
+            .attr('y1', top)
             .attr('x2', d => this.scaleX(d))
-            .attr('y2', this.vizHeight)
+            .attr('y2', top + height)
             .classed('boxplotMedianLine', true);
 
         // Horizontal whisker lines
-        const vertMiddle = this.vizHeight / 2;
-        this.boxplotContainerSelect.selectAll('.boxplotWhiskers')
+        const vertMiddle = top + (height / 2);
+        containerSelect.selectAll('.boxplotWhiskers')
             .data<[number, number]>([
-                [this.totalBoxplotStats.whiskerRange[0], this.totalBoxplotStats.quartileRange[0]],
-                [this.totalBoxplotStats.whiskerRange[1], this.totalBoxplotStats.quartileRange[1]]])
+                [boxplotStats.whiskerRange[0], boxplotStats.quartileRange[0]],
+                [boxplotStats.whiskerRange[1], boxplotStats.quartileRange[1]]])
           .join('line')
             .attr('x1', d => this.scaleX(d[0]))
             .attr('y1', vertMiddle)
@@ -293,14 +336,14 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
         // vertical whisker endpoints
         const relativeSize = 0.66; // height of whisker endpoints compared to box height
-        const padSize = this.vizHeight * (1 - relativeSize) / 2;
-        this.boxplotContainerSelect.selectAll('.boxplotWhiskerEnds')
-            .data<number>(this.totalBoxplotStats.whiskerRange)
+        const padSize = height * (1 - relativeSize) / 2;
+        containerSelect.selectAll('.boxplotWhiskerEnds')
+            .data<number>(boxplotStats.whiskerRange)
           .join('line')
             .attr('x1', d => this.scaleX(d))
-            .attr('y1', padSize)
+            .attr('y1', top + padSize)
             .attr('x2', d => this.scaleX(d))
-            .attr('y2', this.vizHeight - padSize)
+            .attr('y2', top + height - padSize)
             .classed('boxplotWhiskerEnds', true);
         }
 
@@ -319,6 +362,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
 
     public OnBrushChange(): void
     {
+        this.updateFilteredBoxplotStats();
         this.draw();
     }
 
