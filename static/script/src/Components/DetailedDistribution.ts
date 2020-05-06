@@ -335,7 +335,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .attr('height', height)
             .on('mouseover', () =>
             {
-                this.showBoxplotStatsPopup(boxplotStats);
+                this.showBoxplotStatsPopup(boxplotStats, containerSelect);
             })
             .on('mouseout', () => 
             {
@@ -368,9 +368,13 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .classed('boxplotWhiskerEnds', true);
     }
 
-    private showBoxplotStatsPopup(boxplotStats: BoxplotStats): void
+    private showBoxplotStatsPopup(boxplotStats: BoxplotStats, boxplotContainer: SvgSelection): void
     {
         this.boxplotStatsPopupSelect.html(null);
+        const boundRect = boxplotContainer.node().getBoundingClientRect();
+
+        this.boxplotStatsPopupSelect
+            .attr('style', `left: ${(boundRect.left + boundRect.right) / 2}px; top:${boundRect.bottom}px`);
 
         this.boxplotStatsPopupSelect.append('div')
             .attr('id', 'boxplotStatsPopup-q1')
