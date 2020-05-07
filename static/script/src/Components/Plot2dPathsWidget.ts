@@ -249,6 +249,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this._xKey = xKey;
 		this._yKey = yKey;
 		this._squareAspectRatio = squareAspectRatio;
+		this.brushGroupSelect.call(this.brush.move, null);
 		this.OnDataChange();
 	}
 
