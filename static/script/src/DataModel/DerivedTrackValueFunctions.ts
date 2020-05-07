@@ -1,8 +1,8 @@
-import { StringToNumberObj, DerivationFunction } from '../devlib/DevLibTypes'
+import { StringToNumberObj, TrackDerivationFunction } from '../devlib/DevLibTypes'
 
 export class DerivedTrackValueFunctions
 {
-    public static GetFunctionList(): [string[], DerivationFunction][]
+    public static GetFunctionList(): [string[], TrackDerivationFunction][]
     {
         let functionList = [];
         functionList.push([['Track Length'], this.trackLength]);

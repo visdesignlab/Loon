@@ -2,10 +2,21 @@ export interface StringToStringObj {
     [key: string]: string;
 }
 
-export interface DerivationFunction
+export interface TrackDerivationFunction
 {
-    (pointList: StringToNumberObj[]): number;
+    (pointList: StringToNumberObj[]): number[];
 }
+
+export interface PointDerivationFunction
+{
+    (pointList: StringToNumberObj[]): number[][];
+}
+
+
+export type KeyedTrackDerivationFunction = [string[], TrackDerivationFunction];
+export type KeyedPointDerivationFunction = [string[], PointDerivationFunction];
+
+
 
 export interface NDim {
 	valueMap: Map<string, number>,

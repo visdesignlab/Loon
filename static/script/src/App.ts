@@ -11,7 +11,7 @@ import {ImageStackWidget} from './Components/ImageStackWidget'
 // import {Overlay} from './Overlay';
 import {LayoutFramework} from './LayoutFramework';
 import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData} from './types';
-import {ButtonProps, DerivationFunction} from './devlib/DevLibTypes';
+import {ButtonProps, TrackDerivationFunction, KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistribution } from './Components/DetailedDistribution';
 // import {LabelPosition} from './types';
@@ -19,15 +19,29 @@ import { DetailedDistribution } from './Components/DetailedDistribution';
 export class App<DataType extends AppData> {
 	
 	constructor(container: HTMLElement,
-				fromCsv: (data: string, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
-				fromCsvObject: (data: d3.DSVRowArray<string>, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType,
-				derivedDataFunctions: [string[], DerivationFunction][]) {
+				fromCsv: (
+					data: string,
+					derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
+					derivedPointDataFunctions: KeyedPointDerivationFunction[],
+					sourceKey: string,
+					postfixKey: string
+					) => DataType,
+				fromCsvObject: (
+					data: d3.DSVRowArray<string>,
+					derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
+					derivedPointDataFunctions: KeyedPointDerivationFunction[],
+					sourceKey: string,
+					postfixKey: string
+					) => DataType,
+				derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
+				derivedPointDataFunctions: KeyedPointDerivationFunction[]) {
 		this._container = container;
 		this._componentList = [];
 		this._layoutFramework = new LayoutFramework(container);
 		this._dataFromCSV = fromCsv;
 		this._dataFromCSVObject = fromCsvObject;
-		this._derivationFunctions = derivedDataFunctions;
+		this._trackDerivationFunctions = derivedTrackDataFunctions;
+		this._pointDerivationFunctions = derivedPointDataFunctions;
 		document.addEventListener(DataEvents.brushChange, (e: Event) => {this.onBrushChange()});
 		// this._overlay = new Overlay("overlayContainer");
 	}
@@ -58,23 +72,25 @@ export class App<DataType extends AppData> {
 		return this._componentContainers;
 	}
 
-	private _dataFromCSV : (data: string, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType;
-	public get dataFromCSV() : (data: string, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType{
+	private _dataFromCSV : (data: string, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string) => DataType;
+	public get dataFromCSV() : (data: string, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string) => DataType{
 		return this._dataFromCSV;
 	}
 
-	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType;
-	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string) => DataType{
+	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string) => DataType;
+	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string) => DataType{
 		return this._dataFromCSVObject;
 	}
 
 	
-	private _derivationFunctions : [string[], DerivationFunction][];
-	public get derivationFunctions() : [string[], DerivationFunction][] {
-		return this._derivationFunctions;
+	private _trackDerivationFunctions : KeyedTrackDerivationFunction[];
+	public get trackDerivationFunctions() : KeyedTrackDerivationFunction[] {
+		return this._trackDerivationFunctions;
 	}
-	public set derivationFunctions(v : [string[], DerivationFunction][]) {
-		this._derivationFunctions = v;
+
+	private _pointDerivationFunctions : KeyedPointDerivationFunction[];
+	public get pointDerivationFunctions() : KeyedPointDerivationFunction[] {
+		return this._pointDerivationFunctions;
 	}
 
 	public InitializeLayout(frame: Frame<ComponentInitInfo | ComponentType>): void
@@ -137,7 +153,7 @@ export class App<DataType extends AppData> {
 
 	private loadFromCsvString(data: string): void
 	{
-		let newData: DataType = this.dataFromCSV(data, this.derivationFunctions, 'csvString', '');
+		let newData: DataType = this.dataFromCSV(data, this.trackDerivationFunctions, this.pointDerivationFunctions, 'csvString', '');
 		this.SetData(newData);
 	}
 
@@ -146,7 +162,7 @@ export class App<DataType extends AppData> {
 		await d3.csv("../../../data/" + filename).then(data =>
 		{
 			// console.log(data);
-			let newData: DataType = this.dataFromCSVObject(data, this.derivationFunctions, sourceKey, postfixKey);
+			let newData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, sourceKey, postfixKey);
 			// console.log(newData);
 			this.SetData(newData)
 		});

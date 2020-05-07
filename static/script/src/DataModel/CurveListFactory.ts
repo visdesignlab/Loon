@@ -3,25 +3,22 @@ import { DevlibMath } from '../devlib/DevlibMath';
 import { CurveList } from './CurveList';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
-import { StringToStringObj, StringToNumberObj, DerivationFunction } from '../devlib/DevLibTypes'
+import { StringToStringObj, StringToNumberObj, KeyedTrackDerivationFunction, KeyedPointDerivationFunction } from '../devlib/DevLibTypes'
+import { DerivedTrackValueFunctions } from './DerivedTrackValueFunctions';
 
 interface StringToNumberOrList {
     [key: string]: number | StringToNumberObj[];
 }
 
 export class CurveListFactory {
-	
-	// constructor(argument) {
-	// 	// code...
-	// }
 
-	public static CreateCurveListFromCSV(csvString: string, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["Time", "t"]): CurveList
+	public static CreateCurveListFromCSV(csvString: string, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["Time", "t"]): CurveList
 	{
 		let rawValueArray: d3.DSVRowArray<string> = d3.csvParse(csvString);
-		return CurveListFactory.CreateCurveListFromCSVObject(rawValueArray, derivedDataFunctions, sourceKey, postfixKey, idkey, tKeyOptions);
+		return CurveListFactory.CreateCurveListFromCSVObject(rawValueArray, derivedTrackDataFunctions, derivedPointDataFunctions, sourceKey, postfixKey, idkey, tKeyOptions);
 	}
 
-	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, derivedDataFunctions: [string[], DerivationFunction][], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["Time", "t"]): CurveList
+	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["Time", "t"]): CurveList
 	{
 		console.log(csvObject);
 		const curveList: CurveND[] = [];
@@ -83,16 +80,19 @@ export class CurveListFactory {
 				// points.sort(sortFunction);
 
 				values.points = points;
-				for (let [attrNameList, func] of derivedDataFunctions)
-				{
-					let valueList = func(points);
-					for (let i = 0; i < attrNameList.length; i++)
-					{
-						let attrName = attrNameList[i];
-						let val = valueList[i];
-						values[attrName] = val;
-					}
-				}
+				CurveListFactory.calculateDerivedTrackValues(values, derivedTrackDataFunctions);
+				CurveListFactory.calculateDerivedPointValues(values, derivedPointDataFunctions);
+				// todo add point derived functions - also should pull this out into a function
+				// for (let [attrNameList, func] of derivedTrackDataFunctions)
+				// {
+				// 	let valueList = func(points);
+				// 	for (let i = 0; i < attrNameList.length; i++)
+				// 	{
+				// 		let attrName = attrNameList[i];
+				// 		let val = valueList[i];
+				// 		values[attrName] = val;
+				// 	}
+				// }
 				return values;
 			})
 			.entries(csvObject);
@@ -124,4 +124,37 @@ export class CurveListFactory {
 		return curveListObj;
 	}
 
+	private static calculateDerivedTrackValues(values: StringToNumberOrList, derivedTrackDataFunctions: KeyedTrackDerivationFunction[]): void
+	{
+		let points: StringToNumberObj[] = values.points as StringToNumberObj[];
+		for (let [attrNameList, func] of derivedTrackDataFunctions)
+		{
+			let valueList = func(points);
+			for (let i = 0; i < attrNameList.length; i++)
+			{
+				let attrName = attrNameList[i];
+				let val = valueList[i];
+				values[attrName] = val;
+			}
+		}
+	}
+
+	private static calculateDerivedPointValues(values: StringToNumberOrList, derivedPointDataFunctions: KeyedPointDerivationFunction[]): void
+	{
+		let points: StringToNumberObj[] = values.points as StringToNumberObj[];
+		for (let [attrNameList, func] of derivedPointDataFunctions)
+		{
+			let valueListOfLists = func(points);
+			for (let i = 0; i < attrNameList.length; i++)
+			{
+				let attrName = attrNameList[i];
+				let valueList = valueListOfLists[i];
+				for (let j = 0; j < points.length; j++)
+				{
+					points[j][attrName] = valueList[j];
+				}
+
+			}
+		}
+	}
 }

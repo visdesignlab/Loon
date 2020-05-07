@@ -38,8 +38,8 @@
 								"type": "Plot2dPathsWidget",
 								"initArgs":
 								{
-									"xAxis": "Time",
-									"yAxis": "Mass",
+									"xAxis": "Time_norm",
+									"yAxis": "Mass_norm",
 									"squareAspectRatio": false
 								}
 							}
