@@ -3,6 +3,8 @@ export abstract class BaseComponent {
 	constructor(container: Element)
 	{
 		this._container = container;
+		this._componentIndex = BaseComponent._componentCount;
+		BaseComponent._componentCount++;
 		// this._children = [];
 		this.initProps();
 		this.setWidthHeight();
@@ -23,6 +25,13 @@ export abstract class BaseComponent {
 	public get height() : number {
 		return this._height;
 	}
+
+	private _componentIndex : number;
+	public get ComponentId() : string {
+		return this.constructor.name + "_" + this._componentIndex;
+	}	
+
+	private static _componentCount: number = 0;
 
 	// private _children : BaseComponent[];
 	// public get children() : BaseComponent[] {

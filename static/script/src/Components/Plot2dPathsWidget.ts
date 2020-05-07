@@ -61,7 +61,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	public set quickPickContainerSelect(v : HtmlSelection) {
 		this._quickPickContainerSelect = v;
 	}
-	
 
 	private _scaleX : d3.ScaleLinear<number, number>;
 	public get scaleX() : d3.ScaleLinear<number, number> {
@@ -105,7 +104,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 
 	protected init(): void
 	{
-
 		this._svgSelect = d3.select(this.container).append("svg")
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
@@ -135,7 +133,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 
 	private initQuickPickOptions(): void
 	{
-		const containerId = 'TODO-quickPickContainer';
+		const containerId = this.ComponentId + '-quickPickContainer';
 		this._quickPickContainerSelect = d3.select(this.container).append('div')
 			.classed('quickPickContainer', true)
 			.attr('id', containerId);
@@ -328,7 +326,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		const selection: [[number, number], [number, number]] | null  | undefined = d3.event.selection;
 		if (typeof selection === "undefined" || selection === null)
 		{
-			this.data.removeCurveBrush(this.getUniqueKey());
+			this.data.removeCurveBrush(this.ComponentId);
 			return;
 		}
 
@@ -347,13 +345,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			key: this.yKey,
 			bound: [minY, maxY]
 		}
-		this.data.addCurveBrush(this.getUniqueKey(), [xValueFilter, yValueFilter]);
+		this.data.addCurveBrush(this.ComponentId, [xValueFilter, yValueFilter]);
 
-	}
-
-	private getUniqueKey(): string
-	{
-		return this.constructor.name + "." + this.xKey + "." + this.yKey;
 	}
 	
 	public OnBrushChange(): void

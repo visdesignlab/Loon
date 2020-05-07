@@ -2,7 +2,7 @@ import {BaseComponent} from './BaseComponent';
 // import { UploadFileButton } from './UploadFileButton';
 import {ButtonProps} from '../devlib/DevLibTypes';
 
-export class Toolbar extends BaseComponent{
+export class Toolbar extends BaseComponent {
 	
 	constructor(container: Element, fileLoadCallback: (data: string) => any, buttonPropList: ButtonProps[])
 	{

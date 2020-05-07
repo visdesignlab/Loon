@@ -198,7 +198,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 		const selection: [[number, number], [number, number]] | null  | undefined = d3.event.selection;
 		if (typeof selection === "undefined" || selection === null)
 		{
-			this.data.removeBrush(this.getUniqueKey());
+			this.data.removeBrush(this.ComponentId;
 			return;
 		}
 		let [[left, top], [right, bottom]] = selection;
@@ -217,12 +217,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 			bound: [minY, maxY]
 		}
 
-		this.data.addBrush(this.getUniqueKey(), xValueFilter, yValueFilter);
-	}
-
-	private getUniqueKey(): string
-	{
-		return this.constructor.name + "." + this.xKey + "." + this.yKey;
+		this.data.addBrush(this.ComponentId, xValueFilter, yValueFilter);
 	}
 
 	public OnBrushChange(): void

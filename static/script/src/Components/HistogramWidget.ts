@@ -209,7 +209,7 @@ export class HistogramWidget extends BaseWidget<PointCollection> {
 		const selection: [number, number] | null  | undefined = d3.event.selection;
 		if (typeof selection === "undefined" || selection === null)
 		{
-			this.data.removeBrush(this.getUniqueKey());
+			this.data.removeBrush(this.ComponentId);
 			return;
 		}
 		let [minBound, maxBound] = selection;
@@ -221,12 +221,7 @@ export class HistogramWidget extends BaseWidget<PointCollection> {
 			bound: [minV, maxV]
 		}
 
-		this.data.addBrush(this.getUniqueKey(), valueFilter);
-	}
-
-	private getUniqueKey(): string
-	{
-		return this.constructor.name + "." + this.valueKey;
+		this.data.addBrush(this.ComponentId, valueFilter);
 	}
 
 	public OnBrushChange(): void
