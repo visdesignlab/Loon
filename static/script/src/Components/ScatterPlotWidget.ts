@@ -198,7 +198,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 		const selection: [[number, number], [number, number]] | null  | undefined = d3.event.selection;
 		if (typeof selection === "undefined" || selection === null)
 		{
-			this.data.removeBrush(this.ComponentId;
+			this.data.removeBrush(this.ComponentId);
 			return;
 		}
 		let [[left, top], [right, bottom]] = selection;

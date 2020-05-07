@@ -38,8 +38,21 @@
 								"type": "Plot2dPathsWidget",
 								"initArgs":
 								{
-									"xAxis": "Time_norm",
-									"yAxis": "Mass_norm",
+									"quickPickOptions": [
+										{
+											"xKey": "Time",
+											"yKey": "Mass",
+											"iconKey": "linePlot"
+										}, {
+											"xKey": "Time",
+											"yKey": "Mass_norm",
+											"iconKey": "linePlot-yNorm"
+										}, {
+											"xKey": "Time_norm",
+											"yKey": "Mass_norm",
+											"iconKey": "linePlot-xyNorm"
+										}
+									],
 									"squareAspectRatio": false
 								}
 							}

@@ -3,9 +3,9 @@ import {Margin} from '../devlib/DevLibTypes';
 
 export abstract class BaseWidget<DataType> extends BaseComponent {
 	
-	constructor(container: Element)
+	constructor(container: Element, ...props: any[])
 	{
-		super(container);
+		super(container, props);
 	}
 
 
@@ -29,7 +29,7 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 		return this._vizHeight;
 	}
 
-	protected initProps(): void
+	protected initProps(props?: any[]): void
 	{
 		this.setMargin();
 	}

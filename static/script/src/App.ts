@@ -133,7 +133,7 @@ export class App<DataType extends AppData> {
 				{
 					squareAspectRatio = initArgs.squareAspectRatio;
 				}
-				newComponent = new Plot2dPathsWidget(container, initArgs.xAxis, initArgs.yAxis, squareAspectRatio);
+				newComponent = new Plot2dPathsWidget(container, initArgs.quickPickOptions, squareAspectRatio);
 				break;
 			case ComponentType.MetricDistributionWidget:
 				newComponent = new MetricDistributionWidget(container, initArgs.metricDistributionCollectionLevel);

@@ -1,12 +1,12 @@
 export abstract class BaseComponent {
 	
-	constructor(container: Element)
+	constructor(container: Element, props: any[])
 	{
 		this._container = container;
 		this._componentIndex = BaseComponent._componentCount;
 		BaseComponent._componentCount++;
 		// this._children = [];
-		this.initProps();
+		this.initProps(props);
 		this.setWidthHeight();
 		this.init();
 	}
@@ -38,7 +38,7 @@ export abstract class BaseComponent {
 	// 	return this._children;
 	// }
 
-	protected initProps(): void
+	protected initProps(props?: any[]): void
 	{
 		
 	}

@@ -6,17 +6,27 @@ import {Margin, SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLib
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
 
+interface quickPickOption {
+	xKey: string,
+	yKey: string,
+	iconKey: string
+}
+
 export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	
-	constructor(container: Element, xKey: string, yKey: string, squareAspectRatio: boolean = true)
+	constructor(container: Element, quickPickOptions: quickPickOption[], squareAspectRatio: boolean = true)
 	{
-		super(container);
-		this._xKey = xKey;
-		this._yKey = yKey;
+		super(container, quickPickOptions, 1, false, ['tom', 'jerry']);
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
-		// console.log('[[[[ ~~~~~ Will this work? ~~~~~~ ]]]]] ')
-		// console.log((a: string, b: string) => this.changeAxes(a, b));
+	}
+
+	protected initProps(props?: any[]): void
+	{
+		super.initProps();
+		this._quickPickOptions = props[0];
+		this._xKey = this.quickPickOptions[0].xKey;
+		this._yKey = this.quickPickOptions[0].yKey;
 	}
 
 	private _svgSelect : SvgSelection;
@@ -81,6 +91,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	public get yKey() : string {
 		return this._yKey;
 	}
+
+	private _quickPickOptions : quickPickOption[];
+	public get quickPickOptions() : quickPickOption[] {
+		return this._quickPickOptions;
+	}	
 	
 	private _squareAspectRatio : boolean;
 	public get squareAspectRatio() : boolean {
@@ -139,19 +154,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			.attr('id', containerId);
 
 		let optionSelect = new OptionSelect(containerId);
-		let buttonPropList: ButtonProps[] = [
-			{
-				displayName: 'Mass v. Time',
-				callback: () => this.changeAxes('Time', 'Mass')
-			},
-			{
-				displayName: 'Mass_Norm v. Time',
-				callback: () => this.changeAxes('Time', 'Mass_norm')},
-			{
-				displayName: 'Mass_Norm v. Time_Norm',
-				callback: () => this.changeAxes('Time_norm', 'Mass_norm')
+		let buttonPropList: ButtonProps[] = [];
+		for (let quickPickOption of this.quickPickOptions)
+		{
+			let buttonProp: ButtonProps = {
+				displayName: quickPickOption.yKey + " V. " + quickPickOption.xKey,
+				callback: () => this.changeAxes(quickPickOption.xKey, quickPickOption.yKey)
 			}
-		];
+			buttonPropList.push(buttonProp);
+		}
 		optionSelect.onDataChange(buttonPropList);
 	}
 
