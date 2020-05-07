@@ -32,7 +32,7 @@
 					"inside": [
 						{
 							"direction": "row",
-							"fraction": 1,
+							"fraction": 2,
 							"inside": 
 							{
 								"type": "Plot2dPathsWidget",
@@ -63,7 +63,7 @@
 						},
 						{
 							"direction": "row",
-							"fraction": 2,
+							"fraction": 3,
 							"inside": [
 								{
 									"direction": "col",
