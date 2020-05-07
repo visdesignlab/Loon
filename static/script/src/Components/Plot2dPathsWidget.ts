@@ -9,14 +9,14 @@ import { OptionSelect } from './OptionSelect';
 interface quickPickOption {
 	xKey: string,
 	yKey: string,
-	iconKey: string
+	squareAspectRatio: boolean
 }
 
 export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	
 	constructor(container: Element, quickPickOptions: quickPickOption[], squareAspectRatio: boolean = true)
 	{
-		super(container, quickPickOptions, 1, false, ['tom', 'jerry']);
+		super(container, quickPickOptions);
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
 	}
@@ -172,7 +172,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		{
 			let buttonProp: ButtonProps = {
 				displayName: quickPickOption.yKey + " v. " + quickPickOption.xKey,
-				callback: () => this.changeAxes(quickPickOption.xKey, quickPickOption.yKey)
+				callback: () => this.changeAxes(quickPickOption.xKey, quickPickOption.yKey, quickPickOption.squareAspectRatio)
 			}
 			buttonPropList.push(buttonProp);
 		}
@@ -244,10 +244,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
         this.showLabel();
 	}
 
-	private changeAxes(xKey: string, yKey: string): void
+	private changeAxes(xKey: string, yKey: string, squareAspectRatio: boolean): void
 	{
 		this._xKey = xKey;
 		this._yKey = yKey;
+		this._squareAspectRatio = squareAspectRatio;
 		this.OnDataChange();
 	}
 

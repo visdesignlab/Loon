@@ -41,16 +41,20 @@
 									"quickPickOptions": [
 										{
 											"xKey": "Time_norm",
-											"yKey": "Mass_norm"
+											"yKey": "Mass_norm",
+											"squareAspectRatio": false
 										}, {
 											"xKey": "Time",
-											"yKey": "Mass_norm"
+											"yKey": "Mass_norm",
+											"squareAspectRatio": false
 										}, {
 											"xKey": "Time",
-											"yKey": "Mass"
+											"yKey": "Mass",
+											"squareAspectRatio": false
 										}, {
 											"xKey": "X",
-											"yKey": "Y"
+											"yKey": "Y",
+											"squareAspectRatio": true
 										}
 									],
 									"squareAspectRatio": false
