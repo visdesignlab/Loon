@@ -12,7 +12,7 @@ interface BoxplotStats {
     whiskerRange: [number, number]
 }
 
-export class DetailedDistribution extends BaseWidget<CurveList> {
+export class DetailedDistributionWidget extends BaseWidget<CurveList> {
 
 
     constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel, attributeKey: string)
@@ -226,7 +226,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
                             .filter(d => !isNaN(d)) // filter out NaN values.
                             .sort((a, b) => a - b); // d3.quantile requires it to be sorted. This could technically be done faster without sorting.
 
-        this._totalBoxplotStats = DetailedDistribution.calculateBoxplotStats(validNumbers);
+        this._totalBoxplotStats = DetailedDistributionWidget.calculateBoxplotStats(validNumbers);
     }
 
     private updateFilteredBoxplotStats(): void
@@ -237,7 +237,7 @@ export class DetailedDistribution extends BaseWidget<CurveList> {
             .filter(d => !isNaN(d)) // filter out NaN values.
             .sort((a, b) => a - b); // d3.quantile requires it to be sorted. This could technically be done faster without sorting.
 
-        this._filteredBoxplotStats = DetailedDistribution.calculateBoxplotStats(validBrushedNumbers);
+        this._filteredBoxplotStats = DetailedDistributionWidget.calculateBoxplotStats(validBrushedNumbers);
     }
 
     private static calculateBoxplotStats(numbers: number[]): BoxplotStats

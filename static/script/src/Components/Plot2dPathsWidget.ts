@@ -2,8 +2,9 @@ import * as d3 from 'd3';
 import {BaseWidget} from './BaseWidget';
 import {CurveList} from '../DataModel/CurveList';
 import {PointND} from '../DataModel/PointND';
-import {Margin, SvgSelection, HtmlSelection} from '../devlib/DevLibTypes';
+import {Margin, SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
+import { OptionSelect } from './OptionSelect';
 
 export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	
@@ -13,7 +14,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this._xKey = xKey;
 		this._yKey = yKey;
 		this._squareAspectRatio = squareAspectRatio;
-		this.setLabel();
+		this.addLabel();
+		// console.log('[[[[ ~~~~~ Will this work? ~~~~~~ ]]]]] ')
+		// console.log((a: string, b: string) => this.changeAxes(a, b));
 	}
 
 	private _svgSelect : SvgSelection;
@@ -41,7 +44,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		return this._xLabelTextSelect;
 	}
 
-
 	private _yAxisGroupSelect : SvgSelection;
 	public get yAxisGroupSelect() : SvgSelection {
 		return this._yAxisGroupSelect;
@@ -51,6 +53,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	public get yLabelTextSelect() : SvgSelection {
 		return this._yLabelTextSelect;
 	}
+
+	private _quickPickContainerSelect : HtmlSelection;
+	public get quickPickContainerSelect() : HtmlSelection {
+		return this._quickPickContainerSelect;
+	}
+	public set quickPickContainerSelect(v : HtmlSelection) {
+		this._quickPickContainerSelect = v;
+	}
+	
 
 	private _scaleX : d3.ScaleLinear<number, number>;
 	public get scaleX() : d3.ScaleLinear<number, number> {
@@ -113,6 +124,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.classed("labelColor", true);
 
+		this.initQuickPickOptions();
+
 		this._brush = d3.brush()
 			.extent([[0, 0], [this.vizWidth, this.vizHeight]])
 			.on("end", () => { this.brushHandler() });
@@ -120,19 +133,41 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this.brushGroupSelect.call(this.brush);
 	}
 
-	private setLabel(): void
+	private initQuickPickOptions(): void
+	{
+		const containerId = 'TODO-quickPickContainer';
+		this._quickPickContainerSelect = d3.select(this.container).append('div')
+			.classed('quickPickContainer', true)
+			.attr('id', containerId);
+
+		let optionSelect = new OptionSelect(containerId);
+		let buttonPropList: ButtonProps[] = [
+			{
+				displayName: 'Mass v. Time',
+				callback: () => this.changeAxes('Time', 'Mass')
+			},
+			{
+				displayName: 'Mass_Norm v. Time',
+				callback: () => this.changeAxes('Time', 'Mass_norm')},
+			{
+				displayName: 'Mass_Norm v. Time_Norm',
+				callback: () => this.changeAxes('Time_norm', 'Mass_norm')
+			}
+		];
+		optionSelect.onDataChange(buttonPropList);
+	}
+
+	private addLabel(): void
 	{
 		this._xLabelTextSelect = this.svgSelect.append('text')
 			.classed('axisLabel', true)
 			.classed('labelColor', true)
-			.classed('noDisp', true)
-			.text(this.xKey);
+			.classed('noDisp', true);
 
 		this._yLabelTextSelect = this.svgSelect.append('text')
 			.classed('axisLabel', true)
 			.classed('labelColor', true)
-			.classed('noDisp', true)
-			.text(this.yKey);
+			.classed('noDisp', true);
 
 		this.positionLabels();
 	}
@@ -166,6 +201,13 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this.updatePaths();
 		this.drawAxis();
         this.showLabel();
+	}
+
+	private changeAxes(xKey: string, yKey: string): void
+	{
+		this._xKey = xKey;
+		this._yKey = yKey;
+		this.OnDataChange();
 	}
 
 	private updateScales(): void
@@ -259,8 +301,14 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 
     private showLabel(): void
     {
-        this.xLabelTextSelect.classed('noDisp', false);
-        this.yLabelTextSelect.classed('noDisp', false);
+		this.xLabelTextSelect
+			.text(this.xKey)
+			.classed('noDisp', false);
+
+		this.yLabelTextSelect
+			.text(this.yKey)
+			.classed('noDisp', false);
+		
     }
 
 	protected OnResize(): void

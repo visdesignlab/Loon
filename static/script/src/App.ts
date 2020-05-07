@@ -13,7 +13,7 @@ import {LayoutFramework} from './LayoutFramework';
 import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData} from './types';
 import {ButtonProps, TrackDerivationFunction, KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
-import { DetailedDistribution } from './Components/DetailedDistribution';
+import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
 // import {LabelPosition} from './types';
 
 export class App<DataType extends AppData> {
@@ -142,7 +142,7 @@ export class App<DataType extends AppData> {
 				newComponent = new ImageSelectionWidget(container);
 				break;
 			case ComponentType.DetailedDistribution:
-				newComponent = new DetailedDistribution(container, initArgs.metricDistributionCollectionLevel, initArgs.attributeKey);
+				newComponent = new DetailedDistributionWidget(container, initArgs.metricDistributionCollectionLevel, initArgs.attributeKey);
 				break;
 			default:
 				console.error(`Cannot Initialize Component of type: ${componentType}`);
