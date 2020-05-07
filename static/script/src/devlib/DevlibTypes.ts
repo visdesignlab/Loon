@@ -38,10 +38,7 @@ export interface Margin {
 
 export interface ButtonProps {
 	displayName: string,
-	callback: Function,
-	iconUrl?: string,
-	iconSize?: number,
-	iconOnly?: boolean
+	callback: Function
 }
 
 export type SvgSelection = d3.Selection<SVGElement, any, Element, any>;

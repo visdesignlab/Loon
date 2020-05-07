@@ -1,6 +1,6 @@
 export abstract class BaseComponent {
 	
-	constructor(container: Element, props: any[])
+	constructor(container: Element, ...props: any[])
 	{
 		this._container = container;
 		this._componentIndex = BaseComponent._componentCount;

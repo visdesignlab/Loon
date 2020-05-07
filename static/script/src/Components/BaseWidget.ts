@@ -5,7 +5,7 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 	
 	constructor(container: Element, ...props: any[])
 	{
-		super(container, props);
+		super(container, ...props);
 	}
 
 

@@ -12,25 +12,6 @@
     flex-direction: column;
 }
 
-.toggleButton.on {
-    color: white;
-    background: black;
-}
-.toggleButton:hover {
-    border: solid gray 1px;
-}
-
-.toggleButton {
-    margin-bottom: 5px;
-    border-radius: 4px;
-    cursor: pointer;
-    border: solid white 1px;
-    font-size: 8pt;
-    background: white;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 .matrixWrapperContainer {
     display: flex;
     flex-direction: row;

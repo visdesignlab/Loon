@@ -5,53 +5,9 @@
 	opacity: 0.25;
 }
 
-.playControlsContainer {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-}
 
-.playControlButton {
-	background: white;
-    border: solid black 0px;
-    border-radius: 3px;
-    font-size: 16pt;
-    user-select: none;
-    cursor: pointer;
-    margin: 2px;
-    padding: 6px 11px;
-}
-
-.playControlButton:hover {
-	background: #e0e7f0; /*lighter than lightbluesteel*/
-}
-
-.playControlButton:active {
-	background: lightsteelblue;
-}
-
-
-.playControlButton.on {
-	background: black;
-	color: white;
-}
-
-.playControlButton.on:hover {
-	background: gray;
-}
-
-.playControlButton.on:active {
-	background: gray
-}
-
-.animationDot {
-	stroke-width: 1.5;
-	stroke: firebrick;
-	fill: firebrick;
-	fill-opacity: 0;
-	stroke-opacity: 0.8;
-}
-
-.animationDot.inBrush {
-	fill-opacity: .75;
+.quickPickContainer {
+	/* display: flex;
+	flex-direction: column; */
+	position: fixed;
 }

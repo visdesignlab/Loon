@@ -110,7 +110,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	protected setMargin(): void
 	{
 		this._margin = {
-			top: 8,
+			top: 20,
 			right: 8,
 			bottom: 42,
 			left: 64
@@ -119,7 +119,20 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 
 	protected init(): void
 	{
-		this._svgSelect = d3.select(this.container).append("svg")
+		const containerSelect = d3.select(this.container);
+		containerSelect
+			.on('mouseenter', () =>
+			{
+				if (this.data)
+				{
+					this.showQuickPickContainer();
+				}
+			})
+			.on('mouseleave', () =>
+			{
+				this.hideQuickPickContainer();
+			})
+		this._svgSelect = containerSelect.append("svg")
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
@@ -158,12 +171,14 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		for (let quickPickOption of this.quickPickOptions)
 		{
 			let buttonProp: ButtonProps = {
-				displayName: quickPickOption.yKey + " V. " + quickPickOption.xKey,
+				displayName: quickPickOption.yKey + " v. " + quickPickOption.xKey,
 				callback: () => this.changeAxes(quickPickOption.xKey, quickPickOption.yKey)
 			}
 			buttonPropList.push(buttonProp);
 		}
-		optionSelect.onDataChange(buttonPropList);
+		this.hideQuickPickContainer();
+		optionSelect.onDataChange(buttonPropList, 0);
+		this.positionQuickPickContainer();
 	}
 
 	private addLabel(): void
@@ -202,6 +217,23 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			transformText = `rotate(-90) translate(${-transY}, ${transX})`;
 		}
 		this.yLabelTextSelect.attr('transform', transformText);
+	}
+
+	private positionQuickPickContainer(): void
+	{
+		let left = this.container.getBoundingClientRect().left;
+		this.quickPickContainerSelect
+			.attr('style', `left: ${left + this.margin.left}px;`)
+	}
+
+	private showQuickPickContainer(): void
+	{
+		this.quickPickContainerSelect.classed('noDisp', false);
+	}
+
+	private hideQuickPickContainer(): void
+	{
+		this.quickPickContainerSelect.classed('noDisp', true);
 	}
 
 	public OnDataChange(): void
@@ -329,6 +361,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			this.updatePaths();
 			this.positionLabels();
 			this.drawAxis();
+			this.positionQuickPickContainer();
 		}
 	}
 

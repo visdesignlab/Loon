@@ -20,8 +20,8 @@ export class OptionSelect {
 
 	private clearSelectedButton(): void
 	{
-		this.containerSelect.selectAll(".selected")
-			.classed("selected", false);
+		this.containerSelect.selectAll(".on")
+			.classed("on", false);
 	}
 
 	public onDataChange(data: ButtonProps[], defaultSelection?: number): void
@@ -50,17 +50,17 @@ export class OptionSelect {
 			.data(this.data)
 			.join("button")
 			.text(d => d.displayName)
-			.classed("optionButton", true)
-			.classed("selected", (d, i) => defaultSelection === i)
+			.classed("toggleButton", true)
+			.classed("on", (d, i) => defaultSelection === i)
 			.on("click", function(buttonProps: ButtonProps)
 			{
-				if ((this as HTMLElement).classList.contains("selected"))
+				if ((this as HTMLElement).classList.contains("on"))
 				{
 					return;
 				}
 				thisOptionSelect.clearSelectedButton();
 				buttonProps.callback();
-				d3.select(this).classed("selected", true);
+				d3.select(this).classed("on", true);
 			});
 	}
 
@@ -110,7 +110,7 @@ export class OptionSelect {
 
 	private getCurrentSelectionIndex(): number
 	{
-		let currentSelectedElement: Element = this.containerSelect.selectAll('.selected').node() as Element;
+		let currentSelectedElement: Element = this.containerSelect.selectAll('.on').node() as Element;
 		let elementList: Element[] = Array(...this.containerSelect.node().children);
 		let currentSelectedIndex: number = elementList.indexOf(currentSelectedElement)
 		return currentSelectedIndex;

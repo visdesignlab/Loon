@@ -1,0 +1,25 @@
+.toggleButton.on {
+    color: white;
+    background: black;
+}
+
+.toggleButton.on:hover {
+    background: rgb(36, 36, 36);
+}
+
+.toggleButton:hover {
+    border: solid black 1px;
+    background: #f3f3f3;
+}
+
+.toggleButton {
+    margin-bottom: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: solid white 1px;
+    font-size: 8pt;
+    background: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: solid #b4b4b4 1px;
+}

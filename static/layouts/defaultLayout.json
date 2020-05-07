@@ -40,17 +40,17 @@
 								{
 									"quickPickOptions": [
 										{
-											"xKey": "Time",
-											"yKey": "Mass",
-											"iconKey": "linePlot"
-										}, {
-											"xKey": "Time",
-											"yKey": "Mass_norm",
-											"iconKey": "linePlot-yNorm"
-										}, {
 											"xKey": "Time_norm",
-											"yKey": "Mass_norm",
-											"iconKey": "linePlot-xyNorm"
+											"yKey": "Mass_norm"
+										}, {
+											"xKey": "Time",
+											"yKey": "Mass_norm"
+										}, {
+											"xKey": "Time",
+											"yKey": "Mass"
+										}, {
+											"xKey": "X",
+											"yKey": "Y"
 										}
 									],
 									"squareAspectRatio": false
