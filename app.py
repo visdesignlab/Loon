@@ -47,7 +47,8 @@ def authRequired(f):
     def decorated_function(*args, **kwargs):
         # flask.session.clear()
         if not credentialsValid():
-            return flask.redirect(url_for('auth', next=flask.request.url))
+            flask.session['nextUrl'] = flask.request.url
+            return flask.redirect(url_for('auth'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -72,7 +73,7 @@ def authCallback():
         'client_secret': creds.client_secret,
         'scopes': creds.scopes
     }
-    return flask.redirect(url_for('index'))
+    return flask.redirect(flask.session['nextUrl'])
 
 @app.route('/')
 @authRequired
