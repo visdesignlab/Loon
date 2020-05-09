@@ -1,0 +1,20 @@
+<!doctype html>
+<title>Cell Growth - {{datasetId}}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style/core.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/LayoutFramework.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/MetricDistributionWidget.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/mtat.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/Plot2dPathsWidget.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/ImageSelectionWidget.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/ImageStackWidget.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style/DetailedDistributionWidget.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='script/src/devlib/DevlibUtil.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='script/src/devlib/DevlibBasics.css') }}">
+
+
+<link href="https://fonts.googleapis.com/css?family=Montserrat&amp;display=swap" rel="stylesheet">
+<script src="https://kit.fontawesome.com/de8d467ef5.js"></script>
+
+<div id='metaContainer' data-dataset='{{datasetId}}' class='container fullpage'></div>
+
+<script type="module" src="{{ url_for('static', filename='script/dist/bundle.js') }}"></script>
