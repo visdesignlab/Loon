@@ -81,8 +81,19 @@ def index():
     return flask.render_template('index.html')
 
 @app.route('/<string:datasetId>')
+@authRequired
 def detailedView(datasetId: str):
     return flask.render_template('detailedView.html', datasetId=datasetId)
+
+@app.route('/data/<string:datasetId>.json')
+@authRequired
+def getDatasetConfig(datasetId: str) -> str:
+    cachePath = './static/cache/datasetList'
+    filePath = cachePath + '/' + datasetId + ".json"
+    if os.path.exists(filePath):
+        return flask.redirect(filePath[1:]) # don't want '.' here
+
+    return "{}"
 
 @app.route('/data/<string:folderId>/massOverTime.csv')
 @authRequired

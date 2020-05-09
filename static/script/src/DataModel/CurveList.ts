@@ -6,6 +6,7 @@ import { PointCollection, valueFilter } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
 import { thresholdFreedmanDiaconis } from 'd3';
+import { DatasetSpec } from '../types';
 
 export class CurveList extends PointCollection
 {
@@ -28,6 +29,7 @@ export class CurveList extends PointCollection
 		this._minMaxMap = new Map<string, [number, number]>();
 		this._curveCollection = new CurveCollection(this);
 		this._curveBrushList = new Map<string, valueFilter[]>();
+		this._datasetSpec = null;
 	}
 
 	private _curveList : CurveND[];
@@ -41,6 +43,14 @@ export class CurveList extends PointCollection
 	}
 	public set curveCollection(v : CurveCollection) {
 		this._curveCollection = v;
+	}
+	
+	private _datasetSpec : DatasetSpec | null;
+	public get datasetSpec() : DatasetSpec | null {
+		return this._datasetSpec;
+	}
+	public set datasetSpec(v : DatasetSpec | null) {
+		this._datasetSpec = v;
 	}
 	
 

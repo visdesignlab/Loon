@@ -2,10 +2,10 @@ import * as d3 from 'd3';
 import {HtmlSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
 import {ImageStackWidget} from './ImageStackWidget';
-import {PointCollection} from '../DataModel/PointCollection';
 import {ImageMetaData} from '../DataModel/ImageMetaData';
+import { CurveList } from '../DataModel/CurveList';
 
-export class ImageSelectionWidget extends BaseWidget<PointCollection> {
+export class ImageSelectionWidget extends BaseWidget<CurveList> {
     
     private _imageMetaData : ImageMetaData;
     public get imageMetaData() : ImageMetaData {
@@ -79,10 +79,10 @@ export class ImageSelectionWidget extends BaseWidget<PointCollection> {
     public setImageStackWidget(): void
     {
         // TODO - get imgWidth x imgHeight and numCol dynamically
-        const imgWidth = 400;
-        const imgHeight = 300;
+        const imgWidth = 512;
+        const imgHeight = 512;
         const numCol = 10;
-        const newUrl = `/data/${this.data.sourceKey}/imgWithOutline_${this.selectedLocationId}.png`
+        const newUrl = `/data/${this.data.datasetSpec.googleDriveId}/imgWithOutline_${this.selectedLocationId}.png`
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
         let pointsAtLocation = this.data.Array.filter(d => d.get('Location ID') === currentLocation.locationId);
         this.imageStackWidget.SetData(pointsAtLocation, newUrl, currentLocation, imgWidth, imgHeight, numCol);

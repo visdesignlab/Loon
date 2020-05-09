@@ -4,7 +4,7 @@ import { CurveList } from './CurveList';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
 import { StringToStringObj, StringToNumberObj, KeyedTrackDerivationFunction, KeyedPointDerivationFunction } from '../devlib/DevLibTypes'
-import { DerivedTrackValueFunctions } from './DerivedTrackValueFunctions';
+import { DatasetSpec } from '../types';
 
 interface StringToNumberOrList {
     [key: string]: number | StringToNumberObj[];
@@ -12,13 +12,13 @@ interface StringToNumberOrList {
 
 export class CurveListFactory {
 
-	public static CreateCurveListFromCSV(csvString: string, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["Time", "t"]): CurveList
-	{
-		let rawValueArray: d3.DSVRowArray<string> = d3.csvParse(csvString);
-		return CurveListFactory.CreateCurveListFromCSVObject(rawValueArray, derivedTrackDataFunctions, derivedPointDataFunctions, sourceKey, postfixKey, idkey, tKeyOptions);
-	}
+	// public static CreateCurveListFromCSV(csvString: string, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["Time", "t"]): CurveList
+	// {
+	// 	let rawValueArray: d3.DSVRowArray<string> = d3.csvParse(csvString);
+	// 	return CurveListFactory.CreateCurveListFromCSVObject(rawValueArray, derivedTrackDataFunctions, derivedPointDataFunctions, sourceKey, postfixKey, idkey, tKeyOptions);
+	// }
 
-	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string = '', idkey: string = "id", tKeyOptions: string[] = ["Time", "t"]): CurveList
+	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], dataSpec: DatasetSpec, idkey: string = "id", tKeyOptions: string[] = ["Time", "t"]): CurveList
 	{
 		console.log(csvObject);
 		const curveList: CurveND[] = [];
@@ -119,8 +119,7 @@ export class CurveListFactory {
 		// console.log(curveList);
 		const curveListObj = new CurveList(curveList);
 		curveListObj.setInputKey(tKey);
-		curveListObj.sourceKey = sourceKey;
-		curveListObj.postfixKey = postfixKey;
+		curveListObj.datasetSpec = dataSpec;
 		return curveListObj;
 	}
 

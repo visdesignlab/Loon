@@ -3,55 +3,40 @@ import {BaseWidget} from './Components/BaseWidget';
 import {BaseComponent} from './Components/BaseComponent';
 import {Toolbar} from './Components/Toolbar';
 import {Plot2dPathsWidget} from './Components/Plot2dPathsWidget';
-// import {Console} from './Console';
-// import {TableWidget} from './TableWidget';
 import {MetricDistributionWidget} from './Components/MetricDistributionWidget';
 import {ImageSelectionWidget} from './Components/ImageSelectionWidget';
-import {ImageStackWidget} from './Components/ImageStackWidget'
-// import {Overlay} from './Overlay';
 import {LayoutFramework} from './LayoutFramework';
 import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData} from './types';
-import {ButtonProps, TrackDerivationFunction, KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devlib/DevLibTypes';
+import {ButtonProps, KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
-// import {LabelPosition} from './types';
 
-export class App<DataType extends AppData> {
+export class App<DataType extends AppData, DataSpecType> {
 	
 	constructor(container: HTMLElement,
-				fromCsv: (
-					data: string,
-					derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
-					derivedPointDataFunctions: KeyedPointDerivationFunction[],
-					sourceKey: string,
-					postfixKey: string
-					) => DataType,
 				fromCsvObject: (
 					data: d3.DSVRowArray<string>,
 					derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
 					derivedPointDataFunctions: KeyedPointDerivationFunction[],
-					sourceKey: string,
-					postfixKey: string
+					dataSpec: DataSpecType
 					) => DataType,
 				derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
 				derivedPointDataFunctions: KeyedPointDerivationFunction[]) {
 		this._container = container;
 		this._componentList = [];
 		this._layoutFramework = new LayoutFramework(container);
-		this._dataFromCSV = fromCsv;
 		this._dataFromCSVObject = fromCsvObject;
 		this._trackDerivationFunctions = derivedTrackDataFunctions;
 		this._pointDerivationFunctions = derivedPointDataFunctions;
 		document.addEventListener(DataEvents.brushChange, (e: Event) => {this.onBrushChange()});
-		// this._overlay = new Overlay("overlayContainer");
 	}
 
 	
 	private _data : DataType;
 	public get data() : DataType {
 		return this._data;
-	}	
-
+	}
+	
 	private _container : HTMLElement;
 	public get container() : HTMLElement {
 		return this._container;
@@ -72,13 +57,8 @@ export class App<DataType extends AppData> {
 		return this._componentContainers;
 	}
 
-	private _dataFromCSV : (data: string, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string) => DataType;
-	public get dataFromCSV() : (data: string, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string) => DataType{
-		return this._dataFromCSV;
-	}
-
-	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string) => DataType;
-	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], sourceKey: string, postfixKey: string) => DataType{
+	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], dataSpec: DataSpecType) => DataType;
+	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], dataSpec: DataSpecType) => DataType{
 		return this._dataFromCSVObject;
 	}
 
@@ -119,14 +99,6 @@ export class App<DataType extends AppData> {
 			initArgs = compontentInfo.initArgs;
 		}
 		switch (componentType) {
-			case ComponentType.Toolbar:
-				let buttonList: ButtonProps[] = [
-					{displayName: "Non Adherent", callback: () => this.fetchCsv('1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX/massOverTime.csv', '1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX') },
-					{displayName: "Adherent", callback: () => this.fetchCsv('1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96/massOverTime.csv', '1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96') }
-				];
-
-				newComponent = new Toolbar(container, (data: string) => this.loadFromCsvString(data), buttonList);
-				break;
 			case ComponentType.Plot2dPathsWidget:
 				let squareAspectRatio = true;
 				if (typeof(initArgs.squareAspectRatio) !== 'undefined')
@@ -153,25 +125,26 @@ export class App<DataType extends AppData> {
 
 	public LoadDataset(datasetId: string): void
 	{
-		this.fetchCsv(`${datasetId}/massOverTime.csv`, datasetId);
+		this.fetchJson(`${datasetId}.json`);
 	}
-
-	private loadFromCsvString(data: string): void
+	
+	private async fetchJson(filename: string): Promise<void>
 	{
-		let newData: DataType = this.dataFromCSV(data, this.trackDerivationFunctions, this.pointDerivationFunctions, 'csvString', '');
-		this.SetData(newData);
+		await d3.json("../../../data/" + filename).then(data =>
+		{
+			this.fetchCsv(`${data.googleDriveId}/massOverTime.csv`, data);
+		});
 	}
 
-	private async fetchCsv(filename: string, sourceKey: string, postfixKey: string = ''): Promise<void>
+	private async fetchCsv(filename: string, dataSpec: DataSpecType): Promise<void>
 	{
 		await d3.csv("../../../data/" + filename).then(data =>
 		{
 			// console.log(data);
-			let newData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, sourceKey, postfixKey);
+			let newData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
 			// console.log(newData);
 			this.SetData(newData)
 		});
-		return;
 	}
 
 	public SetData(newData: DataType): void

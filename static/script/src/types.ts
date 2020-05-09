@@ -29,8 +29,6 @@ export interface Arguments {
 	[argName: string]: any
 }
 
-
-
 export enum MetricDistributionSubComponentTypes {
 	BasisSelect = "BasisSelect",
 	ScatterplotSelect = "ScatterplotSelect",
@@ -46,20 +44,9 @@ export interface AppData {
 	OnBrushChange: () => void;
 }
 
-
-// export interface Label
-// {
-// 	padSize: [number, number],
-// 	anchorElement: Element,
-// 	position: LabelPosition,
-// 	text: string,
-// 	oval: boolean, // if true maximum corner rounding applied, otherwise, only minmal rounding
-// 	callBeforeNext?: Function
-// }
-
-// export enum LabelPosition {
-// 	// Top = "Top", // top is harder to program, and I don't need it..
-// 	Right = "Right",
-// 	Bottom = "Bottom",
-// 	Left = "Left"
-// }
+export interface DatasetSpec {
+	uniqueId: string,
+    displayName: string,
+    googleDriveId: string,
+	folderPath: string
+}
