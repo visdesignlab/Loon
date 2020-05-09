@@ -151,6 +151,11 @@ export class App<DataType extends AppData> {
 		this.componentList.push(newComponent);
 	}
 
+	public LoadDataset(datasetId: string): void
+	{
+		this.fetchCsv(`${datasetId}/massOverTime.csv`, datasetId);
+	}
+
 	private loadFromCsvString(data: string): void
 	{
 		let newData: DataType = this.dataFromCSV(data, this.trackDerivationFunctions, this.pointDerivationFunctions, 'csvString', '');

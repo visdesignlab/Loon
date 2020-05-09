@@ -15,4 +15,6 @@ window.onresize = () => app.OnWindowResize();
 d3.json('/static/layouts/defaultLayout.json').then(data =>
 {
     app.InitializeLayout(data);
+    const datasetId: string = metaContainer.dataset.dataset;
+    app.LoadDataset(datasetId);
 });

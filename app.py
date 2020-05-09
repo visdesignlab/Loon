@@ -80,6 +80,10 @@ def authCallback():
 def index():
     return flask.render_template('index.html')
 
+@app.route('/<string:datasetId>')
+def detailedView(datasetId: str):
+    return flask.render_template('detailedView.html', datasetId=datasetId)
+
 @app.route('/data/<string:folderId>/massOverTime.csv')
 @authRequired
 def getMassOverTimeCsv(folderId: str) -> str:
@@ -197,11 +201,11 @@ def getImageStackWithOutline(folderId: str, locationId: int):
     return response
 
 def getImageStackArray(folderId: str, locationId: int):
-    imageFilename = 'Copy of data' + str(locationId) + '.mat'
+    imageFilename = 'data' + str(locationId) + '.mat'
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'D_stored')
 
 def getLabeledImageStackArray(folderId: str, locationId: int):
-    imageFilename = 'Copy of data' + str(locationId) + '.mat'
+    imageFilename = 'data' + str(locationId) + '.mat'
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'L_stored')
 
 def getTiledImageFileObject(imageStackArray, imageType: str, colorize = False, getOutline = False) -> io.BytesIO:
