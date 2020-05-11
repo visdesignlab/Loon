@@ -1,20 +1,24 @@
 <!doctype html>
-<title>Cell Growth</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style/core.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style/LayoutFramework.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style/MetricDistributionWidget.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style/mtat.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style/Plot2dPathsWidget.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style/ImageSelectionWidget.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style/ImageStackWidget.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='style/DetailedDistributionWidget.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='script/src/devlib/DevlibUtil.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='script/src/devlib/DevlibBasics.css') }}">
+<title>Cell Growth - Overview</title>
+<link href="https://unpkg.com/lineupjs/build/LineUpJS.css" rel="stylesheet">
+<script src="https://unpkg.com/lineupjs/build/LineUpJS.js"></script>
+<style>
 
+body {
+  margin: 0;
+  padding: 0;
+}
 
-<link href="https://fonts.googleapis.com/css?family=Montserrat&amp;display=swap" rel="stylesheet">
-<script src="https://kit.fontawesome.com/de8d467ef5.js"></script>
+.lu {
+  clear: both;
+  position: absolute;
+  top: 1px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0;
+}
 
-<div id='metaContainer' class='container fullpage'></div>
+</style>
 
-<script type="module" src="{{ url_for('static', filename='script/dist/bundle.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='script/dist/setupTable.js') }}"></script>

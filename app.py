@@ -1,6 +1,6 @@
 import os, io, math, random
 from functools import wraps
-from typing import Dict, Tuple, Set
+from typing import Dict, Tuple, List
 
 # web framework
 import flask
@@ -94,6 +94,47 @@ def getDatasetConfig(datasetId: str) -> str:
         return flask.redirect(filePath[1:]) # don't want '.' here
 
     return "{}"
+
+@app.route('/data/datasetList.json')
+@authRequired
+def getDatasetList() -> str:
+    cachePath = './static/cache/datasetList'
+    filePath = cachePath + '/derived/combined.json'
+    combineDatasetSpecsFromLocalFiles()
+    if os.path.exists(filePath):
+        return flask.redirect(filePath[1:]) # don't want '.' here
+
+    return "{}"
+
+def combineDatasetSpecsFromLocalFiles() -> None:
+    basePath = './static/cache/datasetList/'
+    fileContentList = []
+    datasetSpecs = os.listdir(basePath)
+    for spec in datasetSpecs:
+        if spec.endswith(".json"):
+           specFile = open(basePath + spec, 'r')
+           fileContentList.append((specFile.read(), spec.split(',')[0]))
+    combinedString = combineDatasetSpecs(fileContentList)
+    out = open(basePath + 'derived/combined.json', 'w')
+    out.write(combinedString)
+    return
+
+def combineDatasetSpecs(fileContentList: List[Tuple[str, str]]) -> str:
+    totalDatset = {}
+    authorSet = set()
+    combinedList = []
+    for fileContent, filename in fileContentList:
+        fileSpecObj = json.loads(fileContent)
+        id = filename.split('.')[0]
+        fileSpecObj['uniqueId'] = id
+        fileSpecObj['vizLinkHtml'] = '<a href="/{}">Link</a>'.format(id)
+        driveUrl = 'https://drive.google.com/drive/u/1/folders/{}'.format(fileSpecObj['googleDriveId'])
+        fileSpecObj['driveLinkHtml'] = '<a href="{}">Link</a>'.format(driveUrl)
+        combinedList.append(fileSpecObj)
+        authorSet.add(fileSpecObj['author'])
+    totalDatset['datasetList'] = combinedList
+    totalDatset['authorList'] = list(authorSet)
+    return json.dumps(totalDatset, indent=4)
 
 @app.route('/data/<string:folderId>/massOverTime.csv')
 @authRequired
