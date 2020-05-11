@@ -78,14 +78,30 @@ export class ImageSelectionWidget extends BaseWidget<CurveList> {
     
     public setImageStackWidget(): void
     {
-        // TODO - get imgWidth x imgHeight and numCol dynamically
-        const imgWidth = 512;
-        const imgHeight = 512;
-        const numCol = 10;
-        const newUrl = `/data/${this.data.datasetSpec.googleDriveId}/imgWithOutline_${this.selectedLocationId}.png`
+        const newUrl = `/data/${this.data.datasetSpec.googleDriveId}/img_${this.selectedLocationId}.png`
+        let xhr = new XMLHttpRequest();
+        xhr.responseType = 'blob';
+        xhr.onload = () => {
+            let imageMetaDataString: string = xhr.getResponseHeader("tiledImageMetaData");
+            let imgWidth: number;
+            let imgHeight: number;
+            let numCol: number;
+            if (imageMetaDataString)
+            {
+                let imageMetaData = JSON.parse(imageMetaDataString);
+                imgWidth = imageMetaData['tileWidth'];
+                imgHeight = imageMetaData['tileHeight'];
+                numCol = imageMetaData['numberOfColumns'];
+            }
+            let blobUrl = window.URL.createObjectURL(xhr.response);
+            this.imageStackWidget.SetImageProperties(blobUrl, imgWidth, imgHeight, numCol);
+        }
+        xhr.open('GET', newUrl);
+        xhr.send();
+
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
         let pointsAtLocation = this.data.Array.filter(d => d.get('Location ID') === currentLocation.locationId);
-        this.imageStackWidget.SetData(pointsAtLocation, newUrl, currentLocation, imgWidth, imgHeight, numCol);
+        this.imageStackWidget.SetData(pointsAtLocation, currentLocation);
     }
 
 	protected OnResize(): void

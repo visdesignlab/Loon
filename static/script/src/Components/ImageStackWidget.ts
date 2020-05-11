@@ -128,20 +128,28 @@ export class ImageStackWidget {
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
 	}
 
-	public SetData(data: NDim[], url: string, imageLocation: ImageLocation, imageWidth: number, imageHeight: number, numColumns: number): void
+	public SetData(data: NDim[], imageLocation: ImageLocation): void
 	{
 		this._data = data;
-		this._imageStackUrl = url;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
-		
+		this._numImages = imageLocation.frameList.length;
+		this.SetImageProperties(); // default values before image load
+		this.draw();
+	}
+
+	public SetImageProperties(url?: string, imageWidth?: number, imageHeight?: number, numColumns?: number): void
+	{
+		// default values for when loading, or if image isn't found
+		if (!imageWidth)  { imageWidth  = 256; }
+		if (!imageHeight) { imageHeight = 256; }
+		if (!numColumns)  { numColumns  = 10; }
+		this._imageStackUrl = url;
 		this._imageWidth = imageWidth;
 		this._imageHeight = imageHeight;
 		this.selectedImageOverlay
 			.attr('width', imageWidth)
 			.attr('height', imageHeight);
-
-		this._numImages = imageLocation.frameList.length;
 		this._numColumns = numColumns;
 		this._imageStackWidth = numColumns * imageWidth;
 		const numRows: number = Math.ceil(this.numImages / numColumns);

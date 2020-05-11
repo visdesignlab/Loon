@@ -187,10 +187,13 @@ def getImageStack(folderId: str, locationId: int):
     shape = np.shape(imageStackArray)
     print("image stack shape = " + str(shape))
 
+    tiledImg, metaData = getTiledImage(imageStackArray, 'F')
+    fileObject = getImageFileObject(tiledImg, metaData)
+
     fileObject = getTiledImageFileObject(imageStackArray, 'F')
 
     response = flask.send_file(fileObject, mimetype='image/png')
-
+    response.headers['tiledImageMetaData'] = json.dumps(metaData)
     return response
 
 @app.route('/data/<string:folderId>/imgWithOutline_<int:locationId>.png')
@@ -209,6 +212,7 @@ def getImageStackWithOutline(folderId: str, locationId: int):
 
     response = flask.send_file(fileObject, mimetype='image/png')
 
+    response.headers['tiledImageMetaData'] = json.dumps(metaData1)
     return response
 
 def getImageStackArray(folderId: str, locationId: int):
