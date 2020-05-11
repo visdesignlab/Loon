@@ -216,11 +216,19 @@ def getImageStackWithOutline(folderId: str, locationId: int):
     return response
 
 def getImageStackArray(folderId: str, locationId: int):
-    imageFilename = 'data' + str(locationId) + '.mat'
+    exampleDatasets = set(['1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96','1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'])
+    filenamePattern = 'data{}.mat'
+    if (folderId in exampleDatasets):
+        filenamePattern = 'Copy of data{}.mat'
+    imageFilename = filenamePattern.format(locationId)
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'D_stored')
 
 def getLabeledImageStackArray(folderId: str, locationId: int):
-    imageFilename = 'data' + str(locationId) + '.mat'
+    exampleDatasets = set(['1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96','1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'])
+    filenamePattern = 'data{}.mat'
+    if (folderId in exampleDatasets):
+        filenamePattern = 'Copy of data{}.mat'
+    imageFilename = filenamePattern.format(locationId)
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'L_stored')
 
 def getTiledImageFileObject(imageStackArray, imageType: str, colorize = False, getOutline = False) -> io.BytesIO:
