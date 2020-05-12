@@ -9,8 +9,8 @@ fetch('/data/datasetList.json')
         builder
             .column(LineUpJS.buildStringColumn('vizLinkHtml').label('Viz Link').width(100).html())
             .column(LineUpJS.buildStringColumn('displayName').label('Name').width(260))
-            .column(LineUpJS.buildCategoricalColumn('author', data.authorList).color('green').width(100))
-            .column(LineUpJS.buildStringColumn('driveLinkHtml').label('Google Drive Link').width(100).html());
+            .column(LineUpJS.buildCategoricalColumn('author', data.authorList).color('green').width(200))
+            .column(LineUpJS.buildStringColumn('driveLinkHtml').label('Google Drive Link').width(120).html());
 
         const lineup = builder.buildTaggle(document.body); 
     }
