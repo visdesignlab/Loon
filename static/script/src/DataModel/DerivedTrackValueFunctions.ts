@@ -13,7 +13,9 @@ export class DerivedTrackValueFunctions
 
     private static trackLength(pointList: StringToNumberObj[]): [number]
     {
-        return [pointList.length];
+        let firstTime = pointList[0]['Time'];
+        let lastTime = pointList[pointList.length - 1]['Time'];
+        return [lastTime - firstTime];
     }
 
     private static averageMass(pointList: StringToNumberObj[]): [number]
