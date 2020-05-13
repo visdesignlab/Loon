@@ -392,7 +392,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	private resizeBrush(): void
 	{
 		this.initBrush();
-		if (this.lastYValueBrushBound === null || this.lastXValueBrushBound === null)
+		if (this.lastYValueBrushBound == null || this.lastXValueBrushBound == null)
 		{
 			return;
 		}

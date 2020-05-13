@@ -10,6 +10,7 @@ from flask import abort
 # Google authentication
 import google.oauth2.credentials
 import googleapiclient.discovery
+from googleapiclient.http import MediaIoBaseDownload
 import google_auth_oauthlib.flow
 
 # working with matlab (.mat) files, especially images
@@ -497,7 +498,15 @@ def credentialsValid() -> bool:
 def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> dict:
     tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
     f = open(tempFilename, 'wb')
-    f.write(service.files().get_media(fileId=googleFileId).execute())
+    request = service.files().get_media(fileId=googleFileId)
+
+    downloader = MediaIoBaseDownload(f, request)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+        print( "Download {} %".format(int(status.progress() * 100)), end='\r')
+
+    # f.write(matlabBinary)
     f.close()
     return loadmat(tempFilename)
 

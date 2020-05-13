@@ -144,7 +144,14 @@ export class ImageStackWidget {
 		if (!imageWidth)  { imageWidth  = 256; }
 		if (!imageHeight) { imageHeight = 256; }
 		if (!numColumns)  { numColumns  = 10; }
-		this._imageStackUrl = url;
+		if (url)
+		{
+			this._imageStackUrl = url;
+		}
+		else
+		{
+			this._imageStackUrl = "";
+		}
 		this._imageWidth = imageWidth;
 		this._imageHeight = imageHeight;
 		this.selectedImageOverlay
@@ -244,10 +251,13 @@ export class ImageStackWidget {
 			`
 			background-position-x: ${-left * scale}px;
 			background-position-y: ${-top * scale}px;
-			background-image: url(${this.imageStackUrl});
 			width: ${this.imageWidth * scale}px;
 			height: ${this.imageHeight * scale}px;
 			`;
+		if (imageUrl)
+		{
+			styleString += `background-image: url(${imageUrl});`;
+		}
 
 		if (includeFallback)
 		{
