@@ -5,6 +5,7 @@ import {PointND} from '../DataModel/PointND';
 import {Margin, SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
+import { timeHours } from 'd3';
 
 interface quickPickOption {
 	xKey: string,
@@ -106,6 +107,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	public get brush() : d3.BrushBehavior<any> {
 		return this._brush;
 	}
+	
+	private _lastXValueBrushBound : [number, number];
+	public get lastXValueBrushBound() : [number, number] {
+		return this._lastXValueBrushBound;
+	}
+
+	private _lastYValueBrushBound : [number, number];
+	public get lastYValueBrushBound() : [number, number] {
+		return this._lastYValueBrushBound;
+	}
+	
 
 	protected setMargin(): void
 	{
@@ -151,12 +163,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			.classed("labelColor", true);
 
 		this.initQuickPickOptions();
+		this.initBrush();
 
-		this._brush = d3.brush()
-			.extent([[0, 0], [this.vizWidth, this.vizHeight]])
-			.on("end", () => { this.brushHandler() });
-
-		this.brushGroupSelect.call(this.brush);
 	}
 
 	private initQuickPickOptions(): void
@@ -179,6 +187,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this.hideQuickPickContainer();
 		optionSelect.onDataChange(buttonPropList, 0);
 		this.positionQuickPickContainer();
+	}
+
+	private initBrush(): void
+	{
+		this._brush = d3.brush()
+		.extent([[0, 0], [this.vizWidth, this.vizHeight]])
+		.on("end", () => { this.brushHandler() });
+
+		this.brushGroupSelect.call(this.brush);
 	}
 
 	private addLabel(): void
@@ -249,8 +266,13 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this._xKey = xKey;
 		this._yKey = yKey;
 		this._squareAspectRatio = squareAspectRatio;
-		this.brushGroupSelect.call(this.brush.move, null);
+		this.removeBrush();
 		this.OnDataChange();
+	}
+	
+	private removeBrush(): void
+	{
+		this.brushGroupSelect.call(this.brush.move, null);
 	}
 
 	private updateScales(): void
@@ -356,7 +378,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 
 	protected OnResize(): void
 	{
-		// this.setVizWidthHeight();
 		if (this.data)
 		{
 			this.updateScales();
@@ -365,6 +386,21 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 			this.drawAxis();
 			this.positionQuickPickContainer();
 		}
+		this.resizeBrush();
+	}
+
+	private resizeBrush(): void
+	{
+		this.initBrush();
+		if (this.lastYValueBrushBound === null || this.lastXValueBrushBound === null)
+		{
+			return;
+		}
+		let left = this.scaleX(this.lastXValueBrushBound[0]);
+		let right = this.scaleX(this.lastXValueBrushBound[1]);
+		let top = this.scaleY(this.lastYValueBrushBound[1]);
+		let bottom = this.scaleY(this.lastYValueBrushBound[0]);
+		this.brushGroupSelect.call(this.brush.move, [[left, top], [right, bottom]]);
 	}
 
 	private brushHandler(): void
@@ -373,6 +409,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		if (typeof selection === "undefined" || selection === null)
 		{
 			this.data.removeCurveBrush(this.ComponentId);
+			this._lastXValueBrushBound = null;
+			this._lastYValueBrushBound = null;
 			return;
 		}
 
@@ -380,16 +418,18 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 
 		let minX = this.scaleX.invert(left);
 		let maxX = this.scaleX.invert(right);
+		this._lastXValueBrushBound = [minX, maxX];
 		let xValueFilter: valueFilter = {
 			key: this.xKey,
-			bound: [minX, maxX]
+			bound: this.lastXValueBrushBound
 		}
 
 		let minY = this.scaleY.invert(bottom);
 		let maxY = this.scaleY.invert(top);
+		this._lastYValueBrushBound = [minY, maxY];
 		let yValueFilter: valueFilter = {
 			key: this.yKey,
-			bound: [minY, maxY]
+			bound: this.lastYValueBrushBound
 		}
 		this.data.addCurveBrush(this.ComponentId, [xValueFilter, yValueFilter]);
 
