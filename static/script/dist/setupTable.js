@@ -14,7 +14,7 @@ fetch('/data/datasetList.json')
             .column(LineUpJS.buildStringColumn('folder').label('Folder Path').width(350))
             .column(LineUpJS.buildStringColumn('driveLinkHtml').label('Google Drive Link').width(120).html())
             .column(LineUpJS.buildNumberColumn('fileSize', data.sizeRange).label('size (mb)').width(120))
-            .column(LineUpJS.buildDateColumn('modifiedDate').label('Last Modified Date').width(120).format("%b %d, %Y",'%Y-%d-%m'));
+            .column(LineUpJS.buildDateColumn('modifiedDate').label('Last Modified Date').width(120).format("%b %d, %Y",'%Y-%m-%d'));
 
         const ranking = LineUpJS.buildRanking()
             .supportTypes()
