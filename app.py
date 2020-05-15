@@ -14,6 +14,7 @@ from googleapiclient.http import MediaIoBaseDownload
 import google_auth_oauthlib.flow
 
 # working with matlab (.mat) files, especially images
+import h5py
 from scipy.io import loadmat
 from PIL import Image
 from PIL import ImageFilter
@@ -283,10 +284,25 @@ def getXShiftArray(folderId: str, matlabDict = None):
 def getYShiftArray(folderId: str, matlabDict = None):
     return getMatlabObjectFromKey(folderId, 'yshift_store',  matlabDict)
 
-def getMatlabObjectFromKey(folderId: str, key: str, matlabDict = None):
-    if matlabDict != None and key in matlabDict:
-        return matlabDict[key]
+def getMatlabObjectFromKey(folderId: str, key: str, matlabDict: Union[dict, h5py.File] = None):
+    if matlabDict != None:
+        return getNormalizedMatlabObjectFromKey(matlabDict, key)
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
+
+def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str = None):
+    fileId, service = getFileId(folderId, filename)
+    matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
+
+    if matlabKey != None:
+        return getNormalizedMatlabObjectFromKey(matlabDict, matlabKey)
+    return matlabDict
+
+def getNormalizedMatlabObjectFromKey(matlabDict: Union[dict, h5py.File], key: str):
+    if type(matlabDict) == dict:
+        return matlabDict[key]
+    # else it is an h5py file, which has to be transposed
+    # (https://www.mathworks.com/matlabcentral/answers/308303-why-does-matlab-transpose-hdf5-data)
+    return np.array(matlabDict[key]).T
 
 @app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
 def getImageStackMetaData(folderId: str, locationId: int) -> str:
@@ -306,8 +322,6 @@ def getImageStack(folderId: str, locationId: int):
 
     tiledImg, metaData = getTiledImage(imageStackArray, 'F')
     fileObject = getImageFileObject(tiledImg, metaData)
-
-    fileObject = getTiledImageFileObject(imageStackArray, 'F')
 
     response = flask.send_file(fileObject, mimetype='image/png')
     response.headers['tiledImageMetaData'] = json.dumps(metaData)
@@ -464,13 +478,6 @@ def getColoredImage(labeledValueImg, nonZeroColor):
     outputImg.putdata(outputImgData)
     return outputImg
 
-def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str = None):
-    fileId, service = getFileId(folderId, filename)
-    matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
-    if matlabKey != None:
-        return matlabDict[matlabKey]
-    return matlabDict
-
 def getFileId(folderId: str, filename: str):
     credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
     service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
@@ -495,9 +502,8 @@ def credentialsValid() -> bool:
     print(credentials.expired)
     return credentials.valid and not credentials.expired
 
-def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> dict:
-    tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
-    f = open(tempFilename, 'wb')
+def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> Union[dict, h5py.File]:
+    f = io.BytesIO()
     request = service.files().get_media(fileId=googleFileId)
 
     downloader = MediaIoBaseDownload(f, request)
@@ -506,10 +512,19 @@ def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.di
         status, done = downloader.next_chunk()
         print( "Download {} %".format(int(status.progress() * 100)), end='\r')
 
-    # f.write(matlabBinary)
-    f.close()
-    return loadmat(tempFilename)
+    matlabObject = openAnyMatlabFile(f)
+    return matlabObject
 
+def openAnyMatlabFile(bytesIO) -> Union[dict, h5py.File]:
+    try:
+        outputDict = h5py.File(bytesIO, 'r')
+    except:
+        tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
+        tmpFile = open(tempFilename, 'wb')
+        tmpFile.write(bytesIO.getvalue())
+        tmpFile.close()
+        outputDict = loadmat(tempFilename)
+    return outputDict
 
 @app.errorhandler(404)
 def page_not_found(error):
