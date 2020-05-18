@@ -16,6 +16,11 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 		this.setLabel();
 	}
 
+	protected Clone(container: HTMLElement): BaseWidget<PointCollection>
+    {
+        return new ScatterPlotWidget(container, this.xKey,  this.yKey);
+    }
+	
 	private _xKey : string;
 	public get xKey() : string {
 		return this._xKey;

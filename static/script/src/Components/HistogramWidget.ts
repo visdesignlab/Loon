@@ -15,6 +15,12 @@ export class HistogramWidget extends BaseWidget<PointCollection> {
 		this.setLabel()
 	}
 
+    protected Clone(container: HTMLElement): BaseWidget<PointCollection>
+    {
+        let clone = new HistogramWidget(container, this.valueKey);
+        return clone;
+    }
+
 	private _valueKey : string;
 	public get valueKey() : string {
 		return this._valueKey;

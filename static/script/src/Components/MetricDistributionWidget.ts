@@ -24,6 +24,11 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 		this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
 	}
 
+    protected Clone(container: HTMLElement): BaseWidget<CurveList>
+    {
+        return new MetricDistributionWidget(container, this.metricDistributionCollectionLevel);
+    }
+
 	private _wrapperContainer : HTMLDivElement;
 	public get wrapperContainer() : HTMLDivElement {
 		return this._wrapperContainer;

@@ -23,6 +23,12 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList> {
         this.setLabel();
     }
 
+    protected Clone(container: HTMLElement): BaseWidget<CurveList>
+    {
+        let clone = new DetailedDistributionWidget(container, this.metricDistributionCollectionLevel, this.attributeKey);
+        return clone;
+    }
+
     private _metricDistributionCollectionLevel : MetricDistributionCollectionLevel;
     public get metricDistributionCollectionLevel() : MetricDistributionCollectionLevel {
         return this._metricDistributionCollectionLevel;

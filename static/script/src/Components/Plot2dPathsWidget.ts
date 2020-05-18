@@ -21,6 +21,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
 	}
+	
+	protected Clone(container: HTMLElement): BaseWidget<CurveList>
+    {
+        return new Plot2dPathsWidget(container, this.quickPickOptions,  this.squareAspectRatio);
+    }
 
 	protected initProps(props?: any[]): void
 	{

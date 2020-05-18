@@ -20,12 +20,13 @@ export class DevlibTSUtil {
 		return DevlibTSUtil.asyncSetTimeout(f, 0);
 	}
 
-	public static getIconButton(iconKey: string): HTMLButtonElement
+	public static getIconButton(iconKey: string, callback: (ev: MouseEvent) => void): HTMLButtonElement
 	{
 		let btn = document.createElement('button');
 		btn.classList.add('basicButton');
 		let icon = DevlibTSUtil.getFontAwesomeIcon(iconKey);
 		btn.appendChild(icon);
+		btn.onclick = callback;
 		return btn;
 	}
 

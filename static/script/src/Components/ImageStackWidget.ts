@@ -17,8 +17,7 @@ export class ImageStackWidget {
 		console.log(this);
 		this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
 	}
-	
-	
+		
 	private _container : HTMLElement;
 	public get container() : HTMLElement {
 		return this._container;

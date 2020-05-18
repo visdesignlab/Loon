@@ -7,6 +7,11 @@ import { CurveList } from '../DataModel/CurveList';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList> {
     
+    protected Clone(container: HTMLElement): BaseWidget<CurveList>
+    {
+        return new ImageSelectionWidget(container);
+    }
+
     private _imageMetaData : ImageMetaData;
     public get imageMetaData() : ImageMetaData {
         return this._imageMetaData;

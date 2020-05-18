@@ -38,11 +38,54 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 	public get canFacet() : boolean {
 		return this._canFacet;
 	}
+
+	public set canFacet(v: boolean) {
+		this.container.removeChild(this.facetButton);
+		this.container.removeEventListener("mouseenter", this.onMoueEnter());
+		this.container.removeEventListener("mouseleave", this.onMouseLeave());
+		this._canFacet = v;
+	}
 	
 	private _facetButton : HTMLButtonElement;
 	public get facetButton() : HTMLButtonElement {
 		return this._facetButton;
 	}
+
+	
+	private _largePopupOuter : HTMLDivElement;
+	public get largePopupOuter() : HTMLDivElement {
+		if (this._largePopupOuter)
+		{
+			return this._largePopupOuter;
+		}
+		let largePopupOuter = document.getElementById('largePopupContainerOuter');
+		if (largePopupOuter)
+		{
+			this._largePopupOuter = largePopupOuter as HTMLDivElement;
+			return this._largePopupOuter;
+		}
+		this.initLargePopup();
+		return this._largePopupOuter;
+	}
+
+	
+	private _largePopup : HTMLDivElement;
+	public get largePopup() : HTMLDivElement {
+		if (this._largePopup)
+		{
+			return this._largePopup;
+		}
+		let largePopup = document.getElementById('largePopupContainer');
+		if (largePopup)
+		{
+			this._largePopup = largePopup as HTMLDivElement;
+			return this._largePopup;
+		}
+		this.initLargePopup();
+		return this._largePopup;
+	}
+	
+	
 
 	protected initProps(props?: any[]): void
 	{
@@ -79,26 +122,78 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 
 	protected abstract OnDataChange(): void
 
+	protected abstract Clone(container: HTMLElement): BaseWidget<DataType>
 
 	private addFacetButton(): void
 	{
-		this._facetButton = DevlibTSUtil.getIconButton('layer-group');
+		this._facetButton = DevlibTSUtil.getIconButton('layer-group', () =>
+		{
+			this.drawFacetContent();
+		});
 		this.facetButton.classList.add('noDisp');
 		this.facetButton.style.position = 'absolute';
-		let right = this.container.getBoundingClientRect().right;
-		// let buttonRect = this.facetButton.getBoundingClientRect();
-		// this.facetButton.style.right = (window.innerWidth - right) + 'px';
 		this.facetButton.style.right = '0px';
 		this.container.appendChild(this.facetButton);
-		this.container.addEventListener('mouseenter', () =>
+		this.container.addEventListener('mouseenter', this.onMoueEnter());
+
+		this.container.addEventListener('mouseleave', this.onMouseLeave());
+	}
+
+	private onMoueEnter(): () => void
+	{
+		return () => DevlibTSUtil.show(this.facetButton);
+	}
+
+	private onMouseLeave(): () => void
+	{
+		return () => DevlibTSUtil.hide(this.facetButton);
+	}
+
+	private drawFacetContent(): void
+	{
+		this.largePopup.innerHTML = null;
+		
+		DevlibTSUtil.show(this.largePopupOuter);
+		for (let i = 0; i < 4; i++)
 		{
-			DevlibTSUtil.show(this.facetButton);
+			let newContainer = document.createElement('div');
+			newContainer.classList.add('facetContainer');
+			newContainer.style.width = '400px';
+			newContainer.style.height = '300px';
+			this.largePopup.appendChild(newContainer);
+			this.initSubWidget(newContainer);
+		}
+	}
+
+	private initSubWidget(newContainer: HTMLElement): void
+	{
+		let subWidget = this.Clone(newContainer);
+		subWidget.canFacet = false;
+		subWidget.SetData(this.data);
+	}
+
+	private initLargePopup(): void
+	{
+		let largePopupOuter = document.createElement('div');
+		largePopupOuter.id = "largePopupContainerOuter";
+		largePopupOuter.classList.add('largePopupContainerOuter');
+		largePopupOuter.addEventListener('click', () =>
+		{
+			DevlibTSUtil.hide(this.largePopupOuter);
 		});
 
-		this.container.addEventListener('mouseleave', () =>
+		let largePopup = document.createElement('div');
+		largePopup.id = 'largePopupContainer';
+		largePopup.classList.add('largePopupContainer');
+		largePopup.addEventListener('click', (ev: Event) => 
 		{
-			DevlibTSUtil.hide(this.facetButton);
+			ev.stopPropagation();
 		});
+		this._largePopup = largePopup;
+		largePopupOuter.appendChild(largePopup);
 
+		DevlibTSUtil.hide(largePopupOuter);
+		document.body.appendChild(largePopupOuter);
+		this._largePopupOuter = largePopupOuter as HTMLDivElement;
 	}
 }
