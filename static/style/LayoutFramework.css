@@ -1,6 +1,7 @@
 .frame {
 	display: flex;
 	flex-basis: 0;
+	position: relative;
 }
 
 .dir-row {

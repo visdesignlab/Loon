@@ -21,7 +21,7 @@
 			"inside": [
 				{
 					"direction": "col",
-					"fraction": 1,
+					"fraction": 10,
 					"inside": [
 						{
 							"direction": "row",

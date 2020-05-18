@@ -126,6 +126,7 @@
 .histogramContainer {
     height: 112px;
     width: 200px;
+    position: relative;
 }
 
 .histogramBar {
@@ -147,6 +148,7 @@
 .scatterPlotContainer {
     height: 224px;
     width: 224px;
+    position: relative;
 }
 
 

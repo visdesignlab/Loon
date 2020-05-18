@@ -17,7 +17,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList> {
 
     constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel, attributeKey: string)
     {
-        super(container);
+        super(container, true);
         this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
         this._attributeKey = attributeKey;
         this.setLabel();

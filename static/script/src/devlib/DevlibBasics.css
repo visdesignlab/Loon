@@ -1,3 +1,11 @@
+.basicButton {
+    background: firebrick;
+}
+
+.basicButton:hover {
+    background: steelblue;
+}
+
 .toggleButton.on {
     color: white;
     background: black;
@@ -23,3 +31,4 @@
     text-overflow: ellipsis;
     border: solid #b4b4b4 1px;
 }
+

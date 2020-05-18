@@ -10,7 +10,7 @@ export class HistogramWidget extends BaseWidget<PointCollection> {
 	
 	constructor(container: HTMLElement, valueKey: string)
 	{
-		super(container);
+		super(container, true);
 		this._valueKey = valueKey;
 		this.setLabel()
 	}

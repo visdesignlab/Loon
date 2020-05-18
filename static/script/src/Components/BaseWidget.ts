@@ -1,13 +1,18 @@
-import {BaseComponent} from './BaseComponent';
-import {Margin} from '../devlib/DevLibTypes';
+import { BaseComponent } from './BaseComponent';
+import { Margin } from '../devlib/DevLibTypes';
+import  { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export abstract class BaseWidget<DataType> extends BaseComponent {
 	
-	constructor(container: Element, ...props: any[])
+	constructor(container: Element, canFacet: boolean = false, ...props: any[])
 	{
 		super(container, ...props);
+		this._canFacet = canFacet;
+		if (canFacet)
+		{
+			this.addFacetButton();
+		}
 	}
-
 
 	private _data : DataType | null;
 	public get data() : DataType | null {
@@ -29,6 +34,16 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 		return this._vizHeight;
 	}
 
+	private _canFacet : boolean;
+	public get canFacet() : boolean {
+		return this._canFacet;
+	}
+	
+	private _facetButton : HTMLButtonElement;
+	public get facetButton() : HTMLButtonElement {
+		return this._facetButton;
+	}
+
 	protected initProps(props?: any[]): void
 	{
 		this.setMargin();
@@ -48,13 +63,6 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 	{
 		this._data = data;
 		this.OnDataChange();
-		// for (let child of this.children)
-		// {
-		// 	if (child instanceof BaseWidget)
-		// 	{
-		// 		child.SetData(data);
-		// 	}
-		// }
 	}
 
 	public OnBrushChange(): void
@@ -70,4 +78,27 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 	}
 
 	protected abstract OnDataChange(): void
+
+
+	private addFacetButton(): void
+	{
+		this._facetButton = DevlibTSUtil.getIconButton('layer-group');
+		this.facetButton.classList.add('noDisp');
+		this.facetButton.style.position = 'absolute';
+		let right = this.container.getBoundingClientRect().right;
+		// let buttonRect = this.facetButton.getBoundingClientRect();
+		// this.facetButton.style.right = (window.innerWidth - right) + 'px';
+		this.facetButton.style.right = '0px';
+		this.container.appendChild(this.facetButton);
+		this.container.addEventListener('mouseenter', () =>
+		{
+			DevlibTSUtil.show(this.facetButton);
+		});
+
+		this.container.addEventListener('mouseleave', () =>
+		{
+			DevlibTSUtil.hide(this.facetButton);
+		});
+
+	}
 }

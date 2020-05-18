@@ -17,7 +17,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 	
 	constructor(container: Element, quickPickOptions: quickPickOption[], squareAspectRatio: boolean = true)
 	{
-		super(container, quickPickOptions);
+		super(container, true, quickPickOptions);
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
 	}

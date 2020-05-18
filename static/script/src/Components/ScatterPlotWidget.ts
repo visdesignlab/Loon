@@ -10,7 +10,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 	
 	constructor(container: HTMLElement, xKey: string, yKey: string)
 	{
-		super(container);
+		super(container, true);
 		this._xKey = xKey;
 		this._yKey = yKey;
 		this.setLabel();
