@@ -158,8 +158,8 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 		{
 			let newContainer = document.createElement('div');
 			newContainer.classList.add('facetContainer');
-			newContainer.style.width = '400px';
-			newContainer.style.height = '300px';
+			newContainer.style.width = '500px';
+			newContainer.style.height = '250px';
 			this.largePopup.appendChild(newContainer);
 			this.initSubWidget(newContainer);
 		}
