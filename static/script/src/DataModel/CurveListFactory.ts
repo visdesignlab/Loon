@@ -4,7 +4,7 @@ import { CurveList } from './CurveList';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
 import { StringToStringObj, StringToNumberObj, KeyedTrackDerivationFunction, KeyedPointDerivationFunction } from '../devlib/DevLibTypes'
-import { DatasetSpec, Facet } from '../types';
+import { DatasetSpec, Facet, LocationMapList, LocationMapTemplate } from '../types';
 
 interface StringToNumberOrList {
     [key: string]: number | StringToNumberObj[];
@@ -12,15 +12,40 @@ interface StringToNumberOrList {
 
 export class CurveListFactory {
 
-	public static CreateFacetedDatasets(fullData: CurveList, locationMap: Map<number, string>): Facet[]
+	public static CreateFacetedDatasets(fullData: CurveList, locationMap: LocationMapList | LocationMapTemplate): Facet[]
 	{
+		let locToCat: Map<number, string> = new Map();
+		
+		for (let key of Object.keys(locationMap))
+		{
+			let valueList = locationMap[key];
+			if (valueList.length === 0)
+			{
+				throw new Error('LocationMap valueList should have at least one entry')
+			}
+			if (typeof valueList[0] === 'string')
+			{
+				// todo work for locationmaptemaplate type
+			}
+			else
+			{
+				for (let [low, high] of valueList)
+				{
+					for (let i = +low; i <= +high; i++)
+					{
+						locToCat.set(i, key);
+					}
+				}
+			}
+		}
+
 		let pointMap: Map<string, CurveND[]> = new Map();
 
 		for (let curve of fullData.curveList)
 		{
 			let firstPoint = curve.pointList[0];
 			let location = firstPoint.get('Location ID');
-			let category = locationMap.get(location);
+			let category = locToCat.get(location);
 			if (!pointMap.has(category))
 			{
 				pointMap.set(category, []);
@@ -31,7 +56,7 @@ export class CurveListFactory {
 		let facetList = [];
 		for (let [cat, listOfCurves] of pointMap)
 		{
-			let curveList = new CurveList(listOfCurves);
+			let curveList = new CurveList(listOfCurves, fullData.Specification);
 			let facet: Facet = {
 				name: cat,
 				data: curveList
@@ -140,9 +165,8 @@ export class CurveListFactory {
 			curveList.push(curve);
 		}
 		// console.log(curveList);
-		const curveListObj = new CurveList(curveList);
+		const curveListObj = new CurveList(curveList, dataSpec);
 		curveListObj.setInputKey(tKey);
-		curveListObj.datasetSpec = dataSpec;
 		return curveListObj;
 	}
 

@@ -4,10 +4,11 @@ import {BaseWidget} from './BaseWidget';
 import {ImageStackWidget} from './ImageStackWidget';
 import {ImageMetaData} from '../DataModel/ImageMetaData';
 import { CurveList } from '../DataModel/CurveList';
+import { DatasetSpec } from '../types';
 
-export class ImageSelectionWidget extends BaseWidget<CurveList> {
+export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
-    protected Clone(container: HTMLElement): BaseWidget<CurveList>
+    protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
         return new ImageSelectionWidget(container);
     }
@@ -83,7 +84,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList> {
     
     public setImageStackWidget(): void
     {
-        const newUrl = `/data/${this.data.datasetSpec.googleDriveId}/img_${this.selectedLocationId}.png`
+        const newUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}.png`
         let xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
         xhr.onload = () => {

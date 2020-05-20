@@ -1,16 +1,14 @@
 // import { PointND } from './PointND';
 import { NDim } from '../devlib/DevlibTypes'
 import { DataEvents } from './DataEvents';
-import { AppData, FacetOption, Facet } from '../types';
-// import { PointList } from './PointList';
-import { PointListIterator } from './PointListIterator';
+import { AppData, FacetOption, Facet, DatasetSpec, LocationMapList, LocationMapTemplate } from '../types';
 
 export interface valueFilter {
 	key: string,
 	bound: [number, number]
 }
 
-export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>, AppData {
+export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>, AppData<DatasetSpec> {
 	
 	constructor(pointList: NDim[] = [])
 	{
@@ -23,10 +21,13 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 	
 	abstract [Symbol.iterator](): Iterator<NDim>;
 
-    // public [Symbol.iterator](): Iterator<NDim>
-    // {
-    //     return new PointListIterator(this.Array);
-    // }
+	private _Specification : DatasetSpec;
+	public get Specification() : DatasetSpec {
+		return this._Specification;
+	}
+	public set Specification(v : DatasetSpec) {
+		this._Specification = v;
+	}
 
 	private _sourceKey : string;
 	public get sourceKey() : string {
@@ -82,7 +83,23 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 
 	public abstract OnBrushChange(): void;
 
-	public  abstract GetFacetOptions(): FacetOption[];
+	public GetFacetOptions(): FacetOption[]
+	{
+		let facetOptionList = [];
+		for (let key of Object.keys(this.Specification.locationMaps))
+		{
+			let locationMap = this.Specification.locationMaps[key];
+			let facetOption: FacetOption = 
+			{
+				name: key,
+				GetFacets: () => {return this.getFacetList(locationMap)}
+			}
+			facetOptionList.push(facetOption)
+		}
+		return facetOptionList;
+	}
+
+	protected abstract getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[];
 
 	private initAttributeList(): void
 	{

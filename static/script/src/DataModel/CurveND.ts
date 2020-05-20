@@ -1,9 +1,9 @@
 import { NDim } from '../devlib/DevlibTypes'
 import { PointND } from './PointND';
-import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { PointCollection } from './PointCollection';
 import { CurveIterator } from './CurveIterator';
+import { Facet } from '../types';
 
 export class CurveND extends PointCollection implements NDim {
 	
@@ -47,6 +47,13 @@ export class CurveND extends PointCollection implements NDim {
 			point.inBrush = v;
 		}
 	}
+
+	protected getFacetList(): Facet[]
+	{
+		throw new Error('Not Implemented.');
+	}
+
+	public OnBrushChange(): void { }
 
 	public addValue(key: string, value: number)
 	{

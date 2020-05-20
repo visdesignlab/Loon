@@ -2,11 +2,10 @@ import * as d3 from 'd3';
 import {SvgSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
 import { valueFilter, PointCollection } from '../DataModel/PointCollection';
-// import {PointND} from '../DataModel/PointND';
 import { NDim } from '../devlib/DevlibTypes';
+import { DatasetSpec } from '../types';
 
-
-export class HistogramWidget extends BaseWidget<PointCollection> {
+export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	
 	constructor(container: HTMLElement, valueKey: string)
 	{
@@ -15,7 +14,7 @@ export class HistogramWidget extends BaseWidget<PointCollection> {
 		this.setLabel()
 	}
 
-    protected Clone(container: HTMLElement): BaseWidget<PointCollection>
+    protected Clone(container: HTMLElement): BaseWidget<PointCollection, DatasetSpec>
     {
         let clone = new HistogramWidget(container, this.valueKey);
         return clone;

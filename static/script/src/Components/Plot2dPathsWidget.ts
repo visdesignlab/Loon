@@ -5,7 +5,7 @@ import {PointND} from '../DataModel/PointND';
 import {Margin, SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
-import { timeHours } from 'd3';
+import { DatasetSpec } from '../types';
 
 interface quickPickOption {
 	xKey: string,
@@ -13,7 +13,7 @@ interface quickPickOption {
 	squareAspectRatio: boolean
 }
 
-export class Plot2dPathsWidget extends BaseWidget<CurveList> {
+export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
 	constructor(container: Element, quickPickOptions: quickPickOption[], squareAspectRatio: boolean = true)
 	{
@@ -22,7 +22,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList> {
 		this.addLabel();
 	}
 	
-	protected Clone(container: HTMLElement): BaseWidget<CurveList>
+	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
         return new Plot2dPathsWidget(container, this.quickPickOptions,  this.squareAspectRatio);
     }

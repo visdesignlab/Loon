@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { PointCollection } from '../DataModel/PointCollection';
 import { BaseWidget } from './BaseWidget';
-import { MetricDistributionCollectionLevel } from '../types';
+import { MetricDistributionCollectionLevel, DatasetSpec } from '../types';
 import { SvgSelection, NDim, HtmlSelection } from '../devlib/DevLibTypes';
 import { CurveList } from '../DataModel/CurveList';
 
@@ -11,7 +11,7 @@ interface BoxplotStats {
     whiskerRange: [number, number]
 }
 
-export class DetailedDistributionWidget extends BaseWidget<CurveList> {
+export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 
     constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel, attributeKey: string)
@@ -22,7 +22,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList> {
         this.setLabel();
     }
 
-    protected Clone(container: HTMLElement): BaseWidget<CurveList>
+    protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
         let clone = new DetailedDistributionWidget(container, this.metricDistributionCollectionLevel, this.attributeKey);
         return clone;

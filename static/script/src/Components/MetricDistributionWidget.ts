@@ -7,7 +7,7 @@ import {CurveList} from '../DataModel/CurveList';
 import {LayoutFramework} from '../LayoutFramework';
 import {HistogramWidget} from './HistogramWidget';
 import {ScatterPlotWidget} from './ScatterPlotWidget';
-import {Frame, MetricDistributionSubComponentTypes, Direction, MetricDistributionCollectionLevel} from '../types';
+import {Frame, MetricDistributionSubComponentTypes, Direction, MetricDistributionCollectionLevel, DatasetSpec} from '../types';
 
 interface boolWithIndex {
 	value: boolean,
@@ -15,7 +15,7 @@ interface boolWithIndex {
 }
 
 
-export class MetricDistributionWidget extends BaseWidget<CurveList> {
+export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
 
 	constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel)
@@ -24,7 +24,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList> {
 		this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
 	}
 
-    protected Clone(container: HTMLElement): BaseWidget<CurveList>
+    protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
         return new MetricDistributionWidget(container, this.metricDistributionCollectionLevel);
     }

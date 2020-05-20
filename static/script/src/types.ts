@@ -40,9 +40,10 @@ export enum MetricDistributionCollectionLevel {
 	Point = "Point",
 	Curve = "Curve"
 }
-export interface AppData {
+export interface AppData<SpecType> {
 	GetFacetOptions: () => FacetOption[];
 	OnBrushChange: () => void;
+	Specification: SpecType
 }
 
 export interface FacetOption {
@@ -59,5 +60,23 @@ export interface DatasetSpec {
 	uniqueId: string,
     displayName: string,
     googleDriveId: string,
-	folderPath: string
+	folderPath: string,
+	locationMaps: LocationMaps
 }
+
+export interface LocationMaps {
+	[mapName: string]: LocationMapList | LocationMapTemplate
+}
+
+export interface LocationMapList
+{
+	[categoryName: string]: [number, number][]
+}
+
+export interface LocationMapTemplate
+{
+	[templateFilename: string]: string[]
+}
+
+// export type LocationMapList = Map<string, [number, number][]>
+// export type LocationMapTemplate = Map<string, string[]>

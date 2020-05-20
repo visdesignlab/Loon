@@ -11,7 +11,7 @@ import {ButtonProps, KeyedTrackDerivationFunction, KeyedPointDerivationFunction}
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
 
-export class App<DataType extends AppData, DataSpecType> {
+export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	
 	constructor(container: HTMLElement,
 				fromCsvObject: (

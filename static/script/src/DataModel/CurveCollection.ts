@@ -3,16 +3,17 @@ import { NDim } from '../devlib/DevlibTypes'
 import { CurveCollectionIterator } from './CurveCollectionIterator';
 import { PointCollection } from './PointCollection';
 import { CurveList } from './CurveList';
-import { FacetOption, Facet } from '../types';
+import { Facet, LocationMapList, LocationMapTemplate, DatasetSpec } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 
 export class CurveCollection extends PointCollection
 {
-    constructor(curveList: CurveList)
+    constructor(curveList: CurveList, spec: DatasetSpec)
     {
         super();
         this._length = curveList.curveList.length;
-        this._curveList = curveList;
+		this._curveList = curveList;
+		this.Specification = spec;
     }
     
     private _curveList : CurveList;
@@ -22,42 +23,10 @@ export class CurveCollection extends PointCollection
     
     public OnBrushChange(): void { }
 
-    public GetFacetOptions(): FacetOption[]
+	protected getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[]
 	{
-		// todo - read from data
-		let facetOption1: FacetOption = 
-		{
-			name: 'test',
-			GetFacets: () => {return this.getFacets()}
-		}
-		return [facetOption1];
-	}
 
-	protected getFacets(): Facet[]
-	{
-		let hardcodedDict: Map<number, string> = new Map();
-		
-		for (let i = 0; i < 10; i++)
-		{
-			hardcodedDict.set(i, "A");
-		}		
-		
-		for (let i = 10; i < 20; i++)
-		{
-			hardcodedDict.set(i, "B");
-		}		
-		
-		for (let i = 20; i < 30; i++)
-		{
-			hardcodedDict.set(i, "C");
-		}		
-		
-		for (let i = 30; i < 40; i++)
-		{
-			hardcodedDict.set(i, "D");
-		}
-
-        let facetList = CurveListFactory.CreateFacetedDatasets(this.curveList, hardcodedDict);
+        let facetList = CurveListFactory.CreateFacetedDatasets(this.curveList, locationMap);
         for (let facet of facetList)
         {
             facet.data = facet.data.curveCollection;

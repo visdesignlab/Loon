@@ -3,8 +3,9 @@ import {SvgSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
 import { NDim } from '../devlib/DevlibTypes';
 import {valueFilter, PointCollection} from '../DataModel/PointCollection';
+import { DatasetSpec } from '../types';
 
-export class ScatterPlotWidget extends BaseWidget<PointCollection> {
+export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	
 	constructor(container: HTMLElement, xKey: string, yKey: string)
 	{
@@ -14,7 +15,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 		this.setLabel();
 	}
 
-	protected Clone(container: HTMLElement): BaseWidget<PointCollection>
+	protected Clone(container: HTMLElement): BaseWidget<PointCollection, DatasetSpec>
     {
         return new ScatterPlotWidget(container, this.xKey,  this.yKey);
     }

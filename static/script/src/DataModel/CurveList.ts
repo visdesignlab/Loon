@@ -5,14 +5,13 @@ import { PointND } from './PointND';
 import { PointCollection, valueFilter } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
-import { thresholdFreedmanDiaconis } from 'd3';
-import { DatasetSpec, FacetOption, Facet } from '../types';
+import { DatasetSpec, FacetOption, Facet, AppData, LocationMapList, LocationMapTemplate } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 
-export class CurveList extends PointCollection
+export class CurveList extends PointCollection implements AppData<DatasetSpec>
 {
 
-	constructor(curveList: CurveND[])
+	constructor(curveList: CurveND[], spec: DatasetSpec)
 	{
 		super();
 		this._curveList = curveList;
@@ -28,9 +27,9 @@ export class CurveList extends PointCollection
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
-		this._curveCollection = new CurveCollection(this);
+		this._curveCollection = new CurveCollection(this, spec);
 		this._curveBrushList = new Map<string, valueFilter[]>();
-		this._datasetSpec = null;
+		this.Specification = spec;
 	}
 
 	private _curveList : CurveND[];
@@ -44,16 +43,7 @@ export class CurveList extends PointCollection
 	}
 	public set curveCollection(v : CurveCollection) {
 		this._curveCollection = v;
-	}
-	
-	private _datasetSpec : DatasetSpec | null;
-	public get datasetSpec() : DatasetSpec | null {
-		return this._datasetSpec;
-	}
-	public set datasetSpec(v : DatasetSpec | null) {
-		this._datasetSpec = v;
-	}
-	
+	}	
 
 	private _inputKey : string;
 	public get inputKey() : string {
@@ -82,43 +72,35 @@ export class CurveList extends PointCollection
 	public get curveBrushList() : Map<string, valueFilter[]> {
 		return this._curveBrushList;
 	}	
-	
-	public GetFacetOptions(): FacetOption[]
-	{
-		// todo - read from data
-		let facetOption1: FacetOption = 
-		{
-			name: 'test',
-			GetFacets: () => {return this.getFacets()}
-		}
-		return [facetOption1];
-	}
 
-	protected getFacets(): Facet[]
+	protected getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[]
 	{
-		let hardcodedDict: Map<number, string> = new Map();
+		// let locToCat: Map<number, string> = new Map();
 		
-		for (let i = 0; i < 10; i++)
-		{
-			hardcodedDict.set(i, "A");
-		}		
-		
-		for (let i = 10; i < 20; i++)
-		{
-			hardcodedDict.set(i, "B");
-		}		
-		
-		for (let i = 20; i < 30; i++)
-		{
-			hardcodedDict.set(i, "C");
-		}		
-		
-		for (let i = 30; i < 40; i++)
-		{
-			hardcodedDict.set(i, "D");
-		}
+		// for (let key of Object.keys(locationMap))
+		// {
+		// 	let valueList = locationMap[key];
+		// 	if (valueList.length === 0)
+		// 	{
+		// 		throw new Error('LocationMap valueList should have at least one entry')
+		// 	}
+		// 	if (typeof valueList[0] === 'string')
+		// 	{
+		// 		// todo work for locationmaptemaplate type
+		// 	}
+		// 	else
+		// 	{
+		// 		for (let [low, high] of valueList)
+		// 		{
+		// 			for (let i = +low; i <= +high; i++)
+		// 			{
+		// 				locToCat.set(i, key);
+		// 			}
+		// 		}
+		// 	}
+		// }
 
-		return CurveListFactory.CreateFacetedDatasets(this, hardcodedDict);
+		return CurveListFactory.CreateFacetedDatasets(this, locationMap);
 	}
 
 	public OnBrushChange(): void

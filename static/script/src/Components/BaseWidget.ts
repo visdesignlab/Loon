@@ -1,9 +1,9 @@
 import { BaseComponent } from './BaseComponent';
 import { Margin } from '../devlib/DevLibTypes';
 import  { DevlibTSUtil } from '../devlib/DevlibTSUtil';
-import { AppData } from '../types';
+import { AppData, DatasetSpec } from '../types';
 
-export abstract class BaseWidget<DataType extends AppData> extends BaseComponent {
+export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpecType> extends BaseComponent {
 	
 	constructor(container: Element, canFacet: boolean = false, ...props: any[])
 	{
@@ -123,7 +123,7 @@ export abstract class BaseWidget<DataType extends AppData> extends BaseComponent
 
 	protected abstract OnDataChange(): void
 
-	protected abstract Clone(container: HTMLElement): BaseWidget<DataType>
+	protected abstract Clone(container: HTMLElement): BaseWidget<DataType, DataSpecType>
 
 	private addFacetButton(): void
 	{
