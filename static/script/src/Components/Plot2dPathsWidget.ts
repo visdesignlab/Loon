@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import {BaseWidget} from './BaseWidget';
 import {CurveList} from '../DataModel/CurveList';
 import {PointND} from '../DataModel/PointND';
-import {Margin, SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
+import {SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
 import { DatasetSpec } from '../types';
@@ -24,8 +24,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        return new Plot2dPathsWidget(container, this.quickPickOptions,  this.squareAspectRatio);
-    }
+		return new Plot2dPathsWidget(container, this.quickPickOptions,  this.squareAspectRatio);
+	}
 
 	protected initProps(props?: any[]): void
 	{
@@ -282,8 +282,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	private updateScales(): void
 	{
-		let [minX, maxX] = this.data.minMaxMap.get(this.xKey);
-		let [minY, maxY] = this.data.minMaxMap.get(this.yKey);
+		let [minX, maxX] = this.fullData.minMaxMap.get(this.xKey);
+		let [minY, maxY] = this.fullData.minMaxMap.get(this.yKey);
 		if (this.squareAspectRatio)
 		{
 			this.makeSquareAspectRatioScales(minX, maxX, minY, maxY);

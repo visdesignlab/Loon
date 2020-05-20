@@ -42,10 +42,12 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
     public get pointCollection() : PointCollection {
         return this._pointCollection;
     }
-    public set pointCollection(v : PointCollection) {
-        this._pointCollection = v;
+
+    private _fullPointCollection : PointCollection;
+    public get fullPointCollection() : PointCollection {
+        return this._fullPointCollection;
     }
-    
+
     private _randomNoiseList : number[];
     public get randomNoiseList() : number[] {
         return this._randomNoiseList;
@@ -203,13 +205,16 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         {
             case MetricDistributionCollectionLevel.Point:
                 this._pointCollection = this.data as PointCollection;
+                this._fullPointCollection = this.fullData as PointCollection;
                 break;
             case MetricDistributionCollectionLevel.Curve:
                 this._pointCollection = this.data.curveCollection as PointCollection;
+                this._fullPointCollection = this.fullData.curveCollection as PointCollection;
                 break;
             default:
                 throw new Error("DetailedDistribution needs a valid MetricDistributionCollectionLevel");
                 this._pointCollection = null;
+                this._fullPointCollection = null;
                 break;
         }
 
@@ -268,7 +273,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 
     private updateScales(): void
     {
-        let distributionMinMax = this.pointCollection.getMinMax(this.attributeKey);
+        let distributionMinMax = this.fullPointCollection.getMinMax(this.attributeKey);
         this._scaleX = d3.scaleLinear<number, number>()
                         .domain(distributionMinMax)
                         .range([0, this.vizWidth]);

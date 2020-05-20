@@ -172,12 +172,12 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 
 	private updateScales(): void
 	{
-		let minMaxX = this.data.getMinMax(this.xKey);
+		let minMaxX = this.fullData.getMinMax(this.xKey);
 		this._scaleX = d3.scaleLinear()
 			.domain(minMaxX)
 			.range([0, this.vizWidth]);
 
-		let minMaxY = this.data.getMinMax(this.yKey);
+		let minMaxY = this.fullData.getMinMax(this.yKey);
 		this._scaleY = d3.scaleLinear()
 			.domain(minMaxY)
 			.range([this.vizHeight, 0]);

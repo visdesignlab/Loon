@@ -13,12 +13,27 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		{
 			this.addFacetButton();
 		}
+		this._dataSuperset = null;
 	}
 
 	private _data : DataType | null;
 	public get data() : DataType | null {
 		return this._data;
 	}
+
+	private _dataSuperset : DataType | null;
+	public get dataSuperset() : DataType | null {
+		return this._dataSuperset;
+	}
+
+	public get fullData() : DataType | null {
+		if (this._dataSuperset)
+		{
+			return this.dataSuperset;
+		}
+		return this.data;
+	}
+	
 
 	protected _margin : Margin;
 	public get margin() : Margin {
@@ -103,9 +118,13 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		}
 	}
 
-	public SetData(data: DataType): void
+	public SetData(data: DataType, dataSuperset?: DataType): void
 	{
 		this._data = data;
+		if (dataSuperset)
+		{
+			this._dataSuperset = dataSuperset;
+		}
 		this.OnDataChange();
 	}
 
@@ -171,7 +190,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	{
 		let subWidget = this.Clone(newContainer);
 		subWidget.canFacet = false;
-		subWidget.SetData(data);
+		subWidget.SetData(data, this.data);
 	}
 
 	private initLargePopup(): void

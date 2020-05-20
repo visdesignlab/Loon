@@ -120,8 +120,8 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	public OnDataChange(): void
 	{
-		let count = Math.round(Math.sqrt(this.data.length));
-		let minMax = this.data.getMinMax(this.valueKey);
+		let count = Math.round(Math.sqrt(this.fullData.length));
+		let minMax = this.fullData.getMinMax(this.valueKey);
 		let x = d3.scaleLinear()
 			.domain(minMax)
 			.nice(count);
