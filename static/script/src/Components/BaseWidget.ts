@@ -175,7 +175,18 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		this.largePopup.innerHTML = null;
 		
 		DevlibTSUtil.show(this.largePopupOuter);
+		this.drawGroupBySelection()
+
 		this.drawFacetedData(0);
+	}
+
+	private drawGroupBySelection(): void
+	{
+		let groupByContainer = document.createElement('div');
+		groupByContainer.classList.add('groupByContainer');
+
+
+		this.largePopup.appendChild(groupByContainer);
 	}
 
 	protected drawFacetedData(facetOptionIndex: number): void
@@ -188,11 +199,23 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		let facetOption = this.data.GetFacetOptions()[facetOptionIndex];
 		for (let facet of facetOption.GetFacets())
 		{
-			let newContainer = document.createElement('div');
-			newContainer.classList.add('facetContainer');
-			newContainer.style.width = width;
-			newContainer.style.height = height;
-			this.largePopup.appendChild(newContainer);
+			let outerContainer = document.createElement('div');
+				outerContainer.classList.add('outerFacetContainer');
+				outerContainer.style.width = width;
+				outerContainer.style.height = height;
+
+				let titleContainer = document.createElement('div');
+					titleContainer.classList.add('facetTitle')
+					titleContainer.innerText = facet.name;
+
+			outerContainer.appendChild(titleContainer);
+
+				let newContainer = document.createElement('div');
+					newContainer.classList.add('facetContainer');
+		
+			outerContainer.appendChild(newContainer);
+
+			this.largePopup.appendChild(outerContainer);
 			this.initSubWidget(newContainer, facet.name, facet.data);
 		}
 	}
