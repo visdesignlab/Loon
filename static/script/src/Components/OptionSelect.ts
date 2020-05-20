@@ -33,7 +33,7 @@ export class OptionSelect {
 		if (this.data.length === 1)
 		{
 			this.containerSelect
-				.append("h5")
+				.append("span")
 				.classed("valueHeader", true)
 				.text(this.data[0].displayName);
 			return;
@@ -44,8 +44,22 @@ export class OptionSelect {
 
 	private updateButtons(defaultSelection?: number): void
 	{
+		if (this.data.length < 3)
+		{
+			this.drawQuickSelectButtons(defaultSelection);
+		}
+		else
+		{
+			this.drawDropDownButtons(defaultSelection);
+		}
+	}
+
+
+	private drawQuickSelectButtons(defaultSelection?: number): void
+	{
 		let thisOptionSelect: OptionSelect = this;
 		this.containerSelect
+			.html(null)
 			.selectAll("button")
 			.data(this.data)
 			.join("button")
@@ -64,6 +78,28 @@ export class OptionSelect {
 			});
 	}
 
+	private drawDropDownButtons(defaultSelection?: number): void
+	{
+		// for testing
+		defaultSelection = 1;
+		this.containerSelect
+			.html(null)
+			.append('select')
+			.attr('id', "OptionSelectDropdown") // TODO this should be unique across instances
+			.on('change', () =>
+			{
+				let optionSelect = this.containerSelect.select('#OptionSelectDropdown')
+				let newIndex: number = +optionSelect.property('value');
+				this.data[newIndex].callback();
+			})
+			.selectAll('option')
+			.data(this.data)
+			.join('option')
+			.attr('value', (d, i) => i)
+			.property('selected', (d, i) => defaultSelection === i)
+			.text(d => d.displayName);
+	}
+	
 	public addButton(buttonProps: ButtonProps, selectIndex?: number): void
 	{
 		this.data.push(buttonProps);
