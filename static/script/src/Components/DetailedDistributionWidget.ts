@@ -4,7 +4,6 @@ import { BaseWidget } from './BaseWidget';
 import { MetricDistributionCollectionLevel } from '../types';
 import { SvgSelection, NDim, HtmlSelection } from '../devlib/DevLibTypes';
 import { CurveList } from '../DataModel/CurveList';
-import { BaseComponent } from './BaseComponent';
 
 interface BoxplotStats {
     median: number,

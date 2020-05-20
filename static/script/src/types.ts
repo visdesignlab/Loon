@@ -41,7 +41,18 @@ export enum MetricDistributionCollectionLevel {
 	Curve = "Curve"
 }
 export interface AppData {
+	GetFacetOptions: () => FacetOption[];
 	OnBrushChange: () => void;
+}
+
+export interface FacetOption {
+	name: string,
+	GetFacets: () => Facet[]
+
+}
+export interface Facet {
+	name: string,
+	data: any
 }
 
 export interface DatasetSpec {

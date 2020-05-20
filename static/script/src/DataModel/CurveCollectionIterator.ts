@@ -1,8 +1,5 @@
 import { NDim } from '../devlib/DevlibTypes';
-
-// import { PointND } from './PointND';
 import { CurveList } from './CurveList';
-// import { CurveIterator } from './CurveIterator';
 
 export class CurveCollectionIterator implements Iterator<NDim> {
 	
@@ -22,11 +19,6 @@ export class CurveCollectionIterator implements Iterator<NDim> {
 		return this._curveList;
 	}
 
-	// private _currentCurveIterator : CurveIterator;
-	// public get currentCurveIterator() : CurveIterator {
-	// 	return this._currentCurveIterator;
-	// }
-
 	public next(): IteratorResult<NDim>
 	{
 		let curve = this.curveList.curveList[this.index];
@@ -38,6 +30,5 @@ export class CurveCollectionIterator implements Iterator<NDim> {
 		}
 		return iterResult;
 	}
-
 
 }

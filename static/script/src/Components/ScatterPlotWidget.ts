@@ -1,10 +1,8 @@
 import * as d3 from 'd3';
 import {SvgSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
-import {PointCollection} from '../DataModel/PointCollection';
-// import {PointND} from '../DataModel/PointND';
 import { NDim } from '../devlib/DevlibTypes';
-import {valueFilter} from '../DataModel/PointCollection';
+import {valueFilter, PointCollection} from '../DataModel/PointCollection';
 
 export class ScatterPlotWidget extends BaseWidget<PointCollection> {
 	

@@ -55,10 +55,6 @@ export abstract class BaseComponent {
 	public Resize(): void
 	{
 		this.setWidthHeight();
-		// for (let child of this.children)
-		// {
-		// 	child.Resize();
-		// }
 		this.OnResize();
 	}
 

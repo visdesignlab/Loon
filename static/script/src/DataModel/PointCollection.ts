@@ -1,24 +1,32 @@
 // import { PointND } from './PointND';
 import { NDim } from '../devlib/DevlibTypes'
 import { DataEvents } from './DataEvents';
+import { AppData, FacetOption, Facet } from '../types';
+// import { PointList } from './PointList';
+import { PointListIterator } from './PointListIterator';
 
 export interface valueFilter {
 	key: string,
 	bound: [number, number]
 }
 
-export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim> {
+export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>, AppData {
 	
-	constructor()
+	constructor(pointList: NDim[] = [])
 	{
 		this._attributeList = [];
-		this._length = 0;
-		this._Array = [];
+		this._length = pointList.length;
+		this._Array = pointList;
 		this._minMaxCache = new Map<string, [number, number]>();
 		this._brushList = new Map<string, Map<string, [number, number]>>();
 	}
-
+	
 	abstract [Symbol.iterator](): Iterator<NDim>;
+
+    // public [Symbol.iterator](): Iterator<NDim>
+    // {
+    //     return new PointListIterator(this.Array);
+    // }
 
 	private _sourceKey : string;
 	public get sourceKey() : string {
@@ -71,6 +79,10 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 	public get brushList() : Map<string, Map<string, [number, number]>>  {
 		return this._brushList;
 	}
+
+	public abstract OnBrushChange(): void;
+
+	public  abstract GetFacetOptions(): FacetOption[];
 
 	private initAttributeList(): void
 	{

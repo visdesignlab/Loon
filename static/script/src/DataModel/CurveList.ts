@@ -6,7 +6,8 @@ import { PointCollection, valueFilter } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
 import { thresholdFreedmanDiaconis } from 'd3';
-import { DatasetSpec } from '../types';
+import { DatasetSpec, FacetOption, Facet } from '../types';
+import { CurveListFactory } from './CurveListFactory';
 
 export class CurveList extends PointCollection
 {
@@ -82,6 +83,43 @@ export class CurveList extends PointCollection
 		return this._curveBrushList;
 	}	
 	
+	public GetFacetOptions(): FacetOption[]
+	{
+		// todo - read from data
+		let facetOption1: FacetOption = 
+		{
+			name: 'test',
+			GetFacets: () => {return this.getFacets()}
+		}
+		return [facetOption1];
+	}
+
+	protected getFacets(): Facet[]
+	{
+		let hardcodedDict: Map<number, string> = new Map();
+		
+		for (let i = 0; i < 10; i++)
+		{
+			hardcodedDict.set(i, "A");
+		}		
+		
+		for (let i = 10; i < 20; i++)
+		{
+			hardcodedDict.set(i, "B");
+		}		
+		
+		for (let i = 20; i < 30; i++)
+		{
+			hardcodedDict.set(i, "C");
+		}		
+		
+		for (let i = 30; i < 40; i++)
+		{
+			hardcodedDict.set(i, "D");
+		}
+
+		return CurveListFactory.CreateFacetedDatasets(this, hardcodedDict);
+	}
 
 	public OnBrushChange(): void
 	{

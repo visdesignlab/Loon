@@ -1,8 +1,9 @@
 import { BaseComponent } from './BaseComponent';
 import { Margin } from '../devlib/DevLibTypes';
 import  { DevlibTSUtil } from '../devlib/DevlibTSUtil';
+import { AppData } from '../types';
 
-export abstract class BaseWidget<DataType> extends BaseComponent {
+export abstract class BaseWidget<DataType extends AppData> extends BaseComponent {
 	
 	constructor(container: Element, canFacet: boolean = false, ...props: any[])
 	{
@@ -154,22 +155,23 @@ export abstract class BaseWidget<DataType> extends BaseComponent {
 		this.largePopup.innerHTML = null;
 		
 		DevlibTSUtil.show(this.largePopupOuter);
-		for (let i = 0; i < 4; i++)
+		let firstFacetOption = this.data.GetFacetOptions()[0];
+		for (let facet of firstFacetOption.GetFacets())
 		{
 			let newContainer = document.createElement('div');
 			newContainer.classList.add('facetContainer');
 			newContainer.style.width = '500px';
 			newContainer.style.height = '250px';
 			this.largePopup.appendChild(newContainer);
-			this.initSubWidget(newContainer);
+			this.initSubWidget(newContainer, facet.name, facet.data);
 		}
 	}
 
-	private initSubWidget(newContainer: HTMLElement): void
+	private initSubWidget(newContainer: HTMLElement, name: string, data: DataType): void
 	{
 		let subWidget = this.Clone(newContainer);
 		subWidget.canFacet = false;
-		subWidget.SetData(this.data);
+		subWidget.SetData(data);
 	}
 
 	private initLargePopup(): void
