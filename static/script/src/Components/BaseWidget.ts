@@ -56,9 +56,12 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	}
 
 	public set canFacet(v: boolean) {
-		this.container.removeChild(this.facetButton);
-		this.container.removeEventListener("mouseenter", this.onMoueEnter());
-		this.container.removeEventListener("mouseleave", this.onMouseLeave());
+		if (!v)
+		{
+			this.container.removeChild(this.facetButton);
+			this.container.removeEventListener("mouseenter", this.onMoueEnter());
+			this.container.removeEventListener("mouseleave", this.onMouseLeave());
+		}
 		this._canFacet = v;
 	}
 	
@@ -66,7 +69,6 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	public get facetButton() : HTMLButtonElement {
 		return this._facetButton;
 	}
-
 	
 	private _largePopupOuter : HTMLDivElement;
 	public get largePopupOuter() : HTMLDivElement {
@@ -84,7 +86,6 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		return this._largePopupOuter;
 	}
 
-	
 	private _largePopup : HTMLDivElement;
 	public get largePopup() : HTMLDivElement {
 		if (this._largePopup)
@@ -174,13 +175,23 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		this.largePopup.innerHTML = null;
 		
 		DevlibTSUtil.show(this.largePopupOuter);
-		let firstFacetOption = this.data.GetFacetOptions()[0];
-		for (let facet of firstFacetOption.GetFacets())
+		this.drawFacetedData(0);
+	}
+
+	protected drawFacetedData(facetOptionIndex: number): void
+	{
+		this.drawFacetedDataDefault(facetOptionIndex);
+	}
+
+	protected drawFacetedDataDefault(facetOptionIndex: number, width: string = '500px', height: string = '250px'): void
+	{
+		let facetOption = this.data.GetFacetOptions()[facetOptionIndex];
+		for (let facet of facetOption.GetFacets())
 		{
 			let newContainer = document.createElement('div');
 			newContainer.classList.add('facetContainer');
-			newContainer.style.width = '500px';
-			newContainer.style.height = '250px';
+			newContainer.style.width = width;
+			newContainer.style.height = height;
 			this.largePopup.appendChild(newContainer);
 			this.initSubWidget(newContainer, facet.name, facet.data);
 		}

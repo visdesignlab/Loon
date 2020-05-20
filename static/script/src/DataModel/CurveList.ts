@@ -66,7 +66,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 	public set brushApplied(v : boolean) {
 		this._brushApplied = v;
 	}
-
 	
 	private _curveBrushList : Map<string, valueFilter[]>;
 	public get curveBrushList() : Map<string, valueFilter[]> {
@@ -75,31 +74,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 
 	protected getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[]
 	{
-		// let locToCat: Map<number, string> = new Map();
-		
-		// for (let key of Object.keys(locationMap))
-		// {
-		// 	let valueList = locationMap[key];
-		// 	if (valueList.length === 0)
-		// 	{
-		// 		throw new Error('LocationMap valueList should have at least one entry')
-		// 	}
-		// 	if (typeof valueList[0] === 'string')
-		// 	{
-		// 		// todo work for locationmaptemaplate type
-		// 	}
-		// 	else
-		// 	{
-		// 		for (let [low, high] of valueList)
-		// 		{
-		// 			for (let i = +low; i <= +high; i++)
-		// 			{
-		// 				locToCat.set(i, key);
-		// 			}
-		// 		}
-		// 	}
-		// }
-
 		return CurveListFactory.CreateFacetedDatasets(this, locationMap);
 	}
 
