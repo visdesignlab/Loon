@@ -26,9 +26,10 @@
 }
 
 .boxplotStatsPopup {
-    position: absolute;
+    position: fixed;
     background: #f7f7f7;
     padding: 10px;
     border: solid black 1px;
     box-shadow: 1px 1px 2px 0px grey;
+    z-index: 9001;
 }
