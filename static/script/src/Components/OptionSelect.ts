@@ -12,6 +12,7 @@ export class OptionSelect {
 	{
 		this._containerSelect = d3.select("#" + htmlContainerId);
 		this._label = label;
+		this._uniqueId = 'OptionSelectDropdown_' + OptionSelect._instanceCount++;
 	}
 
 	private _data : ButtonProps[];
@@ -33,6 +34,13 @@ export class OptionSelect {
 	public get mode() : OptionMode {
 		return this._mode;
 	}
+
+	private _uniqueId : string;
+	public get uniqueId() : string {
+		return this._uniqueId;
+	}
+	
+	private static _instanceCount: number = 0;
 
 	private clearSelectedButton(): void
 	{
@@ -116,24 +124,22 @@ export class OptionSelect {
 	{
 		this._mode = OptionMode.Dropdown;
 		this.containerSelect.html(null);
-		// TODO this should be unique across instances
-		let uniqueId = "OptionSelectDropdown";
 
 		if (this.label)
 		{
 			this.containerSelect.append('label')
 				.text(this.label)
 				.classed('optionSelectLabel', true)
-				.attr('for', uniqueId);
+				.attr('for', this.uniqueId);
 		}
 		
 		this.containerSelect
 			.append('select')
-			.attr('id', uniqueId) 
+			.attr('id', this.uniqueId) 
 			.classed('optionSelectSelect', true)
 			.on('change', () =>
 			{
-				let optionSelect = this.containerSelect.select('#' + uniqueId)
+				let optionSelect = this.containerSelect.select('#' + this.uniqueId)
 				let newIndex: number = +optionSelect.property('value');
 				this.data[newIndex].callback();
 			})
@@ -200,7 +206,7 @@ export class OptionSelect {
 		}
 		else
 		{
-			currentSelectedIndex = +this.containerSelect.select('select').property('value');
+			currentSelectedIndex = +this.containerSelect.select('#' + this.uniqueId).property('value');
 		}
 		return currentSelectedIndex;
 	}

@@ -5,7 +5,6 @@ export abstract class BaseComponent {
 		this._container = container;
 		this._componentIndex = BaseComponent._componentCount;
 		BaseComponent._componentCount++;
-		// this._children = [];
 		this.initProps(props);
 		this.setWidthHeight();
 		this.init();
@@ -32,11 +31,6 @@ export abstract class BaseComponent {
 	}	
 
 	private static _componentCount: number = 0;
-
-	// private _children : BaseComponent[];
-	// public get children() : BaseComponent[] {
-	// 	return this._children;
-	// }
 
 	protected initProps(props?: any[]): void
 	{
