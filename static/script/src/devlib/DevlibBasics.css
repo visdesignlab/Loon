@@ -1,9 +1,20 @@
-.basicButton {
-    background: firebrick;
+.basicIconButton {
+        width: 32px;
+        height: 32px;
+        color: #5d5d5d;
+        border: none;
+        border-radius: 4px;
 }
 
-.basicButton:hover {
-    background: steelblue;
+.basicIconButton:hover {
+    color: black;
+    border: solid gray 1px
+}
+
+.basicIconButton:active {
+    color: white;
+    background: black;
+    border-color: black;
 }
 
 .toggleButton.on {

@@ -23,7 +23,7 @@ export class DevlibTSUtil {
 	public static getIconButton(iconKey: string, callback: (ev: MouseEvent) => void): HTMLButtonElement
 	{
 		let btn = document.createElement('button');
-		btn.classList.add('basicButton');
+		btn.classList.add('basicIconButton');
 		let icon = DevlibTSUtil.getFontAwesomeIcon(iconKey);
 		btn.appendChild(icon);
 		btn.onclick = callback;
