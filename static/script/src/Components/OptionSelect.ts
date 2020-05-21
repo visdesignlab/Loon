@@ -3,7 +3,7 @@ import { ButtonProps, HtmlSelection } from '../devlib/DevLibTypes';
 
 export class OptionSelect {
 	
-	constructor(htmlContainerId: string)
+	constructor(htmlContainerId: string, label?: string)
 	{
 		this._containerSelect = d3.select("#" + htmlContainerId);
 	}
@@ -16,6 +16,11 @@ export class OptionSelect {
 	private _containerSelect : HtmlSelection;
 	public get containerSelect() : HtmlSelection {
 		return this._containerSelect;
+	}
+
+	private _label : string;
+	public get label() : string {
+		return this._label;
 	}
 
 	private clearSelectedButton(): void
@@ -54,12 +59,20 @@ export class OptionSelect {
 		}
 	}
 
-
 	private drawQuickSelectButtons(defaultSelection?: number): void
 	{
 		let thisOptionSelect: OptionSelect = this;
+		this.containerSelect.html(null);
+
+		if (this.label)
+		{
+			this.containerSelect
+				.append('span')
+				.classed('optionSelectLabel', true)
+				.text(this.label);
+		}
+
 		this.containerSelect
-			.html(null)
 			.selectAll("button")
 			.data(this.data)
 			.join("button")
@@ -80,15 +93,26 @@ export class OptionSelect {
 
 	private drawDropDownButtons(defaultSelection?: number): void
 	{
-		// for testing
-		defaultSelection = 1;
+		this.containerSelect.html(null);
+
+		// TODO this should be unique across instances
+		let uniqueId = "OptionSelectDropdown";
+
+		if (this.label)
+		{
+			this.containerSelect.append('label')
+				.text(this.label)
+				.classed('optionSelectLabel', true)
+				.attr('for', uniqueId);
+		}
+		
 		this.containerSelect
-			.html(null)
 			.append('select')
-			.attr('id', "OptionSelectDropdown") // TODO this should be unique across instances
+			.attr('id', uniqueId) 
+			.classed('optionSelectSelect', true)
 			.on('change', () =>
 			{
-				let optionSelect = this.containerSelect.select('#OptionSelectDropdown')
+				let optionSelect = this.containerSelect.select('#' + uniqueId)
 				let newIndex: number = +optionSelect.property('value');
 				this.data[newIndex].callback();
 			})

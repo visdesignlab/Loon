@@ -22,7 +22,7 @@ html, body {
 
 /* Toolbar */
 
-button {
+button, option, select {
     font-family: 'Montserrat', sans-serif;
 }
 

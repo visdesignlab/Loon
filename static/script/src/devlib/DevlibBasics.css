@@ -32,3 +32,35 @@
     border: solid #b4b4b4 1px;
 }
 
+
+.devlibButton {
+    background: hsl(232, 100%, 97%);
+    border: solid black 1px;
+    border-radius: 3px;
+    font-size: 10pt;
+    user-select: none;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.devlibButton:hover {
+    background: hsl(232, 100%, 78%);
+}
+
+.devlibButton:active {
+    background: hsl(232, 100%, 39%);
+    color: white;
+}
+
+.optionSelectLabel {
+    padding-right: 5px;
+    vertical-align: middle;
+}
+
+.optionSelectLabel:after {
+    content: ':';
+}
+
+.optionSelectSelect {
+    background: white;
+}
