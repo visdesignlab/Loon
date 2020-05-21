@@ -72,6 +72,11 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._scaleY;
 	}
 
+	private _KDEScaleY : d3.ScaleLinear<number, number>;
+	public get KDEScaleY() : d3.ScaleLinear<number, number> {
+		return this._KDEScaleY;
+	}	
+
 	private _axisPadding :  number;
 	public get axisPadding() :  number {
 		return this._axisPadding;
@@ -159,7 +164,13 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		}
 
 		this.updateScales(bins);
+		// this.drawHistogram(bins);
+		this.drawKDE();
+		this.drawAxis();
+	}
 
+	private drawHistogram(bins: d3.Bin<NDim, number>[]): void
+	{
 		const singleWidth = 18;
 
 		this.mainGroupSelect.selectAll("rect")
@@ -184,8 +195,46 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 				return this.scaleX(d.x1) - this.scaleX(d.x0);
 			})
 			.attr("height", d => this.scaleY(d.length));
+	}
 
-			this.drawAxis();
+	private drawKDE(): void
+	{
+		let pathPoints = this.kde();
+		let maxVal = d3.max(pathPoints, d => d[1]);
+		this._KDEScaleY = d3.scaleLinear<number, number>()
+			.domain([0, maxVal])
+			.range([this.vizHeight, 0]);
+		let lineFunc = d3.line()
+			.curve(d3.curveBasis)
+			.x(d => this.scaleX(d[0]))
+			.y(d => this.KDEScaleY(d[1]));
+
+		this.mainGroupSelect.append("path")
+			.datum(pathPoints)
+			.classed('kdePath', true)
+			.attr("d", lineFunc);
+	}
+
+	private kde(): [number, number][]
+	{
+		const kernel: Function = this.epanechnikov;
+		let [low, high] = this.scaleX.domain();
+		const bandwidth: number = 0.01 * (high - low);
+		let ticks = this.scaleX.ticks(100);
+		let pathPoints: [number, number][] = ticks.map(t => [t, d3.mean(this.data.Array, d => kernel((t - d.get(this.valueKey)) / bandwidth))]);
+		pathPoints.unshift([low, 0]);
+		pathPoints.push([high, 0]);
+		return pathPoints;
+	}
+
+	private epanechnikov(u: number): number
+	{
+		//https://en.wikipedia.org/wiki/Kernel_(statistics)#Kernel_functions_in_common_use
+		if (Math.abs(u) <= 1)
+		{
+			return 0.75 * (1 - u * u);
+		}
+		return 0;
 	}
 
 	private updateScales(bins: d3.Bin<NDim, number>[]): void
