@@ -107,6 +107,13 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			this._brushGroupSelect = this.svgSelect.append("g")
 				.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 				.classed("brushContainer", true);
+
+			this._brush = d3.brushX()
+				.extent([[0, 0], [this.vizWidth, this.vizHeight]])
+				.on("end", () => { this.brushHandler() });
+		
+			this.brushGroupSelect.call(this.brush);
+
 		}
 
 		this._axisPadding = 2;
@@ -114,15 +121,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this._axisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight + this.axisPadding})`)
 			.classed('labelColor', true);
-
-		if (this.canBrush)
-		{
-			this._brush = d3.brushX()
-				.extent([[0, 0], [this.vizWidth, this.vizHeight]])
-				.on("end", () => { this.brushHandler() });
-		
-			this.brushGroupSelect.call(this.brush);
-		}
 	}
 
 	private setLabel(): void

@@ -177,6 +177,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			this._brushGroupSelect = this.svgSelect.append("g")
 				.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 				.classed("brushContainer", true);
+			this.initBrush();
 		}
 
 		this.svgSelect.attr("style", 'width: 100%; height: 100%;');
@@ -190,11 +191,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed("labelColor", true);
 
 		this.initQuickPickOptions();
-		if (this.canBrush)
-		{
-			this.initBrush();
-		}
-
 	}
 
 	private initQuickPickOptions(): void

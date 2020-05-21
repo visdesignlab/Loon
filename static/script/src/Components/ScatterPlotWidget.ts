@@ -120,8 +120,14 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		if (this.canBrush)
 		{
 			this._brushGroupSelect = this.svgSelect.append("g")
-			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
-			.classed("brushContainer", true);
+				.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+				.classed("brushContainer", true);
+
+			this._brush = d3.brush()
+				.extent([[0, 0], [this.vizWidth, this.vizHeight]])
+				.on("end", () => { this.brushHandler() });
+		
+			this.brushGroupSelect.call(this.brush);
 		}
 			
 		this._axisPadding = 0;
@@ -133,15 +139,6 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		this._yAxisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left - this.axisPadding}, ${this.margin.top})`)
 			.classed("labelColor", true);
-
-		if (this.canBrush)
-		{
-			this._brush = d3.brush()
-				.extent([[0, 0], [this.vizWidth, this.vizHeight]])
-				.on("end", () => { this.brushHandler() });
-			
-			this.brushGroupSelect.call(this.brush);
-		}
 	}
 
 	private setLabel(): void
