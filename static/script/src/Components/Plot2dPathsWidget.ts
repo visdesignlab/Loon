@@ -191,7 +191,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed('quickPickContainer', true)
 			.attr('id', containerId);
 
-		this._quickPickOptionSelect = new OptionSelect(containerId);
+		this._quickPickOptionSelect = new OptionSelect(containerId, "Option");
 		let buttonPropList: ButtonProps[] = [];
 		for (let quickPickOption of this.quickPickOptions)
 		{
