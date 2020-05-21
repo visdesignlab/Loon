@@ -135,6 +135,19 @@
     stroke-width: .5px;
 }
 
+.kdePath {
+    fill: rgb(236, 236, 236);
+    stroke: black;
+    stroke-width: 0.5px;
+    /* stroke-linejoin: round; */
+}
+
+.kdePath.inBrush {
+    fill: #272727
+}
+
+
+
 .axisLabel {
     text-anchor: middle;
 }
