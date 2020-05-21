@@ -59,9 +59,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	public set canFacet(v: boolean) {
 		if (!v)
 		{
-			this.container.removeChild(this.facetButton);
-			this.container.removeEventListener("mouseenter", this.onMoueEnter());
-			this.container.removeEventListener("mouseleave", this.onMouseLeave());
+			this.removeFacetButton();
 		}
 		this._canFacet = v;
 	}
@@ -130,6 +128,11 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		{
 			this._dataSuperset = dataSuperset;
 		}
+		let facetOptions = data.GetFacetOptions();
+		if (facetOptions.length === 0)
+		{
+			this.canFacet = false;
+		}
 		this.OnDataChange();
 	}
 
@@ -162,6 +165,16 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		this.container.addEventListener('mouseenter', this.onMoueEnter());
 
 		this.container.addEventListener('mouseleave', this.onMouseLeave());
+	}
+
+	private removeFacetButton(): void
+	{
+		if (this.facetButton)
+		{	
+			this.container.removeChild(this.facetButton);
+		}
+		this.container.removeEventListener("mouseenter", this.onMoueEnter());
+		this.container.removeEventListener("mouseleave", this.onMouseLeave());
 	}
 
 	private onMoueEnter(): () => void

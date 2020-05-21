@@ -85,6 +85,10 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 
 	public GetFacetOptions(): FacetOption[]
 	{
+		if (!this.Specification.locationMaps)
+		{
+			return [];
+		}
 		let facetOptionList = [];
 		for (let key of Object.keys(this.Specification.locationMaps))
 		{
