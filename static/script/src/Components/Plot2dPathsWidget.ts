@@ -203,7 +203,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		}
 		this.hideQuickPickContainer();
 		this.quickPickOptionSelect.onDataChange(buttonPropList, this.initialQuickPickOptionIndex);
-		this.positionQuickPickContainer();
 	}
 
 	private initBrush(): void
@@ -244,13 +243,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		let transformText: string;
 		transformText = `rotate(-90) translate(${-transY}, ${transX})`;
 		this.yLabelTextSelect.attr('transform', transformText);
-	}
-
-	private positionQuickPickContainer(): void
-	{
-		let left = this.container.getBoundingClientRect().left;
-		this.quickPickContainerSelect
-			.attr('style', `left: ${left + this.margin.left}px;`)
 	}
 
 	private showQuickPickContainer(): void
@@ -394,7 +386,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			this.updatePaths();
 			this.positionLabels();
 			this.drawAxis();
-			this.positionQuickPickContainer();
 		}
 		this.resizeBrush();
 	}
