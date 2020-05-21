@@ -170,6 +170,11 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		this.drawAxis();
 	}
 
+	protected drawFacetedData(facetOptionIndex: number): void
+	{
+		super.drawFacetedDataDefault(facetOptionIndex, "300px", "300px");
+	}
+
 	private updateScales(): void
 	{
 		let minMaxX = this.fullData.getMinMax(this.xKey);
