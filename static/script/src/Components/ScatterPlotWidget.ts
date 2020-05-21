@@ -7,9 +7,9 @@ import { DatasetSpec } from '../types';
 
 export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	
-	constructor(container: HTMLElement, xKey: string, yKey: string)
+	constructor(container: HTMLElement, xKey: string, yKey: string, canBrush: boolean = true)
 	{
-		super(container, true);
+		super(container, true, canBrush);
 		this._xKey = xKey;
 		this._yKey = yKey;
 		this.setLabel();
@@ -17,9 +17,16 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 
 	protected Clone(container: HTMLElement): BaseWidget<PointCollection, DatasetSpec>
     {
-        return new ScatterPlotWidget(container, this.xKey,  this.yKey);
-    }
+		const canBrush = false;
+        return new ScatterPlotWidget(container, this.xKey,  this.yKey, canBrush);
+	}
 	
+	protected initProps(props?: any[]): void
+	{
+		super.initProps();
+		this._canBrush = props[0];
+	}
+
 	private _xKey : string;
 	public get xKey() : string {
 		return this._xKey;
@@ -38,6 +45,11 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 	private _mainGroupSelect : SvgSelection;
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
+	}
+
+	private _canBrush : boolean;
+	public get canBrush() : boolean {
+		return this._canBrush;
 	}
 
 	private _brushGroupSelect : SvgSelection;
@@ -98,7 +110,6 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 
 	public init(): void
 	{
-		// console.log(this);
 		this._svgSelect = d3.select(this.container).append("svg")
 			.attr("width", this.width)
 			.attr("height", this.height);
@@ -106,25 +117,31 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 		
-		this._brushGroupSelect = this.svgSelect.append("g")
+		if (this.canBrush)
+		{
+			this._brushGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.classed("brushContainer", true);
-
+		}
+			
 		this._axisPadding = 0;
-
+			
 		this._xAxisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight + this.axisPadding})`)
 			.classed("labelColor", true);
-
+			
 		this._yAxisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left - this.axisPadding}, ${this.margin.top})`)
 			.classed("labelColor", true);
 
-		this._brush = d3.brush()
-			.extent([[0, 0], [this.vizWidth, this.vizHeight]])
-			.on("end", () => { this.brushHandler() });
-	
-		this.brushGroupSelect.call(this.brush);
+		if (this.canBrush)
+		{
+			this._brush = d3.brush()
+				.extent([[0, 0], [this.vizWidth, this.vizHeight]])
+				.on("end", () => { this.brushHandler() });
+			
+			this.brushGroupSelect.call(this.brush);
+		}
 	}
 
 	private setLabel(): void
@@ -158,7 +175,6 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 	public OnDataChange()
 	{
 		this.updateScales();
-		// console.log("on data change...");
 		this.mainGroupSelect.selectAll("circle")
 			.data<NDim>(this.data.Array)
 		  .join("circle")

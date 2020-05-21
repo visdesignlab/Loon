@@ -16,16 +16,17 @@ interface quickPickOption {
 
 export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
-	constructor(container: Element, quickPickOptions: quickPickOption[], initialQuickPickOptionIndex: number = 0, squareAspectRatio: boolean = true)
+	constructor(container: Element, quickPickOptions: quickPickOption[], initialQuickPickOptionIndex: number = 0, squareAspectRatio: boolean = true, canBrush: boolean = true)
 	{
-		super(container, true, quickPickOptions, initialQuickPickOptionIndex);
+		super(container, true, quickPickOptions, initialQuickPickOptionIndex, canBrush);
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
 	}
 	
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-		return new Plot2dPathsWidget(container, this.quickPickOptions, this.quickPickOptionSelect.GetCurrentSelectionIndex(), this.squareAspectRatio);
+		const canBrush = false;
+		return new Plot2dPathsWidget(container, this.quickPickOptions, this.quickPickOptionSelect.GetCurrentSelectionIndex(), this.squareAspectRatio, canBrush);
 	}
 
 	protected initProps(props?: any[]): void
@@ -33,6 +34,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		super.initProps();
 		this._quickPickOptions = props[0];
 		this._initialQuickPickOptionIndex = props[1];
+		this._canBrush = props[2];
 		this._xKey = this.quickPickOptions[this.initialQuickPickOptionIndex].xKey;
 		this._yKey = this.quickPickOptions[this.initialQuickPickOptionIndex].yKey;
 	}
@@ -45,6 +47,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private _mainGroupSelect : SvgSelection;
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
+	}
+
+	private _canBrush : boolean;
+	public get canBrush() : boolean {
+		return this._canBrush;
 	}
 
 	private _brushGroupSelect : SvgSelection;
@@ -165,9 +172,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
-		this._brushGroupSelect = this.svgSelect.append("g")
-			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
-			.classed("brushContainer", true);
+		if (this.canBrush)
+		{
+			this._brushGroupSelect = this.svgSelect.append("g")
+				.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+				.classed("brushContainer", true);
+		}
 
 		this.svgSelect.attr("style", 'width: 100%; height: 100%;');
 
@@ -180,7 +190,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed("labelColor", true);
 
 		this.initQuickPickOptions();
-		this.initBrush();
+		if (this.canBrush)
+		{
+			this.initBrush();
+		}
 
 	}
 

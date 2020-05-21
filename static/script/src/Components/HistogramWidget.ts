@@ -6,19 +6,26 @@ import { NDim } from '../devlib/DevlibTypes';
 import { DatasetSpec } from '../types';
 
 export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
-	
-	constructor(container: HTMLElement, valueKey: string)
+
+	constructor(container: HTMLElement, valueKey: string, canBrush: boolean = true)
 	{
-		super(container, true);
+		super(container, true, canBrush);
 		this._valueKey = valueKey;
 		this.setLabel()
 	}
 
     protected Clone(container: HTMLElement): BaseWidget<PointCollection, DatasetSpec>
     {
-        let clone = new HistogramWidget(container, this.valueKey);
+		const canBrush = false;
+        let clone = new HistogramWidget(container, this.valueKey, canBrush);
         return clone;
     }
+
+	protected initProps(props?: any[]): void
+	{
+		super.initProps();
+		this._canBrush = props[0];
+	}
 
 	private _valueKey : string;
 	public get valueKey() : string {
@@ -33,6 +40,11 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	private _mainGroupSelect : SvgSelection;
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
+	}
+	
+	private _canBrush : boolean;
+	public get canBrush() : boolean {
+		return this._canBrush;
 	}
 
 	private _brushGroupSelect : SvgSelection;
@@ -90,9 +102,12 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 		
-		this._brushGroupSelect = this.svgSelect.append("g")
-			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
-			.classed("brushContainer", true);
+		if (this.canBrush)
+		{
+			this._brushGroupSelect = this.svgSelect.append("g")
+				.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+				.classed("brushContainer", true);
+		}
 
 		this._axisPadding = 2;
 
@@ -100,12 +115,14 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight + this.axisPadding})`)
 			.classed('labelColor', true);
 
-		this._brush = d3.brushX()
-			.extent([[0, 0], [this.vizWidth, this.vizHeight]])
-			.on("end", () => { this.brushHandler() });
-	
-		this.brushGroupSelect.call(this.brush);
-
+		if (this.canBrush)
+		{
+			this._brush = d3.brushX()
+				.extent([[0, 0], [this.vizWidth, this.vizHeight]])
+				.on("end", () => { this.brushHandler() });
+		
+			this.brushGroupSelect.call(this.brush);
+		}
 	}
 
 	private setLabel(): void
