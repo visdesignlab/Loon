@@ -1,7 +1,8 @@
 import { BaseComponent } from './BaseComponent';
-import { Margin } from '../devlib/DevLibTypes';
+import { Margin, ButtonProps } from '../devlib/DevLibTypes';
 import  { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { AppData, DatasetSpec } from '../types';
+import { OptionSelect } from './OptionSelect';
 
 export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpecType> extends BaseComponent {
 	
@@ -102,7 +103,10 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		return this._largePopup;
 	}
 	
-	
+	private _largePopupContent : HTMLDivElement;
+	public get largePopupContent() : HTMLDivElement {
+		return this._largePopupContent;
+	}	
 
 	protected initProps(props?: any[]): void
 	{
@@ -173,10 +177,14 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	private drawFacetContent(): void
 	{
 		this.largePopup.innerHTML = null;
+
 		
 		DevlibTSUtil.show(this.largePopupOuter);
-		this.drawGroupBySelection()
-
+		this.drawGroupBySelection();
+		let contentContainer = document.createElement('div');
+		contentContainer.classList.add('largePopupContent');
+		this.largePopup.appendChild(contentContainer);
+		this._largePopupContent = contentContainer;
 		this.drawFacetedData(0);
 	}
 
@@ -184,9 +192,22 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	{
 		let groupByContainer = document.createElement('div');
 		groupByContainer.classList.add('groupByContainer');
-
-
+		groupByContainer.id = "largePopupGroupByContainer";
 		this.largePopup.appendChild(groupByContainer);
+		let optionSelect = new OptionSelect("largePopupGroupByContainer", "Group by");
+		let buttonPropsList: ButtonProps[] = [];
+		let facetOptions = this.data.GetFacetOptions();
+		for (let i = 0; i < facetOptions.length; i++)
+		{
+			let facetOption = facetOptions[i];
+			let buttonProps: ButtonProps = {
+				displayName: facetOption.name,
+				callback: () => this.drawFacetedData(i)
+			 }
+			 buttonPropsList.push(buttonProps);
+		}
+		optionSelect.onDataChange(buttonPropsList, 0);
+
 	}
 
 	protected drawFacetedData(facetOptionIndex: number): void
@@ -196,6 +217,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 
 	protected drawFacetedDataDefault(facetOptionIndex: number, width: string = '500px', height: string = '250px'): void
 	{
+		this.largePopupContent.innerHTML = null;
 		let facetOption = this.data.GetFacetOptions()[facetOptionIndex];
 		for (let facet of facetOption.GetFacets())
 		{
@@ -215,7 +237,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		
 			outerContainer.appendChild(newContainer);
 
-			this.largePopup.appendChild(outerContainer);
+			this.largePopupContent.appendChild(outerContainer);
 			this.initSubWidget(newContainer, facet.name, facet.data);
 		}
 	}

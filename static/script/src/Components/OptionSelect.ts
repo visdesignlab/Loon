@@ -6,6 +6,7 @@ export class OptionSelect {
 	constructor(htmlContainerId: string, label?: string)
 	{
 		this._containerSelect = d3.select("#" + htmlContainerId);
+		this._label = label;
 	}
 
 	private _data : ButtonProps[];
@@ -37,6 +38,15 @@ export class OptionSelect {
 
 		if (this.data.length === 1)
 		{
+			if (this.label)
+			{
+				this.containerSelect
+					.append('span')
+					.classed('optionSelectLabel', true)
+					.text(this.label);
+			}
+	
+
 			this.containerSelect
 				.append("span")
 				.classed("valueHeader", true)
@@ -49,7 +59,7 @@ export class OptionSelect {
 
 	private updateButtons(defaultSelection?: number): void
 	{
-		if (this.data.length < 3)
+		if (this.data.length < 4)
 		{
 			this.drawQuickSelectButtons(defaultSelection);
 		}

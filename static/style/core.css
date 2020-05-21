@@ -26,16 +26,26 @@
     left: 0px;
     box-shadow: 0px 0px 16px 5px #2f2f2f;
     display: flex;
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.largePopupContent {
+    display: flex;
     flex-wrap: wrap;
     overflow: scroll;
+    flex-grow: 1;
+    padding: 4px;
 }
 
 .outerFacetContainer {
     display: flex;
     flex-direction: column;
     position: relative;
-    margin: auto;
+    margin: 8px auto;
+    padding: 4px;
     box-shadow: 1px 1px 7px 0px grey;
+
 }
 
 .facetContainer {
@@ -48,4 +58,14 @@
     text-align: center;
     padding-top: 10px;
     font-size: 14pt;
+}
+
+.groupByContainer {
+    width: 100%;
+    font-size: 14pt;
+    padding: 8px;
+    margin: 2px;
+    margin-bottom: 8px;
+    background: #f1f1f1;
+    flex-grow: 0;
 }
