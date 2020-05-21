@@ -1,6 +1,11 @@
 import * as d3 from 'd3';
 import { ButtonProps, HtmlSelection } from '../devlib/DevLibTypes';
 
+enum OptionMode {
+	ButtonList,
+	Dropdown
+}
+
 export class OptionSelect {
 	
 	constructor(htmlContainerId: string, label?: string)
@@ -22,6 +27,11 @@ export class OptionSelect {
 	private _label : string;
 	public get label() : string {
 		return this._label;
+	}
+
+	private _mode : OptionMode;
+	public get mode() : OptionMode {
+		return this._mode;
 	}
 
 	private clearSelectedButton(): void
@@ -71,6 +81,7 @@ export class OptionSelect {
 
 	private drawQuickSelectButtons(defaultSelection?: number): void
 	{
+		this._mode = OptionMode.ButtonList;
 		let thisOptionSelect: OptionSelect = this;
 		this.containerSelect.html(null);
 
@@ -103,8 +114,8 @@ export class OptionSelect {
 
 	private drawDropDownButtons(defaultSelection?: number): void
 	{
+		this._mode = OptionMode.Dropdown;
 		this.containerSelect.html(null);
-
 		// TODO this should be unique across instances
 		let uniqueId = "OptionSelectDropdown";
 
@@ -142,7 +153,7 @@ export class OptionSelect {
 
 	public removeButton(displayName: string, callDefaultCallback = true): void
 	{
-		let currentSelectedIndex = this.getCurrentSelectionIndex();
+		let currentSelectedIndex = this.GetCurrentSelectionIndex();
 		if (!this.data)
 		{
 			return;
@@ -169,7 +180,7 @@ export class OptionSelect {
 
 	public replaceButton(oldButtonName: string, newButtonProps: ButtonProps): void
 	{
-		let currentIndex: number = this.getCurrentSelectionIndex();
+		let currentIndex: number = this.GetCurrentSelectionIndex();
 		this.removeButton(oldButtonName, false);
 		this.addButton(newButtonProps, currentIndex);
 		if (currentIndex === this.data.length - 1)
@@ -178,11 +189,19 @@ export class OptionSelect {
 		}
 	}
 
-	private getCurrentSelectionIndex(): number
+	public GetCurrentSelectionIndex(): number
 	{
-		let currentSelectedElement: Element = this.containerSelect.selectAll('.on').node() as Element;
-		let elementList: Element[] = Array(...this.containerSelect.node().children);
-		let currentSelectedIndex: number = elementList.indexOf(currentSelectedElement)
+		let currentSelectedIndex: number = -1;
+		if (this.mode === OptionMode.ButtonList)
+		{
+			let currentSelectedElement: Element = this.containerSelect.selectAll('.on').node() as Element;
+			let elementList: Element[] = this.containerSelect.selectAll('button').nodes() as Element[];
+			currentSelectedIndex = elementList.indexOf(currentSelectedElement)
+		}
+		else
+		{
+			currentSelectedIndex = +this.containerSelect.select('select').property('value');
+		}
 		return currentSelectedIndex;
 	}
 

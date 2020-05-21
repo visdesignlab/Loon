@@ -6,6 +6,7 @@ import {SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
 import { DatasetSpec } from '../types';
+import { thresholdFreedmanDiaconis } from 'd3';
 
 interface quickPickOption {
 	xKey: string,
@@ -15,24 +16,25 @@ interface quickPickOption {
 
 export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
-	constructor(container: Element, quickPickOptions: quickPickOption[], squareAspectRatio: boolean = true)
+	constructor(container: Element, quickPickOptions: quickPickOption[], initialQuickPickOptionIndex: number = 0, squareAspectRatio: boolean = true)
 	{
-		super(container, true, quickPickOptions);
+		super(container, true, quickPickOptions, initialQuickPickOptionIndex);
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
 	}
 	
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-		return new Plot2dPathsWidget(container, this.quickPickOptions,  this.squareAspectRatio);
+		return new Plot2dPathsWidget(container, this.quickPickOptions, this.quickPickOptionSelect.GetCurrentSelectionIndex(), this.squareAspectRatio);
 	}
 
 	protected initProps(props?: any[]): void
 	{
 		super.initProps();
 		this._quickPickOptions = props[0];
-		this._xKey = this.quickPickOptions[0].xKey;
-		this._yKey = this.quickPickOptions[0].yKey;
+		this._initialQuickPickOptionIndex = props[1];
+		this._xKey = this.quickPickOptions[this.initialQuickPickOptionIndex].xKey;
+		this._yKey = this.quickPickOptions[this.initialQuickPickOptionIndex].yKey;
 	}
 
 	private _svgSelect : SvgSelection;
@@ -102,7 +104,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public get quickPickOptions() : quickPickOption[] {
 		return this._quickPickOptions;
 	}	
+
+	private _initialQuickPickOptionIndex : number;
+	public get initialQuickPickOptionIndex() : number {
+		return this._initialQuickPickOptionIndex;
+	}
 	
+	private _quickPickOptionSelect : OptionSelect;
+	public get quickPickOptionSelect() : OptionSelect {
+		return this._quickPickOptionSelect;
+	}
+
 	private _squareAspectRatio : boolean;
 	public get squareAspectRatio() : boolean {
 		return this._squareAspectRatio;
@@ -179,7 +191,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed('quickPickContainer', true)
 			.attr('id', containerId);
 
-		let optionSelect = new OptionSelect(containerId);
+		this._quickPickOptionSelect = new OptionSelect(containerId);
 		let buttonPropList: ButtonProps[] = [];
 		for (let quickPickOption of this.quickPickOptions)
 		{
@@ -190,7 +202,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			buttonPropList.push(buttonProp);
 		}
 		this.hideQuickPickContainer();
-		optionSelect.onDataChange(buttonPropList, 0);
+		this.quickPickOptionSelect.onDataChange(buttonPropList, this.initialQuickPickOptionIndex);
 		this.positionQuickPickContainer();
 	}
 
@@ -230,14 +242,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		let transX = this.margin.left - bufferForAxis;
 		let transY = this.margin.top + this.vizHeight / 2;
 		let transformText: string;
-		if (this.yKey.length === 1)
-		{
-			transformText = `translate(${transX}, ${transY})`;
-		}
-		else
-		{
-			transformText = `rotate(-90) translate(${-transY}, ${transX})`;
-		}
+		transformText = `rotate(-90) translate(${-transY}, ${transX})`;
 		this.yLabelTextSelect.attr('transform', transformText);
 	}
 

@@ -105,7 +105,8 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 				{
 					squareAspectRatio = initArgs.squareAspectRatio;
 				}
-				newComponent = new Plot2dPathsWidget(container, initArgs.quickPickOptions, squareAspectRatio);
+				const defaultOption = 0;
+				newComponent = new Plot2dPathsWidget(container, initArgs.quickPickOptions, defaultOption, squareAspectRatio);
 				break;
 			case ComponentType.MetricDistributionWidget:
 				newComponent = new MetricDistributionWidget(container, initArgs.metricDistributionCollectionLevel);
