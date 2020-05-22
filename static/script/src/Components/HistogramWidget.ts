@@ -42,6 +42,16 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._mainGroupSelect;
 	}
 	
+	private _totalKDEGroupSelect : SvgSelection;
+	public get totalKDEGroupSelect() : SvgSelection {
+		return this._totalKDEGroupSelect;
+	}
+	
+	private _brushedKDEGroupSelect : SvgSelection;
+	public get brushedKDEGroupSelect() : SvgSelection {
+		return this._brushedKDEGroupSelect;
+	}
+
 	private _canBrush : boolean;
 	public get canBrush() : boolean {
 		return this._canBrush;
@@ -72,10 +82,10 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._scaleY;
 	}
 
-	private _KDEScaleY : d3.ScaleLinear<number, number>;
-	public get KDEScaleY() : d3.ScaleLinear<number, number> {
-		return this._KDEScaleY;
-	}	
+	private _kdeScaleY : d3.ScaleLinear<number, number>;
+	public get kdeScaleY() : d3.ScaleLinear<number, number> {
+		return this._kdeScaleY;
+	}
 
 	private _axisPadding :  number;
 	public get axisPadding() :  number {
@@ -118,8 +128,10 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 				.on("end", () => { this.brushHandler() });
 		
 			this.brushGroupSelect.call(this.brush);
-
 		}
+
+		this._totalKDEGroupSelect = this.mainGroupSelect.append('g');
+		this._brushedKDEGroupSelect = this.mainGroupSelect.append('g');
 
 		this._axisPadding = 2;
 
@@ -165,7 +177,8 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 		this.updateScales(bins);
 		// this.drawHistogram(bins);
-		this.drawKDE();
+		this.drawTotalKDE();
+		this.drawBrushedKDE();
 		this.drawAxis();
 	}
 
@@ -197,31 +210,47 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			.attr("height", d => this.scaleY(d.length));
 	}
 
-	private drawKDE(): void
+	private drawTotalKDE(): void
 	{
-		let pathPoints = this.kde();
-		let maxVal = d3.max(pathPoints, d => d[1]);
-		this._KDEScaleY = d3.scaleLinear<number, number>()
-			.domain([0, maxVal])
-			.range([this.vizHeight, 0]);
+		this.drawKDE(this.data.Array, false, this.totalKDEGroupSelect);
+	}
+
+	private drawBrushedKDE(): void
+	{
+		let brushedPoints = this.data.Array.filter(d => d.inBrush); // todo preferably cache this between histos.
+		this.drawKDE(brushedPoints, true, this.brushedKDEGroupSelect);
+	}
+
+	private drawKDE(points: NDim[], inbrush: boolean, select: SvgSelection): void
+	{
+		let pathPoints = this.kde(points);
+		if (!inbrush)
+		{
+			let maxVal = d3.max(pathPoints, d => d[1]);
+			this._kdeScaleY = d3.scaleLinear<number, number>()
+				.domain([0, maxVal])
+				.range([this.vizHeight, 0]);
+		}
 		let lineFunc = d3.line()
 			.curve(d3.curveBasis)
 			.x(d => this.scaleX(d[0]))
-			.y(d => this.KDEScaleY(d[1]));
+			.y(d => this.kdeScaleY((points.length / this.data.length ) * d[1]));
 
-		this.mainGroupSelect.append("path")
+		select.html(null)
+			.append("path")
 			.datum(pathPoints)
 			.classed('kdePath', true)
+			.classed('inBrush', inbrush)
 			.attr("d", lineFunc);
 	}
 
-	private kde(): [number, number][]
+	private kde(points: NDim[]): [number, number][]
 	{
 		const kernel: Function = this.epanechnikov;
 		let [low, high] = this.scaleX.domain();
 		const bandwidth: number = 0.01 * (high - low);
 		let ticks = this.scaleX.ticks(100);
-		let pathPoints: [number, number][] = ticks.map(t => [t, d3.mean(this.data.Array, d => kernel((t - d.get(this.valueKey)) / bandwidth))]);
+		let pathPoints: [number, number][] = ticks.map(t => [t, d3.mean(points, d => kernel((t - d.get(this.valueKey)) / bandwidth))]);
 		pathPoints.unshift([low, 0]);
 		pathPoints.push([high, 0]);
 		return pathPoints;
@@ -295,7 +324,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	public OnBrushChange(): void
 	{
-
+		this.drawBrushedKDE();
 		console.log("~~~~~~ Histo: OnBrushChange");
 	}
 
