@@ -218,19 +218,23 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	private drawBrushedKDE(): void
 	{
 		let brushedPoints = this.data.Array.filter(d => d.inBrush); // todo preferably cache this between histos.
+		if (brushedPoints.length === this.data.length)
+		{
+			this.brushedKDEGroupSelect.html(null);
+			return;
+		}
 		this.drawKDE(brushedPoints, true, this.brushedKDEGroupSelect);
 	}
 
 	private drawKDE(points: NDim[], inbrush: boolean, select: SvgSelection): void
 	{
 		let pathPoints = this.kde(points);
-		// if (!inbrush)
-		// {
-			let maxVal = d3.max(pathPoints, d => d[1]);
-			let kdeScaleY = d3.scaleLinear<number, number>()
-				.domain([0, maxVal])
-				.range([this.vizHeight, 0]);
-		// }
+
+		let maxVal = d3.max(pathPoints, d => d[1]);
+		let kdeScaleY = d3.scaleLinear<number, number>()
+			.domain([0, maxVal])
+			.range([this.vizHeight, 0]);
+
 		let lineFunc = d3.line()
 			.curve(d3.curveBasis)
 			.x(d => this.scaleX(d[0]))
@@ -325,7 +329,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	public OnBrushChange(): void
 	{
 		this.drawBrushedKDE();
-		console.log("~~~~~~ Histo: OnBrushChange");
 	}
 
 
