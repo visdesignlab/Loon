@@ -178,7 +178,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this.updateScales(bins);
 		// this.drawHistogram(bins);
 		this.drawTotalKDE();
-		this.drawBrushedKDE();
+		// this.drawBrushedKDE();
 		this.drawAxis();
 	}
 
@@ -224,17 +224,17 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	private drawKDE(points: NDim[], inbrush: boolean, select: SvgSelection): void
 	{
 		let pathPoints = this.kde(points);
-		if (!inbrush)
-		{
+		// if (!inbrush)
+		// {
 			let maxVal = d3.max(pathPoints, d => d[1]);
-			this._kdeScaleY = d3.scaleLinear<number, number>()
+			let kdeScaleY = d3.scaleLinear<number, number>()
 				.domain([0, maxVal])
 				.range([this.vizHeight, 0]);
-		}
+		// }
 		let lineFunc = d3.line()
 			.curve(d3.curveBasis)
 			.x(d => this.scaleX(d[0]))
-			.y(d => this.kdeScaleY((points.length / this.data.length ) * d[1]));
+			.y(d => kdeScaleY(d[1]));
 
 		select.html(null)
 			.append("path")

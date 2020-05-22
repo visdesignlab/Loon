@@ -143,7 +143,9 @@
 }
 
 .kdePath.inBrush {
-    fill: #272727
+    fill: firebrick;
+    stroke: firebrick;
+    fill-opacity: 0.6;
 }
 
 
