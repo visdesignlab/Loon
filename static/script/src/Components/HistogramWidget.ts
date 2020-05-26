@@ -103,6 +103,8 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._brush;
 	}
 	
+	private static _useKdeInsteadOfHistogram: boolean = false;
+
 
 	protected setMargin(): void
 	{
@@ -183,14 +185,20 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		}
 
 		this.updateScales(bins);
-		// this.drawHistogram(bins);
+		if (HistogramWidget._useKdeInsteadOfHistogram)
+		{
+			let shallowCopy = [...validNumbers];
+			const key = this.valueKey;
+			this._sortedData = shallowCopy.sort(DevlibAlgo.sortOnProperty<NDim>(d => d.get(key) ));
+	
+			this.drawTotalKDE();
+			this.drawBrushedKDE();
+		}
+		else
+		{
+			this.drawHistogram(bins);
+		}
 
-		let shallowCopy = [...validNumbers];
-		const key = this.valueKey;
-		this._sortedData = shallowCopy.sort(DevlibAlgo.sortOnProperty<NDim>(d => d.get(key) ));
-
-		this.drawTotalKDE();
-		this.drawBrushedKDE();
 		this.drawAxis();
 	}
 
@@ -229,7 +237,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private drawBrushedKDE(): void
 	{
-		let brushedPoints = this.sortedData.filter(d => d.inBrush); // todo preferably cache this between histos.
+		let brushedPoints = this.sortedData.filter(d => d.inBrush);
 		if (brushedPoints.length === this.sortedData.length)
 		{
 			this.brushedKDEGroupSelect.html(null);
