@@ -4,6 +4,7 @@ import {BaseWidget} from './BaseWidget';
 import { valueFilter, PointCollection } from '../DataModel/PointCollection';
 import { NDim } from '../devlib/DevlibTypes';
 import { DatasetSpec } from '../types';
+import { DevlibAlgo } from '../devlib/DevlibAlgo';
 
 export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
@@ -30,6 +31,11 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	private _valueKey : string;
 	public get valueKey() : string {
 		return this._valueKey;
+	}
+	
+	private _sortedData : NDim[];
+	public get sortedData() : NDim[] {
+		return this._sortedData;
 	}
 
 	private _svgSelect : SvgSelection;
@@ -152,6 +158,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	public OnDataChange(): void
 	{
+		let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
 		let count = Math.round(Math.sqrt(this.fullData.length));
 		let minMax = this.fullData.getMinMax(this.valueKey);
 		let x = d3.scaleLinear()
@@ -162,7 +169,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			.domain(x.domain() as [number, number])
 			.thresholds(x.ticks(count))
 			.value(d => d.get(this.valueKey))
-			(this.data.Array);
+			(validNumbers);
 
 		// account for degenerate last bin -_-
 		let ultimateBin = bins[bins.length - 1];
@@ -177,8 +184,13 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 		this.updateScales(bins);
 		// this.drawHistogram(bins);
+
+		let shallowCopy = [...validNumbers];
+		const key = this.valueKey;
+		this._sortedData = shallowCopy.sort(DevlibAlgo.sortOnProperty<NDim>(d => d.get(key) ));
+
 		this.drawTotalKDE();
-		// this.drawBrushedKDE();
+		this.drawBrushedKDE();
 		this.drawAxis();
 	}
 
@@ -212,13 +224,13 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private drawTotalKDE(): void
 	{
-		this.drawKDE(this.data.Array, false, this.totalKDEGroupSelect);
+		this.drawKDE(this.sortedData, false, this.totalKDEGroupSelect);
 	}
 
 	private drawBrushedKDE(): void
 	{
-		let brushedPoints = this.data.Array.filter(d => d.inBrush); // todo preferably cache this between histos.
-		if (brushedPoints.length === this.data.length)
+		let brushedPoints = this.sortedData.filter(d => d.inBrush); // todo preferably cache this between histos.
+		if (brushedPoints.length === this.sortedData.length)
 		{
 			this.brushedKDEGroupSelect.html(null);
 			return;
@@ -250,11 +262,68 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private kde(points: NDim[]): [number, number][]
 	{
+		// Assumes that points is sorted based on valueKey
 		const kernel: Function = this.epanechnikov;
 		let [low, high] = this.scaleX.domain();
 		const bandwidth: number = 0.01 * (high - low);
 		let ticks = this.scaleX.ticks(100);
-		let pathPoints: [number, number][] = ticks.map(t => [t, d3.mean(points, d => kernel((t - d.get(this.valueKey)) / bandwidth))]);
+
+		let pathPoints: [number, number][] = [];
+		for (let t of ticks)
+		{
+			// get index with value closest to t
+			let compareFunction = DevlibAlgo.compareProperty<NDim>(t, (point: NDim) => 
+			{
+				return point.get(this.valueKey);
+			});
+
+			let startIndex: number;
+			let searchResult: number | [number, number] = DevlibAlgo.BinarySearchIndex(points, compareFunction);
+	
+			if (typeof searchResult === "number")
+			{
+				startIndex = searchResult;
+			}
+			else
+			{
+				const [idx1, idx2] = searchResult;
+				if (typeof idx1 !== "undefined")
+				{
+					startIndex = idx1;
+				}
+				else
+				{
+					startIndex = idx2;
+				}
+			}
+
+			let kernelSum = 0;
+			// look forward
+			for (let i = startIndex + 1; i < points.length; i++)
+			{
+				let point = points[i];
+				let u: number = (t - point.get(this.valueKey)) / bandwidth;
+				if (Math.abs(u) > 1)
+				{
+					break;
+				}
+				kernelSum += kernel(u);
+			}
+
+			// look backward
+			for (let i = startIndex; i >= 0; i--)
+			{
+				let point = points[i];
+				let u: number = (t - point.get(this.valueKey)) / bandwidth;
+				if (Math.abs(u) > 1)
+				{
+					break;
+				}
+				kernelSum += kernel(u);
+			}
+			pathPoints.push([t, kernelSum / points.length]);
+		}
+
 		pathPoints.unshift([low, 0]);
 		pathPoints.push([high, 0]);
 		return pathPoints;
