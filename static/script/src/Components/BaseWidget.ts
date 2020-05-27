@@ -14,6 +14,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		{
 			this.addFacetButton();
 		}
+		this.initButtonListContainer();		
 		this._dataSuperset = null;
 	}
 
@@ -64,6 +65,20 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		this._canFacet = v;
 	}
 	
+	private _buttonList : HTMLButtonElement[];
+	public get buttonList() : HTMLButtonElement[] {
+		if (!this._buttonList)
+		{
+			this._buttonList = [];
+		}
+		return this._buttonList;
+	}
+	
+	private _buttonListContainer : HTMLDivElement;
+	public get buttonListContainer() : HTMLDivElement {
+		return this._buttonListContainer;
+	}
+
 	private _facetButton : HTMLButtonElement;
 	public get facetButton() : HTMLButtonElement {
 		return this._facetButton;
@@ -152,39 +167,64 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 
 	protected abstract Clone(container: HTMLElement): BaseWidget<DataType, DataSpecType>
 
+	private initButtonListContainer(): void
+	{
+		this._buttonListContainer = document.createElement('div');
+		this.buttonListContainer.classList.add('noDisp');
+		let style = this.buttonListContainer.style;
+
+		style.position = 'absolute';
+		style.right = '0px';
+		style.top = '0px';		
+		style.pointerEvents = 'none';
+		style.display = 'flex';
+		style.flexDirection = 'row-reverse';
+
+		// this.buttonListContainer.style.background = 'firebrick';
+		this.container.addEventListener('mouseenter', this.onMouseEnter());
+
+		this.container.addEventListener('mouseleave', this.onMouseLeave());
+		this.container.appendChild(this.buttonListContainer);
+		
+		for (let button of this.buttonList)
+		{
+			this.buttonListContainer.appendChild(button);
+		}
+	}
+
 	private addFacetButton(): void
 	{
-		this._facetButton = DevlibTSUtil.getIconButton('layer-group', () =>
+		this._facetButton = this.AddButton('layer-group', () =>
 		{
 			this.drawFacetContent();
 		});
-		this.facetButton.classList.add('noDisp');
-		this.facetButton.style.position = 'absolute';
-		this.facetButton.style.right = '0px';
-		this.container.appendChild(this.facetButton);
-		this.container.addEventListener('mouseenter', this.onMoueEnter());
+	}
 
-		this.container.addEventListener('mouseleave', this.onMouseLeave());
+	public AddButton(iconKey: string, callback: (ev: MouseEvent) => void): HTMLButtonElement
+	{
+		let button = DevlibTSUtil.getIconButton(iconKey, callback);
+		button.style.pointerEvents = 'all';
+		this.buttonList.unshift(button);
+		return button;
 	}
 
 	private removeFacetButton(): void
 	{
 		if (this.facetButton)
 		{	
-			this.container.removeChild(this.facetButton);
+			this.buttonListContainer.removeChild(this.facetButton);
+			this.buttonList.r
 		}
-		this.container.removeEventListener("mouseenter", this.onMoueEnter());
-		this.container.removeEventListener("mouseleave", this.onMouseLeave());
 	}
 
-	private onMoueEnter(): () => void
+	private onMouseEnter(): () => void
 	{
-		return () => DevlibTSUtil.show(this.facetButton);
+		return () => DevlibTSUtil.show(this.buttonListContainer);
 	}
 
 	private onMouseLeave(): () => void
 	{
-		return () => DevlibTSUtil.hide(this.facetButton);
+		return () => DevlibTSUtil.hide(this.buttonListContainer);
 	}
 
 	private drawFacetContent(): void

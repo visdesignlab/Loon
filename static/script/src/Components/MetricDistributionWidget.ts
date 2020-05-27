@@ -152,7 +152,6 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		};
 		this._subComponentLookup = this.layoutFramework.InitializeLayout<MetricDistributionSubComponentTypes>(layout)
 		this.initSubComponents();
-		// this.initExpandButton();
 	}
 
 	private initSubComponents(): void
@@ -602,9 +601,8 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		let thisWidget = this;
 		let allHidden = true;
 		this.distributionPlotContainerSelection
-			.selectAll("div")
+			.selectAll(".histogramContainer")
 			.data(this.pointCollection.attributeList)
-			.classed("histogramContainer", true)
 			.classed("noDisp", (d, i) => 
 			{
 				let shouldHide = this.shouldHide(i);
@@ -675,7 +673,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		let allHidden = true;
 
 		this.scatterPlotContainerSelection
-			.selectAll("div")
+			.selectAll(".scatterPlotContainer")
 			.data(flatData)
 			.classed("noDisp", (d) =>
 			{
@@ -726,7 +724,6 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 	protected OnResize(): void
 	{
 		this.resizeSubComponents();
-		// for ()
 	}
 
 	private resizeSubComponents(): void
