@@ -93,11 +93,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._scaleX;
 	}
 
-	// private _scaleY : d3.ScaleLinear<number, number>;
-	// public get scaleY() : d3.ScaleLinear<number, number> {
-	// 	return this._scaleY;
-	// }
-
 	private _kdeScaleY : d3.ScaleLinear<number, number>;
 	public get kdeScaleY() : d3.ScaleLinear<number, number> {
 		return this._kdeScaleY;
@@ -113,7 +108,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._brush;
 	}
 	
-	private static _useKdeInsteadOfHistogram: boolean = false;
+	private static _useKdeInsteadOfHistogram: boolean = true;
 
 
 	protected setMargin(): void
