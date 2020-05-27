@@ -84,7 +84,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
     public setImageStackWidget(): void
     {
-        const newUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}.png`
+        const newUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}_labels.png`
         let xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
         xhr.onload = () => {

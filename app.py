@@ -304,13 +304,31 @@ def getNormalizedMatlabObjectFromKey(matlabDict: Union[dict, h5py.File], key: st
     # (https://www.mathworks.com/matlabcentral/answers/308303-why-does-matlab-transpose-hdf5-data)
     return np.array(matlabDict[key]).T
 
-@app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
+# @app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
+# def getImageStackMetaData(folderId: str, locationId: int) -> str:
+#     labeledImageStack = getLabeledImageStackArray(folderId, locationId)
+#     metadata = getTiledImageMetaData(labeledImageStack)
+#     addFrameInformation(metadata, labeledImageStack)
+#     metaDataJson = json.dumps(metadata)
+#     return metaDataJson
+
+@app.route('/data/<string:folderId>/img_<int:locationId>_labels.png')
 def getImageStackMetaData(folderId: str, locationId: int) -> str:
-    labeledImageStack = getLabeledImageStackArray(folderId, locationId)
-    metadata = getTiledImageMetaData(labeledImageStack)
-    addFrameInformation(metadata, labeledImageStack)
-    metaDataJson = json.dumps(metadata)
-    return metaDataJson
+    labeledImageStackArray = getLabeledImageStackArray(folderId, locationId)
+
+    labeledImageStackArray = labeledImageStackArray.astype(np.int32)
+
+    labeledImageStack, metaData = getTiledImage(labeledImageStackArray, 'I', True)
+    # metadata = getTiledImageMetaData(labeledImageStack)
+    # addFrameInformation(metadata, labeledImageStack)
+    # metaDataJson = json.dumps(metadata)
+
+    fileObject = getImageFileObject(labeledImageStack, metaData)
+
+    response = flask.send_file(fileObject, mimetype='image/png')
+
+    response.headers['tiledImageMetaData'] = json.dumps(metaData)
+    return response
 
 @app.route('/data/<string:folderId>/img_<int:locationId>.png')
 @authRequired
