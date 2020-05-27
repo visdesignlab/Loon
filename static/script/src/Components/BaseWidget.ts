@@ -213,7 +213,6 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		if (this.facetButton)
 		{	
 			this.buttonListContainer.removeChild(this.facetButton);
-			this.buttonList.r
 		}
 	}
 
