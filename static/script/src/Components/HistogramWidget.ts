@@ -94,11 +94,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._scaleX;
 	}
 
-	private _kdeScaleY : d3.ScaleLinear<number, number>;
-	public get kdeScaleY() : d3.ScaleLinear<number, number> {
-		return this._kdeScaleY;
-	}
-
 	private _axisPadding :  number;
 	public get axisPadding() :  number {
 		return this._axisPadding;
