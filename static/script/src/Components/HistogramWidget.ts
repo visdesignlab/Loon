@@ -48,6 +48,16 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._mainGroupSelect;
 	}
 	
+	private _totalHistogramGroupSelect : SvgSelection;
+	public get totalHistogramGroupSelect() : SvgSelection {
+		return this._totalHistogramGroupSelect;
+	}
+	
+	private _brushedHistogramGroupSelect : SvgSelection;
+	public get brushedHistogramGroupSelect() : SvgSelection {
+		return this._brushedHistogramGroupSelect;
+	}
+
 	private _totalKDEGroupSelect : SvgSelection;
 	public get totalKDEGroupSelect() : SvgSelection {
 		return this._totalKDEGroupSelect;
@@ -83,10 +93,10 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._scaleX;
 	}
 
-	private _scaleY : d3.ScaleLinear<number, number>;
-	public get scaleY() : d3.ScaleLinear<number, number> {
-		return this._scaleY;
-	}
+	// private _scaleY : d3.ScaleLinear<number, number>;
+	// public get scaleY() : d3.ScaleLinear<number, number> {
+	// 	return this._scaleY;
+	// }
 
 	private _kdeScaleY : d3.ScaleLinear<number, number>;
 	public get kdeScaleY() : d3.ScaleLinear<number, number> {
@@ -138,6 +148,9 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			this.brushGroupSelect.call(this.brush);
 		}
 
+		this._totalHistogramGroupSelect = this.mainGroupSelect.append('g');
+		this._brushedHistogramGroupSelect = this.mainGroupSelect.append('g');
+
 		this._totalKDEGroupSelect = this.mainGroupSelect.append('g');
 		this._brushedKDEGroupSelect = this.mainGroupSelect.append('g');
 
@@ -161,6 +174,28 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	public OnDataChange(): void
 	{
 		let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
+		
+		let allBins = this.calculateBins(validNumbers);
+		this.updateScales(allBins);
+		if (HistogramWidget._useKdeInsteadOfHistogram)
+		{
+			let shallowCopy = [...validNumbers];
+			const key = this.valueKey;
+			this._sortedData = shallowCopy.sort(DevlibAlgo.sortOnProperty<NDim>(d => d.get(key) ));
+			this.drawTotalKDE();
+			this.drawBrushedKDE();
+		}
+		else
+		{
+			this.drawHistogram(this.totalHistogramGroupSelect, allBins);
+			this.drawBrushedHistogram();
+		}
+
+		this.drawAxis();
+	}
+
+	private calculateBins(points: NDim[]): d3.Bin<NDim, number>[]
+	{
 		let count = Math.round(Math.sqrt(this.fullData.length));
 		let minMax = this.fullData.getMinMax(this.valueKey);
 		let x = d3.scaleLinear()
@@ -171,7 +206,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			.domain(x.domain() as [number, number])
 			.thresholds(x.ticks(count))
 			.value(d => d.get(this.valueKey))
-			(validNumbers);
+			(points);
 
 		// account for degenerate last bin -_-
 		let ultimateBin = bins[bins.length - 1];
@@ -183,51 +218,81 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 				penultimateBin.push(...ultimateBin);
 			}
 		}
-
-		this.updateScales(bins);
-		if (HistogramWidget._useKdeInsteadOfHistogram)
-		{
-			let shallowCopy = [...validNumbers];
-			const key = this.valueKey;
-			this._sortedData = shallowCopy.sort(DevlibAlgo.sortOnProperty<NDim>(d => d.get(key) ));
-	
-			this.drawTotalKDE();
-			this.drawBrushedKDE();
-		}
-		else
-		{
-			this.drawHistogram(bins);
-		}
-
-		this.drawAxis();
+		return bins;
 	}
 
-	private drawHistogram(bins: d3.Bin<NDim, number>[]): void
+	private drawBrushedHistogram(): void
 	{
-		const singleWidth = 18;
+		let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
+		let brushedNumbers = validNumbers.filter(d => d.inBrush);
+		if (validNumbers.length === brushedNumbers.length)
+		{
+			this.brushedHistogramGroupSelect.html(null);
+			return;
+		}
+		let brushedBins = this.calculateBins(brushedNumbers);
+		this.drawHistogram(this.brushedHistogramGroupSelect, brushedBins, true);
+	}
 
-		this.mainGroupSelect.selectAll("rect")
-			.data(bins)
-		  .join("rect")
-		  	.classed("histogramBar", true)
-			.attr("x", d =>
+
+	private drawHistogram(select: SvgSelection, bins: d3.Bin<NDim, number>[], inBrush: boolean = false): void
+	{
+		let pathPoints = this.getHistogramSkyline(bins);
+		let lineFunc = d3.line()
+			.x(d => d[0])
+			.y(d => d[1])
+			.defined(d => d[0] !== null);
+
+		select.html(null)
+			.append("path")
+			.datum(pathPoints)
+			.classed('kdePath', true)
+			.classed('inBrush', inBrush)
+			.attr("d", lineFunc);
+	}
+
+	private getHistogramSkyline(bins: d3.Bin<NDim, number>[], singleWidth: number = 18): [number, number][]
+	{
+		
+		let pathPoints: [number, number][] = [];
+
+		if (bins.length === 1)
+		{
+			let left = (this.vizWidth - singleWidth) / 2;
+			let right = (this.vizWidth + singleWidth) / 2
+			pathPoints.push([left, this.vizHeight]);
+			pathPoints.push([left, 0]);
+			pathPoints.push([right, 0]);
+			pathPoints.push([right, this.vizHeight]);
+			return pathPoints;
+		}
+
+		let biggestBinCount = d3.max(bins, d => d.length);
+		let scaleY = d3.scaleLinear<number, number>()
+			.domain([0, biggestBinCount])
+			.range([0, this.vizHeight]);
+
+		for (let bin of bins)
+		{
+			let x1: number = this.scaleX(bin.x0);
+			let y: number = this.vizHeight - scaleY(bin.length);
+			pathPoints.push([x1, y]);
+
+			if (bin.length === 0)
 			{
-				if (bins.length === 1)
-				{
-					return (this.vizWidth - singleWidth) / 2
-				}
-				return this.scaleX(d.x0);;
-			})
-			.attr("y", d => this.vizHeight - this.scaleY(d.length))
-			.attr("width", (d) =>
-			{
-				if (bins.length === 1)
-				{
-					return singleWidth;
-				}
-				return this.scaleX(d.x1) - this.scaleX(d.x0);
-			})
-			.attr("height", d => this.scaleY(d.length));
+				let splitPoint: [number, number] = [null, null];
+				pathPoints.push(splitPoint);
+			}
+
+			let x2: number = this.scaleX(bin.x1);
+			pathPoints.push([x2, y]);
+		}
+		
+
+		pathPoints.unshift([0, this.vizHeight]);
+		pathPoints.push([this.vizWidth, this.vizHeight]);
+
+		return pathPoints;
 	}
 
 	private drawTotalKDE(): void
@@ -356,10 +421,10 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			.domain([minBinBoundary, maxBinBoundary])
 			.range([0, this.vizWidth]);
 
-		let biggestBinCount = d3.max(bins, d => d.length);
-		this._scaleY = d3.scaleLinear<number, number>()
-			.domain([0, biggestBinCount])
-			.range([0, this.vizHeight]);
+		// let biggestBinCount = d3.max(bins, d => d.length);
+		// this._scaleY = d3.scaleLinear<number, number>()
+		// 	.domain([0, biggestBinCount])
+		// 	.range([0, this.vizHeight]);
 	}
 
 	public MoveBrush(newRange: [number, number] | null): void
@@ -405,7 +470,14 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	public OnBrushChange(): void
 	{
-		this.drawBrushedKDE();
+		if (HistogramWidget._useKdeInsteadOfHistogram)
+		{
+			this.drawBrushedKDE();
+		}
+		else
+		{
+			this.drawBrushedHistogram();
+		}
 	}
 
 
