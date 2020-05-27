@@ -5,6 +5,7 @@ import { valueFilter, PointCollection } from '../DataModel/PointCollection';
 import { NDim } from '../devlib/DevlibTypes';
 import { DatasetSpec } from '../types';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
@@ -12,7 +13,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	{
 		super(container, true, canBrush);
 		this._valueKey = valueKey;
-		this.setLabel()
+		this.setLabel();
 	}
 
     protected Clone(container: HTMLElement): BaseWidget<PointCollection, DatasetSpec>
@@ -108,8 +109,28 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._brush;
 	}
 	
-	private static _useKdeInsteadOfHistogram: boolean = true;
+	
+	private _useHistogramButton : HTMLButtonElement;
+	public get useHistogramButton() : HTMLButtonElement {
+		return this._useHistogramButton;
+	}
 
+	private _useKDEButton : HTMLButtonElement;
+	public get useKDEButton() : HTMLButtonElement {
+		return this._useKDEButton;
+	}
+	
+	private static _useKdeInsteadOfHistogram : boolean = true;
+	
+	private static get useKdeInsteadOfHistogram() : boolean {
+		return HistogramWidget._useKdeInsteadOfHistogram;
+	}
+
+	private static set useKdeInsteadOfHistogram(v : boolean) {
+		HistogramWidget._useKdeInsteadOfHistogram = v;
+		let event = new Event('switchBetweenKdeAndHistogram');
+		document.dispatchEvent(event);
+	}
 
 	protected setMargin(): void
 	{
@@ -123,6 +144,40 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	public init(): void
 	{
+		this._useHistogramButton = this.AddButton('chart-bar', () =>
+		{
+			HistogramWidget.useKdeInsteadOfHistogram = false;
+		});
+		
+		this._useKDEButton = this.AddButton('chart-area', () =>
+		{
+			HistogramWidget.useKdeInsteadOfHistogram = true;
+		});
+		if (HistogramWidget.useKdeInsteadOfHistogram)
+		{
+			DevlibTSUtil.hide(this.useKDEButton);
+		}
+		else
+		{
+			DevlibTSUtil.hide(this.useHistogramButton);
+		}
+
+		document.addEventListener('switchBetweenKdeAndHistogram', (e: Event) => 
+		{
+			if (HistogramWidget.useKdeInsteadOfHistogram)
+			{
+				DevlibTSUtil.show(this.useHistogramButton);
+				DevlibTSUtil.hide(this.useKDEButton);
+			}
+			else
+			{
+				DevlibTSUtil.hide(this.useHistogramButton);
+				DevlibTSUtil.show(this.useKDEButton);
+			}
+			this.OnDataChange();
+		});
+
+
 		this._svgSelect = d3.select(this.container).append("svg")
 			.attr("width", this.width)
 			.attr("height", this.height);
@@ -168,8 +223,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	public OnDataChange(): void
 	{
-		let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
-		
+		let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));	
 		let allBins = this.calculateBins(validNumbers);
 		this.updateScales(allBins);
 		if (HistogramWidget._useKdeInsteadOfHistogram)
@@ -179,11 +233,13 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			this._sortedData = shallowCopy.sort(DevlibAlgo.sortOnProperty<NDim>(d => d.get(key) ));
 			this.drawTotalKDE();
 			this.drawBrushedKDE();
+			this.removeHistograms();
 		}
 		else
 		{
 			this.drawHistogram(this.totalHistogramGroupSelect, allBins);
 			this.drawBrushedHistogram();
+			this.removeKDEs();
 		}
 
 		this.drawAxis();
@@ -216,6 +272,12 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return bins;
 	}
 
+	private removeHistograms(): void
+	{
+		this.totalHistogramGroupSelect.html(null);
+		this.brushedHistogramGroupSelect.html(null);
+	}
+	
 	private drawBrushedHistogram(): void
 	{
 		let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
@@ -228,7 +290,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		let brushedBins = this.calculateBins(brushedNumbers);
 		this.drawHistogram(this.brushedHistogramGroupSelect, brushedBins, true);
 	}
-
 
 	private drawHistogram(select: SvgSelection, bins: d3.Bin<NDim, number>[], inBrush: boolean = false): void
 	{
@@ -289,6 +350,13 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 		return pathPoints;
 	}
+
+	private removeKDEs(): void
+	{
+		this.totalKDEGroupSelect.html(null);
+		this.brushedKDEGroupSelect.html(null);
+	}
+	
 
 	private drawTotalKDE(): void
 	{
@@ -415,11 +483,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this._scaleX = d3.scaleLinear<number, number>()
 			.domain([minBinBoundary, maxBinBoundary])
 			.range([0, this.vizWidth]);
-
-		// let biggestBinCount = d3.max(bins, d => d.length);
-		// this._scaleY = d3.scaleLinear<number, number>()
-		// 	.domain([0, biggestBinCount])
-		// 	.range([0, this.vizHeight]);
 	}
 
 	public MoveBrush(newRange: [number, number] | null): void
