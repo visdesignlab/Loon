@@ -419,6 +419,10 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 
     public OnResize(): void
     {
+        this.svgSelect
+            .attr("width", this.width)
+            .attr("height", this.height);
+            
         this.updateScales();
         this.draw();
     }

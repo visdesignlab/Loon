@@ -180,7 +180,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			this.initBrush();
 		}
 
-		this.svgSelect.attr("style", 'width: 100%; height: 100%;');
+		// this.svgSelect.attr("style", 'width: 100%; height: 100%;');
+		this.svgSelect.attr('width', this.width);
+		this.svgSelect.attr('height', this.height);
 
 		this._xAxisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight})`)
@@ -391,6 +393,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		if (this.data)
 		{
+			this.svgSelect.attr('width', this.width);
+			this.svgSelect.attr('height', this.height);	
 			this.updateScales();
 			this.updatePaths();
 			this.positionLabels();
