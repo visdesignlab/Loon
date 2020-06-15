@@ -1,6 +1,7 @@
 import os, io, math, random
 from functools import wraps
 from typing import Dict, Tuple, List, Union
+import array
 
 # web framework
 import flask
@@ -102,7 +103,7 @@ def getDatasetConfig(datasetId: str) -> str:
 def getDatasetList() -> str:
     cachePath = './static/cache/datasetList'
     filePath = cachePath + '/derived/combined.json'
-    combineDatasetSpecsFromLocalFiles()
+    # combineDatasetSpecsFromLocalFiles()
     if os.path.exists(filePath):
         return flask.redirect(filePath[1:]) # don't want '.' here
 
@@ -127,7 +128,7 @@ def updateDataSpecList() -> str:
             continue
         filename = dataSpecObj['folder'].rstrip('/').replace('/', '__')
         if filename in filenameSet:
-            # Google allows two file of the same name in a folder
+            # Google allows two file of the same name in a folder.
             # I do not.
             continue
         filenameSet.add(filename)
@@ -304,28 +305,26 @@ def getNormalizedMatlabObjectFromKey(matlabDict: Union[dict, h5py.File], key: st
     # (https://www.mathworks.com/matlabcentral/answers/308303-why-does-matlab-transpose-hdf5-data)
     return np.array(matlabDict[key]).T
 
-# @app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
-# def getImageStackMetaData(folderId: str, locationId: int) -> str:
-#     labeledImageStack = getLabeledImageStackArray(folderId, locationId)
-#     metadata = getTiledImageMetaData(labeledImageStack)
-#     addFrameInformation(metadata, labeledImageStack)
-#     metaDataJson = json.dumps(metadata)
-#     return metaDataJson
-
-@app.route('/data/<string:folderId>/img_<int:locationId>_labels.png')
+@app.route('/data/<string:folderId>/img_<int:locationId>_labels.dat')
 def getImageStackMetaData(folderId: str, locationId: int) -> str:
     labeledImageStackArray = getLabeledImageStackArray(folderId, locationId)
 
     labeledImageStackArray = labeledImageStackArray.astype(np.int32)
+    metaData = getTiledImageMetaData(labeledImageStackArray)
 
-    labeledImageStack, metaData = getTiledImage(labeledImageStackArray, 'I', True)
-    # metadata = getTiledImageMetaData(labeledImageStack)
-    # addFrameInformation(metadata, labeledImageStack)
-    # metaDataJson = json.dumps(metadata)
+    fileObject = io.BytesIO()
+    flatList = []
+    for t in range(metaData['numberOfTiles']):
+        for y in range(metaData['tileHeight']):
+            for x in range(metaData['tileWidth']):
+                flatList.append(int(labeledImageStackArray[y, x, t]))
+    vals = array.array('B', flatList)
 
-    fileObject = getImageFileObject(labeledImageStack, metaData)
+    vals.tofile(fileObject)
 
-    response = flask.send_file(fileObject, mimetype='image/png')
+    fileObject.seek(0)
+
+    response = flask.send_file(fileObject, mimetype='application/octet-stream')
 
     response.headers['tiledImageMetaData'] = json.dumps(metaData)
     return response
@@ -343,25 +342,6 @@ def getImageStack(folderId: str, locationId: int):
 
     response = flask.send_file(fileObject, mimetype='image/png')
     response.headers['tiledImageMetaData'] = json.dumps(metaData)
-    return response
-
-@app.route('/data/<string:folderId>/imgWithOutline_<int:locationId>.png')
-@authRequired
-def getImageStackWithOutline(folderId: str, locationId: int):
-    imageStackArray = getImageStackArray(folderId, locationId)
-    labeledImageStackArray = getLabeledImageStackArray(folderId, locationId)
-    labeledImageStackArray = labeledImageStackArray.astype(np.int32)
-
-    imageStack, metaData1 = getTiledImage(imageStackArray, 'F')
-    imageOutlineStack, metaData2 = getTiledImage(labeledImageStackArray, 'I', True, True)
-    # metaData1 should equal metaData2
-
-    combinedImg = ImageChops.add(imageStack, imageOutlineStack)
-    fileObject = getImageFileObject(combinedImg, metaData1)
-
-    response = flask.send_file(fileObject, mimetype='image/png')
-
-    response.headers['tiledImageMetaData'] = json.dumps(metaData1)
     return response
 
 def getImageStackArray(folderId: str, locationId: int):
@@ -395,14 +375,18 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline 
 
     (bigWidth, bigHeight) = (numberOfColumns * smallW, numImageH * smallH)    
 
-    bigImageType = 'RGB'
+    if imageType == 'F':
+        bigImageType = 'RGB'
+    else:
+        bigImageType = imageType
+    # bigImageType = 'RGBA'
     bigImg = Image.new(bigImageType, (bigWidth, bigHeight))
 
     for timeIndex in range(numImages):
         smallImg = imageStackArray[:, :, timeIndex]
         smallImg = Image.fromarray(smallImg, imageType)
         if colorize:
-            firebrick = (178, 34, 34) # css named color
+            firebrick = (178, 34, 34, 255) # css named color
             smallImg = getColoredImage(smallImg, firebrick)
         x = timeIndex % numberOfColumns
         y = math.floor(timeIndex / numberOfColumns)
@@ -489,9 +473,9 @@ def getImageFileObject(img, tiledImgMetaData):
     return fileObject
 
 def getColoredImage(labeledValueImg, nonZeroColor):
-    outputImg = Image.new('RGB', labeledValueImg.size)
+    outputImg = Image.new('RGBA', labeledValueImg.size)
     coloredImgData = labeledValueImg.getdata()
-    backColor = (0,0,0) # black
+    backColor = (0,255,0,0) # black
     outputImgData = [nonZeroColor if x != 0 else backColor for x in coloredImgData]
     outputImg.putdata(outputImgData)
     return outputImg

@@ -3,6 +3,7 @@ import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes'
 // import {PointND} from '../DataModel/PointND' 
 import {NDim} from '../devlib/DevlibTypes';
 import {ImageLocation} from '../DataModel/ImageLocation';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageStackWidget {
 	
@@ -12,6 +13,7 @@ export class ImageStackWidget {
 		this._maxHeight = maxHeight;
 		this.init();
 		this._imageStackUrl = '';
+		this._labelArray = null;
 		this._selectedImgIndex = 0;
 		console.log(d3);
 		console.log(this);
@@ -60,6 +62,11 @@ export class ImageStackWidget {
 		return this._imageStackUrl;
 	}
 	
+	private _imageStackLabelUrl : string;
+	public get imageStackLabelUrl() : string {
+		return this._imageStackLabelUrl;
+	}
+	
 	private _imageStackWidth : number;
 	public get imageStackWidth() : number {
 		return this._imageStackWidth;
@@ -86,11 +93,20 @@ export class ImageStackWidget {
 		return this._selectedImageContainer;
 	}	
 
+	private _selectedImageCanvas : HtmlSelection;
+	public get selectedImageCanvas() : HtmlSelection {
+		return this._selectedImageCanvas;
+	}
+
+	private _canvasContext : CanvasRenderingContext2D;
+	public get canvasContext() : CanvasRenderingContext2D {
+		return this._canvasContext;
+	}
+	
 	private _selectedImageOverlay : SvgSelection;
 	public get selectedImageOverlay() : SvgSelection {
 		return this._selectedImageOverlay;
 	}
-	
 	
 	private _thumbnailsContainer : HtmlSelection;
 	public get thumbnailsContainer() : HtmlSelection {
@@ -108,6 +124,16 @@ export class ImageStackWidget {
 		return this._data;
 	}
 	
+	private _labelArray : Int8Array;
+	public get labelArray() : Int8Array {
+		return this._labelArray;
+	}
+
+	private _defaultCanvasState : ImageData;
+	public get defaultCanvasState() : ImageData {
+		return this._defaultCanvasState;
+	}
+	
 	public init(): void
 	{
 		const containerSelect = d3.select(this.container);
@@ -119,7 +145,21 @@ export class ImageStackWidget {
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
 
-		this._selectedImageOverlay = this._selectedImageContainer.append('svg');
+		// let self = this;
+		this._selectedImageCanvas = this.selectedImageContainer.append('canvas')
+			.classed('noDisp', true);
+		this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) =>
+			{
+				this.onCanvasMouseMove(e)
+			});
+			  
+		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
+
+		this.selectedImageContainer
+			.on('mouseenter', () => DevlibTSUtil.show(this.selectedImageCanvas.node()))
+			.on('mouseleave', () => DevlibTSUtil.hide(this.selectedImageCanvas.node()));
+
+		this._selectedImageOverlay = this.selectedImageContainer.append('svg');
 
 		this._thumbnailsContainer = this.innerContainer.append('div')
 			.classed('thumbnailsContainer', true);
@@ -137,20 +177,35 @@ export class ImageStackWidget {
 		this.draw();
 	}
 
-	public SetImageProperties(url?: string, imageWidth?: number, imageHeight?: number, numColumns?: number): void
+	public SetImageProperties(imageUrl?: string, labelUrl?: string, imageWidth?: number, imageHeight?: number, numColumns?: number): void
 	{
 		// default values for when loading, or if image isn't found
 		if (!imageWidth)  { imageWidth  = 256; }
 		if (!imageHeight) { imageHeight = 256; }
 		if (!numColumns)  { numColumns  = 10; }
-		if (url)
+		if (imageUrl)
 		{
-			this._imageStackUrl = url;
+			this._imageStackUrl = imageUrl;
 		}
 		else
 		{
-			this._imageStackUrl = "";
+			this._imageStackUrl = '';
 		}
+		if (labelUrl)
+		{
+			this._imageStackLabelUrl = labelUrl;
+			this._labelArray = null;
+			d3.buffer(this.imageStackLabelUrl).then((data: ArrayBuffer) =>
+			{
+				this._labelArray = new Int8Array(data);
+				this.updateCanvas();
+			});
+		}
+		else
+		{
+			this._imageStackLabelUrl = '';
+		}
+
 		this._imageWidth = imageWidth;
 		this._imageHeight = imageHeight;
 		this.selectedImageOverlay
@@ -172,6 +227,7 @@ export class ImageStackWidget {
 	public drawUpdate(): void
 	{
 		this.updateBackgroundPosition(this.selectedImgIndex);
+		this.updateCanvas();
 		this.drawBrushedCentroids();
 		this.changeSelectedThumbnail();
 
@@ -180,9 +236,85 @@ export class ImageStackWidget {
 	private drawSelectedImage(): void
 	{
 		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackUrl);
-		this.selectedImageContainer.attr("style", styleString)
+		this.selectedImageContainer.attr("style", styleString);
+		this.updateCanvas();
 		this.drawBrushedCentroids();
 	}
+
+	private updateCanvas(): void
+	{
+		if (!this.imageStackUrl || !this.labelArray)
+		{
+			return;
+		}
+		this.selectedImageCanvas
+			.attr('width', this.imageWidth)
+			.attr('height', this.imageHeight);
+
+		this.createOutlineImage();
+		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
+	}
+
+	private createOutlineImage(): void
+	{
+		let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
+		let numPixelsInTile = this.imageWidth * this.imageHeight;
+		let firstIndex = numPixelsInTile * this.selectedImgIndex;
+		for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
+		{
+			let r = (i - firstIndex) * 4;
+			let g = r + 1;
+			let b = r + 2;
+			let a = r + 3;
+			let label = this.labelArray[i];
+			if (label > 0 && this.isBorder(i))
+			{
+				myImageData.data[r] = 255;
+				myImageData.data[g] = 0;
+				myImageData.data[b] = 0;
+				myImageData.data[a] = 255
+			}
+		}
+		this._defaultCanvasState = myImageData;
+	}
+
+	private isBorder(index: number): boolean
+	{
+		let numPixelsInTile = this.imageWidth * this.imageHeight;
+		let firstIndex = numPixelsInTile * this.selectedImgIndex;
+		let label = this.labelArray[index];
+		let neighborIndices: number[] = [];
+		// 4-neighbor
+		neighborIndices.push(index + 1);
+		neighborIndices.push(index - 1);
+		neighborIndices.push(index + this.imageWidth);
+		neighborIndices.push(index - this.imageWidth);
+
+		for (let nIdx of neighborIndices)
+		{
+			if (nIdx < firstIndex || (firstIndex + numPixelsInTile) <= nIdx)
+			{
+				// neighbor out of bounds of tile
+				continue;
+			}
+			let nVal = this.labelArray[nIdx];
+			if (nVal !== label)
+			{
+				return true
+			}
+		}
+		return false;
+	}
+
+	private onCanvasMouseMove(e: MouseEvent): void
+	{
+		let numPixelsInTile = this.imageWidth * this.imageHeight;
+		let firstIndex = numPixelsInTile * this.selectedImgIndex;
+		let labelIndex = firstIndex + e.offsetY * this.imageWidth + e.offsetX;
+		console.log(this.labelArray[labelIndex]);
+	}
+
+
 
 	private drawBrushedCentroids()
 	{
