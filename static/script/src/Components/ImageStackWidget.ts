@@ -14,6 +14,7 @@ export class ImageStackWidget {
 		this.init();
 		this._imageStackUrl = '';
 		this._labelArray = null;
+		this._cellHovered = 0;
 		this._selectedImgIndex = 0;
 		console.log(d3);
 		console.log(this);
@@ -132,6 +133,11 @@ export class ImageStackWidget {
 	private _defaultCanvasState : ImageData;
 	public get defaultCanvasState() : ImageData {
 		return this._defaultCanvasState;
+	}
+
+	private _cellHovered : number;
+	public get cellHovered() : number {
+		return this._cellHovered;
 	}
 	
 	public init(): void
@@ -252,7 +258,7 @@ export class ImageStackWidget {
 			.attr('height', this.imageHeight);
 
 		this.createOutlineImage();
-		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
+		this.drawDefaultCanvas();
 	}
 
 	private createOutlineImage(): void
@@ -276,6 +282,11 @@ export class ImageStackWidget {
 			}
 		}
 		this._defaultCanvasState = myImageData;
+	}
+
+	private drawDefaultCanvas(): void
+	{
+		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
 	}
 
 	private isBorder(index: number): boolean
@@ -308,10 +319,43 @@ export class ImageStackWidget {
 
 	private onCanvasMouseMove(e: MouseEvent): void
 	{
-		let numPixelsInTile = this.imageWidth * this.imageHeight;
-		let firstIndex = numPixelsInTile * this.selectedImgIndex;
-		let labelIndex = firstIndex + e.offsetY * this.imageWidth + e.offsetX;
-		console.log(this.labelArray[labelIndex]);
+		if (!this.labelArray)
+		{
+			return;
+		}
+		const numPixelsInTile = this.imageWidth * this.imageHeight;
+		const firstIndex = numPixelsInTile * this.selectedImgIndex;
+		const labelIndex = firstIndex + e.offsetY * this.imageWidth + e.offsetX;
+		const label = this.labelArray[labelIndex];
+		if (label !== this.cellHovered)
+		{
+			this._cellHovered = label;
+			if (label === 0)
+			{
+				this.drawDefaultCanvas();
+			}
+			else
+			{
+				let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
+				myImageData.data.set(this.defaultCanvasState.data);
+				for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
+				{
+					let r = (i - firstIndex) * 4;
+					let g = r + 1;
+					let b = r + 2;
+					let a = r + 3;
+					let imgLabel = this.labelArray[i];
+					if (imgLabel === this.cellHovered)
+					{
+						myImageData.data[r] = 255;
+						myImageData.data[g] = 0;
+						myImageData.data[b] = 0;
+						myImageData.data[a] = 200;
+					}
+				}
+				this.canvasContext.putImageData(myImageData, 0, 0);
+			}
+		}
 	}
 
 
