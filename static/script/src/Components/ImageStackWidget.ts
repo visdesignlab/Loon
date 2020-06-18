@@ -4,6 +4,7 @@ import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes'
 import {NDim} from '../devlib/DevlibTypes';
 import {ImageLocation} from '../DataModel/ImageLocation';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
+import { CurveList } from '../DataModel/CurveList';
 
 export class ImageStackWidget {
 	
@@ -19,6 +20,7 @@ export class ImageStackWidget {
 		console.log(d3);
 		console.log(this);
 		this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
+		this._labelLookupCache = new Map();
 	}
 		
 	private _container : HTMLElement;
@@ -82,8 +84,7 @@ export class ImageStackWidget {
 	public get selectedImgIndex() : number {
 		return this._selectedImgIndex;
 	}
-	
-	
+
 	private _innerContainer : HtmlSelection;
 	public get innerContainer() : HtmlSelection {
 		return this._innerContainer;
@@ -120,8 +121,8 @@ export class ImageStackWidget {
 	}
 
 	
-	private _data : NDim[];
-	public get data() : NDim[] {
+	private _data : CurveList;
+	public get data() : CurveList {
 		return this._data;
 	}
 	
@@ -139,6 +140,12 @@ export class ImageStackWidget {
 	public get cellHovered() : number {
 		return this._cellHovered;
 	}
+
+	
+	private _labelLookupCache : Map<number,Map<number, NDim>>;
+	public get labelLookupCache() : Map<number,Map<number, NDim>> {
+		return this._labelLookupCache;
+	}	
 	
 	public init(): void
 	{
@@ -151,9 +158,9 @@ export class ImageStackWidget {
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
 
-		// let self = this;
 		this._selectedImageCanvas = this.selectedImageContainer.append('canvas')
-			.classed('noDisp', true);
+			.style('opacity', 0);
+
 		this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) =>
 			{
 				this.onCanvasMouseMove(e)
@@ -162,8 +169,12 @@ export class ImageStackWidget {
 		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
 
 		this.selectedImageContainer
-			.on('mouseenter', () => DevlibTSUtil.show(this.selectedImageCanvas.node()))
-			.on('mouseleave', () => DevlibTSUtil.hide(this.selectedImageCanvas.node()));
+			.on('mouseenter', () => {
+				this.selectedImageCanvas.style('opacity', 1);
+			})
+			.on('mouseleave', () => {
+				this.selectedImageCanvas.style('opacity', 0.6);
+			});
 
 		this._selectedImageOverlay = this.selectedImageContainer.append('svg');
 
@@ -173,9 +184,10 @@ export class ImageStackWidget {
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
 	}
 
-	public SetData(data: NDim[], imageLocation: ImageLocation): void
+	public SetData(data: CurveList, imageLocation: ImageLocation): void
 	{
 		this._data = data;
+		this._labelLookupCache.clear()
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
 		this._numImages = imageLocation.frameList.length;
@@ -183,7 +195,7 @@ export class ImageStackWidget {
 		this.draw();
 	}
 
-	public SetImageProperties(imageUrl?: string, labelUrl?: string, imageWidth?: number, imageHeight?: number, numColumns?: number): void
+	public SetImageProperties(imageUrl?: string, imageWidth?: number, imageHeight?: number, numColumns?: number): void
 	{
 		// default values for when loading, or if image isn't found
 		if (!imageWidth)  { imageWidth  = 256; }
@@ -196,20 +208,6 @@ export class ImageStackWidget {
 		else
 		{
 			this._imageStackUrl = '';
-		}
-		if (labelUrl)
-		{
-			this._imageStackLabelUrl = labelUrl;
-			this._labelArray = null;
-			d3.buffer(this.imageStackLabelUrl).then((data: ArrayBuffer) =>
-			{
-				this._labelArray = new Int8Array(data);
-				this.updateCanvas();
-			});
-		}
-		else
-		{
-			this._imageStackLabelUrl = '';
 		}
 
 		this._imageWidth = imageWidth;
@@ -224,6 +222,29 @@ export class ImageStackWidget {
 		this.draw();
 	}
 
+	public SetLabelUrl(labelUrl?: string): void
+	{
+		this._imageStackLabelUrl = labelUrl;
+		this._labelArray = null;
+		this.updateCanvas();
+		if (!labelUrl)
+		{
+			return
+		}
+		d3.buffer(this.imageStackLabelUrl).then((data: ArrayBuffer) =>
+		{
+			if (data.byteLength === 0)
+			{
+				this._labelArray = null;
+			}
+			else
+			{
+				this._labelArray = new Int8Array(data);
+			}
+			this.updateCanvas();
+		});
+	}
+
 	public draw(): void
 	{
 		this.drawSelectedImage();
@@ -234,7 +255,6 @@ export class ImageStackWidget {
 	{
 		this.updateBackgroundPosition(this.selectedImgIndex);
 		this.updateCanvas();
-		this.drawBrushedCentroids();
 		this.changeSelectedThumbnail();
 
 	}
@@ -244,12 +264,11 @@ export class ImageStackWidget {
 		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackUrl);
 		this.selectedImageContainer.attr("style", styleString);
 		this.updateCanvas();
-		this.drawBrushedCentroids();
 	}
 
 	private updateCanvas(): void
 	{
-		if (!this.imageStackUrl || !this.labelArray)
+		if (!this.imageStackUrl)
 		{
 			return;
 		}
@@ -264,6 +283,11 @@ export class ImageStackWidget {
 	private createOutlineImage(): void
 	{
 		let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
+		if (!this.labelArray)
+		{
+			this._defaultCanvasState = myImageData
+			return;
+		}
 		let numPixelsInTile = this.imageWidth * this.imageHeight;
 		let firstIndex = numPixelsInTile * this.selectedImgIndex;
 		for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
@@ -275,9 +299,25 @@ export class ImageStackWidget {
 			let label = this.labelArray[i];
 			if (label > 0 && this.isBorder(i))
 			{
-				myImageData.data[r] = 255;
-				myImageData.data[g] = 0;
-				myImageData.data[b] = 0;
+				let cell = this.getCell(label)
+				if (!cell)
+				{
+					myImageData.data[r] = 0;
+					myImageData.data[g] = 255;
+					myImageData.data[b] = 0;
+				}
+				else if (cell.inBrush)
+				{
+					myImageData.data[r] = 255;
+					myImageData.data[g] = 0;
+					myImageData.data[b] = 0;
+				}
+				else
+				{
+					myImageData.data[r] = 0;
+					myImageData.data[g] = 0;
+					myImageData.data[b] = 255;
+				}
 				myImageData.data[a] = 255
 			}
 		}
@@ -319,7 +359,7 @@ export class ImageStackWidget {
 
 	private onCanvasMouseMove(e: MouseEvent): void
 	{
-		if (!this.labelArray)
+		if (!this.labelArray || !this.defaultCanvasState)
 		{
 			return;
 		}
@@ -336,6 +376,8 @@ export class ImageStackWidget {
 			}
 			else
 			{
+				let cell: NDim = this.getCell(label);
+				console.log(cell);
 				let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
 				myImageData.data.set(this.defaultCanvasState.data);
 				for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
@@ -347,9 +389,24 @@ export class ImageStackWidget {
 					let imgLabel = this.labelArray[i];
 					if (imgLabel === this.cellHovered)
 					{
-						myImageData.data[r] = 255;
-						myImageData.data[g] = 0;
-						myImageData.data[b] = 0;
+						if (!cell)
+						{
+							myImageData.data[r] = 0;
+							myImageData.data[g] = 255;
+							myImageData.data[b] = 0;
+						}
+						else if (cell.inBrush)
+						{
+							myImageData.data[r] = 255;
+							myImageData.data[g] = 0;
+							myImageData.data[b] = 0;
+						}
+						else
+						{
+							myImageData.data[r] = 0;
+							myImageData.data[g] = 0;
+							myImageData.data[b] = 255;
+						}
 						myImageData.data[a] = 200;
 					}
 				}
@@ -358,21 +415,12 @@ export class ImageStackWidget {
 		}
 	}
 
-
-
-	private drawBrushedCentroids()
+	private getCell(label: number): NDim | null
 	{
-		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
-		let thisFramesData = this.data.filter(d => d.get('Frame ID') === currentFrameId)
-
-		this.selectedImageOverlay.selectAll('circle')
-		  .data(thisFramesData)
-			.join('circle')
-			.attr('cx', d => d.get('X') + d.get('xShift'))
-			.attr('cy', d => d.get('Y') + d.get('yShift'))
-			.classed('centroidIndicator', true)
-			.classed('inBrush', d => d.inBrush)
-	}
+		let locId = this.imageLocation.locationId
+		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId
+		return this.data.GetCellFromLabel(locId, currentFrameId, label);
+	} 
 
 	private drawAllThumbnails(): void
 	{

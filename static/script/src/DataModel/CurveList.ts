@@ -27,10 +27,21 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
+		this._locationFrameSegmentLookup = new Map<string, PointND>();
+		for (let point of this)
+		{
+			let loc = point.get('Location ID');
+			let frame = point.get('Frame ID');
+			let segmentLabel = point.get('segmentLabel');
+			let key: string = [loc, frame, segmentLabel].join(',')
+			this._locationFrameSegmentLookup.set(key, point);
+		}
 		this._curveCollection = new CurveCollection(this, spec);
 		this._curveBrushList = new Map<string, valueFilter[]>();
 		this.Specification = spec;
 	}
+
+
 
 	private _curveList : CurveND[];
 	public get curveList() : CurveND[] {
@@ -58,6 +69,19 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		}
 		return this._minMaxMap;
 	}
+
+	private _locationFrameSegmentLookup : Map<string, PointND>;
+
+	public GetCellFromLabel(locationId: number, frameId: number, segmentLabel: number): PointND | null
+	{
+		let key: string = [locationId, frameId, segmentLabel].join(',')
+		if (this._locationFrameSegmentLookup.has(key))
+		{
+			return this._locationFrameSegmentLookup.get(key);
+		}
+		return null;
+	}
+	
 
 	private _brushApplied : boolean;
 	public get brushApplied() : boolean {
