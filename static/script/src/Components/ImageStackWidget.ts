@@ -360,6 +360,18 @@ export class ImageStackWidget {
 		else
 		{
 			let [cell, index] = this.getCell(label);
+			let pageX = e.pageX;
+			let pageY = e.pageY;
+			let cellX = 0;
+			let cellY = 0;
+			if (cell)
+			{
+				let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
+				cellX = cell.get('X') + cell.get('xShift');
+				cellY = cell.get('Y') + cell.get('yShift');
+				pageX = canvasBoundRect.x + cellX;
+				pageY = canvasBoundRect.y + cellY;
+			}
 			// console.log(cell);
 			// console.log('Cell ID:' + cell?.parent?.id);
 			// console.log('Row: ' + (index + 1));
@@ -367,10 +379,22 @@ export class ImageStackWidget {
 			myImageData.data.set(this.defaultCanvasState.data);
 			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 			{
+				let imgX = (i - firstIndex) % this.imageWidth;
+				let imgY = Math.floor((i - firstIndex) / this.imageWidth);
 				let rIdx = (i - firstIndex) * 4;
 				let imgLabel = this.labelArray[i];
-				if (imgLabel === this.cellHovered)
+				if (cell && Math.pow(imgX - cellX, 2) + Math.pow(imgY - cellY, 2) <= 25)
 				{
+					// cell center label
+					let [r, g, b] = this.getCellColor(cell);
+					myImageData.data[rIdx] = 255;
+					myImageData.data[rIdx + 1] = 0;
+					myImageData.data[rIdx + 2] = 255;
+					myImageData.data[rIdx + 3] = 255; // alpha
+				}
+				else if (imgLabel === this.cellHovered)
+				{
+					// cell region color
 					let [r, g, b] = this.getCellColor(cell);
 					myImageData.data[rIdx] = r;
 					myImageData.data[rIdx + 1] = g;
@@ -381,15 +405,7 @@ export class ImageStackWidget {
 			this.canvasContext.putImageData(myImageData, 0, 0);
 			let tooltipContent: string = this.getTooltipContent(label, cell, index);
 			
-			let pageX = e.pageX;
-			let pageY = e.pageY;
-			if (cell)
-			{
-				let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
 
-				pageX = canvasBoundRect.x + cell.get('X') + cell.get('xShift');
-				pageY = canvasBoundRect.y + cell.get('Y') + cell.get('yShift');
-			}
 			this.tooltip.Show(tooltipContent, pageX, pageY);
 		}
 	}
