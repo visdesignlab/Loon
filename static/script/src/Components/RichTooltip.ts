@@ -77,12 +77,13 @@ export class RichTooltip
         const callbackFunc = () => this.drawTooltip(htmlString, pageX, pageY)
         if (this.showTimerRunning)
         {
-            this.showTimer.restart(callbackFunc,  waitToShow);
+            // this.showTimer.restart(callbackFunc,  waitToShow);
+            this.showTimer.stop();
         }
-        else
-        {
+        // else
+        // {
             this._showTimer = d3.timeout(callbackFunc, waitToShow);
-        }
+        // }
         this._showTimerRunning = true;
         if (this.hideTimerRunning)
         {

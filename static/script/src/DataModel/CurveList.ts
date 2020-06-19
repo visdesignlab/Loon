@@ -35,7 +35,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			let frame = point.get('Frame ID');
 			let segmentLabel = point.get('segmentLabel');
 			let key: string = [loc, frame, segmentLabel].join(',')
-			this._locationFrameSegmentLookup.set(key, [point, i]);
+			this._locationFrameSegmentLookup.set(key, [point, i + 1]);
 		}
 		this._curveCollection = new CurveCollection(this, spec);
 		this._curveBrushList = new Map<string, valueFilter[]>();
