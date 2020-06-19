@@ -1,5 +1,7 @@
 .richTooltip {
     position: absolute;
+    top: 0px;
+    left: 0px;
     background: rgba(255,255,255,.85);
     border: solid black 1px;
     border-radius: 4px;
