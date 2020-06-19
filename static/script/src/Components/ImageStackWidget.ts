@@ -292,33 +292,19 @@ export class ImageStackWidget {
 		let firstIndex = numPixelsInTile * this.selectedImgIndex;
 		for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 		{
-			let r = (i - firstIndex) * 4;
-			let g = r + 1;
-			let b = r + 2;
-			let a = r + 3;
+			let rIdx = (i - firstIndex) * 4;
+			let gIdx = rIdx + 1;
+			let bIdx = rIdx + 2;
+			let aIdx = rIdx + 3;
 			let label = this.labelArray[i];
 			if (label > 0 && this.isBorder(i))
 			{
 				let cell = this.getCell(label)
-				if (!cell)
-				{
-					myImageData.data[r] = 0;
-					myImageData.data[g] = 255;
-					myImageData.data[b] = 0;
-				}
-				else if (cell.inBrush)
-				{
-					myImageData.data[r] = 255;
-					myImageData.data[g] = 0;
-					myImageData.data[b] = 0;
-				}
-				else
-				{
-					myImageData.data[r] = 0;
-					myImageData.data[g] = 0;
-					myImageData.data[b] = 255;
-				}
-				myImageData.data[a] = 255
+				let [r, g, b] = this.getCellColor(cell);
+				myImageData.data[rIdx] = r;
+				myImageData.data[gIdx] = g;
+				myImageData.data[bIdx] = b;
+				myImageData.data[aIdx] = 255;
 			}
 		}
 		this._defaultCanvasState = myImageData;
@@ -382,32 +368,18 @@ export class ImageStackWidget {
 				myImageData.data.set(this.defaultCanvasState.data);
 				for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 				{
-					let r = (i - firstIndex) * 4;
-					let g = r + 1;
-					let b = r + 2;
-					let a = r + 3;
+					let rIdx = (i - firstIndex) * 4;
+					let gIdx = rIdx + 1;
+					let bIdx = rIdx + 2;
+					let aIdx = rIdx + 3;
 					let imgLabel = this.labelArray[i];
 					if (imgLabel === this.cellHovered)
 					{
-						if (!cell)
-						{
-							myImageData.data[r] = 0;
-							myImageData.data[g] = 255;
-							myImageData.data[b] = 0;
-						}
-						else if (cell.inBrush)
-						{
-							myImageData.data[r] = 255;
-							myImageData.data[g] = 0;
-							myImageData.data[b] = 0;
-						}
-						else
-						{
-							myImageData.data[r] = 0;
-							myImageData.data[g] = 0;
-							myImageData.data[b] = 255;
-						}
-						myImageData.data[a] = 200;
+						let [r, g, b] = this.getCellColor(cell);
+						myImageData.data[rIdx] = r;
+						myImageData.data[gIdx] = g;
+						myImageData.data[bIdx] = b;
+						myImageData.data[aIdx] = 200;
 					}
 				}
 				this.canvasContext.putImageData(myImageData, 0, 0);
@@ -420,7 +392,28 @@ export class ImageStackWidget {
 		let locId = this.imageLocation.locationId
 		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId
 		return this.data.GetCellFromLabel(locId, currentFrameId, label);
-	} 
+	}
+
+	private getCellColor(cell: NDim | null): [number, number, number]
+	{
+		let color: [number, number, number] = [0, 0, 0];
+		if (!cell)
+		{
+			// SpringGreen
+			color = [154, 205, 50];
+		}
+		else if (cell.inBrush)
+		{
+			// FireBrick
+			color = [178, 34, 34];
+		}
+		else
+		{
+			// SteelBlue
+			color = [70, 130, 180];
+		}
+		return color
+	}
 
 	private drawAllThumbnails(): void
 	{
