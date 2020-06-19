@@ -1,4 +1,5 @@
 import { StringToNumberObj, NDim } from '../devlib/DevlibTypes'
+import { CurveND } from './CurveND';
 
 export class PointND implements NDim {
 
@@ -11,6 +12,7 @@ export class PointND implements NDim {
 			this._valueMap.set(key, m);
 		}
 		this._inBrush = true;
+		this._parent = null;
 	}
 
 	private _valueMap : Map<string, number>;
@@ -22,9 +24,16 @@ export class PointND implements NDim {
 	public get inBrush() : boolean {
 		return this._inBrush;
 	}
-
 	public set inBrush(v: boolean) {
 		this._inBrush = v;
+	}
+	
+	private _parent : CurveND | null;
+	public get parent() : CurveND | null {
+		return this._parent;
+	}
+	public set parent(v : CurveND | null) {
+		this._parent = v;
 	}
 
 	public addValue(key: string, value: number)

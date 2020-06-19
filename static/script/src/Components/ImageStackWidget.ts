@@ -1,9 +1,8 @@
 import * as d3 from 'd3';
 import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes'
-// import {PointND} from '../DataModel/PointND' 
-import {NDim} from '../devlib/DevlibTypes';
+import {PointND} from '../DataModel/PointND' 
+// import {NDim} from '../devlib/DevlibTypes';
 import {ImageLocation} from '../DataModel/ImageLocation';
-import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { CurveList } from '../DataModel/CurveList';
 
 export class ImageStackWidget {
@@ -20,7 +19,6 @@ export class ImageStackWidget {
 		console.log(d3);
 		console.log(this);
 		this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
-		this._labelLookupCache = new Map();
 	}
 		
 	private _container : HTMLElement;
@@ -140,12 +138,6 @@ export class ImageStackWidget {
 	public get cellHovered() : number {
 		return this._cellHovered;
 	}
-
-	
-	private _labelLookupCache : Map<number,Map<number, NDim>>;
-	public get labelLookupCache() : Map<number,Map<number, NDim>> {
-		return this._labelLookupCache;
-	}	
 	
 	public init(): void
 	{
@@ -187,7 +179,6 @@ export class ImageStackWidget {
 	public SetData(data: CurveList, imageLocation: ImageLocation): void
 	{
 		this._data = data;
-		this._labelLookupCache.clear()
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
 		this._numImages = imageLocation.frameList.length;
@@ -293,18 +284,15 @@ export class ImageStackWidget {
 		for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 		{
 			let rIdx = (i - firstIndex) * 4;
-			let gIdx = rIdx + 1;
-			let bIdx = rIdx + 2;
-			let aIdx = rIdx + 3;
 			let label = this.labelArray[i];
 			if (label > 0 && this.isBorder(i))
 			{
 				let cell = this.getCell(label)
 				let [r, g, b] = this.getCellColor(cell);
 				myImageData.data[rIdx] = r;
-				myImageData.data[gIdx] = g;
-				myImageData.data[bIdx] = b;
-				myImageData.data[aIdx] = 255;
+				myImageData.data[rIdx + 1] = g;
+				myImageData.data[rIdx + 2] = b;
+				myImageData.data[rIdx + 3] = 255;
 			}
 		}
 		this._defaultCanvasState = myImageData;
@@ -353,48 +341,47 @@ export class ImageStackWidget {
 		const firstIndex = numPixelsInTile * this.selectedImgIndex;
 		const labelIndex = firstIndex + e.offsetY * this.imageWidth + e.offsetX;
 		const label = this.labelArray[labelIndex];
-		if (label !== this.cellHovered)
+		if (label === this.cellHovered)
 		{
-			this._cellHovered = label;
-			if (label === 0)
+			return
+		}
+		this._cellHovered = label;
+		if (label === 0)
+		{
+			this.drawDefaultCanvas();
+		}
+		else
+		{
+			let cell: PointND = this.getCell(label);
+			console.log(cell);
+			console.log(cell?.parent?.id);
+			let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
+			myImageData.data.set(this.defaultCanvasState.data);
+			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 			{
-				this.drawDefaultCanvas();
-			}
-			else
-			{
-				let cell: NDim = this.getCell(label);
-				console.log(cell);
-				let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
-				myImageData.data.set(this.defaultCanvasState.data);
-				for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
+				let rIdx = (i - firstIndex) * 4;
+				let imgLabel = this.labelArray[i];
+				if (imgLabel === this.cellHovered)
 				{
-					let rIdx = (i - firstIndex) * 4;
-					let gIdx = rIdx + 1;
-					let bIdx = rIdx + 2;
-					let aIdx = rIdx + 3;
-					let imgLabel = this.labelArray[i];
-					if (imgLabel === this.cellHovered)
-					{
-						let [r, g, b] = this.getCellColor(cell);
-						myImageData.data[rIdx] = r;
-						myImageData.data[gIdx] = g;
-						myImageData.data[bIdx] = b;
-						myImageData.data[aIdx] = 200;
-					}
+					let [r, g, b] = this.getCellColor(cell);
+					myImageData.data[rIdx] = r;
+					myImageData.data[rIdx + 1] = g;
+					myImageData.data[rIdx + 2] = b;
+					myImageData.data[rIdx + 3] = 200; // alpha
 				}
-				this.canvasContext.putImageData(myImageData, 0, 0);
 			}
+			this.canvasContext.putImageData(myImageData, 0, 0);
 		}
 	}
 
-	private getCell(label: number): NDim | null
+	private getCell(label: number): PointND | null
 	{
 		let locId = this.imageLocation.locationId
 		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId
 		return this.data.GetCellFromLabel(locId, currentFrameId, label);
 	}
 
-	private getCellColor(cell: NDim | null): [number, number, number]
+	private getCellColor(cell: PointND | null): [number, number, number]
 	{
 		let color: [number, number, number] = [0, 0, 0];
 		if (!cell)
