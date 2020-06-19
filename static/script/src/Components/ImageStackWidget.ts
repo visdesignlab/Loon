@@ -287,7 +287,7 @@ export class ImageStackWidget {
 			let label = this.labelArray[i];
 			if (label > 0 && this.isBorder(i))
 			{
-				let cell = this.getCell(label)
+				let [cell, _index] = this.getCell(label)
 				let [r, g, b] = this.getCellColor(cell);
 				myImageData.data[rIdx] = r;
 				myImageData.data[rIdx + 1] = g;
@@ -352,9 +352,10 @@ export class ImageStackWidget {
 		}
 		else
 		{
-			let cell: PointND = this.getCell(label);
+			let [cell, index] = this.getCell(label);
 			console.log(cell);
-			console.log(cell?.parent?.id);
+			console.log('Cell ID:' + cell?.parent?.id);
+			console.log('Row: ' + (index + 1));
 			let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
 			myImageData.data.set(this.defaultCanvasState.data);
 			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
@@ -374,7 +375,7 @@ export class ImageStackWidget {
 		}
 	}
 
-	private getCell(label: number): PointND | null
+	private getCell(label: number): [PointND, number] | [null, null]
 	{
 		let locId = this.imageLocation.locationId
 		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId
