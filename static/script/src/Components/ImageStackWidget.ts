@@ -380,7 +380,17 @@ export class ImageStackWidget {
 			}
 			this.canvasContext.putImageData(myImageData, 0, 0);
 			let tooltipContent: string = this.getTooltipContent(label, cell, index);
-			this.tooltip.Show(tooltipContent, e.pageX, e.pageY);
+			
+			let pageX = e.pageX;
+			let pageY = e.pageY;
+			if (cell)
+			{
+				let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
+
+				pageX = canvasBoundRect.x + cell.get('X') + cell.get('xShift');
+				pageY = canvasBoundRect.y + cell.get('Y') + cell.get('yShift');
+			}
+			this.tooltip.Show(tooltipContent, pageX, pageY);
 		}
 	}
 

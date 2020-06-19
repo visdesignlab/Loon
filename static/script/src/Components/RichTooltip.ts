@@ -14,12 +14,10 @@ export class RichTooltip
         this._hideTimerRunning = false;
         this.container.addEventListener('mouseleave', () =>
         {
-            // console.log('mouseleave')
             this.Hide();
         });
         this.container.addEventListener('mouseenter', () =>
         {
-            // console.log('mouseenter')
             if (this.hideTimer && this.hideTimerRunning)
             {
                 this.hideTimer.stop();
@@ -35,7 +33,6 @@ export class RichTooltip
              // this appears to fix it.
             this.hideTimer.stop();
             this._hideTimerRunning = false;
-            // console.log('hide callback');
         };
 
     }
@@ -76,8 +73,7 @@ export class RichTooltip
 
     public Show(htmlString: string, pageX: number, pageY: number): void
     {
-        // console.log('Show()'); 
-        const waitToShow = 250;
+        const waitToShow = 350;
         const callbackFunc = () => this.drawTooltip(htmlString, pageX, pageY)
         if (this.showTimerRunning)
         {
@@ -97,7 +93,6 @@ export class RichTooltip
 
     private drawTooltip(htmlString: string, pageX: number, pageY: number): void
     {
-        // console.log('drawTooltip')
         this._showTimerRunning = false;
         this.container.innerHTML = htmlString;
 
@@ -108,7 +103,7 @@ export class RichTooltip
         let containerRect = document.body.getBoundingClientRect();
 
         // Priority for placement is right, below, left, above
-        const offset = 16; // space between label and position
+        const offset = 20; // space between label and position
         const edgeMargin = 10; // whitespace required between label and edge of document.
         const pad = offset  + edgeMargin;
         let spaceRight = containerRect.right - pageX;
@@ -169,22 +164,15 @@ export class RichTooltip
 
     public Hide(): void
     {
-        // console.log('Hide()')
         if (this.showTimerRunning)
         {
             this.showTimer.stop();
             this._showTimerRunning = false;
         }
         const waitToHide = 200;
-        // const callbackFunc = () => {
-        //     DevlibTSUtil.hide(this.container);
-        //     this._hideTimerRunning = false;
-        //     console.log('hide callback');
-        // };
         if (this.hideTimer && this.hideTimerRunning)
         {
             return
-            // this.hideTimer.restart(this.hideCallback, waitToHide);
         }
         else
         {
