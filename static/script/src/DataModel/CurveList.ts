@@ -27,10 +27,10 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
-		this._locationFrameSegmentLookup = new Map<string, PointND>();
+		this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
 		for (let i = 0; i < this.length; i++)
 		{
-			let point = this[i];
+			let point = this[i] as PointND;
 			let loc = point.get('Location ID');
 			let frame = point.get('Frame ID');
 			let segmentLabel = point.get('segmentLabel');

@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes'
 import {PointND} from '../DataModel/PointND' 
-// import {NDim} from '../devlib/DevlibTypes';
 import {ImageLocation} from '../DataModel/ImageLocation';
 import { CurveList } from '../DataModel/CurveList';
+import { RichTooltip } from '../Components/RichTooltip';
 
 export class ImageStackWidget {
 	
@@ -19,6 +19,7 @@ export class ImageStackWidget {
 		console.log(d3);
 		console.log(this);
 		this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
+		this._tooltip = new RichTooltip();
 	}
 		
 	private _container : HTMLElement;
@@ -137,6 +138,11 @@ export class ImageStackWidget {
 	private _cellHovered : number;
 	public get cellHovered() : number {
 		return this._cellHovered;
+	}
+
+	private _tooltip : RichTooltip;
+	public get tooltip() : RichTooltip {
+		return this._tooltip;
 	}
 	
 	public init(): void
@@ -349,6 +355,7 @@ export class ImageStackWidget {
 		if (label === 0)
 		{
 			this.drawDefaultCanvas();
+			this.tooltip.Hide();
 		}
 		else
 		{
@@ -372,13 +379,53 @@ export class ImageStackWidget {
 				}
 			}
 			this.canvasContext.putImageData(myImageData, 0, 0);
+			let tooltipContent: string = this.getTooltipContent(label, cell, index);
+			this.tooltip.Show(tooltipContent, e.pageX, e.pageY);
 		}
+	}
+
+	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
+	{
+		let innerContainer = document.createElement('div');
+		innerContainer.classList.add('imageStackTooltipContainer')
+		let locId = this.imageLocation.locationId;
+		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
+		let labelValuePairs: [string, string | null][] = [
+			['Location', locId.toString()],
+			['Frame', currentFrameId.toString()],
+			['Segment', label.toString()]
+		];
+		let cellId = cell?.parent?.id;
+		if (cellId)
+		{
+			labelValuePairs.push(['Cell', cellId]);
+			labelValuePairs.push(['Row', index.toString()]);
+		}
+		else
+		{
+			labelValuePairs.push(['No cell linked', null])
+		}
+
+		d3.select(innerContainer).selectAll('p')
+			.data(labelValuePairs)
+			.join('p')
+			.html(d => {
+				if (d[1])
+				{
+					return d[0] + ': <b>' + d[1] + '</b>';
+				}
+				return '<i>' + d[0] + '</i>';
+			})
+			.classed('tooltipDisplayRow', true)
+
+
+		return innerContainer.outerHTML;
 	}
 
 	private getCell(label: number): [PointND, number] | [null, null]
 	{
-		let locId = this.imageLocation.locationId
-		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId
+		let locId = this.imageLocation.locationId;
+		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
 		return this.data.GetCellFromLabel(locId, currentFrameId, label);
 	}
 

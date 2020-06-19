@@ -42,3 +42,11 @@
     fill-opacity: 1;
     fill: #eb2828;
 }
+
+.imageStackTooltipContainer {
+    margin: 10px;
+}
+
+.tooltipDisplayRow {
+    margin: 0px;
+}

@@ -147,7 +147,9 @@ export class CurveListFactory {
 
 		for (let plainCurve of pojoList)
 		{
-			const curve = new CurveND(plainCurve.key);
+			let numericKey = +plainCurve.key;
+			// js formats the number as '123.0', Instead I want '123'
+			const curve = new CurveND(numericKey.toString());
 			for (let key in plainCurve.value)
 			{
 				let value = plainCurve.value[key];
