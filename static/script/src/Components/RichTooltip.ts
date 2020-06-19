@@ -110,25 +110,32 @@ export class RichTooltip
         // Priority for placement is right, below, left, above
         const offset = 16; // space between label and position
         const edgeMargin = 10; // whitespace required between label and edge of document.
+        const pad = offset  + edgeMargin;
         let spaceRight = containerRect.right - pageX;
         let spaceBelow = containerRect.bottom - pageY;
         let spaceLeft = containerRect.width - spaceRight;
+        let spaceAbove = containerRect.height - spaceBelow;
+        let w = boundRect.width;
+        let h = boundRect.height;
+        let w2 = w / 2.0;
+        let h2 = h / 2.0;
         let [top, left]: [number, number] = [0, 0];
-        if (spaceRight > boundRect.width + offset + edgeMargin)
+        if (spaceRight >= w + pad && spaceAbove >= h2 + edgeMargin && spaceBelow >= h2 + edgeMargin)
         {
             [top, left] = this.positionRight(pageX, pageY, boundRect, offset);
         }
-        else if (spaceBelow > boundRect.height  + offset + edgeMargin)
+        else if (spaceBelow >= h + pad && spaceRight >= h2 + edgeMargin && spaceLeft >= h2 + edgeMargin)
         {
             [top, left] = this.positionBelow(pageX, pageY, boundRect, offset);
         }
-        else if (spaceLeft > boundRect.width + offset + edgeMargin)
+        else if (spaceLeft >= w + pad && spaceAbove >= h2 + edgeMargin && spaceBelow >= h2 + edgeMargin)
         {
             [top, left] = this.positionLeft(pageX, pageY, boundRect, offset);
         }
         else
         {
-            let [top, left] = this.positionAbove(pageX, pageY, boundRect, offset);
+            [top, left] = this.positionAbove(pageX, pageY, boundRect, offset);
+            // TODO This can still run into problems if the x and y are at corners, and this point get's reached.
         }
         this.container.style.top = top + 'px';
         this.container.style.left = left + 'px';
