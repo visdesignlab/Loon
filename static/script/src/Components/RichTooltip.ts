@@ -1,3 +1,4 @@
+import * as d3 from 'd3';
 import { DevlibTSUtil } from "../devlib/DevlibTSUtil";
 
 export class RichTooltip
@@ -5,13 +6,38 @@ export class RichTooltip
 
     constructor()
     {
-        // this._uniqueId = "RichTooltip_" + RichTooltip._componentCount;
-        // RichTooltip._componentCount++;
         this._container = document.createElement('div');
         DevlibTSUtil.hide(this.container);
         document.body.appendChild(this.container);
-        this.container.classList.add('richTooltip')
-        // this.container.classList.add('noDisp');
+        this.container.classList.add('richTooltip');
+        this._showTimerRunning = false;
+        this._hideTimerRunning = false;
+        this.container.addEventListener('mouseleave', () =>
+        {
+            // console.log('mouseleave')
+            this.Hide();
+        });
+        this.container.addEventListener('mouseenter', () =>
+        {
+            // console.log('mouseenter')
+            if (this.hideTimer && this.hideTimerRunning)
+            {
+                this.hideTimer.stop();
+                this._hideTimerRunning = false;
+            }
+        });
+        this._hideTimerRunning = false;
+        this._showTimerRunning = false;
+
+        this._hideCallback = () => {
+            DevlibTSUtil.hide(this.container);
+             // shouldn't need this, but I was running into a problem where stop timer was getting stuck in a loop.
+             // this appears to fix it.
+            this.hideTimer.stop();
+            this._hideTimerRunning = false;
+            // console.log('hide callback');
+        };
+
     }
 
     
@@ -20,17 +46,59 @@ export class RichTooltip
         return this._container;
     }
 
-    // private _uniqueId : string;
-    // public get uniqueId() : string {
-    //     return this._uniqueId;
-    // }
-
-    // TODO timer
     
-	private static _componentCount: number = 0;
+    private _showTimerRunning : boolean;
+    public get showTimerRunning() : boolean {
+        return this._showTimerRunning;
+    }
+
+    
+    private _showTimer : d3.Timer;
+    public get showTimer() : d3.Timer {
+        return this._showTimer;
+    }
+
+    private _hideTimer : d3.Timer;
+    public get hideTimer() : d3.Timer {
+        return this._hideTimer;
+    }
+
+    private _hideTimerRunning : boolean;
+    public get hideTimerRunning() : boolean {
+        return this._hideTimerRunning;
+    }
+
+    
+    private _hideCallback : (elapsed: number) => void;
+    public get hideCallback() : (elapsed: number) => void {
+        return this._hideCallback;
+    }
 
     public Show(htmlString: string, pageX: number, pageY: number): void
     {
+        // console.log('Show()'); 
+        const waitToShow = 250;
+        const callbackFunc = () => this.drawTooltip(htmlString, pageX, pageY)
+        if (this.showTimerRunning)
+        {
+            this.showTimer.restart(callbackFunc,  waitToShow);
+        }
+        else
+        {
+            this._showTimer = d3.timeout(callbackFunc, waitToShow);
+        }
+        this._showTimerRunning = true;
+        if (this.hideTimerRunning)
+        {
+            this.hideTimer.stop();
+            this._hideTimerRunning = false;
+        }
+    }
+
+    private drawTooltip(htmlString: string, pageX: number, pageY: number): void
+    {
+        // console.log('drawTooltip')
+        this._showTimerRunning = false;
         this.container.innerHTML = htmlString;
 
         // need to display as hidden to get width
@@ -40,7 +108,6 @@ export class RichTooltip
         let containerRect = document.body.getBoundingClientRect();
 
         // Priority for placement is right, below, left, above
-
         const offset = 16; // space between label and position
         const edgeMargin = 10; // whitespace required between label and edge of document.
         let spaceRight = containerRect.right - pageX;
@@ -66,7 +133,6 @@ export class RichTooltip
         this.container.style.top = top + 'px';
         this.container.style.left = left + 'px';
         this.container.style.visibility = 'visible';
-        
     }
 
     private positionRight(pageX: number, pageY: number, boundRect: DOMRect, offset: number): [number, number]
@@ -96,8 +162,27 @@ export class RichTooltip
 
     public Hide(): void
     {
-        DevlibTSUtil.hide(this.container);
-        // this.container.innerHTML = '';
+        // console.log('Hide()')
+        if (this.showTimerRunning)
+        {
+            this.showTimer.stop();
+            this._showTimerRunning = false;
+        }
+        const waitToHide = 200;
+        // const callbackFunc = () => {
+        //     DevlibTSUtil.hide(this.container);
+        //     this._hideTimerRunning = false;
+        //     console.log('hide callback');
+        // };
+        if (this.hideTimer && this.hideTimerRunning)
+        {
+            return
+            // this.hideTimer.restart(this.hideCallback, waitToHide);
+        }
+        else
+        {
+            this._hideTimer = d3.timeout(this.hideCallback, waitToHide);
+        }
+        this._hideTimerRunning = true;
     }
-
 }

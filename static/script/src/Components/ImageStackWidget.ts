@@ -360,9 +360,9 @@ export class ImageStackWidget {
 		else
 		{
 			let [cell, index] = this.getCell(label);
-			console.log(cell);
-			console.log('Cell ID:' + cell?.parent?.id);
-			console.log('Row: ' + (index + 1));
+			// console.log(cell);
+			// console.log('Cell ID:' + cell?.parent?.id);
+			// console.log('Row: ' + (index + 1));
 			let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
 			myImageData.data.set(this.defaultCanvasState.data);
 			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
