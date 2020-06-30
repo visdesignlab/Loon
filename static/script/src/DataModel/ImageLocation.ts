@@ -1,4 +1,5 @@
 import { ImageFrame } from './ImageFrame'
+import { DevlibAlgo } from '../devlib/DevlibAlgo';
 
 export class ImageLocation
 {
@@ -42,5 +43,10 @@ export class ImageLocation
         let newFrame = new ImageFrame(frameId);
         this.frameList.push(newFrame);
         this.frameLookup.set(frameId, newFrame);
+    }
+
+    public sortFrames(): void
+    {
+        this.frameList.sort(DevlibAlgo.sortOnProperty((frame: ImageFrame) => frame.frameId));
     }
 }

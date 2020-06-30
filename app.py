@@ -1,6 +1,7 @@
 import os, io, math, random
 from functools import wraps
 from typing import Dict, Tuple, List, Union
+import array
 
 # web framework
 import flask
@@ -102,7 +103,7 @@ def getDatasetConfig(datasetId: str) -> str:
 def getDatasetList() -> str:
     cachePath = './static/cache/datasetList'
     filePath = cachePath + '/derived/combined.json'
-    combineDatasetSpecsFromLocalFiles()
+    # combineDatasetSpecsFromLocalFiles()
     if os.path.exists(filePath):
         return flask.redirect(filePath[1:]) # don't want '.' here
 
@@ -122,12 +123,12 @@ def updateDataSpecList() -> str:
     for index, candidateFile in enumerate(candidateFiles):
         print('Building: {}/{}'.format(index, len(candidateFiles)), end='\r')
         dataSpecObj = getDataSpecObj(service, candidateFile)
-        if dataSpecObj == None:
+        if dataSpecObj is None:
             skipCount += 1
             continue
         filename = dataSpecObj['folder'].rstrip('/').replace('/', '__')
         if filename in filenameSet:
-            # Google allows two file of the same name in a folder
+            # Google allows two file of the same name in a folder.
             # I do not.
             continue
         filenameSet.add(filename)
@@ -171,7 +172,7 @@ def getFolderPathFromGoogleDrive(service, topDir, bottomDir) -> List[str]:
     while currentDir != topDir:
         currentDirFile = service.files().get(fileId=currentDir, fields='parents, name').execute()
         parentList = currentDirFile.get('parents', None)
-        if parentList == None:
+        if parentList is None:
             return []
         pathList.append(currentDirFile['name'])
         currentDir = currentDirFile['parents'][0]
@@ -225,34 +226,46 @@ def getMassOverTimeCsv(folderId: str) -> str:
     data_allframes = getData_AllFrames(folderId)
 
     massOverTime = getMassOverTimeArray(folderId, data_allframes)
+    if massOverTime is None:
+        raise Exception('Cannot find massOverTime')
     timeArray = getTimeIndexArray(folderId, data_allframes)
+    if timeArray is None:
+        raise Exception('Cannot find timeArray')
     locationArray = getLocationArray(folderId, data_allframes)
     frameArray = getFrameArray(folderId, data_allframes)
     xShiftArray = getXShiftArray(folderId, data_allframes)
     yShiftArray = getYShiftArray(folderId, data_allframes)
     timeToIndex = {}
+    uniqueLocationList = set()
     for index, time in enumerate(timeArray):
         # weird [0] indexing here is a result of weird
         # array structure that has nested arrays at 
         # surprising places
         time = time[0]
         locId = locationArray[0][index]
+        uniqueLocationList.add(locId)
         frameId = frameArray[index, 0]
         xShift = xShiftArray[index][0]
         yShift = yShiftArray[index][0]
         timeToIndex[time] = (locId, frameId, xShift, yShift)
 
-    returnStr = 'X,Y,Mass,Time,id,Mean Value,Shape Factor,Location ID,Frame ID,xShift,yShift\n'
+    uniqueLocationList = list(uniqueLocationList)
+    uniqueLocationList.sort()
+    labelLookup = buildLabelLookup(folderId, massOverTime, timeToIndex, uniqueLocationList)
+
+    returnStr = 'X,Y,Mass,Time,id,Mean Value,Shape Factor,Location ID,Frame ID,xShift,yShift,segmentLabel\n'
     for index, row in enumerate(massOverTime):
         time = row[3]
         locationId, frameId, xShift, yShift = timeToIndex[time]
         # this corrects the xShift/yShift problem.
         # row[0] += xShift
         # row[1] += yShift
-
+        cellId = row[4]
+        label = labelLookup.get(cellId, {}).get(frameId, -1)
         returnStr += ",".join(map(str, row))
         returnStr += ',' + str(locationId) + ',' + str(frameId)
         returnStr += ',' + str(xShift) + ',' + str(yShift)
+        returnStr += ',' + str(label)
         returnStr += '\n'
 
     # cache file
@@ -263,7 +276,84 @@ def getMassOverTimeCsv(folderId: str) -> str:
     cache.close()
     return returnStr
 
-def getData_AllFrames(folderId: str) -> Dict:
+def buildLabelLookup(folderId: str, massOverTime: Dict, timeToIndex: Dict, locationArray: List) -> Dict:
+    labelLookup = {}
+    for locId in locationArray:
+        print('####===--> LOCATION ID (build label lookup)' + str(locId))
+        imageLabelStack = getLabeledImageStackArray(folderId, locId, True)
+        if imageLabelStack is None:
+            continue
+
+        imgCenters = {}
+        smallH, smallW, numImages = np.shape(imageLabelStack)
+        for frame in range(numImages):
+            frameId = frame + 1
+            imgCenters[frameId] = calculateCenters(imageLabelStack[:, :, frame])
+        
+        for row in massOverTime:
+            x = row[0]
+            y = row[1]
+            time = row[3]
+            cellId = row[4]
+            cellLocId, cellFrameId, xShift, yShift = timeToIndex[time]
+            if cellLocId != locId:
+                continue
+            currentImgCenters = imgCenters[cellFrameId]
+            cellPos = (x + xShift, y + yShift)
+            print('(cellId, frameId) = ' + str(cellId) + ', ' + str(cellFrameId))
+            closestLabel = getClosestLabel(currentImgCenters, cellPos)
+            cellDict = labelLookup.get(cellId, {})
+            cellDict[cellFrameId] = closestLabel
+            labelLookup[cellId] = cellDict
+            
+        # print('imageLabelStack: ' + str(imageLabelStack))
+        # print()
+
+    return labelLookup
+
+def calculateCenters(imgArray) -> List[Tuple[float, float, int]]:
+    h, w = np.shape(imgArray)
+    labelLookup = {}
+    for x in range(w):
+        for y in range(h):
+            label = imgArray[y][x]
+            if label == 0:
+                continue
+            
+            xSum, ySum, count = labelLookup.get(label, (0,0,0))
+            # add one to get bottom right of pixel.
+            # (It looks like this is closer to what they compute for x,y)
+            xSum += (x + 1)
+            ySum += (y + 1)
+            count += 1
+            labelLookup[label] = (xSum, ySum, count)
+    
+    centerList = []
+    for label, (xSum, ySum, count) in labelLookup.items():
+        xAvg = xSum / float(count)
+        yAvg = ySum / float(count)
+        centerList.append((xAvg, yAvg, label))
+    return centerList
+
+def getClosestLabel(imgCenters: List[Tuple[float, float, int]], cellPos: Tuple[float, float]) -> int:
+    closestDistSoFar = math.inf
+    bestLabelSoFar = -1
+    cellX, cellY = cellPos
+    for x, y, label in imgCenters:
+        thisDist = (x - cellX)**2 + (y - cellY)**2
+        # skip square root - this adds compute and doesn't change order
+        if thisDist < closestDistSoFar:
+            closestDistSoFar = thisDist
+            bestLabelSoFar = label
+
+
+    if closestDistSoFar > 0:
+        if closestDistSoFar > 1:
+            print('~~~ Warning, larger dist ~~~')
+        print('dist: ' + str(math.sqrt(closestDistSoFar)))
+    return bestLabelSoFar
+
+def getData_AllFrames(folderId: str) -> Union[Dict, None]:
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat')
 
 def getMassOverTimeArray(folderId: str, matlabDict = None):
@@ -289,8 +379,10 @@ def getMatlabObjectFromKey(folderId: str, key: str, matlabDict: Union[dict, h5py
         return getNormalizedMatlabObjectFromKey(matlabDict, key)
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat', key)
 
-def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str = None):
-    fileId, service = getFileId(folderId, filename)
+def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str = None, doNotAbort = False):
+    fileId, service = getFileId(folderId, filename, doNotAbort)
+    if fileId is None:
+        return None
     matlabDict = getMatlabDictFromGoogleFileId(fileId, service)
 
     if matlabKey != None:
@@ -304,13 +396,38 @@ def getNormalizedMatlabObjectFromKey(matlabDict: Union[dict, h5py.File], key: st
     # (https://www.mathworks.com/matlabcentral/answers/308303-why-does-matlab-transpose-hdf5-data)
     return np.array(matlabDict[key]).T
 
-@app.route('/data/<string:folderId>/img_<int:locationId>_metadata.json')
+@app.route('/data/<string:folderId>/img_<int:locationId>_labels.dat')
 def getImageStackMetaData(folderId: str, locationId: int) -> str:
-    labeledImageStack = getLabeledImageStackArray(folderId, locationId)
-    metadata = getTiledImageMetaData(labeledImageStack)
-    addFrameInformation(metadata, labeledImageStack)
-    metaDataJson = json.dumps(metadata)
-    return metaDataJson
+    labeledImageStackArray = getLabeledImageStackArray(folderId, locationId, True)
+
+    if labeledImageStackArray is None:
+        fileObject = io.BytesIO()
+        vals = array.array('B', [])
+        vals.tofile(fileObject)
+        fileObject.seek(0)
+        response = flask.send_file(fileObject, mimetype='application/octet-stream')
+        # response.headers['tiledImageMetaData'] = json.dumps(metaData)
+        return response
+
+    labeledImageStackArray = labeledImageStackArray.astype(np.int32)
+    metaData = getTiledImageMetaData(labeledImageStackArray)
+
+    fileObject = io.BytesIO()
+    flatList = []
+    for t in range(metaData['numberOfTiles']):
+        for y in range(metaData['tileHeight']):
+            for x in range(metaData['tileWidth']):
+                flatList.append(int(labeledImageStackArray[y, x, t]))
+    vals = array.array('B', flatList)
+
+    vals.tofile(fileObject)
+
+    fileObject.seek(0)
+
+    response = flask.send_file(fileObject, mimetype='application/octet-stream')
+
+    response.headers['tiledImageMetaData'] = json.dumps(metaData)
+    return response
 
 @app.route('/data/<string:folderId>/img_<int:locationId>.png')
 @authRequired
@@ -327,25 +444,6 @@ def getImageStack(folderId: str, locationId: int):
     response.headers['tiledImageMetaData'] = json.dumps(metaData)
     return response
 
-@app.route('/data/<string:folderId>/imgWithOutline_<int:locationId>.png')
-@authRequired
-def getImageStackWithOutline(folderId: str, locationId: int):
-    imageStackArray = getImageStackArray(folderId, locationId)
-    labeledImageStackArray = getLabeledImageStackArray(folderId, locationId)
-    labeledImageStackArray = labeledImageStackArray.astype(np.int32)
-
-    imageStack, metaData1 = getTiledImage(imageStackArray, 'F')
-    imageOutlineStack, metaData2 = getTiledImage(labeledImageStackArray, 'I', True, True)
-    # metaData1 should equal metaData2
-
-    combinedImg = ImageChops.add(imageStack, imageOutlineStack)
-    fileObject = getImageFileObject(combinedImg, metaData1)
-
-    response = flask.send_file(fileObject, mimetype='image/png')
-
-    response.headers['tiledImageMetaData'] = json.dumps(metaData1)
-    return response
-
 def getImageStackArray(folderId: str, locationId: int):
     exampleDatasets = set(['1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96','1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'])
     filenamePattern = 'data{}.mat'
@@ -354,13 +452,13 @@ def getImageStackArray(folderId: str, locationId: int):
     imageFilename = filenamePattern.format(locationId)
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'D_stored')
 
-def getLabeledImageStackArray(folderId: str, locationId: int):
+def getLabeledImageStackArray(folderId: str, locationId: int, doNotAbort = False):
     exampleDatasets = set(['1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96','1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'])
     filenamePattern = 'data{}.mat'
     if (folderId in exampleDatasets):
         filenamePattern = 'Copy of data{}.mat'
     imageFilename = filenamePattern.format(locationId)
-    return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'L_stored')
+    return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'L_stored', doNotAbort)
 
 def getTiledImageFileObject(imageStackArray, imageType: str, colorize = False, getOutline = False) -> io.BytesIO:
     tiledImg, metaData = getTiledImage(imageStackArray, imageType, colorize, getOutline)
@@ -377,14 +475,18 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline 
 
     (bigWidth, bigHeight) = (numberOfColumns * smallW, numImageH * smallH)    
 
-    bigImageType = 'RGB'
+    if imageType == 'F':
+        bigImageType = 'RGB'
+    else:
+        bigImageType = imageType
+    # bigImageType = 'RGBA'
     bigImg = Image.new(bigImageType, (bigWidth, bigHeight))
 
     for timeIndex in range(numImages):
         smallImg = imageStackArray[:, :, timeIndex]
         smallImg = Image.fromarray(smallImg, imageType)
         if colorize:
-            firebrick = (178, 34, 34) # css named color
+            firebrick = (178, 34, 34, 255) # css named color
             smallImg = getColoredImage(smallImg, firebrick)
         x = timeIndex % numberOfColumns
         y = math.floor(timeIndex / numberOfColumns)
@@ -471,14 +573,14 @@ def getImageFileObject(img, tiledImgMetaData):
     return fileObject
 
 def getColoredImage(labeledValueImg, nonZeroColor):
-    outputImg = Image.new('RGB', labeledValueImg.size)
+    outputImg = Image.new('RGBA', labeledValueImg.size)
     coloredImgData = labeledValueImg.getdata()
-    backColor = (0,0,0) # black
+    backColor = (0,255,0,0) # black
     outputImgData = [nonZeroColor if x != 0 else backColor for x in coloredImgData]
     outputImg.putdata(outputImgData)
     return outputImg
 
-def getFileId(folderId: str, filename: str):
+def getFileId(folderId: str, filename: str, doNotAbort = False):
     credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
     service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
     
@@ -488,6 +590,8 @@ def getFileId(folderId: str, filename: str):
     results = service.files().list(q=query, fields=responseFields).execute()
     items = results.get('files', [])
     if len(items) == 0:
+        if doNotAbort:
+            return None, None
         abort(404)
     fileId = items[0]['id']
     return fileId, service

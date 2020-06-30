@@ -5,12 +5,12 @@ export class DerivedPointValueFunctions
     public static GetFunctionList(): [string[], PointDerivationFunction][]
     {
         let functionList = [];
-        functionList.push([['Mass_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Mass', pointList)]);
+        functionList.push([['Mass_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Mass', pointList, false)]);
         functionList.push([['Time_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Time', pointList)]);
         return functionList;
     }
 
-    private static normAttr(attrKey: string, pointList: StringToNumberObj[]): [number[]]
+    private static normAttr(attrKey: string, pointList: StringToNumberObj[], zeroNorm = true): [number[]]
     {
         let newValues: number[] = [];
         if (pointList.length === 0)
@@ -21,7 +21,14 @@ export class DerivedPointValueFunctions
         for (let point of pointList)
         {
             let oldVal = point[attrKey];
-            newValues.push(oldVal - firstVal);
+            if (zeroNorm)
+            {
+                newValues.push(oldVal - firstVal);
+            }
+            else
+            {   
+                newValues.push(oldVal / firstVal);
+            }
         }
         return [newValues];
     }

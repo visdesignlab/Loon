@@ -96,6 +96,10 @@ export class ImageMetaData
             }
             imageLocation.addFrame(frameId);
         }
+        for (let imageLocation of imgMetaData.locationList)
+        {
+            imageLocation.sortFrames();
+        }
         imgMetaData.updateInBrushProp(pointList);
         return imgMetaData;
     }

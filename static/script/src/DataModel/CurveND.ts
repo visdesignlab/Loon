@@ -154,6 +154,7 @@ export class CurveND extends PointCollection implements NDim {
 
 	public addPoint(point: PointND): void
 	{
+		point.parent = this;
 		this._pointList.push(point);
 		this[this.length] = point;
 		++this._length;
