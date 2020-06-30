@@ -279,7 +279,7 @@ def getMassOverTimeCsv(folderId: str) -> str:
 def buildLabelLookup(folderId: str, massOverTime: Dict, timeToIndex: Dict, locationArray: List) -> Dict:
     labelLookup = {}
     for locId in locationArray:
-        print('####===--> LOCATION ID (build label lookup)' + str(locId))
+        print('####===--> build label lookup, LOCATION ID = ' + str(locId))
         imageLabelStack = getLabeledImageStackArray(folderId, locId, True)
         if imageLabelStack is None:
             continue
@@ -290,7 +290,11 @@ def buildLabelLookup(folderId: str, massOverTime: Dict, timeToIndex: Dict, locat
             frameId = frame + 1
             imgCenters[frameId] = calculateCenters(imageLabelStack[:, :, frame])
         
-        for row in massOverTime:
+        for index,row in enumerate(massOverTime):
+            endChar = '\r'
+            if index == len(massOverTime) - 1:
+                endChar = '\n'
+            print('row: {} of {}'.format(index + 1, len(massOverTime)), end=endChar)
             x = row[0]
             y = row[1]
             time = row[3]
@@ -300,7 +304,7 @@ def buildLabelLookup(folderId: str, massOverTime: Dict, timeToIndex: Dict, locat
                 continue
             currentImgCenters = imgCenters[cellFrameId]
             cellPos = (x + xShift, y + yShift)
-            print('(cellId, frameId) = ' + str(cellId) + ', ' + str(cellFrameId))
+            # print('(cellId, frameId) = ' + str(cellId) + ', ' + str(cellFrameId))
             closestLabel = getClosestLabel(currentImgCenters, cellPos)
             cellDict = labelLookup.get(cellId, {})
             cellDict[cellFrameId] = closestLabel
@@ -349,8 +353,10 @@ def getClosestLabel(imgCenters: List[Tuple[float, float, int]], cellPos: Tuple[f
 
     if closestDistSoFar > 0:
         if closestDistSoFar > 1:
+            print()
             print('~~~ Warning, larger dist ~~~')
-        print('dist: ' + str(math.sqrt(closestDistSoFar)))
+            print('dist: ' + str(math.sqrt(closestDistSoFar)))
+            print()
     return bestLabelSoFar
 
 def getData_AllFrames(folderId: str) -> Union[Dict, None]:
