@@ -23,6 +23,11 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._innerContainer;
     }
     
+    private _imageTrackContainer : HtmlSelection;
+    public get imageTrackContainer() : HtmlSelection {
+        return this._imageTrackContainer;
+    }    
+
     private _locationSelectionContainer : HtmlSelection;
     public get locationSelectionContainer() : HtmlSelection {
         return this._locationSelectionContainer;
@@ -58,6 +63,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
         this._innerContainer = d3.select(this.container).append('div');
         this.innerContainer.classed('imageSelectionContainer', true);
+
+        this._imageTrackContainer = d3.select(this.container).append('div');
+        this.imageTrackContainer.classed('imageTrackContainer', true);
+
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
 
@@ -70,7 +79,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._imageStackContainer = this.innerContainer.append('div')
             .attr('style', `max-height: ${this.vizHeight}px;`)
             .classed('imageStackContainer', true);
-        this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.vizHeight);
+        this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight);
+
 
 	}
 

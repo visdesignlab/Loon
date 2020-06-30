@@ -5,12 +5,14 @@ import { ImageLocation } from '../DataModel/ImageLocation';
 import { CurveList } from '../DataModel/CurveList';
 import { RichTooltip } from '../Components/RichTooltip';
 import { ImageStackMetaData } from '../types';
+import { ImageTrackWidget } from './ImageTrackWidget';
 
 export class ImageStackWidget {
 	
-	constructor(container: HTMLElement, maxHeight: number)
+	constructor(container: HTMLElement, imageTrackContainer: HTMLElement, maxHeight: number)
 	{
 		this._container = container;
+		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this);
 		this._maxHeight = maxHeight;
 		this.init();
 		this._imageStackMetaData = {
@@ -34,42 +36,20 @@ export class ImageStackWidget {
 		return this._container;
 	}
 	
+	private _imageTrackWidget : ImageTrackWidget;
+	public get imageTrackWidget() : ImageTrackWidget {
+		return this._imageTrackWidget;
+	}	
+
 	private _maxHeight : number;
 	public get maxHeight() : number {
 		return this._maxHeight;
 	}
 	
-	
 	private _imageLocation : ImageLocation;
 	public get imageLocation() : ImageLocation {
 		return this._imageLocation;
 	}
-	
-
-	// private _imageWidth : number;
-	// public get imageWidth() : number {
-	// 	return this._imageWidth;
-	// }
-	
-	// private _imageHeight : number;
-	// public get imageHeight() : number {
-	// 	return this._imageHeight;
-	// }
-	
-	// private _numImages : number;
-	// public get numImages() : number {
-	// 	return this._numImages;
-	// }
-	
-	// private _numColumns : number;
-	// public get numColumns() : number {
-	// 	return this._numColumns;
-	// }
-	
-	// private _imageStackUrl : string;
-	// public get imageStackUrl() : string {
-	// 	return this._imageStackUrl;
-	// }
 	
 	private _imageStackMetaData : ImageStackMetaData;
 	public get imageStackMetaData() : ImageStackMetaData {
@@ -192,6 +172,7 @@ export class ImageStackWidget {
 			.classed('thumbnailsContainer', true);
 
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
+		this.imageTrackWidget.init();
 	}
 
 	public SetData(data: CurveList, imageLocation: ImageLocation): void
@@ -265,7 +246,6 @@ export class ImageStackWidget {
 		this.updateBackgroundPosition(this.selectedImgIndex);
 		this.updateCanvas();
 		this.changeSelectedThumbnail();
-
 	}
 
 	private drawSelectedImage(): void
@@ -287,6 +267,7 @@ export class ImageStackWidget {
 
 		this.createOutlineImage();
 		this.drawDefaultCanvas();
+		this.imageTrackWidget.draw();
 	}
 
 	private createOutlineImage(): void
