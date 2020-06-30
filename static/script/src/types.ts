@@ -78,5 +78,14 @@ export interface LocationMapTemplate
 	[templateFilename: string]: string[]
 }
 
+export interface ImageStackMetaData
+{
+	url: string,
+	tileWidth: number,
+	tileHeight: number,
+	numberOfTiles: number,
+	numberOfColumns: number
+}
+
 // export type LocationMapList = Map<string, [number, number][]>
 // export type LocationMapTemplate = Map<string, string[]>
