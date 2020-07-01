@@ -336,6 +336,17 @@ export class ImageStackWidget {
 		neighborIndices.push(index - 1);
 		neighborIndices.push(index + this.imageStackMetaData.tileWidth);
 		neighborIndices.push(index - this.imageStackMetaData.tileWidth);
+		// 8-neighbor
+		neighborIndices.push(index - this.imageStackMetaData.tileWidth + 1);
+		neighborIndices.push(index - this.imageStackMetaData.tileWidth - 1);
+		neighborIndices.push(index + this.imageStackMetaData.tileWidth + 1);
+		neighborIndices.push(index + this.imageStackMetaData.tileWidth - 1);
+		// 12-neighbor
+		neighborIndices.push(index + 2);
+		neighborIndices.push(index - 2);
+		neighborIndices.push(index + 2 * this.imageStackMetaData.tileWidth);
+		neighborIndices.push(index - 2 * this.imageStackMetaData.tileWidth);
+
 
 		for (let nIdx of neighborIndices)
 		{
