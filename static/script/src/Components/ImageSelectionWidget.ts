@@ -65,7 +65,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.innerContainer.classed('imageSelectionContainer', true);
 
         this._imageTrackContainer = d3.select(this.container).append('div');
-        this.imageTrackContainer.classed('imageTrackContainer', true);
+        this.imageTrackContainer
+            .classed('imageTrackContainer', true)
+            .classed('overflow-scroll', true)
+            .attr('style', `max-width: ${this.vizWidth}px;`);
 
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
@@ -110,8 +113,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 imgHeight = imageMetaData['tileHeight'];
                 numCol = imageMetaData['numberOfColumns'];
             }
-            let blobUrl = window.URL.createObjectURL(xhr.response);
-            this.imageStackWidget.SetImageProperties(blobUrl, imgWidth, imgHeight, numCol);
+            this.imageStackWidget.SetImageProperties(xhr.response, imgWidth, imgHeight, numCol);
         }
         xhr.open('GET', newUrl);
         xhr.send();
@@ -124,6 +126,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	protected OnResize(): void
 	{
         this.imageStackWidget.OnResize(this.vizHeight);
+        this.imageTrackContainer
+            .attr('style', `max-width: ${this.vizWidth}px;`);
 	}
 
     public OnBrushChange(): void

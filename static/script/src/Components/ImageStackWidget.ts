@@ -51,10 +51,23 @@ export class ImageStackWidget {
 		return this._imageLocation;
 	}
 	
+	private _imageStackBlob : Blob;
+	public get imageStackBlob() : Blob {
+		return this._imageStackBlob;
+	}
+
 	private _imageStackMetaData : ImageStackMetaData;
 	public get imageStackMetaData() : ImageStackMetaData {
 		return this._imageStackMetaData;
-	}	
+	}
+
+	public get numPixelsInTile() : number {
+		return this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight;
+	}
+
+	public get firstIndex() : number {
+		return this.numPixelsInTile * this.selectedImgIndex;
+	}
 
 	private _imageStackLabelUrl : string;
 	public get imageStackLabelUrl() : string {
@@ -185,20 +198,21 @@ export class ImageStackWidget {
 		this.draw();
 	}
 
-	public SetImageProperties(imageUrl?: string, imageWidth?: number, imageHeight?: number, numColumns?: number): void
+	public SetImageProperties(blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number): void
 	{
 		// default values for when loading, or if image isn't found
 		if (!imageWidth)  { imageWidth  = 256; }
 		if (!imageHeight) { imageHeight = 256; }
 		if (!numColumns)  { numColumns  = 10; }
-		if (imageUrl)
+		if (blob)
 		{
-			this.imageStackMetaData.url = imageUrl;
+			this.imageStackMetaData.url = window.URL.createObjectURL(blob);
 		}
 		else
 		{
 			this.imageStackMetaData.url = '';
 		}
+		this._imageStackBlob = blob;
 
 		this.imageStackMetaData.tileWidth = imageWidth;
 		this.imageStackMetaData.tileHeight = imageHeight;
@@ -278,8 +292,8 @@ export class ImageStackWidget {
 			this._defaultCanvasState = myImageData
 			return;
 		}
-		let numPixelsInTile = this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight;
-		let firstIndex = numPixelsInTile * this.selectedImgIndex;
+		const numPixelsInTile = this.numPixelsInTile;
+		const firstIndex = this.firstIndex;
 		for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 		{
 			let rIdx = (i - firstIndex) * 4;
@@ -304,8 +318,8 @@ export class ImageStackWidget {
 
 	private isBorder(index: number): boolean
 	{
-		let numPixelsInTile = this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight;
-		let firstIndex = numPixelsInTile * this.selectedImgIndex;
+		const numPixelsInTile = this.numPixelsInTile;
+		const firstIndex = this.firstIndex;
 		let label = this.labelArray[index];
 		let neighborIndices: number[] = [];
 		// 4-neighbor
@@ -336,8 +350,8 @@ export class ImageStackWidget {
 		{
 			return;
 		}
-		const numPixelsInTile = this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight;
-		const firstIndex = numPixelsInTile * this.selectedImgIndex;
+		const numPixelsInTile = this.numPixelsInTile;
+		const firstIndex = this.firstIndex;
 		const labelIndex = firstIndex + e.offsetY * this.imageStackMetaData.tileWidth + e.offsetX;
 		const label = this.labelArray[labelIndex];
 		if (label === this.cellHovered)
@@ -372,8 +386,7 @@ export class ImageStackWidget {
 			myImageData.data.set(this.defaultCanvasState.data);
 			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 			{
-				let imgX = (i - firstIndex) % this.imageStackMetaData.tileWidth;
-				let imgY = Math.floor((i - firstIndex) / this.imageStackMetaData.tileWidth);
+				let [imgX, imgY] = this.getTilePixelXYFromLabelIndex(firstIndex, i);
 				let rIdx = (i - firstIndex) * 4;
 				let imgLabel = this.labelArray[i];
 				if (cell && Math.pow(imgX - cellX, 2) + Math.pow(imgY - cellY, 2) <= 25)
@@ -401,6 +414,13 @@ export class ImageStackWidget {
 
 			this.tooltip.Show(tooltipContent, pageX, pageY);
 		}
+	}
+
+	public  getTilePixelXYFromLabelIndex(tileStartIndex: number, labelIndex: number): [number, number]
+	{
+		let imgX = (labelIndex - tileStartIndex) % this.imageStackMetaData.tileWidth;
+		let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackMetaData.tileWidth);
+		return [imgX, imgY];
 	}
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
@@ -547,7 +567,7 @@ export class ImageStackWidget {
 		this.selectedImageContainer.node().style.backgroundPositionY = -top + 'px';
 	}
 
-	private getTileTopLeft(index): [number, number]
+	public getTileTopLeft(index: number): [number, number]
 	{
 		const left: number = (index % this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileWidth;
 		const top: number = Math.floor(index / this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileHeight;
