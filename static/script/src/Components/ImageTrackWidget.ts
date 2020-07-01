@@ -78,13 +78,6 @@ export class ImageTrackWidget
             let width = ImageTrackWidget.rectWidth(bbox);
             let height = ImageTrackWidget.rectHeight(bbox);
             asyncFunctionList.push(createImageBitmap(this.parentWidget.imageStackBlob, sX, sY, width, height));
-            // createImageBitmap(this.parentWidget.imageStackBlob, sX, sY, width, height).then(
-            //     (imgBitmap: ImageBitmap) =>
-            //     {
-            //         const off
-            //         canvasContext.drawImage(imgBitmap, asdf, 0);
-            //     }
-            // );
         }
 
         Promise.all(asyncFunctionList).then(
@@ -92,9 +85,12 @@ export class ImageTrackWidget
             {
                 for (let i = 0; i < bitMapList.length; i++)
                 {
-                    let imgBitmap = bitMapList[i];
-                    const offset = i * maxWidth;
-                    canvasContext.drawImage(imgBitmap, offset, 0);
+                    const imgBitmap = bitMapList[i];
+                    const thisWidth = ImageTrackWidget.rectWidth(boundingBoxList[i]);
+                    const thisHeight = ImageTrackWidget.rectHeight(boundingBoxList[i]);
+                    const offsetX = i * maxWidth + (maxWidth - thisWidth) / 2;
+                    const offsetY = (maxHeight - thisHeight) / 2;
+                    canvasContext.drawImage(imgBitmap, offsetX, offsetY);
                 }
             }
         )
