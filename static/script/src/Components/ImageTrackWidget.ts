@@ -12,6 +12,8 @@ export class ImageTrackWidget
     {
         this._container = container;
         this._parentWidget = parent;
+        this._verticalPad = 16;
+        this._horizontalPad = 8;
     }
 
     private _container : HTMLElement;
@@ -32,8 +34,24 @@ export class ImageTrackWidget
 	private _canvasContext : CanvasRenderingContext2D;
 	public get canvasContext() : CanvasRenderingContext2D {
 		return this._canvasContext;
-	}
+    }
+    
+    private _trackList : CurveND[];
+    public get trackList() : CurveND[] {
+        return this._trackList;
+    }
 
+    
+    private _verticalPad : number;
+    public get verticalPad() : number {
+        return this._verticalPad;
+    }
+
+    private _horizontalPad : number;
+    public get horizontalPad() : number {
+        return this._horizontalPad;
+    }
+    
     public init(): void
     {
         const containerSelect = d3.select(this.container);
@@ -45,14 +63,20 @@ export class ImageTrackWidget
     {
         if (!this.parentWidget.labelArray)
         {
+            // todo - clear canvas
             return;
         }
-        this.drawTrackList(tracks);
+        if (tracks === this.trackList)
+        {
+            return;
+        }
+        this._trackList = tracks;
+        this.drawTrackList();
     }
 
-    private drawTrackList(trackList: CurveND[]): void
+    private drawTrackList(): void
     {
-        let listOfBoundingBoxLists = this.getBoundingBoxLists(trackList);
+        let listOfBoundingBoxLists = this.getBoundingBoxLists(this.trackList);
         let maxHeightList: number[] = [];
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
             (rectList: Rect[]) =>
@@ -66,32 +90,33 @@ export class ImageTrackWidget
             maxHeightList.push(thisHeight); 
         }
 
-        let minFrameId = d3.min(trackList, 
+        let minFrameId = d3.min(this.trackList, 
             (track: CurveND) =>
             {
                 return d3.min(track.pointList, point => point.get('Frame ID'));
             });
 
-        let maxFrameId = d3.max(trackList, 
+        let maxFrameId = d3.max(this.trackList, 
             (track: CurveND) =>
             {
                 return d3.max(track.pointList, point => point.get('Frame ID'));
             });
 
-        const canvasWidth = (maxFrameId - minFrameId) * maxWidth;
-        const totalHeight = d3.sum(maxHeightList);
+        const numFrames = maxFrameId - minFrameId;
+        const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
+        const totalHeight = d3.sum(maxHeightList) + this.verticalPad * (this.trackList.length + 1);
         this.selectedImageCanvas
             .attr('width', canvasWidth)
             .attr('height', totalHeight);
 
-        let verticalOffset: number = 0;
-        for (let i = 0; i < trackList.length; i++)
+        let verticalOffset: number = this.verticalPad;
+        for (let i = 0; i < this.trackList.length; i++)
         {
-            let track = trackList[i];
+            let track = this.trackList[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
-            this.drawTrack(track, boundingBoxList, maxWidth,  trackHeight, minFrameId, verticalOffset);
-            verticalOffset += trackHeight;
+            this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset);
+            verticalOffset += trackHeight + this.verticalPad;
         }
     }
 
@@ -138,7 +163,7 @@ export class ImageTrackWidget
                     const thisHeight = ImageTrackWidget.rectHeight(boundingBoxList[i]);
                     const frameId = trackData.pointList[i].get('Frame ID');
                     const offsetIndex = frameId - minFrame;
-                    const offsetX = offsetIndex * maxWidth + (maxWidth - thisWidth) / 2;
+                    const offsetX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad) + (maxWidth - thisWidth) / 2;
                     const offsetY = verticalOffset + (maxHeight - thisHeight) / 2;
                     this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
                 }
