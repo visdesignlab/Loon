@@ -6,6 +6,7 @@ import { CurveList } from '../DataModel/CurveList';
 import { RichTooltip } from '../Components/RichTooltip';
 import { ImageStackMetaData } from '../types';
 import { ImageTrackWidget } from './ImageTrackWidget';
+import { CurveND } from '../DataModel/CurveND';
 
 export class ImageStackWidget {
 	
@@ -281,7 +282,15 @@ export class ImageStackWidget {
 
 		this.createOutlineImage();
 		this.drawDefaultCanvas();
-		this.imageTrackWidget.draw();
+		let locId = this.imageLocation.locationId;
+		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
+		const pointsAtFrame = this.data.GetCellsAtFrame(locId, currentFrameId)
+		let curveList: CurveND[] = [];
+		for (let point of pointsAtFrame)
+		{
+			curveList.push(point.parent);
+		}
+		this.imageTrackWidget.draw(curveList);
 	}
 
 	private createOutlineImage(): void

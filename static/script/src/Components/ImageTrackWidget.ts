@@ -41,17 +41,13 @@ export class ImageTrackWidget
         this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
     }
 
-    public draw(): void
+    public draw(tracks: CurveND[]): void
     {
         if (!this.parentWidget.labelArray)
         {
             return;
         }
-        console.log('draw image track widget');
-        let [hardCodedTestCell1, _1] = this.parentWidget.data.GetCellFromLabel(91, 5, 23);
-        let [hardCodedTestCell2, _2] = this.parentWidget.data.GetCellFromLabel(91, 20, 3);
-        let [hardCodedTestCell3, _3] = this.parentWidget.data.GetCellFromLabel(91, 20, 9);
-        this.drawTrackList([hardCodedTestCell1.parent, hardCodedTestCell2.parent, hardCodedTestCell3.parent]);
+        this.drawTrackList(tracks);
     }
 
     private drawTrackList(trackList: CurveND[]): void
