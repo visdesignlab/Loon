@@ -102,7 +102,7 @@ export class ImageTrackWidget
                 return d3.max(track.pointList, point => point.get('Frame ID'));
             });
 
-        const numFrames = maxFrameId - minFrameId;
+        const numFrames = maxFrameId - minFrameId + 1;
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
         const totalHeight = d3.sum(maxHeightList) + this.verticalPad * (this.trackList.length + 1);
         this.selectedImageCanvas
@@ -144,13 +144,38 @@ export class ImageTrackWidget
         verticalOffset: number): void
     {
         let asyncFunctionList = [];
+        let offsetArray: [number, number][] = [];
         for (let i = 0; i < boundingBoxList.length; i++)
         {
+            // this is a bit painful. The biggest addition to the complexity
+            // is accounting for edge cases in the tile of the tiled image.
+            // if it gets to an edge only only copies what it can, then centers in
+            // a rect of the same size as others in the cell.
             let bbox = boundingBoxList[i];
             let [sX, sY] = bbox[0];
             let width = ImageTrackWidget.rectWidth(bbox);
             let height = ImageTrackWidget.rectHeight(bbox);
-            asyncFunctionList.push(createImageBitmap(this.parentWidget.imageStackBlob, sX, sY, width, height));
+            let extraX = (maxWidth - width) / 2;
+            let extraY = (maxHeight - height) / 2;
+            const frameId = trackData.pointList[i].get('Frame ID');
+
+            const offsetIndex = frameId - minFrame;
+            const frameIndex = frameId - 1;
+
+            const [tileTop, tileLeft] = this.parentWidget.getTileTopLeft(frameIndex);
+            const tileBot = tileTop + this.parentWidget.imageStackMetaData.tileHeight;
+            const tileRight = tileLeft + this.parentWidget.imageStackMetaData.tileWidth;
+
+            const copyTop = ImageTrackWidget.clamp(sY - extraY, [tileTop, tileBot]);
+            const copyLeft = ImageTrackWidget.clamp(sX - extraX, [tileLeft, tileRight]);
+            
+            const copyWidth = Math.min(maxWidth, tileRight - copyLeft);
+            const copyHeight = Math.min(maxHeight, tileBot - copyTop);
+            
+            const offsetX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad) + (maxWidth - copyWidth) / 2;
+            const offsetY = verticalOffset + (maxHeight - copyHeight) / 2;
+            offsetArray.push([offsetX, offsetY]);
+            asyncFunctionList.push(createImageBitmap(this.parentWidget.imageStackBlob, copyLeft, copyTop, copyWidth, copyHeight));
         }
 
         Promise.all(asyncFunctionList).then(
@@ -159,17 +184,31 @@ export class ImageTrackWidget
                 for (let i = 0; i < bitMapList.length; i++)
                 {
                     const imgBitmap = bitMapList[i];
-                    const thisWidth = ImageTrackWidget.rectWidth(boundingBoxList[i]);
-                    const thisHeight = ImageTrackWidget.rectHeight(boundingBoxList[i]);
                     const frameId = trackData.pointList[i].get('Frame ID');
                     const offsetIndex = frameId - minFrame;
-                    const offsetX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad) + (maxWidth - thisWidth) / 2;
-                    const offsetY = verticalOffset + (maxHeight - thisHeight) / 2;
+                    const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
+                    const frameY = verticalOffset;
+                    const [offsetX, offsetY] = offsetArray[i];
+
+                    this.canvasContext.beginPath();
+                    this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
+                    this.canvasContext.strokeStyle = 'gray';
+                    this.canvasContext.fillStyle = 'black';
+                    this.canvasContext.stroke();
+                    this.canvasContext.fill();
+                    this.canvasContext.closePath();
+                    // this.canvasContext.fillRect(offsetX, offsetY, maxWidth, maxHeight);
+
                     this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
                 }
             }
         )
 
+    }
+
+    private static clamp(val: number, [minVal, maxVal]: [number, number]): number
+    {
+        return Math.min(Math.max(val, minVal), maxVal);
     }
 
     private static rectWidth(rect: Rect): number
