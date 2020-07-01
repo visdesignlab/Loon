@@ -48,28 +48,80 @@ export class ImageTrackWidget
             return;
         }
         console.log('draw image track widget');
-        let [hardCodedTestCell, _] = this.parentWidget.data.GetCellFromLabel(91, 5, 23);
-        this.drawTrack(hardCodedTestCell.parent, this.selectedImageCanvas);
+        let [hardCodedTestCell1, _1] = this.parentWidget.data.GetCellFromLabel(91, 5, 23);
+        let [hardCodedTestCell2, _2] = this.parentWidget.data.GetCellFromLabel(91, 20, 3);
+        let [hardCodedTestCell3, _3] = this.parentWidget.data.GetCellFromLabel(91, 20, 9);
+        this.drawTrackList([hardCodedTestCell1.parent, hardCodedTestCell2.parent, hardCodedTestCell3.parent]);
     }
 
-    private drawTrack(trackData: CurveND, canvasSelection: HtmlSelection ): void
+    private drawTrackList(trackList: CurveND[]): void
     {
-        // loop over cells and extract based on parent image data and label data
-        const canvasContext = (canvasSelection.node() as HTMLCanvasElement).getContext('2d');
-        let boundingBoxList: Rect[] = [];
-        for (let point of trackData.pointList)
+        let listOfBoundingBoxLists = this.getBoundingBoxLists(trackList);
+        let maxHeightList: number[] = [];
+        let maxWidth: number = d3.max(listOfBoundingBoxLists, 
+            (rectList: Rect[]) =>
+            {
+                return d3.max(rectList, r => ImageTrackWidget.rectWidth(r));
+            });
+        
+        for (let rectList of listOfBoundingBoxLists)
         {
-            const boundingBox = this.getCellBoundingBox(point);
-            boundingBoxList.push(boundingBox);
+            let thisHeight = d3.max(rectList, r => ImageTrackWidget.rectHeight(r));
+            maxHeightList.push(thisHeight); 
         }
-        const maxWidth = d3.max(boundingBoxList, r => ImageTrackWidget.rectWidth(r));
-        const maxHeight = d3.max(boundingBoxList, r => ImageTrackWidget.rectHeight(r));
-        const canvasWidth = trackData.pointList.length * maxWidth;
+
+        let minFrameId = d3.min(trackList, 
+            (track: CurveND) =>
+            {
+                return d3.min(track.pointList, point => point.get('Frame ID'));
+            });
+
+        let maxFrameId = d3.max(trackList, 
+            (track: CurveND) =>
+            {
+                return d3.max(track.pointList, point => point.get('Frame ID'));
+            });
+
+        const canvasWidth = (maxFrameId - minFrameId) * maxWidth;
+        const totalHeight = d3.sum(maxHeightList);
         this.selectedImageCanvas
             .attr('width', canvasWidth)
-            .attr('height', maxHeight);
+            .attr('height', totalHeight);
 
+        let verticalOffset: number = 0;
+        for (let i = 0; i < trackList.length; i++)
+        {
+            let track = trackList[i];
+            let boundingBoxList = listOfBoundingBoxLists[i];
+            let trackHeight = maxHeightList[i];
+            this.drawTrack(track, boundingBoxList, maxWidth,  trackHeight, minFrameId, verticalOffset);
+            verticalOffset += trackHeight;
+        }
+    }
 
+    private getBoundingBoxLists(trackList: CurveND[]): Rect[][]
+    {
+        let listOfLists: Rect[][] = [];
+        for (let track of trackList)
+        {
+            let thisList: Rect[] = [];
+            for (let point of track.pointList)
+            {
+                const boundingBox = this.getCellBoundingBox(point);
+                thisList.push(boundingBox);
+            }
+            listOfLists.push(thisList);
+        }
+        return listOfLists;
+    }
+
+    private drawTrack(
+        trackData: CurveND,
+        boundingBoxList: Rect[],
+        maxWidth: number, maxHeight: number,
+        minFrame: number,
+        verticalOffset: number): void
+    {
         let asyncFunctionList = [];
         for (let i = 0; i < boundingBoxList.length; i++)
         {
@@ -88,9 +140,11 @@ export class ImageTrackWidget
                     const imgBitmap = bitMapList[i];
                     const thisWidth = ImageTrackWidget.rectWidth(boundingBoxList[i]);
                     const thisHeight = ImageTrackWidget.rectHeight(boundingBoxList[i]);
-                    const offsetX = i * maxWidth + (maxWidth - thisWidth) / 2;
-                    const offsetY = (maxHeight - thisHeight) / 2;
-                    canvasContext.drawImage(imgBitmap, offsetX, offsetY);
+                    const frameId = trackData.pointList[i].get('Frame ID');
+                    const offsetIndex = frameId - minFrame;
+                    const offsetX = offsetIndex * maxWidth + (maxWidth - thisWidth) / 2;
+                    const offsetY = verticalOffset + (maxHeight - thisHeight) / 2;
+                    this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
                 }
             }
         )
@@ -111,7 +165,7 @@ export class ImageTrackWidget
     {
         const locId = point.get('Location ID');
         const frameId = point.get('Frame ID');
-        const frameIndex = frameId - 1; // MatLab..
+        const frameIndex = frameId - 1; // MatLab..        
         const segmentId = point.get('segmentLabel');
         const numPixelsInTile = this.parentWidget.numPixelsInTile;
         const firstIndex = frameIndex * numPixelsInTile;
