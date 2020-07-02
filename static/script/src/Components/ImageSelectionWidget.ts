@@ -124,7 +124,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	protected OnResize(): void
 	{
-        const topHeightMax = 0.6 * this.vizHeight;
+        const topHeightMax = 0.5 * this.vizHeight;
         const botHeightMax = this.vizHeight - topHeightMax;
         this.imageStackWidget.OnResize(topHeightMax, botHeightMax, this.width);
         this.locationSelectionContainer

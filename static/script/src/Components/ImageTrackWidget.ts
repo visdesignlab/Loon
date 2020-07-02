@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
-import { HtmlSelection, SvgSelection } from '../devlib/DevlibTypes';
+import { HtmlSelection, SvgSelection, Margin } from '../devlib/DevlibTypes';
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
-import { extent } from 'd3';
+import { extent, linkVertical, VoronoiEdge } from 'd3';
 import { Rect } from '../types';
 
 export class ImageTrackWidget
@@ -14,6 +14,18 @@ export class ImageTrackWidget
         this._parentWidget = parent;
         this._verticalPad = 16;
         this._horizontalPad = 8;
+        this._frameLabelPositions = [];
+        this._cellLabelPositions = [];
+
+        // hardcoded from css
+        this._cellTimelineMargin = {
+            top: 36,
+            right: 4,
+            bottom: 4,
+            left: 72
+        }
+        this._latestScroll = [0,0];
+        this._scrollChangeTicking = false;
     }
 
     private _container : HTMLElement;
@@ -29,11 +41,31 @@ export class ImageTrackWidget
     private _innerContainer : HtmlSelection;
     public get innerContainer() : HtmlSelection {
         return this._innerContainer;
-    }    
+    }
+
+    private _innerContainerW : number;
+    public get innerContainerW() : number {
+        return this._innerContainerW;
+    }
+    
+    private _innerContainerH : number;
+    public get innerContainerH() : number {
+        return this._innerContainerH;
+    }
 
     private _svgContainer : SvgSelection;
     public get svgContainer() : SvgSelection {
         return this._svgContainer;
+    }
+
+    private _cellLabelGroup : SvgSelection;
+    public get cellLabelGroup() : SvgSelection {
+        return this._cellLabelGroup;
+    }
+
+    private _frameLabelGroup : SvgSelection;
+    public get frameLabelGroup() : SvgSelection {
+        return this._frameLabelGroup;
     }
 
 	private _selectedImageCanvas : HtmlSelection;
@@ -61,14 +93,46 @@ export class ImageTrackWidget
     public get horizontalPad() : number {
         return this._horizontalPad;
     }
-    
+
+    private _frameLabelPositions : [string, number][];
+    public get frameLabelPositions() : [string, number][] {
+        return this._frameLabelPositions;
+    }
+
+    private _cellLabelPositions : [string, number][];
+    public get cellLabelPositions() : [string, number][] {
+        return this._cellLabelPositions;
+    }
+
+    private _cellTimelineMargin : Margin;
+    public get cellTimelineMargin() : Margin {
+        return this._cellTimelineMargin;
+    }
+
+    private _scrollChangeTicking : boolean;
+    public get scrollChangeTicking() : boolean {
+        return this._scrollChangeTicking;
+    }    
+
+    private _latestScroll : [number, number];
+    public get latestScroll() : [number, number] {
+        return this._latestScroll;
+    }
+
     public init(): void
     {
         const containerSelect = d3.select(this.container);
         this._svgContainer = containerSelect.append('svg');
+        this._cellLabelGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
+
+        this._frameLabelGroup = this.svgContainer.append('g');
+
         this._innerContainer = containerSelect.append('div')
             .classed('cellTimelineInnerContainer', true)
             .classed('overflow-scroll', true);
+
+        this.innerContainer.node().addEventListener('scroll', (e: Event) => this.onCellTimelineScroll(e));
 
         this._selectedImageCanvas = this.innerContainer.append('canvas');
         this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
@@ -87,10 +151,12 @@ export class ImageTrackWidget
         }
         this._trackList = tracks;
         this.drawTrackList();
+        this.drawLabels();
     }
 
     private drawTrackList(): void
     {
+        this._cellLabelPositions = [];
         let listOfBoundingBoxLists = this.getBoundingBoxLists(this.trackList);
         let maxHeightList: number[] = [];
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
@@ -131,6 +197,7 @@ export class ImageTrackWidget
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
             this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset);
+            this._cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
         }
     }
@@ -266,16 +333,60 @@ export class ImageTrackWidget
         return extent;
     }
 
+    private onCellTimelineScroll(event: Event): void
+    {
+        let el = this.innerContainer.node();
+        this._latestScroll = [el.scrollLeft, el.scrollTop];
+        if (!this.scrollChangeTicking)
+        {
+            window.requestAnimationFrame(() =>
+            {
+                // this.updateLabels();
+                this.drawLabels()
+                this._scrollChangeTicking = false;
+            });
+            this._scrollChangeTicking = true;
+        }
+    }
+
+    private drawLabels(): void
+    {
+        const tickWidth = 10;
+        const tickPadding = 4;
+        const xAnchor = this.cellTimelineMargin.left - tickWidth - tickPadding;
+        const labelsInView = this.cellLabelPositions.filter((labelPos: [string, number]) =>
+        {
+            const pos: number = labelPos[1] - this.latestScroll[1];
+            return 0 <= pos && pos <= this.innerContainerH;
+        })
+        this.cellLabelGroup.selectAll('text')
+            .data(labelsInView)
+            .join('text')
+            .text(d => d[0])
+            .attr('x', xAnchor)
+            .attr('y', d => d[1] - this.latestScroll[1])
+            .classed('axisLabel', true)
+            .classed('left', true);
+    }
+
+    private updateLabels(): void
+    {
+        this.cellLabelGroup
+            .attr('transform', `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);
+    }
+
+
+
     public OnResize(width: number, height: number): void
     {
         this.svgContainer
             .attr('height', height)
             .attr('width', width);
 
-        const marginLeftRight = 72 + 4; // from css
-        const marginTopBot = 36 + 4; // from css
-        const innerW = width - marginLeftRight;
-        const innerH = height - marginTopBot;
+        const innerW = width - this.cellTimelineMargin.left - this.cellTimelineMargin.right;
+        this._innerContainerW = innerW;
+        const innerH = height - this.cellTimelineMargin.top - this.cellTimelineMargin.bottom;
+        this._innerContainerH = innerH;
         this.innerContainer
             .attr('style',
             `max-width: ${innerW}px;

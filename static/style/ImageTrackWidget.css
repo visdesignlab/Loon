@@ -6,6 +6,17 @@
     position: absolute;
     top: 0;
     right: 0;
+    /* If this margin changes, then ImageTrackWidget._cellTimelineMargin needs to be updated */
     margin: 36px 4px 4px 72px;
     outline: solid gray 1px;
+}
+
+.axisLabel {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11pt;
+}
+
+.axisLabel.left {
+    dominant-baseline: middle;
+    text-anchor: end;
 }
