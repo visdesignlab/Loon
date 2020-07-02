@@ -67,8 +67,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._imageTrackContainer = d3.select(this.container).append('div');
         this.imageTrackContainer
             .classed('imageTrackContainer', true)
-            .classed('overflow-scroll', true)
-            .attr('style', `max-width: ${this.vizWidth}px;`);
+            .classed('overflow-scroll', true);
 
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
@@ -80,10 +79,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .classed('locationListContainer', true);
 
         this._imageStackContainer = this.innerContainer.append('div')
-            .attr('style', `max-height: ${this.vizHeight}px;`)
             .classed('imageStackContainer', true);
         this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight);
 
+        this.OnResize()
 
 	}
 
@@ -125,9 +124,14 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	protected OnResize(): void
 	{
-        this.imageStackWidget.OnResize(this.vizHeight);
+        const topHeightMax = 0.6 * this.vizHeight;
+        this.imageStackWidget.OnResize(topHeightMax);
+        this.locationSelectionContainer
+            .attr('style', `max-height: ${topHeightMax}`)
         this.imageTrackContainer
-            .attr('style', `max-width: ${this.vizWidth}px;`);
+            .attr('style',
+            `max-width: ${this.vizWidth}px;
+            max-height: ${0.4 * this.vizHeight}px;`)
 	}
 
     public OnBrushChange(): void
