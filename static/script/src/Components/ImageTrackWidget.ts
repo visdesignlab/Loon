@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { HtmlSelection } from '../devlib/DevlibTypes';
+import { HtmlSelection, SvgSelection } from '../devlib/DevlibTypes';
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
@@ -25,6 +25,16 @@ export class ImageTrackWidget
     public get parentWidget() : ImageStackWidget {
         return this._parentWidget;
     }    
+    
+    private _innerContainer : HtmlSelection;
+    public get innerContainer() : HtmlSelection {
+        return this._innerContainer;
+    }    
+
+    private _svgContainer : SvgSelection;
+    public get svgContainer() : SvgSelection {
+        return this._svgContainer;
+    }
 
 	private _selectedImageCanvas : HtmlSelection;
 	public get selectedImageCanvas() : HtmlSelection {
@@ -55,7 +65,12 @@ export class ImageTrackWidget
     public init(): void
     {
         const containerSelect = d3.select(this.container);
-        this._selectedImageCanvas = containerSelect.append('canvas');
+        this._svgContainer = containerSelect.append('svg');
+        this._innerContainer = containerSelect.append('div')
+            .classed('cellTimelineInnerContainer', true)
+            .classed('overflow-scroll', true);
+
+        this._selectedImageCanvas = this.innerContainer.append('canvas');
         this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
     }
 
@@ -249,5 +264,23 @@ export class ImageTrackWidget
             }
         }
         return extent;
+    }
+
+    public OnResize(width: number, height: number): void
+    {
+        this.svgContainer
+            .attr('height', height)
+            .attr('width', width);
+
+        const marginLeftRight = 72 + 4; // from css
+        const marginTopBot = 36 + 4; // from css
+        const innerW = width - marginLeftRight;
+        const innerH = height - marginTopBot;
+        this.innerContainer
+            .attr('style',
+            `max-width: ${innerW}px;
+            max-height: ${innerH}px;
+            width: ${innerW}px;
+            height: ${innerH}px;`)
     }
 }

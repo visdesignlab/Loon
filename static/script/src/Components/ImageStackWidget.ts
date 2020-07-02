@@ -594,10 +594,11 @@ export class ImageStackWidget {
 		return [top, left];
 	}
 
-	public OnResize(newMaxHeight: number): void
+	public OnResize(newMaxHeight: number, imageTrackMaxHeight: number, newWidth: number): void
 	{
 		this._maxHeight = this.maxHeight;
 		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
+		this.imageTrackWidget.OnResize(newWidth, imageTrackMaxHeight);
 	}
 
 }

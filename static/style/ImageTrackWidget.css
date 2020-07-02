@@ -1,0 +1,11 @@
+.imageTrackContainer {
+    position: relative;
+}
+
+.cellTimelineInnerContainer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 36px 4px 4px 72px;
+    outline: solid gray 1px;
+}
