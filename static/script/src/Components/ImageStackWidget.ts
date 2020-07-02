@@ -1,18 +1,28 @@
 import * as d3 from 'd3';
-import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes'
-import {PointND} from '../DataModel/PointND' 
-import {ImageLocation} from '../DataModel/ImageLocation';
+import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes';
+import { PointND } from '../DataModel/PointND';
+import { ImageLocation } from '../DataModel/ImageLocation';
 import { CurveList } from '../DataModel/CurveList';
 import { RichTooltip } from '../Components/RichTooltip';
+import { ImageStackMetaData } from '../types';
+import { ImageTrackWidget } from './ImageTrackWidget';
+import { CurveND } from '../DataModel/CurveND';
 
 export class ImageStackWidget {
 	
-	constructor(container: HTMLElement, maxHeight: number)
+	constructor(container: HTMLElement, imageTrackContainer: HTMLElement, maxHeight: number)
 	{
 		this._container = container;
+		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this);
 		this._maxHeight = maxHeight;
 		this.init();
-		this._imageStackUrl = '';
+		this._imageStackMetaData = {
+			url: '',
+			tileWidth: 0,
+			tileHeight: 0,
+			numberOfTiles: 0,
+			numberOfColumns: 0
+		};
 		this._labelArray = null;
 		this._cellHovered = 0;
 		this._selectedImgIndex = 0;
@@ -27,43 +37,39 @@ export class ImageStackWidget {
 		return this._container;
 	}
 	
+	private _imageTrackWidget : ImageTrackWidget;
+	public get imageTrackWidget() : ImageTrackWidget {
+		return this._imageTrackWidget;
+	}	
+
 	private _maxHeight : number;
 	public get maxHeight() : number {
 		return this._maxHeight;
 	}
-	
 	
 	private _imageLocation : ImageLocation;
 	public get imageLocation() : ImageLocation {
 		return this._imageLocation;
 	}
 	
+	private _imageStackBlob : Blob;
+	public get imageStackBlob() : Blob {
+		return this._imageStackBlob;
+	}
 
-	private _imageWidth : number;
-	public get imageWidth() : number {
-		return this._imageWidth;
+	private _imageStackMetaData : ImageStackMetaData;
+	public get imageStackMetaData() : ImageStackMetaData {
+		return this._imageStackMetaData;
 	}
-	
-	private _imageHeight : number;
-	public get imageHeight() : number {
-		return this._imageHeight;
+
+	public get numPixelsInTile() : number {
+		return this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight;
 	}
-	
-	private _numImages : number;
-	public get numImages() : number {
-		return this._numImages;
+
+	public get firstIndex() : number {
+		return this.numPixelsInTile * this.selectedImgIndex;
 	}
-	
-	private _numColumns : number;
-	public get numColumns() : number {
-		return this._numColumns;
-	}
-	
-	private _imageStackUrl : string;
-	public get imageStackUrl() : string {
-		return this._imageStackUrl;
-	}
-	
+
 	private _imageStackLabelUrl : string;
 	public get imageStackLabelUrl() : string {
 		return this._imageStackLabelUrl;
@@ -180,6 +186,7 @@ export class ImageStackWidget {
 			.classed('thumbnailsContainer', true);
 
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
+		this.imageTrackWidget.init();
 	}
 
 	public SetData(data: CurveList, imageLocation: ImageLocation): void
@@ -187,34 +194,35 @@ export class ImageStackWidget {
 		this._data = data;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
-		this._numImages = imageLocation.frameList.length;
+		this.imageStackMetaData.numberOfTiles = imageLocation.frameList.length;
 		this.SetImageProperties(); // default values before image load
 		this.draw();
 	}
 
-	public SetImageProperties(imageUrl?: string, imageWidth?: number, imageHeight?: number, numColumns?: number): void
+	public SetImageProperties(blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number): void
 	{
 		// default values for when loading, or if image isn't found
 		if (!imageWidth)  { imageWidth  = 256; }
 		if (!imageHeight) { imageHeight = 256; }
 		if (!numColumns)  { numColumns  = 10; }
-		if (imageUrl)
+		if (blob)
 		{
-			this._imageStackUrl = imageUrl;
+			this.imageStackMetaData.url = window.URL.createObjectURL(blob);
 		}
 		else
 		{
-			this._imageStackUrl = '';
+			this.imageStackMetaData.url = '';
 		}
+		this._imageStackBlob = blob;
 
-		this._imageWidth = imageWidth;
-		this._imageHeight = imageHeight;
+		this.imageStackMetaData.tileWidth = imageWidth;
+		this.imageStackMetaData.tileHeight = imageHeight;
 		this.selectedImageOverlay
 			.attr('width', imageWidth)
 			.attr('height', imageHeight);
-		this._numColumns = numColumns;
+		this.imageStackMetaData.numberOfColumns = numColumns;
 		this._imageStackWidth = numColumns * imageWidth;
-		const numRows: number = Math.ceil(this.numImages / numColumns);
+		const numRows: number = Math.ceil(this.imageStackMetaData.numberOfTiles / numColumns);
 		this._imageStackHeight = numRows * imageHeight;
 		this.draw();
 	}
@@ -253,40 +261,48 @@ export class ImageStackWidget {
 		this.updateBackgroundPosition(this.selectedImgIndex);
 		this.updateCanvas();
 		this.changeSelectedThumbnail();
-
 	}
 
 	private drawSelectedImage(): void
 	{
-		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackUrl);
+		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackMetaData.url);
 		this.selectedImageContainer.attr("style", styleString);
 		this.updateCanvas();
 	}
 
 	private updateCanvas(): void
 	{
-		if (!this.imageStackUrl)
+		if (!this.imageStackMetaData.url)
 		{
 			return;
 		}
 		this.selectedImageCanvas
-			.attr('width', this.imageWidth)
-			.attr('height', this.imageHeight);
+			.attr('width', this.imageStackMetaData?.tileWidth)
+			.attr('height', this.imageStackMetaData?.tileHeight);
 
 		this.createOutlineImage();
 		this.drawDefaultCanvas();
+		let locId = this.imageLocation.locationId;
+		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
+		const pointsAtFrame = this.data.GetCellsAtFrame(locId, currentFrameId)
+		let curveList: CurveND[] = [];
+		for (let point of pointsAtFrame)
+		{
+			curveList.push(point.parent);
+		}
+		this.imageTrackWidget.draw(curveList);
 	}
 
 	private createOutlineImage(): void
 	{
-		let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
+		let myImageData = this.canvasContext.createImageData(this.imageStackMetaData?.tileWidth, this.imageStackMetaData?.tileHeight);
 		if (!this.labelArray)
 		{
 			this._defaultCanvasState = myImageData
 			return;
 		}
-		let numPixelsInTile = this.imageWidth * this.imageHeight;
-		let firstIndex = numPixelsInTile * this.selectedImgIndex;
+		const numPixelsInTile = this.numPixelsInTile;
+		const firstIndex = this.firstIndex;
 		for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 		{
 			let rIdx = (i - firstIndex) * 4;
@@ -311,15 +327,26 @@ export class ImageStackWidget {
 
 	private isBorder(index: number): boolean
 	{
-		let numPixelsInTile = this.imageWidth * this.imageHeight;
-		let firstIndex = numPixelsInTile * this.selectedImgIndex;
+		const numPixelsInTile = this.numPixelsInTile;
+		const firstIndex = this.firstIndex;
 		let label = this.labelArray[index];
 		let neighborIndices: number[] = [];
 		// 4-neighbor
 		neighborIndices.push(index + 1);
 		neighborIndices.push(index - 1);
-		neighborIndices.push(index + this.imageWidth);
-		neighborIndices.push(index - this.imageWidth);
+		neighborIndices.push(index + this.imageStackMetaData.tileWidth);
+		neighborIndices.push(index - this.imageStackMetaData.tileWidth);
+		// 8-neighbor
+		neighborIndices.push(index - this.imageStackMetaData.tileWidth + 1);
+		neighborIndices.push(index - this.imageStackMetaData.tileWidth - 1);
+		neighborIndices.push(index + this.imageStackMetaData.tileWidth + 1);
+		neighborIndices.push(index + this.imageStackMetaData.tileWidth - 1);
+		// 12-neighbor
+		neighborIndices.push(index + 2);
+		neighborIndices.push(index - 2);
+		neighborIndices.push(index + 2 * this.imageStackMetaData.tileWidth);
+		neighborIndices.push(index - 2 * this.imageStackMetaData.tileWidth);
+
 
 		for (let nIdx of neighborIndices)
 		{
@@ -343,9 +370,9 @@ export class ImageStackWidget {
 		{
 			return;
 		}
-		const numPixelsInTile = this.imageWidth * this.imageHeight;
-		const firstIndex = numPixelsInTile * this.selectedImgIndex;
-		const labelIndex = firstIndex + e.offsetY * this.imageWidth + e.offsetX;
+		const numPixelsInTile = this.numPixelsInTile;
+		const firstIndex = this.firstIndex;
+		const labelIndex = firstIndex + e.offsetY * this.imageStackMetaData.tileWidth + e.offsetX;
 		const label = this.labelArray[labelIndex];
 		if (label === this.cellHovered)
 		{
@@ -375,12 +402,11 @@ export class ImageStackWidget {
 			// console.log(cell);
 			// console.log('Cell ID:' + cell?.parent?.id);
 			// console.log('Row: ' + (index + 1));
-			let myImageData = this.canvasContext.createImageData(this.imageWidth, this.imageHeight);
+			let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
 			myImageData.data.set(this.defaultCanvasState.data);
 			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
 			{
-				let imgX = (i - firstIndex) % this.imageWidth;
-				let imgY = Math.floor((i - firstIndex) / this.imageWidth);
+				let [imgX, imgY] = this.getTilePixelXYFromLabelIndex(firstIndex, i);
 				let rIdx = (i - firstIndex) * 4;
 				let imgLabel = this.labelArray[i];
 				if (cell && Math.pow(imgX - cellX, 2) + Math.pow(imgY - cellY, 2) <= 25)
@@ -408,6 +434,13 @@ export class ImageStackWidget {
 
 			this.tooltip.Show(tooltipContent, pageX, pageY);
 		}
+	}
+
+	public  getTilePixelXYFromLabelIndex(tileStartIndex: number, labelIndex: number): [number, number]
+	{
+		let imgX = (labelIndex - tileStartIndex) % this.imageStackMetaData.tileWidth;
+		let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackMetaData.tileWidth);
+		return [imgX, imgY];
 	}
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
@@ -483,7 +516,7 @@ export class ImageStackWidget {
 		this.thumbnailsContainer.selectAll('div')
 			.data(this.imageLocation.frameList)
 		  .join('div')
-			.attr('style', (d, index) => this.getImageInlineStyle(index, this.imageStackUrl, true, 0.1))
+			.attr('style', (d, index) => this.getImageInlineStyle(index, this.imageStackMetaData.url, true, 0.1))
 			.classed('imageStackThumbnail', true)
 			.classed('selected', (d, index) => index === this.selectedImgIndex)
 			.classed('brushed', d => d.inBrush)
@@ -515,7 +548,7 @@ export class ImageStackWidget {
 				this.changeSelectedImage(newIndex);
 				break;
 			case 39: // right
-				newIndex = Math.min(this.numImages - 1, this.selectedImgIndex + 1);
+				newIndex = Math.min(this.imageStackMetaData.numberOfTiles - 1, this.selectedImgIndex + 1);
 				this.changeSelectedImage(newIndex);
 				break;
 		}
@@ -528,8 +561,8 @@ export class ImageStackWidget {
 			`
 			background-position-x: ${-left * scale}px;
 			background-position-y: ${-top * scale}px;
-			width: ${this.imageWidth * scale}px;
-			height: ${this.imageHeight * scale}px;
+			width: ${this.imageStackMetaData.tileWidth * scale}px;
+			height: ${this.imageStackMetaData.tileHeight * scale}px;
 			`;
 		if (imageUrl)
 		{
@@ -554,17 +587,18 @@ export class ImageStackWidget {
 		this.selectedImageContainer.node().style.backgroundPositionY = -top + 'px';
 	}
 
-	private getTileTopLeft(index): [number, number]
+	public getTileTopLeft(index: number): [number, number]
 	{
-		const left: number = (index % this.numColumns) * this.imageWidth;
-		const top: number = Math.floor(index / this.numColumns) * this.imageHeight;
+		const left: number = (index % this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileWidth;
+		const top: number = Math.floor(index / this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileHeight;
 		return [top, left];
 	}
 
-	public OnResize(newMaxHeight: number): void
+	public OnResize(newMaxHeight: number, imageTrackMaxHeight: number, newWidth: number): void
 	{
 		this._maxHeight = this.maxHeight;
 		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
+		this.imageTrackWidget.OnResize(newWidth, imageTrackMaxHeight);
 	}
 
 }

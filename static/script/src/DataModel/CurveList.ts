@@ -27,15 +27,25 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
-		this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
+		this._locationFrameSegmentLookup = new Map<number, Map<number, Map<number, [PointND, number]>>>();
+		// this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
 		for (let i = 0; i < this.length; i++)
 		{
 			let point = this[i] as PointND;
 			let loc = point.get('Location ID');
+			if (!this._locationFrameSegmentLookup.has(loc))
+			{
+				this._locationFrameSegmentLookup.set(loc, new Map());
+			}
+			const locMap = this._locationFrameSegmentLookup.get(loc);
 			let frame = point.get('Frame ID');
+			if (!locMap.has(frame))
+			{
+				locMap.set(frame, new Map());
+			}
+			const segMap = locMap.get(frame);
 			let segmentLabel = point.get('segmentLabel');
-			let key: string = [loc, frame, segmentLabel].join(',')
-			this._locationFrameSegmentLookup.set(key, [point, i + 1]);
+			segMap.set(segmentLabel, [point, i + 1]);
 		}
 		this._curveCollection = new CurveCollection(this, spec);
 		this._curveBrushList = new Map<string, valueFilter[]>();
@@ -71,14 +81,42 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return this._minMaxMap;
 	}
 
-	private _locationFrameSegmentLookup : Map<string, [PointND, number]>;
+	// private _locationFrameSegmentLookup : Map<string, [PointND, number]>;
+	private _locationFrameSegmentLookup : Map<number, Map<number, Map<number, [PointND, number]>>>;
+
+	public GetCellsAtFrame(locationId: number, frameId: number): PointND[]
+	{
+		if (this._locationFrameSegmentLookup.has(locationId))
+		{
+			const frameMap = this._locationFrameSegmentLookup.get(locationId);
+			if (frameMap.has(frameId))
+			{
+				const segMap = frameMap.get(frameId);
+				const tuplelist = segMap.values();
+				let pointList: PointND[] = [];
+				for (let [point, _] of tuplelist)
+				{
+					pointList.push(point);
+				}
+				return pointList;
+			}
+		}
+		return [];
+	}
 
 	public GetCellFromLabel(locationId: number, frameId: number, segmentLabel: number): [PointND, number] | [null, null]
 	{
-		let key: string = [locationId, frameId, segmentLabel].join(',')
-		if (this._locationFrameSegmentLookup.has(key))
+		if (this._locationFrameSegmentLookup.has(locationId))
 		{
-			return this._locationFrameSegmentLookup.get(key);
+			const frameMap = this._locationFrameSegmentLookup.get(locationId);
+			if (frameMap.has(frameId))
+			{
+				const segMap = frameMap.get(frameId);
+				if (segMap.has(segmentLabel))
+				{
+					return segMap.get(segmentLabel);
+				}
+			}
 		}
 		return [null, null];
 	}

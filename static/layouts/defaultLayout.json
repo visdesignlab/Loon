@@ -88,7 +88,7 @@
 				},
 				{
 					"direction": "col",
-					"fraction": 1,
+					"fraction": 2,
 					"inside": "ImageSelectionWidget"
 				}
 			]

@@ -1,0 +1,26 @@
+.imageTrackContainer {
+    position: relative;
+}
+
+.cellTimelineInnerContainer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    /* If this margin changes, then ImageTrackWidget._cellTimelineMargin needs to be updated */
+    margin: 36px 4px 4px 72px;
+    outline: solid gray 1px;
+}
+
+.cellAxisLabel {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11pt;
+}
+
+.cellAxisLabel.left {
+    dominant-baseline: middle;
+    text-anchor: end;
+}
+
+.cellAxisLabel.right {
+    text-anchor: middle
+}

@@ -23,6 +23,11 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._innerContainer;
     }
     
+    private _imageTrackContainer : HtmlSelection;
+    public get imageTrackContainer() : HtmlSelection {
+        return this._imageTrackContainer;
+    }    
+
     private _locationSelectionContainer : HtmlSelection;
     public get locationSelectionContainer() : HtmlSelection {
         return this._locationSelectionContainer;
@@ -58,6 +63,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
         this._innerContainer = d3.select(this.container).append('div');
         this.innerContainer.classed('imageSelectionContainer', true);
+
+        this._imageTrackContainer = d3.select(this.container).append('div');
+        this.imageTrackContainer
+            .classed('imageTrackContainer', true);
+            // .classed('overflow-scroll', true);
+
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
 
@@ -68,9 +79,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .classed('locationListContainer', true);
 
         this._imageStackContainer = this.innerContainer.append('div')
-            .attr('style', `max-height: ${this.vizHeight}px;`)
             .classed('imageStackContainer', true);
-        this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.vizHeight);
+        this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight);
+
+        this.OnResize()
 
 	}
 
@@ -100,8 +112,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 imgHeight = imageMetaData['tileHeight'];
                 numCol = imageMetaData['numberOfColumns'];
             }
-            let blobUrl = window.URL.createObjectURL(xhr.response);
-            this.imageStackWidget.SetImageProperties(blobUrl, imgWidth, imgHeight, numCol);
+            this.imageStackWidget.SetImageProperties(xhr.response, imgWidth, imgHeight, numCol);
         }
         xhr.open('GET', newUrl);
         xhr.send();
@@ -113,7 +124,17 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	protected OnResize(): void
 	{
-        this.imageStackWidget.OnResize(this.vizHeight);
+        const topHeightMax = 0.5 * this.vizHeight;
+        const botHeightMax = this.vizHeight - topHeightMax;
+        this.imageStackWidget.OnResize(topHeightMax, botHeightMax, this.width);
+        this.locationSelectionContainer
+            .attr('style', `max-height: ${topHeightMax}`)
+        this.imageTrackContainer
+            .attr('style',
+            `max-width: ${this.width}px;
+            max-height: ${botHeightMax}px;
+            width: ${this.width}px;
+            height: ${botHeightMax}px;`)
 	}
 
     public OnBrushChange(): void
