@@ -125,8 +125,9 @@ export class ImageTrackWidget
         this._svgContainer = containerSelect.append('svg');
         this._cellLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
-
-        this._frameLabelGroup = this.svgContainer.append('g');
+            
+        this._frameLabelGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
 
         this._innerContainer = containerSelect.append('div')
             .classed('cellTimelineInnerContainer', true)
@@ -199,6 +200,15 @@ export class ImageTrackWidget
             this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset);
             this._cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
+        }
+        this._frameLabelPositions = [];
+        for (let i = 0; i < numFrames; i++)
+        {
+            let frameId: string = (i + minFrameId).toString();
+            let offset = this.horizontalPad
+            offset += i * (maxWidth + this.horizontalPad);
+            offset += maxWidth / 2;
+            this._frameLabelPositions.push([frameId, offset]);
         }
     }
 
@@ -351,31 +361,40 @@ export class ImageTrackWidget
 
     private drawLabels(): void
     {
-        const tickWidth = 10;
-        const tickPadding = 4;
-        const xAnchor = this.cellTimelineMargin.left - tickWidth - tickPadding;
-        const labelsInView = this.cellLabelPositions.filter((labelPos: [string, number]) =>
+        // cell labels
+        let pad = 10;
+        const xAnchor = this.cellTimelineMargin.left - pad;
+        let labelsInView = this.cellLabelPositions.filter((labelPos: [string, number]) =>
         {
             const pos: number = labelPos[1] - this.latestScroll[1];
             return 0 <= pos && pos <= this.innerContainerH;
-        })
+        });
         this.cellLabelGroup.selectAll('text')
             .data(labelsInView)
             .join('text')
             .text(d => d[0])
             .attr('x', xAnchor)
             .attr('y', d => d[1] - this.latestScroll[1])
-            .classed('axisLabel', true)
+            .classed('cellAxisLabel', true)
             .classed('left', true);
+
+        // frame labels
+        pad = 6;
+        const yAnchor = this.cellTimelineMargin.top - pad;
+        labelsInView = this.frameLabelPositions.filter((labelPos: [string, number]) =>
+        {
+            const pos: number = labelPos[1] - this.latestScroll[0];
+            return 0 <= pos && pos <= this.innerContainerW;
+        });
+        this.frameLabelGroup.selectAll('text')
+            .data(labelsInView)
+            .join('text')
+            .text(d => d[0])
+            .attr('x', d => d[1] - this.latestScroll[0])
+            .attr('y', yAnchor)
+            .classed('cellAxisLabel', true)
+            .classed('right', true);
     }
-
-    private updateLabels(): void
-    {
-        this.cellLabelGroup
-            .attr('transform', `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);
-    }
-
-
 
     public OnResize(width: number, height: number): void
     {

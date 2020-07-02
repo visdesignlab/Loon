@@ -11,12 +11,16 @@
     outline: solid gray 1px;
 }
 
-.axisLabel {
+.cellAxisLabel {
     font-family: 'Montserrat', sans-serif;
     font-size: 11pt;
 }
 
-.axisLabel.left {
+.cellAxisLabel.left {
     dominant-baseline: middle;
     text-anchor: end;
+}
+
+.cellAxisLabel.right {
+    text-anchor: middle
 }
