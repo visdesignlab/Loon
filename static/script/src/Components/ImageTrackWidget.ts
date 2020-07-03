@@ -285,10 +285,32 @@ export class ImageTrackWidget
             const destOffset: [number, number] = [offsetX, offsetY];
             offsetArray.push(destOffset);
             let sourceRect: Rect = [[copyLeft, copyTop], [copyLeft + copyWidth, copyTop + copyHeight]];
-            // let destRect: Rect = [[offsetX, offsetY], [offsetX + copyWidth, offsetY + copyHeight]];
             this.sourceDestCell.push([sourceRect, destOffset, point]);
             asyncFunctionList.push(createImageBitmap(this.parentWidget.imageStackBlob, copyLeft, copyTop, copyWidth, copyHeight));
         }
+
+        // draw track background
+
+        let offsetIndex = trackData.pointList[0].get('Frame ID') - minFrame;
+        const minDestX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
+        const lastIndex = trackData.pointList.length - 1;
+        offsetIndex = trackData.pointList[lastIndex].get('Frame ID') - minFrame + 1;
+        const maxDestX = offsetIndex * (maxWidth + this.horizontalPad);
+        const minDestY = verticalOffset;
+
+        this.canvasContext.beginPath();
+        const marginX = 4;
+        const marginY = 4;
+        this.canvasContext.rect(
+            minDestX - marginX,
+            minDestY - marginY,
+            maxDestX - minDestX + 1 + 2 * marginX,
+            maxHeight + 2 * marginY);
+        this.canvasContext.strokeStyle = 'black';
+        this.canvasContext.fillStyle = 'rgb(240,240,240)';
+        this.canvasContext.stroke();
+        this.canvasContext.fill();
+        this.canvasContext.closePath();
 
         Promise.all(asyncFunctionList).then(
             (bitMapList: ImageBitmap[]) =>
@@ -309,14 +331,12 @@ export class ImageTrackWidget
                     this.canvasContext.stroke();
                     this.canvasContext.fill();
                     this.canvasContext.closePath();
-                    // this.canvasContext.fillRect(offsetX, offsetY, maxWidth, maxHeight);
 
                     this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
                 }
                 this.drawOutlines();
             }
-        )//.then(() => this.drawOutlines());
-
+        );
     }
 
     private static clamp(val: number, [minVal, maxVal]: [number, number]): number
