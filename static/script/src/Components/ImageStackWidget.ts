@@ -157,8 +157,6 @@ export class ImageStackWidget {
 		this._innerContainer = containerSelect.append('div')
 			.classed('innerContainer', true);
 
-		this.innerContainer.attr('style', `max-height: ${this.maxHeight}px;`)
-
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
 
@@ -250,10 +248,16 @@ export class ImageStackWidget {
 		});
 	}
 
-	public draw(): void
+	public draw(skipImageTrackDraw = false): void
 	{
-		this.drawSelectedImage();
+		this.drawSelectedImage(skipImageTrackDraw);
 		this.drawAllThumbnails();
+	}
+
+	public OnBrushChange(): void
+	{
+		this.draw(true);
+		this.imageTrackWidget.OnBrushChange();
 	}
 
 	public drawUpdate(): void
@@ -263,14 +267,14 @@ export class ImageStackWidget {
 		this.changeSelectedThumbnail();
 	}
 
-	private drawSelectedImage(): void
+	private drawSelectedImage(skipImageTrackDraw = false): void
 	{
 		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackMetaData.url);
 		this.selectedImageContainer.attr("style", styleString);
-		this.updateCanvas();
+		this.updateCanvas(skipImageTrackDraw);
 	}
 
-	private updateCanvas(): void
+	private updateCanvas(skipImageTrackDraw = false): void
 	{
 		if (!this.imageStackMetaData.url)
 		{
@@ -285,12 +289,15 @@ export class ImageStackWidget {
 		let locId = this.imageLocation.locationId;
 		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
 		const pointsAtFrame = this.data.GetCellsAtFrame(locId, currentFrameId)
-		let curveList: CurveND[] = [];
-		for (let point of pointsAtFrame)
+		if (!skipImageTrackDraw)
 		{
-			curveList.push(point.parent);
+			let curveList: CurveND[] = [];
+			for (let point of pointsAtFrame)
+			{
+				curveList.push(point.parent);
+			}
+			this.imageTrackWidget.draw(curveList);
 		}
-		this.imageTrackWidget.draw(curveList);
 	}
 
 	private createOutlineImage(): void
@@ -325,10 +332,11 @@ export class ImageStackWidget {
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
 	}
 
-	private isBorder(index: number): boolean
+	public isBorder(index: number): boolean
 	{
 		const numPixelsInTile = this.numPixelsInTile;
-		const firstIndex = this.firstIndex;
+		const extra = index % (this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight);
+		const firstIndex = index - extra;
 		let label = this.labelArray[index];
 		let neighborIndices: number[] = [];
 		// 4-neighbor
@@ -399,9 +407,7 @@ export class ImageStackWidget {
 				pageX = canvasBoundRect.x + cellX;
 				pageY = canvasBoundRect.y + cellY;
 			}
-			// console.log(cell);
-			// console.log('Cell ID:' + cell?.parent?.id);
-			// console.log('Row: ' + (index + 1));
+
 			let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
 			myImageData.data.set(this.defaultCanvasState.data);
 			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
@@ -441,6 +447,26 @@ export class ImageStackWidget {
 		let imgX = (labelIndex - tileStartIndex) % this.imageStackMetaData.tileWidth;
 		let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackMetaData.tileWidth);
 		return [imgX, imgY];
+	}
+
+	public getLabelIndexFromBigImgPixelXY(x: number, y: number): number
+	{
+		x = Math.round(x);
+		y = Math.round(y);
+
+		let tileX = x % this.imageStackMetaData.tileWidth;
+		let tileY = y % this.imageStackMetaData.tileHeight;
+		let tileIndex = this.getTileIndexFromBigImgPixelXY(x, y);
+		let labelIndex = tileIndex * (this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight);
+		labelIndex += tileX + tileY * this.imageStackMetaData.tileWidth;
+		return labelIndex;
+	}
+
+	public getTileIndexFromBigImgPixelXY(x: number, y: number): number
+	{
+		let colIndex = Math.floor(x / this.imageStackMetaData.tileWidth);
+		let rowIndex = Math.floor(y / this.imageStackMetaData.tileHeight);
+		return rowIndex * this.imageStackMetaData.numberOfColumns + colIndex;
 	}
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
@@ -488,7 +514,7 @@ export class ImageStackWidget {
 		return this.data.GetCellFromLabel(locId, currentFrameId, label);
 	}
 
-	private getCellColor(cell: PointND | null): [number, number, number]
+	public getCellColor(cell: PointND | null): [number, number, number]
 	{
 		let color: [number, number, number] = [0, 0, 0];
 		if (!cell)
@@ -511,8 +537,6 @@ export class ImageStackWidget {
 
 	private drawAllThumbnails(): void
 	{
-		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
-
 		this.thumbnailsContainer.selectAll('div')
 			.data(this.imageLocation.frameList)
 		  .join('div')
@@ -596,8 +620,8 @@ export class ImageStackWidget {
 
 	public OnResize(newMaxHeight: number, imageTrackMaxHeight: number, newWidth: number): void
 	{
-		this._maxHeight = this.maxHeight;
-		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
+		this._maxHeight = newMaxHeight;
+		this.container.setAttribute('style',`max-height: ${this.maxHeight}px;`);
 		this.imageTrackWidget.OnResize(newWidth, imageTrackMaxHeight);
 	}
 

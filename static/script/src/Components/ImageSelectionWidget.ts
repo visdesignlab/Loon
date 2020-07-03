@@ -79,7 +79,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .classed('locationListContainer', true);
 
         this._imageStackContainer = this.innerContainer.append('div')
-            .classed('imageStackContainer', true);
+            .classed('imageStackContainer', true)
+            .classed('overflow-scroll', true);
         this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight);
 
         this.OnResize()
@@ -124,11 +125,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	protected OnResize(): void
 	{
-        const topHeightMax = 0.5 * this.vizHeight;
-        const botHeightMax = this.vizHeight - topHeightMax;
+        const topHeightMax = 0.5 * this.height;
+        const botHeightMax = this.height - topHeightMax;
         this.imageStackWidget.OnResize(topHeightMax, botHeightMax, this.width);
         this.locationSelectionContainer
-            .attr('style', `max-height: ${topHeightMax}`)
+            .classed('overflow-scroll', true)
+            .attr('style', `max-height: ${topHeightMax}px`)
         this.imageTrackContainer
             .attr('style',
             `max-width: ${this.width}px;
@@ -156,7 +158,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 this.changeLocationSelection(d);
                 this.setImageStackWidget();
             });
-        this.imageStackWidget.draw();
+        this.imageStackWidget.OnBrushChange();
     }
 
     private changeLocationSelection(newId: number): void
