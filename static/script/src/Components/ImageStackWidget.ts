@@ -157,8 +157,6 @@ export class ImageStackWidget {
 		this._innerContainer = containerSelect.append('div')
 			.classed('innerContainer', true);
 
-		// this.innerContainer.attr('style', `max-height: ${this.maxHeight}px;`)
-
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
 
@@ -409,9 +407,7 @@ export class ImageStackWidget {
 				pageX = canvasBoundRect.x + cellX;
 				pageY = canvasBoundRect.y + cellY;
 			}
-			// console.log(cell);
-			// console.log('Cell ID:' + cell?.parent?.id);
-			// console.log('Row: ' + (index + 1));
+
 			let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
 			myImageData.data.set(this.defaultCanvasState.data);
 			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
@@ -541,8 +537,6 @@ export class ImageStackWidget {
 
 	private drawAllThumbnails(): void
 	{
-		// this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
-
 		this.thumbnailsContainer.selectAll('div')
 			.data(this.imageLocation.frameList)
 		  .join('div')

@@ -160,7 +160,6 @@ export class ImageTrackWidget
         }
         this._trackList = tracks;
         this.drawTrackList();
-        // this.drawOutlines();
         this.drawLabels();
     }
 
@@ -290,7 +289,6 @@ export class ImageTrackWidget
         }
 
         // draw track background
-
         let offsetIndex = trackData.pointList[0].get('Frame ID') - minFrame;
         const minDestX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
         const lastIndex = trackData.pointList.length - 1;
@@ -392,7 +390,6 @@ export class ImageTrackWidget
         {
             window.requestAnimationFrame(() =>
             {
-                // this.updateLabels();
                 this.drawLabels()
                 this._scrollChangeTicking = false;
             });
@@ -407,7 +404,6 @@ export class ImageTrackWidget
             let width = ImageTrackWidget.rectWidth(sourceRect);
             let height = ImageTrackWidget.rectHeight(sourceRect);
             let [[sLeft, sTop], [sRight, sBot]] = sourceRect;
-            // let outlineTileData = this.canvasContext.createImageData(width, height);
             let outlineTileData = this.canvasContext.getImageData(dX, dY, width, height);
             let labelToMatch = point.get('segmentLabel');
             let rIdx = 0;
