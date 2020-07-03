@@ -250,10 +250,16 @@ export class ImageStackWidget {
 		});
 	}
 
-	public draw(): void
+	public draw(skipImageTrackDraw = false): void
 	{
-		this.drawSelectedImage();
+		this.drawSelectedImage(skipImageTrackDraw);
 		this.drawAllThumbnails();
+	}
+
+	public OnBrushChange(): void
+	{
+		this.draw(true);
+		this.imageTrackWidget.OnBrushChange();
 	}
 
 	public drawUpdate(): void
@@ -263,14 +269,14 @@ export class ImageStackWidget {
 		this.changeSelectedThumbnail();
 	}
 
-	private drawSelectedImage(): void
+	private drawSelectedImage(skipImageTrackDraw = false): void
 	{
 		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackMetaData.url);
 		this.selectedImageContainer.attr("style", styleString);
-		this.updateCanvas();
+		this.updateCanvas(skipImageTrackDraw);
 	}
 
-	private updateCanvas(): void
+	private updateCanvas(skipImageTrackDraw = false): void
 	{
 		if (!this.imageStackMetaData.url)
 		{
@@ -285,12 +291,15 @@ export class ImageStackWidget {
 		let locId = this.imageLocation.locationId;
 		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
 		const pointsAtFrame = this.data.GetCellsAtFrame(locId, currentFrameId)
-		let curveList: CurveND[] = [];
-		for (let point of pointsAtFrame)
+		if (!skipImageTrackDraw)
 		{
-			curveList.push(point.parent);
+			let curveList: CurveND[] = [];
+			for (let point of pointsAtFrame)
+			{
+				curveList.push(point.parent);
+			}
+			this.imageTrackWidget.draw(curveList);
 		}
-		this.imageTrackWidget.draw(curveList);
 	}
 
 	private createOutlineImage(): void

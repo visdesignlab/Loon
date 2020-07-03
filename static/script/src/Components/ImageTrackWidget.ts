@@ -124,7 +124,8 @@ export class ImageTrackWidget
     private _sourceDestCell : [Rect, [number, number], PointND][];
     public get sourceDestCell() : [Rect, [number, number], PointND][] {
         return this._sourceDestCell;
-    }    
+    }
+    
 
     public init(): void
     {
@@ -148,20 +149,24 @@ export class ImageTrackWidget
 
     public draw(tracks: CurveND[]): void
     {
+        this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         if (!this.parentWidget.labelArray)
         {
-            // todo - clear canvas
             return;
         }
         if (tracks === this.trackList)
         {
             return;
         }
-        this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         this._trackList = tracks;
         this.drawTrackList();
         // this.drawOutlines();
         this.drawLabels();
+    }
+
+    public OnBrushChange(): void
+    {
+        this.drawOutlines();
     }
 
     private drawTrackList(): void

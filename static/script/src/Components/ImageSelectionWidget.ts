@@ -158,7 +158,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 this.changeLocationSelection(d);
                 this.setImageStackWidget();
             });
-        this.imageStackWidget.draw();
+        this.imageStackWidget.OnBrushChange();
     }
 
     private changeLocationSelection(newId: number): void
