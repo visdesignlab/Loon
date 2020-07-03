@@ -157,7 +157,7 @@ export class ImageStackWidget {
 		this._innerContainer = containerSelect.append('div')
 			.classed('innerContainer', true);
 
-		this.innerContainer.attr('style', `max-height: ${this.maxHeight}px;`)
+		// this.innerContainer.attr('style', `max-height: ${this.maxHeight}px;`)
 
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
@@ -325,10 +325,11 @@ export class ImageStackWidget {
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
 	}
 
-	private isBorder(index: number): boolean
+	public isBorder(index: number): boolean
 	{
 		const numPixelsInTile = this.numPixelsInTile;
-		const firstIndex = this.firstIndex;
+		const extra = index % (this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight);
+		const firstIndex = index - extra;
 		let label = this.labelArray[index];
 		let neighborIndices: number[] = [];
 		// 4-neighbor
@@ -443,6 +444,26 @@ export class ImageStackWidget {
 		return [imgX, imgY];
 	}
 
+	public getLabelIndexFromBigImgPixelXY(x: number, y: number): number
+	{
+		x = Math.round(x);
+		y = Math.round(y);
+
+		let tileX = x % this.imageStackMetaData.tileWidth;
+		let tileY = y % this.imageStackMetaData.tileHeight;
+		let tileIndex = this.getTileIndexFromBigImgPixelXY(x, y);
+		let labelIndex = tileIndex * (this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight);
+		labelIndex += tileX + tileY * this.imageStackMetaData.tileWidth;
+		return labelIndex;
+	}
+
+	public getTileIndexFromBigImgPixelXY(x: number, y: number): number
+	{
+		let colIndex = Math.floor(x / this.imageStackMetaData.tileWidth);
+		let rowIndex = Math.floor(y / this.imageStackMetaData.tileHeight);
+		return rowIndex * this.imageStackMetaData.numberOfColumns + colIndex;
+	}
+
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
 	{
 		let innerContainer = document.createElement('div');
@@ -488,7 +509,7 @@ export class ImageStackWidget {
 		return this.data.GetCellFromLabel(locId, currentFrameId, label);
 	}
 
-	private getCellColor(cell: PointND | null): [number, number, number]
+	public getCellColor(cell: PointND | null): [number, number, number]
 	{
 		let color: [number, number, number] = [0, 0, 0];
 		if (!cell)
@@ -511,7 +532,7 @@ export class ImageStackWidget {
 
 	private drawAllThumbnails(): void
 	{
-		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
+		// this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
 
 		this.thumbnailsContainer.selectAll('div')
 			.data(this.imageLocation.frameList)
@@ -596,8 +617,8 @@ export class ImageStackWidget {
 
 	public OnResize(newMaxHeight: number, imageTrackMaxHeight: number, newWidth: number): void
 	{
-		this._maxHeight = this.maxHeight;
-		this.thumbnailsContainer.attr('style', `max-height: ${this.maxHeight}px;`);
+		this._maxHeight = newMaxHeight;
+		this.container.setAttribute('style',`max-height: ${this.maxHeight}px;`);
 		this.imageTrackWidget.OnResize(newWidth, imageTrackMaxHeight);
 	}
 

@@ -26,6 +26,7 @@ export class ImageTrackWidget
         }
         this._latestScroll = [0,0];
         this._scrollChangeTicking = false;
+        this._sourceDestCell = [];
     }
 
     private _container : HTMLElement;
@@ -119,6 +120,12 @@ export class ImageTrackWidget
         return this._latestScroll;
     }
 
+    
+    private _sourceDestCell : [Rect, [number, number], PointND][];
+    public get sourceDestCell() : [Rect, [number, number], PointND][] {
+        return this._sourceDestCell;
+    }    
+
     public init(): void
     {
         const containerSelect = d3.select(this.container);
@@ -150,14 +157,17 @@ export class ImageTrackWidget
         {
             return;
         }
+        this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         this._trackList = tracks;
         this.drawTrackList();
+        // this.drawOutlines();
         this.drawLabels();
     }
 
     private drawTrackList(): void
     {
         this._cellLabelPositions = [];
+        this._sourceDestCell = [];
         let listOfBoundingBoxLists = this.getBoundingBoxLists(this.trackList);
         let maxHeightList: number[] = [];
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
@@ -247,9 +257,10 @@ export class ImageTrackWidget
             let [sX, sY] = bbox[0];
             let width = ImageTrackWidget.rectWidth(bbox);
             let height = ImageTrackWidget.rectHeight(bbox);
-            let extraX = (maxWidth - width) / 2;
-            let extraY = (maxHeight - height) / 2;
-            const frameId = trackData.pointList[i].get('Frame ID');
+            let extraX = Math.round((maxWidth - width) / 2);
+            let extraY = Math.round((maxHeight - height) / 2);
+            const point = trackData.pointList[i];
+            const frameId = point.get('Frame ID');
 
             const offsetIndex = frameId - minFrame;
             const frameIndex = frameId - 1;
@@ -264,9 +275,13 @@ export class ImageTrackWidget
             const copyWidth = Math.min(maxWidth, tileRight - copyLeft);
             const copyHeight = Math.min(maxHeight, tileBot - copyTop);
             
-            const offsetX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad) + (maxWidth - copyWidth) / 2;
-            const offsetY = verticalOffset + (maxHeight - copyHeight) / 2;
-            offsetArray.push([offsetX, offsetY]);
+            const offsetX = Math.round(this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad) + (maxWidth - copyWidth) / 2);
+            const offsetY = Math.round(verticalOffset + (maxHeight - copyHeight) / 2);
+            const destOffset: [number, number] = [offsetX, offsetY];
+            offsetArray.push(destOffset);
+            let sourceRect: Rect = [[copyLeft, copyTop], [copyLeft + copyWidth, copyTop + copyHeight]];
+            // let destRect: Rect = [[offsetX, offsetY], [offsetX + copyWidth, offsetY + copyHeight]];
+            this.sourceDestCell.push([sourceRect, destOffset, point]);
             asyncFunctionList.push(createImageBitmap(this.parentWidget.imageStackBlob, copyLeft, copyTop, copyWidth, copyHeight));
         }
 
@@ -293,8 +308,9 @@ export class ImageTrackWidget
 
                     this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
                 }
+                this.drawOutlines();
             }
-        )
+        )//.then(() => this.drawOutlines());
 
     }
 
@@ -305,12 +321,12 @@ export class ImageTrackWidget
 
     private static rectWidth(rect: Rect): number
     {
-        return rect[1][0] - rect[0][0];
+        return rect[1][0] - rect[0][0] + 1;
     }
     
     private static rectHeight(rect: Rect): number
     {
-        return rect[1][1] - rect[0][1];
+        return rect[1][1] - rect[0][1] + 1;
     }
 
     private getCellBoundingBox(point: PointND): Rect
@@ -356,6 +372,44 @@ export class ImageTrackWidget
                 this._scrollChangeTicking = false;
             });
             this._scrollChangeTicking = true;
+        }
+    }
+
+    private drawOutlines(): void
+    {
+        for (let [sourceRect, [dX, dY], point] of this.sourceDestCell)
+        {
+            let width = ImageTrackWidget.rectWidth(sourceRect);
+            let height = ImageTrackWidget.rectHeight(sourceRect);
+            let [[sLeft, sTop], [sRight, sBot]] = sourceRect;
+            // let outlineTileData = this.canvasContext.createImageData(width, height);
+            let outlineTileData = this.canvasContext.getImageData(dX, dY, width, height);
+            let labelToMatch = point.get('segmentLabel');
+            let rIdx = 0;
+            for (let y = sTop; y <= sBot; y++)
+            {
+                for (let x = sLeft; x <= sRight; x++)
+                {
+                    if (x == 510 && y == 180)
+                    {
+                        console.log('sup');
+                    }
+                    let labelIndex = this.parentWidget.getLabelIndexFromBigImgPixelXY(x, y);
+                    if (this.parentWidget.labelArray[labelIndex] == labelToMatch)
+                    {
+                        if (this.parentWidget.isBorder(labelIndex))
+                        {
+                            let [r, g, b] = this.parentWidget.getCellColor(point);
+                            outlineTileData.data[rIdx] = r;
+                            outlineTileData.data[rIdx + 1] = g;
+                            outlineTileData.data[rIdx + 2] = b;
+                            outlineTileData.data[rIdx + 3] = 255;
+                        }
+                    }
+                    rIdx += 4;
+                }
+            }
+            this.canvasContext.putImageData(outlineTileData, dX, dY);
         }
     }
 
