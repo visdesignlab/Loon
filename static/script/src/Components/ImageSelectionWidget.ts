@@ -142,6 +142,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     public OnBrushChange(): void
     {
         this.imageMetaData.updateInBrushProp(this.data);
+        this.draw();
+        this.imageStackWidget.OnBrushChange();
+    }
+
+    private draw(): void
+    {
         let brushedImageCount: number = this.imageMetaData.getBrushedImageCount();
         this._imageCountContainer.text(`Selected Images = (${brushedImageCount})`);
 
@@ -158,7 +164,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 this.changeLocationSelection(d);
                 this.setImageStackWidget();
             });
-        this.imageStackWidget.OnBrushChange();
     }
 
     private changeLocationSelection(newId: number): void
