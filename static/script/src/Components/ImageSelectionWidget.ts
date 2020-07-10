@@ -223,15 +223,23 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .domain(this.data.getMinMax('Frame ID'))
             .range([marginW, miniWidth -  marginW]);
 
+        const scaleLineWidth = d3.scaleLinear()
+            .domain([0, 1])
+            .range([0.5, 1.5]);
+
+        const scaleLineHeight = d3.scaleLinear()
+            .domain([0, 1])
+            .range([1, miniHeight - 2 * marginH]);
+
         svgSelection.selectAll('line')
             .data(d => this.getFrameList(d))
             .join('line')
             .attr('x1', d => scaleX(d.frameId))
             .attr('x2', d => scaleX(d.frameId))
-            .attr('y1', marginH)
-            .attr('y2', miniHeight - marginH) // lerp
-            .attr('stroke-width', 1) // lerp
-            .attr('stroke', d => d.inBrush ? 'firebrick' : '#ECECEC')
+            .attr('y1', d => (miniHeight - scaleLineHeight(d.inBrushPercent)) / 2)
+            .attr('y2', d => miniHeight - (miniHeight - scaleLineHeight(d.inBrushPercent)) / 2) // lerp
+            .attr('stroke-width', d => scaleLineWidth(d.inBrushPercent))
+            .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
             .classed('tickMark', true);
     }
 
