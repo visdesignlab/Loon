@@ -27,6 +27,9 @@
     font-size: 12pt;
     margin-top: 6px;
     font-weight: 800;
+    position: sticky;
+    top: 0;
+    background: white;
 }
 
 .subListContainer {
