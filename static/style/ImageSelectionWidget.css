@@ -46,8 +46,9 @@
 }
 
 .locationButton.selected {
-    color: white;
-    background: black;
+    font-weight: 800;
+    border-width: 2px;
+    border-color: black;
 }
 
 .frameListContainer {

@@ -197,8 +197,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .text(d => d)
             .classed('locationButton', true)
             .classed('toggleButton', true)
-            .classed('on', d => d == this.selectedLocationId)
+            .classed('selected', d => d == this.selectedLocationId)
             .attr('id', d => 'imageLocation-' + d)
+            .attr('style', d => 
+            {
+                const location = this.imageMetaData.locationLookup.get(d);
+                const stop = (1 - location.inBrushPercent) * 100
+                const barColor = '#EDCAC9'; // lighter firebrick
+                return `background: linear-gradient(to left, white, white ${stop}%, ${barColor}, ${stop}%, ${barColor})`
+            })
             .on('click', d => 
             {
                 this.changeLocationSelection(d);

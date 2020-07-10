@@ -30,7 +30,8 @@
 
 .toggleButton:hover {
     border: solid black 1px;
-    background: #f3f3f3;
+    /* background: #f3f3f3; */
+    filter: brightness(.8);
 }
 
 .toggleButton {
