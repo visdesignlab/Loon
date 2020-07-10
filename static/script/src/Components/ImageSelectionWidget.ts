@@ -1,10 +1,11 @@
 import * as d3 from 'd3';
-import {HtmlSelection} from '../devlib/DevLibTypes';
+import {HtmlSelection, SvgSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
 import {ImageStackWidget} from './ImageStackWidget';
 import {ImageMetaData} from '../DataModel/ImageMetaData';
 import { CurveList } from '../DataModel/CurveList';
 import { DatasetSpec } from '../types';
+import { ImageFrame } from '../DataModel/ImageFrame';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -33,10 +34,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._locationSelectionContainer;
     }
     
-    private _imageCountContainer : HtmlSelection;
-    public get imageCountContainer() : HtmlSelection {
-        return this._imageCountContainer;
-    }
+    // private _imageCountContainer : HtmlSelection;
+    // public get imageCountContainer() : HtmlSelection {
+    //     return this._imageCountContainer;
+    // }
     
     private _locationListContainer : HtmlSelection;
     public get locationListContainer() : HtmlSelection {
@@ -72,8 +73,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
 
-        this._imageCountContainer = this._locationSelectionContainer.append('div')
-            .classed('imageCountContainer', true);
+        // this._imageCountContainer = this._locationSelectionContainer.append('div')
+        //     .classed('imageCountContainer', true);
 
         this._locationListContainer = this._locationSelectionContainer.append('div')
             .classed('locationListContainer', true);
@@ -148,22 +149,96 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     private draw(): void
     {
-        let brushedImageCount: number = this.imageMetaData.getBrushedImageCount();
-        this._imageCountContainer.text(`Selected Images = (${brushedImageCount})`);
+        // let brushedImageCount: number = this.imageMetaData.getBrushedImageCount();
+        // this._imageCountContainer.text(`Selected Images = (${brushedImageCount})`);
 
-        let brushedLocationList: number[] = this.imageMetaData.getBrushedLocations();
-        this.locationListContainer.selectAll('button')
-            .data(brushedLocationList)
-            .join('button')
+
+        let facetOptions = this.data.GetFacetOptions();
+
+        let hardCodedOption = facetOptions[0];
+        let facetList = hardCodedOption.GetFacets();
+        this.locationListContainer.html(null);
+        for (let facet of facetList)
+        {
+            this.drawFacet(facet.name, facet.data);
+        }
+
+        // let brushedLocationList: number[] = this.imageMetaData.getBrushedLocations();
+        // this.locationListContainer.selectAll('button')
+        //     .data(brushedLocationList)
+        //     .join('button')
+        //     .text(d => d)
+        //     .classed('locationButton', true)
+        //     .classed('selected', d => d == this.selectedLocationId)
+        //     .attr('id', d => 'imageLocation-' + d)
+        //     .on('click', d => 
+        //     {
+        //         this.changeLocationSelection(d);
+        //         this.setImageStackWidget();
+        //     });
+    }
+
+    private drawFacet(name: string, data: CurveList): void
+    {
+        this.locationListContainer.append('div')
+            .text(name)
+            .classed('locationListCatTitle', true);
+
+        const subListContainer = this.locationListContainer.append('ul')
+            .classed('subListContainer', true);
+
+        console.log(data.locationList);
+        const listElement = subListContainer.selectAll('li')
+            .data(data.locationList)
+            .join('li');
+
+        listElement.html(null)
+            .append('button')
             .text(d => d)
             .classed('locationButton', true)
-            .classed('selected', d => d == this.selectedLocationId)
+            .classed('toggleButton', true)
+            .classed('on', d => d == this.selectedLocationId)
             .attr('id', d => 'imageLocation-' + d)
             .on('click', d => 
             {
                 this.changeLocationSelection(d);
                 this.setImageStackWidget();
             });
+
+        const wraperSelection = listElement.append('div')
+            .classed('frameListContainer', true);
+
+        // getting the first one, they should all be the same
+        const bbox = wraperSelection.node().getBoundingClientRect();
+        const miniWidth = bbox.width;
+        const miniHeight = bbox.height;
+
+        const svgSelection = wraperSelection.append('svg')
+            .attr('width', miniWidth)
+            .attr('height', miniHeight);
+
+        const marginW = 8;
+        const marginH = 2;
+        const scaleX = d3.scaleLinear()
+            .domain(this.data.getMinMax('Frame ID'))
+            .range([marginW, miniWidth -  marginW]);
+
+        svgSelection.selectAll('line')
+            .data(d => this.getFrameList(d))
+            .join('line')
+            .attr('x1', d => scaleX(d.frameId))
+            .attr('x2', d => scaleX(d.frameId))
+            .attr('y1', marginH)
+            .attr('y2', miniHeight - marginH) // lerp
+            .attr('stroke-width', 1) // lerp
+            .attr('stroke', d => d.inBrush ? 'firebrick' : '#ECECEC')
+            .classed('tickMark', true);
+    }
+
+    private getFrameList(locationId: number): ImageFrame[]
+    {
+        const imageLocation = this.imageMetaData.locationLookup.get(locationId);
+        return imageLocation.frameList;
     }
 
     private changeLocationSelection(newId: number): void

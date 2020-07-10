@@ -1,3 +1,10 @@
+.locationListContainer {
+    display: flex;
+    flex-direction: column;
+    margin: 8px;
+    font-family: 'Montserrat', sans-serif;
+}
+
 .imageSelectionContainer {
     display: flex;
     flex-direction: row;
@@ -14,11 +21,39 @@
     height: 100%;
 }
 
+
+
+.locationListCatTitle {
+    font-size: 12pt;
+    margin-top: 6px;
+    font-weight: 800;
+}
+
+.subListContainer {
+    margin: 0px;
+    padding: 0px;
+}
+
+.subListContainer li {
+    display: flex;
+    font-size: 10pt;
+    margin-left: 2px;
+}
+
 .locationButton {
-    background: wheat;
+    width: 40px;  
+    flex-shrink: 0;
 }
 
 .locationButton.selected {
     color: white;
     background: black;
+}
+
+.frameListContainer {
+    flex-grow: 1;
+}
+
+.tickMark {
+    stroke-linecap: round;
 }
