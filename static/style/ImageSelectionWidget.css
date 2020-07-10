@@ -38,21 +38,38 @@
     display: flex;
     font-size: 10pt;
     margin-left: 2px;
+    margin-bottom: 6px;
 }
 
-.locationButton {
-    width: 40px;  
+.subListContainer li:hover {
+    background: #e6e6e6;
+}
+
+.toggleButton.locationButton {
+    width: 40px;
     flex-shrink: 0;
+    border-radius: 0px;
+    border-width: 0px;
+    margin: 0px;
+    height: 20px; 
+    /* changing this will require changing ImageSelectionWidget.drawFacet() */
+}
+
+.toggleButton.locationButton:hover {
+    filter: brightness(.8);
 }
 
 .locationButton.selected {
     font-weight: 800;
+    height: 40px;
     border-width: 2px;
     border-color: black;
 }
 
 .frameListContainer {
     flex-grow: 1;
+    display: flex;
+    align-items: center;
 }
 
 .tickMark {

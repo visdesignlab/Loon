@@ -204,7 +204,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 const location = this.imageMetaData.locationLookup.get(d);
                 const stop = (1 - location.inBrushPercent) * 100
                 const barColor = '#EDCAC9'; // lighter firebrick
-                return `background: linear-gradient(to left, white, white ${stop}%, ${barColor}, ${stop}%, ${barColor})`
+                return `background: linear-gradient(to left, rgba(255,255,255,0), rgba(255,255,255,0) ${stop}%, ${barColor}, ${stop}%, ${barColor})`
             })
             .on('click', d => 
             {
@@ -218,13 +218,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         // getting the first one, they should all be the same
         const bbox = wraperSelection.node().getBoundingClientRect();
         const miniWidth = bbox.width;
-        const miniHeight = bbox.height;
+        const miniHeight = 20; // hardcoded based on CSS
 
         const svgSelection = wraperSelection.append('svg')
             .attr('width', miniWidth)
             .attr('height', miniHeight);
 
-        const marginW = 8;
+        const marginW = 4;
         const marginH = 2;
         const scaleX = d3.scaleLinear()
             .domain(this.data.getMinMax('Frame ID'))
