@@ -3,9 +3,11 @@
     flex-direction: column;
     overflow: scroll;
     align-items: center;
+    flex-grow: 1;
+    margin: 10px;
 }
 
-.thumbnailsContainer {
+/* .thumbnailsContainer {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -14,13 +16,13 @@
     padding: 5px;
     justify-content: center;
     background: #ebebeb;
-}
+} */
 
-.imageStackThumbnail {
+/* .imageStackThumbnail {
     margin: 1px;
-}
+} */
 
-.imageStackThumbnail.selected {
+/* .imageStackThumbnail.selected {
     outline: solid firebrick 2px;
     box-shadow: 0px 0px 7px 0px white;
 }
@@ -36,9 +38,9 @@
 .centroidIndicator {
     fill-opacity: 0;
     r: 2;
-}
+} */
 
-.centroidIndicator.inBrush {
+/* .centroidIndicator.inBrush {
     fill-opacity: 1;
     fill: #eb2828;
-}
+} */

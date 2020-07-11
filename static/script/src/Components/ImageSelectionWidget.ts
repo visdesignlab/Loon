@@ -224,7 +224,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
         const scaleLineWidth = d3.scaleLinear()
             .domain([0, 1])
-            .range([0.5, 1.5]);
+            .range([1.0, 3.0]);
 
         const scaleLineHeight = d3.scaleLinear()
             .domain([0, 1])

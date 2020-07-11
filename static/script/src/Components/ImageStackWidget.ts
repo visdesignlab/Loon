@@ -28,7 +28,7 @@ export class ImageStackWidget {
 		this._selectedImgIndex = 0;
 		console.log(d3);
 		console.log(this);
-		this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
+		// this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
 		this._tooltip = new RichTooltip();
 	}
 		
@@ -110,20 +110,20 @@ export class ImageStackWidget {
 		return this._canvasContext;
 	}
 	
-	private _selectedImageOverlay : SvgSelection;
-	public get selectedImageOverlay() : SvgSelection {
-		return this._selectedImageOverlay;
-	}
+	// private _selectedImageOverlay : SvgSelection;
+	// public get selectedImageOverlay() : SvgSelection {
+	// 	return this._selectedImageOverlay;
+	// }
 	
-	private _thumbnailsContainer : HtmlSelection;
-	public get thumbnailsContainer() : HtmlSelection {
-		return this._thumbnailsContainer;
-	}
+	// private _thumbnailsContainer : HtmlSelection;
+	// public get thumbnailsContainer() : HtmlSelection {
+	// 	return this._thumbnailsContainer;
+	// }
 	
-	private _thumbnailScale : number;
-	public get thumbnailScale() : number {
-		return this._thumbnailScale;
-	}
+	// private _thumbnailScale : number;
+	// public get thumbnailScale() : number {
+	// 	return this._thumbnailScale;
+	// }
 
 	
 	private _data : CurveList;
@@ -178,10 +178,10 @@ export class ImageStackWidget {
 				this.selectedImageCanvas.style('opacity', 0.6);
 			});
 
-		this._selectedImageOverlay = this.selectedImageContainer.append('svg');
+		// this._selectedImageOverlay = this.selectedImageContainer.append('svg');
 
-		this._thumbnailsContainer = this.innerContainer.append('div')
-			.classed('thumbnailsContainer', true);
+		// this._thumbnailsContainer = this.innerContainer.append('div')
+		// 	.classed('thumbnailsContainer', true);
 
 		document.onkeydown = (event) => {this.handleKeyDown(event)};
 		this.imageTrackWidget.init();
@@ -215,9 +215,9 @@ export class ImageStackWidget {
 
 		this.imageStackMetaData.tileWidth = imageWidth;
 		this.imageStackMetaData.tileHeight = imageHeight;
-		this.selectedImageOverlay
-			.attr('width', imageWidth)
-			.attr('height', imageHeight);
+		// this.selectedImageOverlay
+		// 	.attr('width', imageWidth)
+		// 	.attr('height', imageHeight);
 		this.imageStackMetaData.numberOfColumns = numColumns;
 		this._imageStackWidth = numColumns * imageWidth;
 		const numRows: number = Math.ceil(this.imageStackMetaData.numberOfTiles / numColumns);
@@ -251,7 +251,7 @@ export class ImageStackWidget {
 	public draw(skipImageTrackDraw = false): void
 	{
 		this.drawSelectedImage(skipImageTrackDraw);
-		this.drawAllThumbnails();
+		// this.drawAllThumbnails();
 	}
 
 	public OnBrushChange(): void
@@ -264,7 +264,7 @@ export class ImageStackWidget {
 	{
 		this.updateBackgroundPosition(this.selectedImgIndex);
 		this.updateCanvas();
-		this.changeSelectedThumbnail();
+		// this.changeSelectedThumbnail();
 	}
 
 	private drawSelectedImage(skipImageTrackDraw = false): void
@@ -519,28 +519,28 @@ export class ImageStackWidget {
 		return color
 	}
 
-	private drawAllThumbnails(): void
-	{
-		this.thumbnailsContainer.selectAll('div')
-			.data(this.imageLocation.frameList)
-		  .join('div')
-			.attr('style', (d, index) => this.getImageInlineStyle(index, this.imageStackMetaData.url, true, 0.1))
-			.classed('imageStackThumbnail', true)
-			.classed('selected', (d, index) => index === this.selectedImgIndex)
-			.classed('brushed', d => d.inBrush)
-			.on('click', (d, index) => {
-				this.changeSelectedImage(index);
-			});
-	}
+	// private drawAllThumbnails(): void
+	// {
+	// 	this.thumbnailsContainer.selectAll('div')
+	// 		.data(this.imageLocation.frameList)
+	// 	  .join('div')
+	// 		.attr('style', (d, index) => this.getImageInlineStyle(index, this.imageStackMetaData.url, true, 0.1))
+	// 		.classed('imageStackThumbnail', true)
+	// 		.classed('selected', (d, index) => index === this.selectedImgIndex)
+	// 		.classed('brushed', d => d.inBrush)
+	// 		.on('click', (d, index) => {
+	// 			this.changeSelectedImage(index);
+	// 		});
+	// }
 
-	private changeSelectedThumbnail(): void
-	{
-		this.thumbnailsContainer.selectAll('div')
-			.data(this.imageLocation.frameList)
-		  	.classed('selected', (d, index) => index === this.selectedImgIndex)
-	}
+	// private changeSelectedThumbnail(): void
+	// {
+	// 	this.thumbnailsContainer.selectAll('div')
+	// 		.data(this.imageLocation.frameList)
+	// 	  	.classed('selected', (d, index) => index === this.selectedImgIndex)
+	// }
 
-	private changeSelectedImage(newIndex: number): void
+	public changeSelectedImage(newIndex: number): void
 	{
 		this._selectedImgIndex = newIndex;
 		this.drawUpdate();
