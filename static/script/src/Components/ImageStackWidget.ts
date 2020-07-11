@@ -471,8 +471,6 @@ export class ImageStackWidget {
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
 	{
-		let innerContainer = document.createElement('div');
-		innerContainer.classList.add('imageStackTooltipContainer')
 		let locId = this.imageLocation.locationId;
 		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
 		let labelValuePairs: [string, string | null][] = [
@@ -490,21 +488,7 @@ export class ImageStackWidget {
 		{
 			labelValuePairs.push(['No cell linked', null])
 		}
-
-		d3.select(innerContainer).selectAll('p')
-			.data(labelValuePairs)
-			.join('p')
-			.html(d => {
-				if (d[1])
-				{
-					return d[0] + ': <b>' + d[1] + '</b>';
-				}
-				return '<i>' + d[0] + '</i>';
-			})
-			.classed('tooltipDisplayRow', true)
-
-
-		return innerContainer.outerHTML;
+		return RichTooltip.createLabelValueListContent(labelValuePairs);
 	}
 
 	private getCell(label: number): [PointND, number] | [null, null]

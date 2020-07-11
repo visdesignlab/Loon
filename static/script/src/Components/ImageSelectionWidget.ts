@@ -6,6 +6,8 @@ import {ImageMetaData} from '../DataModel/ImageMetaData';
 import { CurveList } from '../DataModel/CurveList';
 import { DatasetSpec } from '../types';
 import { ImageFrame } from '../DataModel/ImageFrame';
+import { DevlibMath } from '../devlib/DevlibMath';
+import { RichTooltip } from './RichTooltip';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -34,11 +36,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._locationSelectionContainer;
     }
     
-    // private _imageCountContainer : HtmlSelection;
-    // public get imageCountContainer() : HtmlSelection {
-    //     return this._imageCountContainer;
-    // }
-    
     private _locationListContainer : HtmlSelection;
     public get locationListContainer() : HtmlSelection {
         return this._locationListContainer;
@@ -60,8 +57,20 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._selectedLocationId;
     }
 
+    private _frameTooltip : RichTooltip;
+    public get frameTooltip() : RichTooltip {
+        return this._frameTooltip;
+    }
+    
+    // private _tooltipContainer : HTMLDivElement;
+    // public get tooltipContainer() : HTMLDivElement {
+    //     return this._tooltipContainer;
+    // }
+
 	public init(): void
 	{
+        this._frameTooltip = new RichTooltip(0, 0);
+        // this._tooltipContainer = document.createElement('div');
         this._innerContainer = d3.select(this.container).append('div');
         this.innerContainer.classed('imageSelectionContainer', true);
 
@@ -85,7 +94,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight);
 
         this.OnResize()
-
 	}
 
 	public OnDataChange()
@@ -149,10 +157,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     private draw(): void
     {
-        // let brushedImageCount: number = this.imageMetaData.getBrushedImageCount();
-        // this._imageCountContainer.text(`Selected Images = (${brushedImageCount})`);
-
-
         let facetOptions = this.data.GetFacetOptions();
 
         let hardCodedOption = facetOptions[0];
@@ -162,20 +166,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         {
             this.drawFacet(facet.name, facet.data);
         }
-
-        // let brushedLocationList: number[] = this.imageMetaData.getBrushedLocations();
-        // this.locationListContainer.selectAll('button')
-        //     .data(brushedLocationList)
-        //     .join('button')
-        //     .text(d => d)
-        //     .classed('locationButton', true)
-        //     .classed('selected', d => d == this.selectedLocationId)
-        //     .attr('id', d => 'imageLocation-' + d)
-        //     .on('click', d => 
-        //     {
-        //         this.changeLocationSelection(d);
-        //         this.setImageStackWidget();
-        //     });
     }
 
     private drawFacet(name: string, data: CurveList): void
@@ -187,7 +177,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         const subListContainer = this.locationListContainer.append('ul')
             .classed('subListContainer', true);
 
-        console.log(data.locationList);
         const listElement = subListContainer.selectAll('li')
             .data(data.locationList)
             .join('li');
@@ -222,12 +211,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
         const svgSelection = wraperSelection.append('svg')
             .attr('width', miniWidth)
-            .attr('height', miniHeight);
+            .attr('height', miniHeight)
+            .attr('id', d => 'frameTicksViz-' + d)
+            .attr('data-locId', d => d)
+            .on('mouseleave', () => this.hideFrameTooltip())
 
         const marginW = 4;
         const marginH = 2;
+        const frameExtent: [number, number] = this.data.getMinMax('Frame ID');
         const scaleX = d3.scaleLinear()
-            .domain(this.data.getMinMax('Frame ID'))
+            .domain(frameExtent)
             .range([marginW, miniWidth -  marginW]);
 
         const scaleLineWidth = d3.scaleLinear()
@@ -248,6 +241,45 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('stroke-width', d => scaleLineWidth(d.inBrushPercent))
             .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
             .classed('tickMark', true);
+    
+        let svgList = svgSelection.nodes();
+        for (let i = 0; i < svgList.length; i++)
+        {
+            const svgElement = svgList[i];
+            const locId = +svgElement.dataset['locId'];
+            svgElement.addEventListener('mousemove', (event: MouseEvent) =>
+            {
+                const mouseX = event.offsetX;
+                let frameId = scaleX.invert(mouseX);
+                frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
+                this.onHoverLocationFrame(locId, frameId);
+            });
+        }
+    }
+
+    private onHoverLocationFrame(locationId: number, frameId: number): void
+    {
+        const svgContainer = d3.select('#frameTicksViz-' + locationId);
+        const bbox = (svgContainer.node() as SVGElement).getBoundingClientRect();
+
+        const xPos = bbox.right;
+        const yPos = bbox.top + bbox.height / 2;
+        const htmlString = this.createTooltipContent(locationId, frameId);
+        this.frameTooltip.Show(htmlString, xPos, yPos);
+    }
+
+    private createTooltipContent(locationId: number, frameId: number): string
+    {
+        const labelValueList: [string, string][] = [
+            ['Location', locationId.toString()],
+			['Frame', frameId.toString()],
+        ];
+        return RichTooltip.createLabelValueListContent(labelValueList);
+    }
+
+    private hideFrameTooltip(): void
+    {
+        this.frameTooltip.Hide();
     }
 
     private getFrameList(locationId: number): ImageFrame[]
@@ -266,5 +298,4 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         let newSelected = d3.select("#imageLocation-" + this.selectedLocationId);
         newSelected.classed('selected', true);
     }
-
 }

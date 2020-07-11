@@ -6,3 +6,11 @@
     border: solid black 1px;
     border-radius: 4px;
 }
+
+.tooltipInnerContainer {
+    margin: 10px;
+}
+
+.tooltipDisplayRow {
+    margin: 0px;
+}

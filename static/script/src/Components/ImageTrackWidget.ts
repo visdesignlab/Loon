@@ -5,6 +5,7 @@ import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
 import { extent, linkVertical, VoronoiEdge } from 'd3';
 import { Rect } from '../types';
+import { DevlibMath } from '../devlib/DevlibMath';
 
 export class ImageTrackWidget
 {
@@ -273,8 +274,8 @@ export class ImageTrackWidget
             const tileBot = tileTop + this.parentWidget.imageStackMetaData.tileHeight;
             const tileRight = tileLeft + this.parentWidget.imageStackMetaData.tileWidth;
 
-            const copyTop = ImageTrackWidget.clamp(sY - extraY, [tileTop, tileBot]);
-            const copyLeft = ImageTrackWidget.clamp(sX - extraX, [tileLeft, tileRight]);
+            const copyTop = DevlibMath.clamp(sY - extraY, [tileTop, tileBot]);
+            const copyLeft = DevlibMath.clamp(sX - extraX, [tileLeft, tileRight]);
             
             const copyWidth = Math.min(maxWidth, tileRight - copyLeft);
             const copyHeight = Math.min(maxHeight, tileBot - copyTop);
@@ -335,11 +336,6 @@ export class ImageTrackWidget
                 this.drawOutlines();
             }
         );
-    }
-
-    private static clamp(val: number, [minVal, maxVal]: [number, number]): number
-    {
-        return Math.min(Math.max(val, minVal), maxVal);
     }
 
     private static rectWidth(rect: Rect): number
