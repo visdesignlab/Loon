@@ -197,8 +197,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             })
             .on('click', d => 
             {
-                this.changeLocationSelection(d);
-                this.setImageStackWidget();
+                this.onClickLocation(d);
             });
 
         const wraperSelection = listElement.append('div')
@@ -254,6 +253,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
                 this.onHoverLocationFrame(locId, frameId);
             });
+            svgElement.addEventListener('click', (event: MouseEvent) =>
+            {
+                const mouseX = event.offsetX;
+                let frameId = scaleX.invert(mouseX);
+                frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
+                this.onClickLocationFrame(locId, frameId);
+            });
         }
     }
 
@@ -266,6 +272,22 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         const yPos = bbox.top + bbox.height / 2;
         const htmlString = this.createTooltipContent(locationId, frameId);
         this.frameTooltip.Show(htmlString, xPos, yPos);
+    }
+
+    private onClickLocation(locationId: number): void
+    {
+        if (locationId === this.selectedLocationId)
+        {
+            return;
+        }
+        this.changeLocationSelection(locationId);
+        this.setImageStackWidget();
+    }
+
+    private onClickLocationFrame(locationId: number, frameId: number): void
+    {
+        this.onClickLocation(locationId);
+        this.imageStackWidget.changeSelectedImage(frameId - 1); // matlab
     }
 
     private createTooltipContent(locationId: number, frameId: number): string
