@@ -52,13 +52,13 @@
 }
 
 .toggleButton.locationButton {
-    width: 40px;
+    width: 48px;
     flex-shrink: 0;
     border-radius: 0px;
     border-width: 0px;
     margin: 0px;
-    height: 20px; 
-    /* changing this will require changing ImageSelectionWidget.drawFacet() */
+    height: 24px; 
+    /* changing this will require changing ImageSelectionWidget.frameHeight */
 }
 
 .toggleButton.locationButton:hover {
@@ -79,5 +79,5 @@
 }
 
 .tickMark {
-    stroke-linecap: round;
+    stroke-linecap: butt;
 }

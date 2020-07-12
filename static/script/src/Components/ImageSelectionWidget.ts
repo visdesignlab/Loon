@@ -8,6 +8,7 @@ import { DatasetSpec } from '../types';
 import { ImageFrame } from '../DataModel/ImageFrame';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { RichTooltip } from './RichTooltip';
+import { timeHours, linkVertical } from 'd3';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -61,15 +62,38 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     public get frameTooltip() : RichTooltip {
         return this._frameTooltip;
     }
+
+    private _frameHeight : number;
+    public get frameHeight() : number {
+        return this._frameHeight;
+    }    
     
-    // private _tooltipContainer : HTMLDivElement;
-    // public get tooltipContainer() : HTMLDivElement {
-    //     return this._tooltipContainer;
-    // }
+    private _frameScaleX : d3.ScaleLinear<number, number>;
+    public get frameScaleX() : d3.ScaleLinear<number, number> {
+        return this._frameScaleX;
+    }
+
+    private _frameScaleHeight : d3.ScaleLinear<number, number>;
+    public get frameScaleHeight() : d3.ScaleLinear<number, number> {
+        return this._frameScaleHeight;
+    }
+    
+    private _hoveredLocFrame : [number, number] | null;
+    public get hoveredLocFrame() : [number, number] | null {
+        return this._hoveredLocFrame;
+    }
+    
+    private _selectedLocFrame : [number, number];
+    public get selectedLocFrame() : [number, number] {
+        return this._selectedLocFrame;
+    }
 
 	public init(): void
 	{
+        this._frameHeight = 24; // hardcoded based on CSS
         this._frameTooltip = new RichTooltip(0, 0);
+        this._selectedLocFrame = [1, 1];
+        this._hoveredLocFrame = null;
         // this._tooltipContainer = document.createElement('div');
         this._innerContainer = d3.select(this.container).append('div');
         this.innerContainer.classed('imageSelectionContainer', true);
@@ -166,6 +190,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         {
             this.drawFacet(facet.name, facet.data);
         }
+        this.drawSelectedDots();
     }
 
     private drawFacet(name: string, data: CurveList): void
@@ -206,19 +231,22 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         // getting the first one, they should all be the same
         const bbox = wraperSelection.node().getBoundingClientRect();
         const miniWidth = bbox.width;
-        const miniHeight = 20; // hardcoded based on CSS
 
         const svgSelection = wraperSelection.append('svg')
             .attr('width', miniWidth)
-            .attr('height', miniHeight)
+            .attr('height', this.frameHeight)
             .attr('id', d => 'frameTicksViz-' + d)
             .attr('data-locId', d => d)
-            .on('mouseleave', () => this.hideFrameTooltip())
+            .on('mouseleave', () => 
+            {
+                this.hideFrameTooltip();
+                this.removeHoverDots(svgSelection);
+            })
 
         const marginW = 4;
-        const marginH = 2;
+        const marginH = 8;
         const frameExtent: [number, number] = this.data.getMinMax('Frame ID');
-        const scaleX = d3.scaleLinear()
+        this._frameScaleX = d3.scaleLinear()
             .domain(frameExtent)
             .range([marginW, miniWidth -  marginW]);
 
@@ -226,17 +254,17 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .domain([0, 1])
             .range([1.0, 3.0]);
 
-        const scaleLineHeight = d3.scaleLinear()
+        this._frameScaleHeight = d3.scaleLinear()
             .domain([0, 1])
-            .range([1, miniHeight - 2 * marginH]);
+            .range([1, this.frameHeight - 2 * marginH]);
 
         svgSelection.selectAll('line')
             .data(d => this.getFrameList(d))
             .join('line')
-            .attr('x1', d => scaleX(d.frameId))
-            .attr('x2', d => scaleX(d.frameId))
-            .attr('y1', d => (miniHeight - scaleLineHeight(d.inBrushPercent)) / 2)
-            .attr('y2', d => miniHeight - (miniHeight - scaleLineHeight(d.inBrushPercent)) / 2) // lerp
+            .attr('x1', d => this.frameScaleX(d.frameId))
+            .attr('x2', d => this.frameScaleX(d.frameId))
+            .attr('y1', d => (this.frameHeight - this.frameScaleHeight(d.inBrushPercent)) / 2)
+            .attr('y2', d => this.frameHeight - (this.frameHeight - this.frameScaleHeight(d.inBrushPercent)) / 2)
             .attr('stroke-width', d => scaleLineWidth(d.inBrushPercent))
             .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
             .classed('tickMark', true);
@@ -249,14 +277,14 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             svgElement.addEventListener('mousemove', (event: MouseEvent) =>
             {
                 const mouseX = event.offsetX;
-                let frameId = scaleX.invert(mouseX);
+                let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
                 this.onHoverLocationFrame(locId, frameId);
             });
             svgElement.addEventListener('click', (event: MouseEvent) =>
             {
                 const mouseX = event.offsetX;
-                let frameId = scaleX.invert(mouseX);
+                let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
                 this.onClickLocationFrame(locId, frameId);
             });
@@ -265,13 +293,74 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     private onHoverLocationFrame(locationId: number, frameId: number): void
     {
-        const svgContainer = d3.select('#frameTicksViz-' + locationId);
-        const bbox = (svgContainer.node() as SVGElement).getBoundingClientRect();
+        this._hoveredLocFrame = [locationId, frameId];
+        const svgContainer = d3.select('#frameTicksViz-' + locationId) as SvgSelection;
+        const bbox = svgContainer.node().getBoundingClientRect();
 
         const xPos = bbox.right;
         const yPos = bbox.top + bbox.height / 2;
         const htmlString = this.createTooltipContent(locationId, frameId);
         this.frameTooltip.Show(htmlString, xPos, yPos);
+        this.drawHoverDots(svgContainer, locationId, frameId);
+    }
+
+    private drawHoverDots(svgContainer: SvgSelection, locationId: number, frameId: number): void
+    {
+        const xyPositions: [number, number][] =this.getDotCenters(locationId, frameId);
+        const dotR = 2;
+        svgContainer.selectAll('.hoverDot')
+            .data(xyPositions)
+            .join('circle')
+            .classed('hoverDot', true)
+            .attr('cx', d => d[0])
+            .attr('cy', d => d[1])
+            .attr('fill', '#ECECEC')
+            .attr('stroke', 'black')
+            .attr('r', dotR)
+            .attr('stroke-width', 0.5);
+    }
+
+    private drawSelectedDots(): void
+    {
+        const [locationId, frameId] = this.selectedLocFrame;
+        const xyPositions: [number, number][] =this.getDotCenters(locationId, frameId);
+        const dotR = 3;
+
+        const svgContainer = d3.select('#frameTicksViz-' + locationId) as SvgSelection;
+        svgContainer.selectAll('.selectedDot')
+            .data(xyPositions)
+            .join('circle')
+            .classed('selectedDot', true)
+            .attr('cx', d => d[0])
+            .attr('cy', d => d[1])
+            .attr('fill', 'black')
+            .attr('stroke', 'black')
+            .attr('r', dotR)
+            .attr('stroke-width', 0.5);
+    }
+
+    private getDotCenters(locationId: number, frameId: number): [number, number][]
+    {
+        const frame = this.imageMetaData.locationLookup.get(locationId).frameLookup.get(frameId);
+        const xPos = this.frameScaleX(frameId);
+        const tickHeight = this.frameScaleHeight(frame.inBrushPercent);
+        const dotR = 2;
+        const dotMargin = 3;
+        const margin = (this.frameHeight - tickHeight) / 2
+        const yPos1 = margin - dotR - dotMargin;
+        const yPos2 = margin + tickHeight + dotR + dotMargin;
+        return [[xPos, yPos1], [xPos, yPos2]];
+    }
+
+    private removeHoverDots(svgContainer: SvgSelection): void
+    {
+        svgContainer.selectAll('.hoverDot').remove();
+    }
+    
+    private removeCurrentSelectedDots(): void
+    {
+        const svgContainer = d3.select('#frameTicksViz-' + this.selectedLocFrame[0]) as SvgSelection;
+        svgContainer.selectAll('.selectedDot').remove();
     }
 
     private onClickLocation(locationId: number): void
@@ -286,8 +375,21 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     private onClickLocationFrame(locationId: number, frameId: number): void
     {
+        let [oldLocId, oldFrameId] = this.selectedLocFrame;
+        if (oldLocId === locationId && oldFrameId === frameId)
+        {
+            return;
+        }
         this.onClickLocation(locationId);
         this.imageStackWidget.changeSelectedImage(frameId - 1); // matlab
+        this.updateSelectedDots(locationId, frameId);
+    }
+    
+    private updateSelectedDots(locationId: number, frameId: number): void
+    {
+        this.removeCurrentSelectedDots();
+        this._selectedLocFrame = [locationId, frameId];
+        this.drawSelectedDots();
     }
 
     private createTooltipContent(locationId: number, frameId: number): string
