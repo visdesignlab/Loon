@@ -88,12 +88,18 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._selectedLocFrame;
     }
 
+    private _hoveredLocId : number | null;
+    public get hoveredLocId() : number | null {
+        return this._hoveredLocId;
+    }
+
 	public init(): void
 	{
         this._frameHeight = 24; // hardcoded based on CSS
         this._frameTooltip = new RichTooltip(0, 0);
         this._selectedLocFrame = [1, 1];
         this._hoveredLocFrame = null;
+        this._hoveredLocId = null;
         // this._tooltipContainer = document.createElement('div');
         this._innerContainer = d3.select(this.container).append('div');
         this.innerContainer.classed('imageSelectionContainer', true);
@@ -105,6 +111,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
+
+        document.onkeydown = (event) => {this.handleKeyDown(event)};
 
         // this._imageCountContainer = this._locationSelectionContainer.append('div')
         //     .classed('imageCountContainer', true);
@@ -239,6 +247,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('data-locId', d => d)
             .on('mouseleave', () => 
             {
+                this._hoveredLocId = null;
                 this.hideFrameTooltip();
                 this.removeHoverDots(svgSelection);
             })
@@ -276,6 +285,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             const locId = +svgElement.dataset['locId'];
             svgElement.addEventListener('mousemove', (event: MouseEvent) =>
             {
+                this._hoveredLocId = locId;
                 const mouseX = event.offsetX;
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
@@ -291,6 +301,36 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
     }
 
+	private handleKeyDown(event: KeyboardEvent): void
+	{
+        let newIndex: number;
+        const [locId, frameId] = this.hoveredLocFrame;
+        const location = this.imageMetaData.locationLookup.get(locId);
+        let nextFrameId: number;
+		switch (event.keyCode)
+		{
+            case 37: // left
+                if (this.hoveredLocId !== locId) { return; }
+                // newIndex = Math.max(0, this.imageStackWidget.selectedImgIndex - 1);
+                const minFrameId = location.frameList[0].frameId;
+                nextFrameId = Math.max(frameId - 1, minFrameId);
+                this.onHoverLocationFrame(locId, nextFrameId)
+				break;
+            case 39: // right
+                if (this.hoveredLocId !== locId) { return; }
+                const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
+                nextFrameId = Math.min(frameId + 1, maxFrameId);
+                this.onHoverLocationFrame(locId, nextFrameId);
+				// newIndex = Math.min(this.imageStackWidget.imageStackMetaData.numberOfTiles - 1, this.imageStackWidget.selectedImgIndex + 1);
+				// this.imageStackWidget.changeSelectedImage(newIndex);
+                break;
+            case 13: // enter
+                if (this.hoveredLocId !== locId) { return; }
+                this.switchToHovered();
+                break;
+		}
+	}
+
     private onHoverLocationFrame(locationId: number, frameId: number): void
     {
         this._hoveredLocFrame = [locationId, frameId];
@@ -302,6 +342,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         const htmlString = this.createTooltipContent(locationId, frameId);
         this.frameTooltip.Show(htmlString, xPos, yPos);
         this.drawHoverDots(svgContainer, locationId, frameId);
+    }
+
+    private switchToHovered(): void
+    {
+        const [locId, frameId] = this.hoveredLocFrame;
+        this.onClickLocationFrame(locId, frameId);
     }
 
     private drawHoverDots(svgContainer: SvgSelection, locationId: number, frameId: number): void

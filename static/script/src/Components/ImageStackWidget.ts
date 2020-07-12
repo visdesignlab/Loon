@@ -212,7 +212,6 @@ export class ImageStackWidget {
 		// this._thumbnailsContainer = this.innerContainer.append('div')
 		// 	.classed('thumbnailsContainer', true);
 
-		document.onkeydown = (event) => {this.handleKeyDown(event)};
 		this.imageTrackWidget.init();
 	}
 
@@ -587,22 +586,6 @@ export class ImageStackWidget {
 	{
 		this._selectedImgIndex = newIndex;
 		this.drawUpdate();
-	}
-
-	private handleKeyDown(event: KeyboardEvent): void
-	{
-		let newIndex: number;
-		switch (event.keyCode)
-		{
-			case 37: // left
-				newIndex = Math.max(0, this.selectedImgIndex - 1);
-				this.changeSelectedImage(newIndex);
-				break;
-			case 39: // right
-				newIndex = Math.min(this.imageStackMetaData.numberOfTiles - 1, this.selectedImgIndex + 1);
-				this.changeSelectedImage(newIndex);
-				break;
-		}
 	}
 
 	private getImageInlineStyle(index: number, imageUrl: string, includeFallback = true,  scale: number = 1): string

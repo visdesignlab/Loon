@@ -407,10 +407,6 @@ export class ImageTrackWidget
             {
                 for (let x = sLeft; x <= sRight; x++)
                 {
-                    if (x == 510 && y == 180)
-                    {
-                        console.log('sup');
-                    }
                     let labelIndex = this.parentWidget.getLabelIndexFromBigImgPixelXY(x, y);
                     if (this.parentWidget.labelArray[labelIndex] == labelToMatch)
                     {
