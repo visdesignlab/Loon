@@ -95,6 +95,21 @@ export class ImageStackWidget {
 		return this._innerContainer;
 	}
 
+	// private _locationFrameLabel : HtmlSelection;
+	// public get locationFrameLabel() : HtmlSelection {
+	// 	return this._locationFrameLabel;
+	// }
+
+	private _locationLabel : HtmlSelection;
+	public get locationLabel() : HtmlSelection {
+		return this._locationLabel;
+	}
+	
+	private _frameLabel : HtmlSelection;
+	public get frameLabel() : HtmlSelection {
+		return this._frameLabel;
+	}	
+
 	private _selectedImageContainer : HtmlSelection;
 	public get selectedImageContainer() : HtmlSelection {
 		return this._selectedImageContainer;
@@ -156,6 +171,20 @@ export class ImageStackWidget {
 		const containerSelect = d3.select(this.container);
 		this._innerContainer = containerSelect.append('div')
 			.classed('innerContainer', true);
+
+		const locationFrameLabelContainer = this.innerContainer.append('div')
+			.classed('locationFrameLabelContainer', true);
+
+		const locationFrameLabel = locationFrameLabelContainer.append('h3')
+			.classed('locationFrameLabel', true);
+		
+		locationFrameLabel.node().append('Location: ');
+		this._locationLabel = locationFrameLabel.append('span')
+			.classed('locationFrameLabelValue', true);
+
+		locationFrameLabel.node().append('Frame: ');
+		this._frameLabel = locationFrameLabel.append('span')
+			.classed('locationFrameLabelValue', true);
 
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
@@ -252,6 +281,8 @@ export class ImageStackWidget {
 	{
 		this.drawSelectedImage(skipImageTrackDraw);
 		// this.drawAllThumbnails();
+		this.updateLocationFrameLabel();
+
 	}
 
 	public OnBrushChange(): void
@@ -264,6 +295,7 @@ export class ImageStackWidget {
 	{
 		this.updateBackgroundPosition(this.selectedImgIndex);
 		this.updateCanvas();
+		this.updateLocationFrameLabel();
 		// this.changeSelectedThumbnail();
 	}
 
@@ -272,6 +304,22 @@ export class ImageStackWidget {
 		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackMetaData.url);
 		this.selectedImageContainer.attr("style", styleString);
 		this.updateCanvas(skipImageTrackDraw);
+	}
+
+	private updateLocationFrameLabel(): void
+	{
+		this.locationLabel.text(this.getCurrentLocationId());
+		this.frameLabel.text(this.getCurrentFrameId());
+	}
+
+	private getCurrentLocationId(): number
+	{
+		return this.imageLocation.locationId;
+	}
+
+	private getCurrentFrameId(): number
+	{
+		return this.imageLocation.frameList[this.selectedImgIndex].frameId;
 	}
 
 	private updateCanvas(skipImageTrackDraw = false): void
@@ -287,8 +335,7 @@ export class ImageStackWidget {
 		this.createOutlineImage();
 		this.drawDefaultCanvas();
 		let locId = this.imageLocation.locationId;
-		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
-		const pointsAtFrame = this.data.GetCellsAtFrame(locId, currentFrameId)
+		const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
 		if (!skipImageTrackDraw)
 		{
 			let curveList: CurveND[] = [];
@@ -471,11 +518,9 @@ export class ImageStackWidget {
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
 	{
-		let locId = this.imageLocation.locationId;
-		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
 		let labelValuePairs: [string, string | null][] = [
-			['Location', locId.toString()],
-			['Frame', currentFrameId.toString()],
+			['Location', this.getCurrentLocationId().toString()],
+			['Frame', this.getCurrentFrameId().toString()],
 			['Segment', label.toString()]
 		];
 		let cellId = cell?.parent?.id;
@@ -493,9 +538,7 @@ export class ImageStackWidget {
 
 	private getCell(label: number): [PointND, number] | [null, null]
 	{
-		let locId = this.imageLocation.locationId;
-		let currentFrameId = this.imageLocation.frameList[this.selectedImgIndex].frameId;
-		return this.data.GetCellFromLabel(locId, currentFrameId, label);
+		return this.data.GetCellFromLabel(this.getCurrentLocationId(), this.getCurrentFrameId(), label);
 	}
 
 	public getCellColor(cell: PointND | null): [number, number, number]
