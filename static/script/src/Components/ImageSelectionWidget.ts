@@ -100,22 +100,17 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._selectedLocFrame = [1, 1];
         this._hoveredLocFrame = null;
         this._hoveredLocId = null;
-        // this._tooltipContainer = document.createElement('div');
         this._innerContainer = d3.select(this.container).append('div');
         this.innerContainer.classed('imageSelectionContainer', true);
 
         this._imageTrackContainer = d3.select(this.container).append('div');
         this.imageTrackContainer
             .classed('imageTrackContainer', true);
-            // .classed('overflow-scroll', true);
 
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
 
         document.onkeydown = (event) => {this.handleKeyDown(event)};
-
-        // this._imageCountContainer = this._locationSelectionContainer.append('div')
-        //     .classed('imageCountContainer', true);
 
         this._locationListContainer = this._locationSelectionContainer.append('div')
             .classed('locationListContainer', true);
@@ -311,7 +306,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
             case 37: // left
                 if (this.hoveredLocId !== locId) { return; }
-                // newIndex = Math.max(0, this.imageStackWidget.selectedImgIndex - 1);
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
                 this.onHoverLocationFrame(locId, nextFrameId)
@@ -321,8 +315,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
                 nextFrameId = Math.min(frameId + 1, maxFrameId);
                 this.onHoverLocationFrame(locId, nextFrameId);
-				// newIndex = Math.min(this.imageStackWidget.imageStackMetaData.numberOfTiles - 1, this.imageStackWidget.selectedImgIndex + 1);
-				// this.imageStackWidget.changeSelectedImage(newIndex);
                 break;
             case 13: // enter
                 if (this.hoveredLocId !== locId) { return; }

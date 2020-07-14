@@ -95,11 +95,6 @@ export class ImageStackWidget {
 		return this._innerContainer;
 	}
 
-	// private _locationFrameLabel : HtmlSelection;
-	// public get locationFrameLabel() : HtmlSelection {
-	// 	return this._locationFrameLabel;
-	// }
-
 	private _locationLabel : HtmlSelection;
 	public get locationLabel() : HtmlSelection {
 		return this._locationLabel;
@@ -124,22 +119,6 @@ export class ImageStackWidget {
 	public get canvasContext() : CanvasRenderingContext2D {
 		return this._canvasContext;
 	}
-	
-	// private _selectedImageOverlay : SvgSelection;
-	// public get selectedImageOverlay() : SvgSelection {
-	// 	return this._selectedImageOverlay;
-	// }
-	
-	// private _thumbnailsContainer : HtmlSelection;
-	// public get thumbnailsContainer() : HtmlSelection {
-	// 	return this._thumbnailsContainer;
-	// }
-	
-	// private _thumbnailScale : number;
-	// public get thumbnailScale() : number {
-	// 	return this._thumbnailScale;
-	// }
-
 	
 	private _data : CurveList;
 	public get data() : CurveList {
@@ -243,9 +222,6 @@ export class ImageStackWidget {
 
 		this.imageStackMetaData.tileWidth = imageWidth;
 		this.imageStackMetaData.tileHeight = imageHeight;
-		// this.selectedImageOverlay
-		// 	.attr('width', imageWidth)
-		// 	.attr('height', imageHeight);
 		this.imageStackMetaData.numberOfColumns = numColumns;
 		this._imageStackWidth = numColumns * imageWidth;
 		const numRows: number = Math.ceil(this.imageStackMetaData.numberOfTiles / numColumns);
@@ -279,9 +255,7 @@ export class ImageStackWidget {
 	public draw(skipImageTrackDraw = false): void
 	{
 		this.drawSelectedImage(skipImageTrackDraw);
-		// this.drawAllThumbnails();
 		this.updateLocationFrameLabel();
-
 	}
 
 	public OnBrushChange(): void
@@ -295,7 +269,6 @@ export class ImageStackWidget {
 		this.updateBackgroundPosition(this.selectedImgIndex);
 		this.updateCanvas();
 		this.updateLocationFrameLabel();
-		// this.changeSelectedThumbnail();
 	}
 
 	private drawSelectedImage(skipImageTrackDraw = false): void
@@ -560,27 +533,6 @@ export class ImageStackWidget {
 		}
 		return color
 	}
-
-	// private drawAllThumbnails(): void
-	// {
-	// 	this.thumbnailsContainer.selectAll('div')
-	// 		.data(this.imageLocation.frameList)
-	// 	  .join('div')
-	// 		.attr('style', (d, index) => this.getImageInlineStyle(index, this.imageStackMetaData.url, true, 0.1))
-	// 		.classed('imageStackThumbnail', true)
-	// 		.classed('selected', (d, index) => index === this.selectedImgIndex)
-	// 		.classed('brushed', d => d.inBrush)
-	// 		.on('click', (d, index) => {
-	// 			this.changeSelectedImage(index);
-	// 		});
-	// }
-
-	// private changeSelectedThumbnail(): void
-	// {
-	// 	this.thumbnailsContainer.selectAll('div')
-	// 		.data(this.imageLocation.frameList)
-	// 	  	.classed('selected', (d, index) => index === this.selectedImgIndex)
-	// }
 
 	public changeSelectedImage(newIndex: number): void
 	{
