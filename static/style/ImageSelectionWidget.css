@@ -1,3 +1,10 @@
+.locationListContainer {
+    display: flex;
+    flex-direction: column;
+    margin: 8px;
+    font-family: 'Montserrat', sans-serif;
+}
+
 .imageSelectionContainer {
     display: flex;
     flex-direction: row;
@@ -5,20 +12,72 @@
 
 .locationSelectionContainer {
     min-width: 200px;
-    max-width: 200px;
+    max-width: 400px;
+    flex-grow: 2;
 }
 
 .imageStackContainer {
     flex-grow: 1;
     flex-shrink: 1;
     height: 100%;
+    display: flex;
+    align-items: center;
 }
 
-.locationButton {
-    background: wheat;
+
+
+.locationListCatTitle {
+    font-size: 12pt;
+    margin-top: 6px;
+    font-weight: 800;
+    position: sticky;
+    top: 0;
+    background: white;
+}
+
+.subListContainer {
+    margin: 0px;
+    padding: 0px;
+}
+
+.subListContainer li {
+    display: flex;
+    font-size: 10pt;
+    margin-left: 2px;
+    margin-bottom: 6px;
+}
+
+.subListContainer li:hover {
+    background: #e6e6e6;
+}
+
+.toggleButton.locationButton {
+    width: 48px;
+    flex-shrink: 0;
+    border-radius: 0px;
+    border-width: 0px;
+    margin: 0px;
+    height: 24px; 
+    /* changing this will require changing ImageSelectionWidget.frameHeight */
+}
+
+.toggleButton.locationButton:hover {
+    filter: brightness(.8);
 }
 
 .locationButton.selected {
-    color: white;
-    background: black;
+    font-weight: 800;
+    height: 40px;
+    border-width: 2px;
+    border-color: black;
+}
+
+.frameListContainer {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+
+.tickMark {
+    stroke-linecap: butt;
 }

@@ -4,8 +4,10 @@ import { DevlibTSUtil } from "../devlib/DevlibTSUtil";
 export class RichTooltip
 {
 
-    constructor()
+    constructor(waitToShow: number = 350, waitToHide: number = 200)
     {
+        this._waitToShow = waitToShow;
+        this._waitToHide = waitToHide;
         this._container = document.createElement('div');
         DevlibTSUtil.hide(this.container);
         document.body.appendChild(this.container);
@@ -38,17 +40,25 @@ export class RichTooltip
     }
 
     
+    private _waitToShow : number;
+    public get waitToShow() : number {
+        return this._waitToShow;
+    }
+
+    private _waitToHide : number;
+    public get waitToHide() : number {
+        return this._waitToHide;
+    }
+
     private _container : HTMLDivElement;
     public get container() : HTMLDivElement {
         return this._container;
     }
-
     
     private _showTimerRunning : boolean;
     public get showTimerRunning() : boolean {
         return this._showTimerRunning;
     }
-
     
     private _showTimer : d3.Timer;
     public get showTimer() : d3.Timer {
@@ -65,7 +75,6 @@ export class RichTooltip
         return this._hideTimerRunning;
     }
 
-    
     private _hideCallback : (elapsed: number) => void;
     public get hideCallback() : (elapsed: number) => void {
         return this._hideCallback;
@@ -73,17 +82,12 @@ export class RichTooltip
 
     public Show(htmlString: string, pageX: number, pageY: number): void
     {
-        const waitToShow = 350;
         const callbackFunc = () => this.drawTooltip(htmlString, pageX, pageY)
         if (this.showTimerRunning)
         {
-            // this.showTimer.restart(callbackFunc,  waitToShow);
             this.showTimer.stop();
         }
-        // else
-        // {
-            this._showTimer = d3.timeout(callbackFunc, waitToShow);
-        // }
+        this._showTimer = d3.timeout(callbackFunc, this.waitToShow);
         this._showTimerRunning = true;
         if (this.hideTimerRunning)
         {
@@ -170,15 +174,34 @@ export class RichTooltip
             this.showTimer.stop();
             this._showTimerRunning = false;
         }
-        const waitToHide = 200;
+
         if (this.hideTimer && this.hideTimerRunning)
         {
             return
         }
         else
         {
-            this._hideTimer = d3.timeout(this.hideCallback, waitToHide);
+            this._hideTimer = d3.timeout(this.hideCallback, this.waitToHide);
         }
         this._hideTimerRunning = true;
+    }
+
+    public static createLabelValueListContent(labelValueList: [string, string | null][]): string
+    {
+        let innerContainer = document.createElement('div');
+        innerContainer.classList.add('tooltipInnerContainer')
+        
+        d3.select(innerContainer).selectAll('p')
+        .data(labelValueList)
+        .join('p')
+        .html(d => {
+            if (d[1])
+            {
+                return d[0] + ': <b>' + d[1] + '</b>';
+            }
+            return '<i>' + d[0] + '</i>';
+        })
+        .classed('tooltipDisplayRow', true);
+        return innerContainer.outerHTML;
     }
 }

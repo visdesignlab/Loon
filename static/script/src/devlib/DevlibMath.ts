@@ -59,4 +59,9 @@ export class DevlibMath
 		return !isNaN(Number(text))
 	}
 
+	public static clamp(val: number, [minVal, maxVal]: [number, number]): number
+    {
+        return Math.min(Math.max(val, minVal), maxVal);
+    }
+
 }

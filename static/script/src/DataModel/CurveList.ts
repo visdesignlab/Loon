@@ -29,10 +29,12 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._minMaxMap = new Map<string, [number, number]>();
 		this._locationFrameSegmentLookup = new Map<number, Map<number, Map<number, [PointND, number]>>>();
 		// this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
+		const locationSet = new Set<number>();
 		for (let i = 0; i < this.length; i++)
 		{
 			let point = this[i] as PointND;
 			let loc = point.get('Location ID');
+			locationSet.add(loc);
 			if (!this._locationFrameSegmentLookup.has(loc))
 			{
 				this._locationFrameSegmentLookup.set(loc, new Map());
@@ -47,6 +49,8 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			let segmentLabel = point.get('segmentLabel');
 			segMap.set(segmentLabel, [point, i + 1]);
 		}
+		this._locationList = Array.from(locationSet);
+		this.locationList.sort(DevlibAlgo.sortAscend);
 		this._curveCollection = new CurveCollection(this, spec);
 		this._curveBrushList = new Map<string, valueFilter[]>();
 		this.Specification = spec;
@@ -83,6 +87,11 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 
 	// private _locationFrameSegmentLookup : Map<string, [PointND, number]>;
 	private _locationFrameSegmentLookup : Map<number, Map<number, Map<number, [PointND, number]>>>;
+
+	private _locationList : number[];
+	public get locationList() : number[] {
+		return this._locationList;
+	}	
 
 	public GetCellsAtFrame(locationId: number, frameId: number): PointND[]
 	{

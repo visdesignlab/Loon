@@ -51,13 +51,18 @@ export class ImageMetaData
         this.resetAllToFalse();
         for (let point of pointList)
         {
+            let locId: number = point.get(this.locationIdKey);
+            let frameId: number = point.get(this.frameIdKey);
+            let location = this.locationLookup.get(locId);
+            let frame = location.frameLookup.get(frameId);
+            location.totalCount++;
+            frame.totalCount++;
             if (point.inBrush)
             {
-                let locId: number = point.get(this.locationIdKey);
-                let frameId: number = point.get(this.frameIdKey);
-                let location = this.locationLookup.get(locId);
+                location.inBrushCount++;
                 location.inBrush = true;
-                location.frameLookup.get(frameId).inBrush = true;
+                frame.inBrushCount++;
+                frame.inBrush = true;
             }
         }
     }
@@ -67,9 +72,13 @@ export class ImageMetaData
         for (let loc of this.locationList)
         {
             loc.inBrush = false;
+            loc.inBrushCount = 0;
+            loc.totalCount = 0;
             for (let frame of loc.frameList)
             {
                 frame.inBrush = false;
+                frame.inBrushCount = 0;
+                frame.totalCount = 0;
             }
         }
     }

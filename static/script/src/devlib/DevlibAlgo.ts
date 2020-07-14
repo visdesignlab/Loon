@@ -66,13 +66,23 @@ export class DevlibAlgo {
 			const bVal = propertyAccessor(b);
 			if (ascend)
 			{
-				return DevlibAlgo.compareValues(aVal, bVal);
+				return DevlibAlgo.sortAscend(aVal, bVal);
 			}
 			else
 			{
-				return DevlibAlgo.compareValues(bVal, aVal);				
+				return DevlibAlgo.sortDescend(aVal, bVal);				
 			}
 		}
+	}
+
+	public static sortAscend(aVal: number, bVal: number): number
+	{
+		return DevlibAlgo.compareValues(aVal, bVal);
+	}
+
+	public static sortDescend(aVal: number, bVal: number): number
+	{
+		return DevlibAlgo.compareValues(bVal, aVal);
 	}
 
 	private static compareValues(a: number, b: number): number

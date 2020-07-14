@@ -14,11 +14,29 @@ export class ImageFrame
         this._inBrush = v;
     }
 
+    private _inBrushCount : number;
+    public get inBrushCount() : number {
+        return this._inBrushCount;
+    }
+    public set inBrushCount(v : number) {
+        this._inBrushCount = v;
+    }
+
+    private _totalCount : number;
+    public get totalCount() : number {
+        return this._totalCount;
+    }
+    public set totalCount(v : number) {
+        this._totalCount = v;
+    }
+    
+    public get inBrushPercent() : number {
+        return this.inBrushCount / this.totalCount;
+    }
+
     private _frameId : number;
     public get frameId() : number {
         return this._frameId;
     }
-
-    
-    
+        
 }
