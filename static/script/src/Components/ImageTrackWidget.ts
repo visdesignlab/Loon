@@ -6,6 +6,7 @@ import { PointND } from '../DataModel/PointND';
 import { extent, linkVertical, VoronoiEdge } from 'd3';
 import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
+import { DevlibAlgo } from '../devlib/DevlibAlgo';
 
 export class ImageTrackWidget
 {
@@ -121,7 +122,11 @@ export class ImageTrackWidget
         return this._latestScroll;
     }
 
-    
+    private _latestMouseCanvasOffset : [number, number];
+    public get latestMouseCanvasOffset() : [number, number] {
+        return this._latestMouseCanvasOffset;
+    }    
+
     private _sourceDestCell : [Rect, [number, number], PointND][];
     public get sourceDestCell() : [Rect, [number, number], PointND][] {
         return this._sourceDestCell;
@@ -142,9 +147,22 @@ export class ImageTrackWidget
             .classed('cellTimelineInnerContainer', true)
             .classed('overflow-scroll', true);
 
-        this.innerContainer.node().addEventListener('scroll', (e: Event) => this.onCellTimelineScroll(e));
+        this.innerContainer.node().addEventListener('scroll', (e: WheelEvent) => {
+            this.onCellTimelineScroll(e);
+            // todo - update hover state
+        });
 
         this._selectedImageCanvas = this.innerContainer.append('canvas');
+        this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) => 
+        {
+            this.onCanvasMouseMove(e);
+        });
+
+        this.selectedImageCanvas.on('mouseleave', () => {
+            this.parentWidget.hideSegmentHover();
+            this.parentWidget.dimCanvas();
+        });
+
         this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
     }
 
@@ -391,6 +409,65 @@ export class ImageTrackWidget
             });
             this._scrollChangeTicking = true;
         }
+    }
+
+    private onCanvasMouseMove(e: MouseEvent | WheelEvent): void
+    {
+        if (!this.parentWidget.labelArray)
+        {
+            return;
+        }
+        let xPos = e.offsetX;
+        let yPos = e.offsetY;
+        const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
+        const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
+
+        console.log(frameId);
+        console.log(cellId);
+        let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+        this.parentWidget.selectedImgIndex;
+        const displayedFrameId = this.parentWidget.getCurrentFrameId();
+        let point = curve.pointList.find(point => point.get('Frame ID') === displayedFrameId);
+        // let point = this.parentWidget.data.curveList.find
+        this.parentWidget.showSegmentHover(point.get('segmentLabel'));
+        this.parentWidget.brightenCanvas();
+    }
+
+    private static getClosestLabel(labelPositions: [string, number][], pos: number): string
+    {
+        let compareFunction = DevlibAlgo.compareProperty<[string, number]>(pos, labelPos =>  labelPos[1]);
+        let indices = DevlibAlgo.BinarySearchIndex(labelPositions, compareFunction);
+        let labelIndex: number;
+        if (typeof indices === 'number')
+        {
+            labelIndex = indices;
+        }
+        else {
+            let [indexLow, indexHigh] = indices;
+            if (typeof indexLow === 'undefined')
+            {
+                labelIndex = indexHigh;
+            }
+            else if (typeof indexHigh === 'undefined')
+            {
+                labelIndex = indexLow;
+            }
+            else {
+                const [ _labelLow, labelPosLow] = labelPositions[indexLow];
+                const [ _labelHeigh, labelPosHigh] = labelPositions[indexHigh];
+                const distToLow = pos - labelPosLow;
+                const distToHigh = labelPosHigh - pos;
+                if (distToLow < distToHigh)
+                {
+                    labelIndex = indexLow;
+                }
+                else
+                {
+                    labelIndex = indexHigh;
+                }
+            }
+        }
+        return labelPositions[labelIndex][0];
     }
 
     private drawOutlines(): void
