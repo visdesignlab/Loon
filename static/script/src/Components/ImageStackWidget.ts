@@ -28,7 +28,6 @@ export class ImageStackWidget {
 		this._selectedImgIndex = 0;
 		console.log(d3);
 		console.log(this);
-		// this._thumbnailScale = 0.1; // thumbnails are 1/10th the size of the original
 		this._tooltip = new RichTooltip();
 	}
 		
@@ -185,11 +184,6 @@ export class ImageStackWidget {
 			.on('mouseleave', () => {
 				this.selectedImageCanvas.style('opacity', 0.6);
 			});
-
-		// this._selectedImageOverlay = this.selectedImageContainer.append('svg');
-
-		// this._thumbnailsContainer = this.innerContainer.append('div')
-		// 	.classed('thumbnailsContainer', true);
 
 		this.imageTrackWidget.init();
 	}
