@@ -26,7 +26,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
 		const canBrush = false;
-		return new Plot2dPathsWidget(container, this.quickPickOptions, this.quickPickOptionSelect.GetCurrentSelectionIndex(), this.squareAspectRatio, canBrush);
+		return new Plot2dPathsWidget(container, this.quickPickOptions, this.quickPickOptionSelect.currentSelectionIndex, this.squareAspectRatio, canBrush);
 	}
 
 	protected initProps(props?: any[]): void

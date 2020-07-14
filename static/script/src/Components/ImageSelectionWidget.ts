@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import {HtmlSelection, SvgSelection} from '../devlib/DevLibTypes';
+import {HtmlSelection, SvgSelection, ButtonProps} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
 import {ImageStackWidget} from './ImageStackWidget';
 import {ImageMetaData} from '../DataModel/ImageMetaData';
@@ -9,6 +9,7 @@ import { ImageFrame } from '../DataModel/ImageFrame';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { RichTooltip } from './RichTooltip';
 import { timeHours, linkVertical } from 'd3';
+import { OptionSelect } from './OptionSelect';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -35,6 +36,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     private _locationSelectionContainer : HtmlSelection;
     public get locationSelectionContainer() : HtmlSelection {
         return this._locationSelectionContainer;
+    }
+
+    private _groupByContainer : HtmlSelection;
+    public get groupByContainer() : HtmlSelection {
+        return this._groupByContainer;
+    }
+
+    private _groupByOptionSelect : OptionSelect;
+    public get groupByOptionSelect() : OptionSelect {
+        return this._groupByOptionSelect;
     }
     
     private _locationListContainer : HtmlSelection;
@@ -112,7 +123,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
         document.onkeydown = (event) => {this.handleKeyDown(event)};
 
-        this._locationListContainer = this._locationSelectionContainer.append('div')
+        this._groupByContainer = this.locationSelectionContainer.append('div')
+            .classed('groupByContainer', true)
+            .attr('id', 'locationListGroupByContainer')
+
+        this._groupByOptionSelect = new OptionSelect("locationListGroupByContainer", "Group by", 0);
+    
+        this._locationListContainer = this.locationSelectionContainer.append('div')
             .classed('locationListContainer', true);
 
         this._imageStackContainer = this.innerContainer.append('div')
@@ -127,8 +144,26 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
         this._imageMetaData = ImageMetaData.fromPointCollection(this.data);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
-        this.setImageStackWidget()
-        this.OnBrushChange()
+        this.setImageStackWidget();
+        this.OnBrushChange();
+        this.updateGroupByOptions();
+
+    }
+
+    private updateGroupByOptions(): void
+    {
+        let buttonPropsList: ButtonProps[] = [];
+        let facetOptions = this.data.GetFacetOptions();
+        for (let i = 0; i < facetOptions.length; i++)
+        {
+            let facetOption = facetOptions[i];
+            let buttonProps: ButtonProps = {
+                displayName: facetOption.name,
+                callback: () => this.draw()
+                }
+                buttonPropsList.push(buttonProps);
+        }
+        this.groupByOptionSelect.onDataChange(buttonPropsList, 0);
     }
     
     public setImageStackWidget(): void
@@ -181,12 +216,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.draw();
         this.imageStackWidget.OnBrushChange();
     }
-
+    
     private draw(): void
     {
+        const facetIndex = this.groupByOptionSelect.currentSelectionIndex;
         let facetOptions = this.data.GetFacetOptions();
 
-        let hardCodedOption = facetOptions[0];
+        let hardCodedOption = facetOptions[facetIndex];
         let facetList = hardCodedOption.GetFacets();
         this.locationListContainer.html(null);
         for (let facet of facetList)

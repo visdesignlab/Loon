@@ -8,11 +8,16 @@ enum OptionMode {
 
 export class OptionSelect {
 	
-	constructor(htmlContainerId: string, label?: string)
+	constructor(htmlContainerId: string, label?: string, defaultSelectionIndex?: number)
 	{
 		this._containerSelect = d3.select("#" + htmlContainerId);
 		this._label = label;
 		this._uniqueId = 'OptionSelectDropdown_' + OptionSelect._instanceCount++;
+		this._currentSelectionIndex = null;
+		if (typeof defaultSelectionIndex !== 'undefined')
+		{
+			this._currentSelectionIndex = defaultSelectionIndex;
+		}
 	}
 
 	private _data : ButtonProps[];
@@ -38,6 +43,12 @@ export class OptionSelect {
 	private _uniqueId : string;
 	public get uniqueId() : string {
 		return this._uniqueId;
+	}
+
+	
+	private _currentSelectionIndex : number | null;
+	public get currentSelectionIndex() : number | null {
+		return this._currentSelectionIndex;
 	}
 	
 	private static _instanceCount: number = 0;
@@ -77,6 +88,14 @@ export class OptionSelect {
 
 	private updateButtons(defaultSelection?: number): void
 	{
+		if (typeof defaultSelection !== 'undefined')
+		{
+			this._currentSelectionIndex = defaultSelection;
+		}
+		else
+		{
+			this._currentSelectionIndex = null;
+		}
 		if (this.data.length < 4)
 		{
 			this.drawQuickSelectButtons(defaultSelection);
@@ -108,21 +127,23 @@ export class OptionSelect {
 			.text(d => d.displayName)
 			.classed("toggleButton", true)
 			.classed("on", (d, i) => defaultSelection === i)
-			.on("click", function(buttonProps: ButtonProps)
+			.on("click", function(buttonProps: ButtonProps, index: number)
 			{
 				if ((this as HTMLElement).classList.contains("on"))
 				{
 					return;
 				}
+				thisOptionSelect._currentSelectionIndex = index;
 				thisOptionSelect.clearSelectedButton();
-				buttonProps.callback();
 				d3.select(this).classed("on", true);
+				buttonProps.callback();
 			});
 	}
 
 	private drawDropDownButtons(defaultSelection?: number): void
 	{
 		this._mode = OptionMode.Dropdown;
+		let thisOptionSelect: OptionSelect = this;
 		this.containerSelect.html(null);
 
 		if (this.label)
@@ -142,6 +163,7 @@ export class OptionSelect {
 				let optionSelect = this.containerSelect.select('#' + this.uniqueId)
 				let newIndex: number = +optionSelect.property('value');
 				this.data[newIndex].callback();
+				thisOptionSelect._currentSelectionIndex = newIndex;
 			})
 			.selectAll('option')
 			.data(this.data)
@@ -159,7 +181,6 @@ export class OptionSelect {
 
 	public removeButton(displayName: string, callDefaultCallback = true): void
 	{
-		let currentSelectedIndex = this.GetCurrentSelectionIndex();
 		if (!this.data)
 		{
 			return;
@@ -171,14 +192,14 @@ export class OptionSelect {
 		}
 		this.data.splice(removeIndex);
 		let selectionIndex: number;
-		if (callDefaultCallback && currentSelectedIndex === removeIndex)
+		if (callDefaultCallback && this.currentSelectionIndex === removeIndex)
 		{
 			selectionIndex = 0;
 			this.data[0].callback();
 		}
 		else
 		{
-			selectionIndex = currentSelectedIndex;
+			selectionIndex = this.currentSelectionIndex;
 		}
 		this.updateButtons(selectionIndex);
 		return;
@@ -186,29 +207,12 @@ export class OptionSelect {
 
 	public replaceButton(oldButtonName: string, newButtonProps: ButtonProps): void
 	{
-		let currentIndex: number = this.GetCurrentSelectionIndex();
 		this.removeButton(oldButtonName, false);
-		this.addButton(newButtonProps, currentIndex);
-		if (currentIndex === this.data.length - 1)
+		this.addButton(newButtonProps, this.currentSelectionIndex);
+		if (this.currentSelectionIndex === this.data.length - 1)
 		{
-			this.data[currentIndex].callback();
+			this.data[this.currentSelectionIndex].callback();
 		}
 	}
-
-	public GetCurrentSelectionIndex(): number
-	{
-		let currentSelectedIndex: number = -1;
-		if (this.mode === OptionMode.ButtonList)
-		{
-			let currentSelectedElement: Element = this.containerSelect.selectAll('.on').node() as Element;
-			let elementList: Element[] = this.containerSelect.selectAll('button').nodes() as Element[];
-			currentSelectedIndex = elementList.indexOf(currentSelectedElement)
-		}
-		else
-		{
-			currentSelectedIndex = +this.containerSelect.select('#' + this.uniqueId).property('value');
-		}
-		return currentSelectedIndex;
-	}
-
+	
 }
