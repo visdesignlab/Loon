@@ -16,3 +16,9 @@
     font-weight: bold;
     margin-right: 20px;
 }
+
+.cellAxisLabel.currentFrame {
+    font-size: 18pt;
+    font-weight: 900;
+    fill: #0f531c;
+}

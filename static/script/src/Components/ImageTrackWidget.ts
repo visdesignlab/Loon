@@ -542,12 +542,14 @@ export class ImageTrackWidget
             const pos: number = labelPos[1] - this.latestScroll[0];
             return 0 <= pos && pos <= this.innerContainerW;
         });
+        const currentFrame  = this.parentWidget.getCurrentFrameId();
         this.frameLabelGroup.selectAll('text')
             .data(labelsInView)
             .join('text')
             .text(d => d[0])
             .attr('x', d => d[1] - this.latestScroll[0])
             .attr('y', yAnchor)
+            .classed('currentFrame', d => +d[0] === currentFrame)
             .classed('cellAxisLabel', true)
             .classed('right', true);
     }
