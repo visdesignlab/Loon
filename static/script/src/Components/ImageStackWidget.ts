@@ -461,13 +461,18 @@ export class ImageStackWidget {
 		}
 	}
 
-	public hideSegmentHover(): void
+	public hideSegmentHover(hideTooltipImmediately: boolean = false): void
 	{
 		this.drawDefaultCanvas();
-		this.tooltip.Hide();
+		let delayOverride: number;
+		if (hideTooltipImmediately)
+		{
+			delayOverride = 0;
+		}
+		this.tooltip.Hide(delayOverride);
 	}
 
-	public showSegmentHover(segmentId: number): void
+	public showSegmentHover(segmentId: number, showTooltipImmediately: boolean = false): void
 	{
 		this._cellHovered = segmentId;
 		let [cell, index] = this.getCell(segmentId);
@@ -513,7 +518,12 @@ export class ImageStackWidget {
 		}
 		this.canvasContext.putImageData(myImageData, 0, 0);
 		let tooltipContent: string = this.getTooltipContent(segmentId, cell, index);
-		this.tooltip.Show(tooltipContent, pageX, pageY);
+		let delayOverride: number;
+		if (showTooltipImmediately)
+		{
+			delayOverride = 0;
+		}
+		this.tooltip.Show(tooltipContent, pageX, pageY, delayOverride);
 	}
 
 	public  getTilePixelXYFromLabelIndex(tileStartIndex: number, labelIndex: number): [number, number]

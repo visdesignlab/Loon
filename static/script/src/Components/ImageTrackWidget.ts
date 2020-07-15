@@ -159,7 +159,7 @@ export class ImageTrackWidget
         });
 
         this.selectedImageCanvas.on('mouseleave', () => {
-            this.parentWidget.hideSegmentHover();
+            this.parentWidget.hideSegmentHover(true);
             this.parentWidget.dimCanvas();
         });
 
@@ -429,7 +429,7 @@ export class ImageTrackWidget
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
         let point = curve.pointList.find(point => point.get('Frame ID') === displayedFrameId);
         // let point = this.parentWidget.data.curveList.find
-        this.parentWidget.showSegmentHover(point.get('segmentLabel'));
+        this.parentWidget.showSegmentHover(point.get('segmentLabel'), true);
         this.parentWidget.brightenCanvas();
     }
 
