@@ -416,47 +416,6 @@ export class ImageStackWidget {
 		}
 		else
 		{
-			// let [cell, index] = this.getCell(label);
-			// let cellX = 0;
-			// let cellY = 0;
-			// if (cell)
-			// {
-			// 	let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
-			// 	cellX = cell.get('X') + cell.get('xShift');
-			// 	cellY = cell.get('Y') + cell.get('yShift');
-			// }
-
-			// let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
-			// myImageData.data.set(this.defaultCanvasState.data);
-			// for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
-			// {
-			// 	let [imgX, imgY] = this.getTilePixelXYFromLabelIndex(firstIndex, i);
-			// 	let rIdx = (i - firstIndex) * 4;
-			// 	let imgLabel = this.labelArray[i];
-			// 	if (cell && Math.pow(imgX - cellX, 2) + Math.pow(imgY - cellY, 2) <= 25)
-			// 	{
-			// 		// cell center label
-			// 		let [r, g, b] = this.getCellColor(cell);
-			// 		myImageData.data[rIdx] = 255;
-			// 		myImageData.data[rIdx + 1] = 0;
-			// 		myImageData.data[rIdx + 2] = 255;
-			// 		myImageData.data[rIdx + 3] = 255; // alpha
-			// 	}
-			// 	else if (imgLabel === this.cellHovered)
-			// 	{
-			// 		// cell region color
-			// 		let [r, g, b] = this.getCellColor(cell);
-			// 		myImageData.data[rIdx] = r;
-			// 		myImageData.data[rIdx + 1] = g;
-			// 		myImageData.data[rIdx + 2] = b;
-			// 		myImageData.data[rIdx + 3] = 200; // alpha
-			// 	}
-			// }
-			// this.canvasContext.putImageData(myImageData, 0, 0);
-			// let tooltipContent: string = this.getTooltipContent(label, cell, index);
-			
-
-			// this.tooltip.Show(tooltipContent, pageX, pageY);
 			this.showSegmentHover(label);
 		}
 	}
