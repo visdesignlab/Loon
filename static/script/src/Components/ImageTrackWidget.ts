@@ -158,6 +158,12 @@ export class ImageTrackWidget
             this.onCanvasMouseMove(e);
         });
 
+
+        this.selectedImageCanvas.node().addEventListener('click', (e: MouseEvent) => 
+        {
+            this.onCanvasClick(e);
+        });
+
         this.selectedImageCanvas.on('mouseleave', () => {
             this.parentWidget.hideSegmentHover(true);
             this.parentWidget.dimCanvas();
@@ -423,7 +429,21 @@ export class ImageTrackWidget
         }
     }
 
-    private onCanvasMouseMove(e: MouseEvent | WheelEvent): void
+    private onCanvasClick(e: MouseEvent): void
+    {
+        if (!this.parentWidget.labelArray)
+        {
+            return;
+        }
+        let xPos = e.offsetX;
+        let yPos = e.offsetY;
+        const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
+        // const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
+        this.parentWidget.changeSelectedImage(frameId - 1); // todo
+
+    }
+
+    private onCanvasMouseMove(e: MouseEvent): void
     {
         if (!this.parentWidget.labelArray)
         {
@@ -434,8 +454,6 @@ export class ImageTrackWidget
         const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
         const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
 
-        console.log(frameId);
-        console.log(cellId);
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
         this.parentWidget.selectedImgIndex;
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
@@ -443,6 +461,7 @@ export class ImageTrackWidget
         // let point = this.parentWidget.data.curveList.find
         this.parentWidget.showSegmentHover(point.get('segmentLabel'), true);
         this.parentWidget.brightenCanvas();
+        this.updateLabelsOnMouseMove(cellId, frameId.toString())
     }
 
     private static getClosestLabel(labelPositions: [string, number][], pos: number): string
@@ -552,6 +571,30 @@ export class ImageTrackWidget
             .classed('currentFrame', d => +d[0] === currentFrame)
             .classed('cellAxisLabel', true)
             .classed('right', true);
+    }
+
+    private updateLabelsOnMouseMove(cellId: string, frameId: string): void
+    {
+        let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
+        this.hoverNodeWithText(svgSelection.nodes(), cellId);
+        svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
+        this.hoverNodeWithText(svgSelection.nodes(), frameId);
+    }
+
+    private hoverNodeWithText(svgElementList: SVGElement[], text: string): void
+    {
+        for (let node  of svgElementList)
+        {
+            let nodeEl = (node as SVGElement);
+            if (nodeEl.textContent === text)
+            {
+                nodeEl.classList.add('hovered');
+            }
+            else
+            {
+                nodeEl.classList.remove('hovered');
+            }
+        }
     }
 
     public OnResize(width: number, height: number): void
