@@ -439,8 +439,14 @@ export class ImageTrackWidget
         let yPos = e.offsetY;
         const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
         // const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
-        this.parentWidget.changeSelectedImage(frameId - 1); // todo
-
+        // this.parentWidget.changeSelectedImage(frameId - 1);
+        const locId = this.parentWidget.getCurrentLocationId();
+        let event = new CustomEvent('locFrameClicked', { detail:
+        {
+            locationId: locId,
+            frameId: frameId
+        }});
+		document.dispatchEvent(event);
     }
 
     private onCanvasMouseMove(e: MouseEvent): void
@@ -461,7 +467,15 @@ export class ImageTrackWidget
         // let point = this.parentWidget.data.curveList.find
         this.parentWidget.showSegmentHover(point.get('segmentLabel'), true);
         this.parentWidget.brightenCanvas();
-        this.updateLabelsOnMouseMove(cellId, frameId.toString())
+        this.updateLabelsOnMouseMove(cellId, frameId.toString());
+        const locId = this.parentWidget.getCurrentLocationId();
+        let event = new CustomEvent('frameHoverChange', { detail:
+        {
+            locationId: locId,
+            frameId: frameId
+        }});
+		document.dispatchEvent(event);
+        
     }
 
     private static getClosestLabel(labelPositions: [string, number][], pos: number): string

@@ -137,6 +137,20 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .classed('overflow-scroll', true);
         this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight);
 
+        document.addEventListener('frameHoverChange', (e: CustomEvent) => 
+        {
+            const locId = e.detail.locationId;
+            const frameId = e.detail.frameId;
+            this.onHoverLocationFrame(locId, frameId);
+        });
+
+        document.addEventListener('locFrameClicked', (e: CustomEvent) =>
+        {
+            const locId = e.detail.locationId;
+            const frameId = e.detail.frameId;
+            this.onClickLocationFrame(locId, frameId);
+        });
+
         this.OnResize()
 	}
 
