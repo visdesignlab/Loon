@@ -416,7 +416,7 @@ export class ImageStackWidget {
 		}
 		else
 		{
-			this.showSegmentHover(label);
+			this.showSegmentHover(label, false, e);
 		}
 	}
 
@@ -431,7 +431,7 @@ export class ImageStackWidget {
 		this.tooltip.Hide(delayOverride);
 	}
 
-	public showSegmentHover(segmentId: number, showTooltipImmediately: boolean = false): void
+	public showSegmentHover(segmentId: number, showTooltipImmediately: boolean = false, event?: MouseEvent): void
 	{
 		this._cellHovered = segmentId;
 		let [cell, index] = this.getCell(segmentId);
@@ -447,6 +447,11 @@ export class ImageStackWidget {
 			cellY = cell.get('Y') + cell.get('yShift');
 			pageX = canvasBoundRect.x + cellX;
 			pageY = canvasBoundRect.y + cellY;
+		}
+		else if (event)
+		{
+			pageX = event.pageX;
+			pageY = event.pageY;
 		}
 
 		let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
