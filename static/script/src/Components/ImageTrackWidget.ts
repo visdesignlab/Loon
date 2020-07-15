@@ -336,6 +336,7 @@ export class ImageTrackWidget
                 {
                     const imgBitmap = bitMapList[i];
                     const frameId = trackData.pointList[i].get('Frame ID');
+                    const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
                     const offsetIndex = frameId - minFrame;
                     const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
                     const frameY = verticalOffset;
@@ -343,7 +344,18 @@ export class ImageTrackWidget
 
                     this.canvasContext.beginPath();
                     this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
-                    this.canvasContext.strokeStyle = 'gray';
+                    if (currentFrame)
+                    {
+                        this.canvasContext.strokeStyle = 'MediumSeaGreen';
+                        this.canvasContext.lineWidth = 8; 
+
+                    }
+                    else
+                    {
+                        this.canvasContext.strokeStyle = 'grey';
+                        this.canvasContext.lineWidth = 1; 
+                    }
+
                     this.canvasContext.fillStyle = 'black';
                     this.canvasContext.stroke();
                     this.canvasContext.fill();
