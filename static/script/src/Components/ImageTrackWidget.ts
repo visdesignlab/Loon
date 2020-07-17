@@ -149,25 +149,13 @@ export class ImageTrackWidget
 
         this.innerContainer.node().addEventListener('scroll', (e: WheelEvent) => {
             this.onCellTimelineScroll(e);
-            // todo - update hover state
         });
 
         this._selectedImageCanvas = this.innerContainer.append('canvas');
         const canvasElement: HTMLCanvasElement = this.selectedImageCanvas.node() as HTMLCanvasElement;
-        canvasElement.addEventListener('mousemove', (e: MouseEvent) => 
-        {
-            this.onCanvasMouseMove(e);
-        });
-
-
-        canvasElement.addEventListener('click', (e: MouseEvent) => 
-        {
-            this.onCanvasClick(e);
-        });
-        
-        this.selectedImageCanvas.on('mouseleave', () => {
-            this.removeHoverEffects();
-        });
+        canvasElement.addEventListener('mousemove', (e: MouseEvent) => this.onCanvasMouseMove(e) );
+        canvasElement.addEventListener('click', (e: MouseEvent) => this.onCanvasClick(e));
+        this.selectedImageCanvas.on('mouseleave', () => this.onCanvasMouseLeave() );
 
         this._canvasContext = canvasElement.getContext('2d');
     }
@@ -438,8 +426,6 @@ export class ImageTrackWidget
         let xPos = e.offsetX;
         let yPos = e.offsetY;
         const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
-        // const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
-        // this.parentWidget.changeSelectedImage(frameId - 1);
         const locId = this.parentWidget.getCurrentLocationId();
         let event = new CustomEvent('locFrameClicked', { detail:
         {
@@ -464,7 +450,6 @@ export class ImageTrackWidget
         this.parentWidget.selectedImgIndex;
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
         let point = curve.pointList.find(point => point.get('Frame ID') === displayedFrameId);
-        // let point = this.parentWidget.data.curveList.find
         this.parentWidget.showSegmentHover(point.get('segmentLabel'), true);
         this.parentWidget.brightenCanvas();
         this.updateLabelsOnMouseMove(cellId, frameId.toString());
@@ -477,7 +462,7 @@ export class ImageTrackWidget
 		document.dispatchEvent(event);
     }
 
-    private removeHoverEffects(): void
+    private onCanvasMouseLeave(): void
     {
         this.parentWidget.hideSegmentHover(true);
         this.parentWidget.dimCanvas();
