@@ -153,23 +153,23 @@ export class ImageTrackWidget
         });
 
         this._selectedImageCanvas = this.innerContainer.append('canvas');
-        this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) => 
+        const canvasElement: HTMLCanvasElement = this.selectedImageCanvas.node() as HTMLCanvasElement;
+        canvasElement.addEventListener('mousemove', (e: MouseEvent) => 
         {
             this.onCanvasMouseMove(e);
         });
 
 
-        this.selectedImageCanvas.node().addEventListener('click', (e: MouseEvent) => 
+        canvasElement.addEventListener('click', (e: MouseEvent) => 
         {
             this.onCanvasClick(e);
         });
-
+        
         this.selectedImageCanvas.on('mouseleave', () => {
-            this.parentWidget.hideSegmentHover(true);
-            this.parentWidget.dimCanvas();
+            this.removeHoverEffects();
         });
 
-        this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
+        this._canvasContext = canvasElement.getContext('2d');
     }
 
     public draw(tracks: CurveND[]): void
@@ -475,7 +475,20 @@ export class ImageTrackWidget
             frameId: frameId
         }});
 		document.dispatchEvent(event);
-        
+    }
+
+    private removeHoverEffects(): void
+    {
+        this.parentWidget.hideSegmentHover(true);
+        this.parentWidget.dimCanvas();
+        this.updateLabelsOnMouseMove('', '');
+        const locId = this.parentWidget.getCurrentLocationId();
+        let event = new CustomEvent('frameHoverChange', { detail:
+            {
+                locationId: locId,
+                frameId: null
+            }});
+            document.dispatchEvent(event);
     }
 
     private static getClosestLabel(labelPositions: [string, number][], pos: number): string

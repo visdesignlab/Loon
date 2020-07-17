@@ -8,7 +8,7 @@ import { DatasetSpec } from '../types';
 import { ImageFrame } from '../DataModel/ImageFrame';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { RichTooltip } from './RichTooltip';
-import { timeHours, linkVertical } from 'd3';
+import { timeHours, linkVertical, svg } from 'd3';
 import { OptionSelect } from './OptionSelect';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
@@ -373,10 +373,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 		}
 	}
 
-    private onHoverLocationFrame(locationId: number, frameId: number): void
+    private onHoverLocationFrame(locationId: number, frameId: number | null): void
     {
         this._hoveredLocFrame = [locationId, frameId];
         const svgContainer = d3.select('#frameTicksViz-' + locationId) as SvgSelection;
+        if (frameId === null)
+        {
+            this.removeHoverDots(svgContainer);
+            this.frameTooltip.Hide();
+            return;
+        }
         const bbox = svgContainer.node().getBoundingClientRect();
 
         const xPos = bbox.right;
