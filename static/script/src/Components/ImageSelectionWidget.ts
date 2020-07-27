@@ -155,7 +155,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             const locId = e.detail.locationId;
             const frameId = e.detail.frameId;
             const cellId = e.detail.cellId;
-            this.onHoverLocationFrame(locId, frameId, cellId);
+            this.onHoverLocationFrame(locId, frameId, cellId, false);
         });
 
         document.addEventListener('locFrameClicked', (e: CustomEvent) =>
@@ -347,7 +347,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 const mouseX = event.offsetX;
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
-                this.onHoverLocationFrame(locId, frameId, null);
+                this.onHoverLocationFrame(locId, frameId, null, true);
             });
             svgElement.addEventListener('click', (event: MouseEvent) =>
             {
@@ -371,13 +371,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 if (this.hoveredLocId !== locId) { return; }
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
-                this.onHoverLocationFrame(locId, nextFrameId, null)
+                this.onHoverLocationFrame(locId, nextFrameId, null, true)
 				break;
             case 39: // right
                 if (this.hoveredLocId !== locId) { return; }
                 const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
                 nextFrameId = Math.min(frameId + 1, maxFrameId);
-                this.onHoverLocationFrame(locId, nextFrameId, null);
+                this.onHoverLocationFrame(locId, nextFrameId, null, true);
                 break;
             case 13: // enter
                 if (this.hoveredLocId !== locId) { return; }
@@ -386,7 +386,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 		}
 	}
 
-    private onHoverLocationFrame(locationId: number, frameId: number | null, cellId: string | null): void
+    private onHoverLocationFrame(locationId: number, frameId: number | null, cellId: string | null, showTooltip: boolean): void
     {
         this._hoveredLocFrame = [locationId, frameId];
         const svgContainer = d3.select('#frameTicksViz-' + locationId) as SvgSelection;
@@ -397,12 +397,14 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             this.frameTooltip.Hide();
             return;
         }
-        const bbox = svgContainer.node().getBoundingClientRect();
-
-        const xPos = bbox.right;
-        const yPos = bbox.top + bbox.height / 2;
-        const htmlString = this.createTooltipContent(locationId, frameId);
-        this.frameTooltip.Show(htmlString, xPos, yPos);
+        if (showTooltip)
+        {
+            const bbox = svgContainer.node().getBoundingClientRect();
+            const xPos = bbox.right;
+            const yPos = bbox.top + bbox.height / 2;
+            const htmlString = this.createTooltipContent(locationId, frameId);
+            this.frameTooltip.Show(htmlString, xPos, yPos);
+        }
         this.drawHoverDots(svgContainer, locationId, frameId);
         this.drawFrameRange(svgContainer, cellId);
     }
