@@ -158,6 +158,20 @@ export class ImageTrackWidget
         this.selectedImageCanvas.on('mouseleave', () => this.onCanvasMouseLeave() );
 
         this._canvasContext = canvasElement.getContext('2d');
+
+        document.addEventListener('frameHoverChange', (e: CustomEvent) => 
+        {
+            const frameId = e.detail.frameId;
+            const cellId = e.detail.cellId;
+            if (frameId !== null && cellId !== null)
+            {
+                this.updateLabelsOnMouseMove(cellId, frameId.toString());
+            }
+            else
+            {
+                this.updateLabelsOnMouseMove('', '');
+            }
+        });
     }
 
     public draw(tracks: CurveND[]): void
