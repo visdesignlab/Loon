@@ -301,7 +301,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
         const svgSelection = wraperSelection.append('svg')
             .attr('width', miniWidth)
-            .attr('height', this.frameHeight)
+            .attr('height', d => d === this.selectedLocationId ? this.frameHeightSelected : this.frameHeight)
             .attr('id', d => 'frameTicksViz-' + d)
             .attr('data-locId', d => d)
             .on('mouseleave', () => 
