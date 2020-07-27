@@ -10,6 +10,7 @@ import { DevlibMath } from '../devlib/DevlibMath';
 import { RichTooltip } from './RichTooltip';
 import { timeHours, linkVertical, svg } from 'd3';
 import { OptionSelect } from './OptionSelect';
+import { ImageLocation } from '../DataModel/ImageLocation';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -78,6 +79,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     public get frameHeight() : number {
         return this._frameHeight;
     }    
+
+    private _frameHeightSelected : number;
+    public get frameHeightSelected() : number {
+        return this._frameHeightSelected;
+    }    
+
+    private _frameMarginTopBot : number;
+    public get frameMarginTopBot() : number {
+        return this._frameMarginTopBot;
+    }
     
     private _frameScaleX : d3.ScaleLinear<number, number>;
     public get frameScaleX() : d3.ScaleLinear<number, number> {
@@ -107,6 +118,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public init(): void
 	{
         this._frameHeight = 24; // hardcoded based on CSS
+        this._frameHeightSelected = 40; // also based on CSS
+        this._frameMarginTopBot = 8;
         this._frameTooltip = new RichTooltip(0, 0);
         this._selectedLocFrame = [1, 1];
         this._hoveredLocFrame = null;
@@ -141,7 +154,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         {
             const locId = e.detail.locationId;
             const frameId = e.detail.frameId;
-            this.onHoverLocationFrame(locId, frameId);
+            const cellId = e.detail.cellId;
+            this.onHoverLocationFrame(locId, frameId, cellId);
         });
 
         document.addEventListener('locFrameClicked', (e: CustomEvent) =>
@@ -298,7 +312,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             })
 
         const marginW = 4;
-        const marginH = 8;
         const frameExtent: [number, number] = this.data.getMinMax('Frame ID');
         this._frameScaleX = d3.scaleLinear()
             .domain(frameExtent)
@@ -310,7 +323,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
         this._frameScaleHeight = d3.scaleLinear()
             .domain([0, 1])
-            .range([1, this.frameHeight - 2 * marginH]);
+            .range([1, this.frameHeight - 2 * this.frameMarginTopBot]);
 
         svgSelection.selectAll('line')
             .data(d => this.getFrameList(d))
@@ -334,7 +347,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 const mouseX = event.offsetX;
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
-                this.onHoverLocationFrame(locId, frameId);
+                this.onHoverLocationFrame(locId, frameId, null);
             });
             svgElement.addEventListener('click', (event: MouseEvent) =>
             {
@@ -358,13 +371,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 if (this.hoveredLocId !== locId) { return; }
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
-                this.onHoverLocationFrame(locId, nextFrameId)
+                this.onHoverLocationFrame(locId, nextFrameId, null)
 				break;
             case 39: // right
                 if (this.hoveredLocId !== locId) { return; }
                 const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
                 nextFrameId = Math.min(frameId + 1, maxFrameId);
-                this.onHoverLocationFrame(locId, nextFrameId);
+                this.onHoverLocationFrame(locId, nextFrameId, null);
                 break;
             case 13: // enter
                 if (this.hoveredLocId !== locId) { return; }
@@ -373,13 +386,14 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 		}
 	}
 
-    private onHoverLocationFrame(locationId: number, frameId: number | null): void
+    private onHoverLocationFrame(locationId: number, frameId: number | null, cellId: string | null): void
     {
         this._hoveredLocFrame = [locationId, frameId];
         const svgContainer = d3.select('#frameTicksViz-' + locationId) as SvgSelection;
         if (frameId === null)
         {
             this.removeHoverDots(svgContainer);
+            this.removeHoverBar(svgContainer);
             this.frameTooltip.Hide();
             return;
         }
@@ -390,12 +404,73 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         const htmlString = this.createTooltipContent(locationId, frameId);
         this.frameTooltip.Show(htmlString, xPos, yPos);
         this.drawHoverDots(svgContainer, locationId, frameId);
+        this.drawFrameRange(svgContainer, cellId);
     }
 
     private switchToHovered(): void
     {
         const [locId, frameId] = this.hoveredLocFrame;
         this.onClickLocationFrame(locId, frameId);
+    }
+
+    private drawFrameRange(svgContainer: SvgSelection, cellId: string | null): void
+    {
+        if (cellId === null)
+        {
+            this.removeHoverBar(svgContainer);
+            return;
+        }
+        const curve = this.data.curveLookup.get(cellId);
+        const firstPoint = curve.pointList[0];
+        const lowFrameId = firstPoint.get("Frame ID");
+        const locId = firstPoint.get('Location ID')
+        const location: ImageLocation = this.imageMetaData.locationLookup.get(locId);
+        const frameLow: ImageFrame = location.frameLookup.get(lowFrameId);
+        
+        const lastPoint = curve.pointList[curve.pointList.length - 1]
+        const highFrameId = lastPoint.get("Frame ID");
+        const frameHigh: ImageFrame = location.frameLookup.get(highFrameId);
+
+        const xLow = this.frameScaleX(lowFrameId);
+        const xHigh = this.frameScaleX(highFrameId);
+
+        const h1 = this.frameScaleHeight(frameLow.inBrushPercent);
+        const h2 = this.frameScaleHeight(frameLow.inBrushPercent);
+
+        const betweenTickMargin = 2;
+        const fromBottomMargin = 6;
+
+        const y1 = h1 + this.frameMarginTopBot + betweenTickMargin;
+        const y2 = this.frameHeightSelected - fromBottomMargin;
+        const y3 = h2 + this.frameMarginTopBot + betweenTickMargin;
+
+        const pointList: [number, number][] = [
+            [xLow, y1],
+            [xLow, y2],
+            [xHigh, y2],
+            [xHigh, y3]
+        ];
+
+
+
+        const lineFunction = d3.line<[number, number]>()
+                          .x(d => d[0])
+                          .y(d => d[1])
+                          .curve(d3.curveBasis);
+                        //   .interpolate("linear");
+
+        const path: string = lineFunction(pointList);
+        
+        svgContainer.selectAll('.hoverBar')
+            .data([path])
+            .join('path')
+            .attr('d', path)
+            .classed('hoverBar', true);
+    }
+
+    private removeHoverBar(svgContainer: SvgSelection): void
+    {
+        svgContainer.selectAll('.hoverBar').remove();
     }
 
     private drawHoverDots(svgContainer: SvgSelection, locationId: number, frameId: number): void
@@ -510,10 +585,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     {
         let lastSelected = d3.select("#imageLocation-" + this.selectedLocationId);
         lastSelected.classed('selected', false);
+        let lastSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.selectedLocationId);
+        lastSelectedFrameTickViz.attr('height', this.frameHeight);
+
 
         this._selectedLocationId = newId;
 
         let newSelected = d3.select("#imageLocation-" + this.selectedLocationId);
         newSelected.classed('selected', true);
+        let newSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.selectedLocationId);
+        newSelectedFrameTickViz.attr('height', this.frameHeightSelected);
     }
 }

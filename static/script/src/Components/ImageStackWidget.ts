@@ -287,7 +287,7 @@ export class ImageStackWidget {
 		this.frameLabel.text(this.getCurrentFrameId());
 	}
 
-	private getCurrentLocationId(): number
+	public getCurrentLocationId(): number
 	{
 		return this.imageLocation.locationId;
 	}

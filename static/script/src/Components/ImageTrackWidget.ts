@@ -457,7 +457,8 @@ export class ImageTrackWidget
         let event = new CustomEvent('frameHoverChange', { detail:
         {
             locationId: locId,
-            frameId: frameId
+            frameId: frameId,
+            cellId: cellId
         }});
 		document.dispatchEvent(event);
     }
@@ -471,7 +472,8 @@ export class ImageTrackWidget
         let event = new CustomEvent('frameHoverChange', { detail:
             {
                 locationId: locId,
-                frameId: null
+                frameId: null,
+                cellId: null
             }});
             document.dispatchEvent(event);
     }
