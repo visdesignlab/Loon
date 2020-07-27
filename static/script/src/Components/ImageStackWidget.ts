@@ -406,13 +406,20 @@ export class ImageStackWidget {
 		const label = this.labelArray[labelIndex];
 		if (label === this.cellHovered)
 		{
-			return
+			return;
 		}
 		this._cellHovered = label;
 		if (label === 0)
 		{
 			this.drawDefaultCanvas();
 			this.tooltip.Hide();
+			const customEvent = new CustomEvent('frameHoverChange', { detail:
+				{
+					locationId: this.getCurrentLocationId(),
+					frameId: this.getCurrentFrameId(),
+					cellId: null
+				}});
+			document.dispatchEvent(customEvent);
 		}
 		else
 		{
@@ -447,6 +454,14 @@ export class ImageStackWidget {
 			cellY = cell.get('Y') + cell.get('yShift');
 			pageX = canvasBoundRect.x + cellX;
 			pageY = canvasBoundRect.y + cellY;
+
+			const customEvent = new CustomEvent('frameHoverChange', { detail:
+				{
+					locationId: this.getCurrentLocationId(),
+					frameId: this.getCurrentFrameId(),
+					cellId: cell.parent.id
+				}});
+			document.dispatchEvent(customEvent);
 		}
 		else if (event)
 		{
