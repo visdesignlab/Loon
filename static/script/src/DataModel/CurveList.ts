@@ -17,8 +17,10 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._curveList = curveList;
 		this._length = 0;
 		let i = 0;
+		this._curveLookup = new Map<string, CurveND>();
 		for (let curve of this.curveList)
 		{
+			this.curveLookup.set(curve.id, curve);
 			this._length += curve.length;
 			for (let point of curve)
 			{
@@ -61,6 +63,11 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 	private _curveList : CurveND[];
 	public get curveList() : CurveND[] {
 		return this._curveList;
+	}
+
+	private _curveLookup : Map<string, CurveND>;
+	public get curveLookup() : Map<string, CurveND> {
+		return this._curveLookup;
 	}
 
 	private _curveCollection : CurveCollection;

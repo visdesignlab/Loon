@@ -16,3 +16,17 @@
     font-weight: bold;
     margin-right: 20px;
 }
+
+.cellAxisLabel.currentFrame {
+    font-size: 18pt;
+    font-weight: 900;
+    fill: #0f531c;
+}
+.cellAxisLabel.hovered.currentFrame {
+    font-size: 19pt;
+}
+
+.cellAxisLabel.hovered {
+    font-size: 14pt;
+    font-weight: 900;
+}

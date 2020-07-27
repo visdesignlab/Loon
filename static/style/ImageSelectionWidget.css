@@ -81,3 +81,11 @@
 .tickMark {
     stroke-linecap: butt;
 }
+
+.hoverBar {
+    fill: none;
+    stroke: black;
+    stroke-width: 2px;
+    opacity: 0.6;
+    stroke-linejoin: round;
+}

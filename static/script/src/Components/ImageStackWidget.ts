@@ -178,14 +178,23 @@ export class ImageStackWidget {
 		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
 
 		this.selectedImageContainer
-			.on('mouseenter', () => {
-				this.selectedImageCanvas.style('opacity', 1);
-			})
+			.on('mouseenter', () => this.brightenCanvas())
 			.on('mouseleave', () => {
-				this.selectedImageCanvas.style('opacity', 0.6);
+				this.hideSegmentHover();
+				this.dimCanvas();
 			});
 
 		this.imageTrackWidget.init();
+	}
+
+	public dimCanvas(): void
+	{
+		this.selectedImageCanvas.style('opacity', 0.6);
+	}
+
+	public brightenCanvas(): void
+	{
+		this.selectedImageCanvas.style('opacity', 1);
 	}
 
 	public SetData(data: CurveList, imageLocation: ImageLocation): void
@@ -278,12 +287,12 @@ export class ImageStackWidget {
 		this.frameLabel.text(this.getCurrentFrameId());
 	}
 
-	private getCurrentLocationId(): number
+	public getCurrentLocationId(): number
 	{
 		return this.imageLocation.locationId;
 	}
 
-	private getCurrentFrameId(): number
+	public getCurrentFrameId(): number
 	{
 		return this.imageLocation.frameList[this.selectedImgIndex].frameId;
 	}
@@ -397,62 +406,103 @@ export class ImageStackWidget {
 		const label = this.labelArray[labelIndex];
 		if (label === this.cellHovered)
 		{
-			return
+			return;
 		}
 		this._cellHovered = label;
 		if (label === 0)
 		{
 			this.drawDefaultCanvas();
 			this.tooltip.Hide();
+			const customEvent = new CustomEvent('frameHoverChange', { detail:
+				{
+					locationId: this.getCurrentLocationId(),
+					frameId: this.getCurrentFrameId(),
+					cellId: null
+				}});
+			document.dispatchEvent(customEvent);
 		}
 		else
 		{
-			let [cell, index] = this.getCell(label);
-			let pageX = e.pageX;
-			let pageY = e.pageY;
-			let cellX = 0;
-			let cellY = 0;
-			if (cell)
-			{
-				let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
-				cellX = cell.get('X') + cell.get('xShift');
-				cellY = cell.get('Y') + cell.get('yShift');
-				pageX = canvasBoundRect.x + cellX;
-				pageY = canvasBoundRect.y + cellY;
-			}
-
-			let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
-			myImageData.data.set(this.defaultCanvasState.data);
-			for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
-			{
-				let [imgX, imgY] = this.getTilePixelXYFromLabelIndex(firstIndex, i);
-				let rIdx = (i - firstIndex) * 4;
-				let imgLabel = this.labelArray[i];
-				if (cell && Math.pow(imgX - cellX, 2) + Math.pow(imgY - cellY, 2) <= 25)
-				{
-					// cell center label
-					let [r, g, b] = this.getCellColor(cell);
-					myImageData.data[rIdx] = 255;
-					myImageData.data[rIdx + 1] = 0;
-					myImageData.data[rIdx + 2] = 255;
-					myImageData.data[rIdx + 3] = 255; // alpha
-				}
-				else if (imgLabel === this.cellHovered)
-				{
-					// cell region color
-					let [r, g, b] = this.getCellColor(cell);
-					myImageData.data[rIdx] = r;
-					myImageData.data[rIdx + 1] = g;
-					myImageData.data[rIdx + 2] = b;
-					myImageData.data[rIdx + 3] = 200; // alpha
-				}
-			}
-			this.canvasContext.putImageData(myImageData, 0, 0);
-			let tooltipContent: string = this.getTooltipContent(label, cell, index);
-			
-
-			this.tooltip.Show(tooltipContent, pageX, pageY);
+			this.showSegmentHover(label, false, e);
 		}
+	}
+
+	public hideSegmentHover(hideTooltipImmediately: boolean = false): void
+	{
+		this.drawDefaultCanvas();
+		let delayOverride: number;
+		if (hideTooltipImmediately)
+		{
+			delayOverride = 0;
+		}
+		this.tooltip.Hide(delayOverride);
+	}
+
+	public showSegmentHover(segmentId: number, showTooltipImmediately: boolean = false, event?: MouseEvent): void
+	{
+		this._cellHovered = segmentId;
+		let [cell, index] = this.getCell(segmentId);
+
+		let cellX = 0;
+		let cellY = 0;
+		let pageX = 0;
+		let pageY = 0;
+		if (cell)
+		{
+			let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
+			cellX = cell.get('X') + cell.get('xShift');
+			cellY = cell.get('Y') + cell.get('yShift');
+			pageX = canvasBoundRect.x + cellX;
+			pageY = canvasBoundRect.y + cellY;
+
+			const customEvent = new CustomEvent('frameHoverChange', { detail:
+				{
+					locationId: this.getCurrentLocationId(),
+					frameId: this.getCurrentFrameId(),
+					cellId: cell.parent.id
+				}});
+			document.dispatchEvent(customEvent);
+		}
+		else if (event)
+		{
+			pageX = event.pageX;
+			pageY = event.pageY;
+		}
+
+		let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
+		myImageData.data.set(this.defaultCanvasState.data);
+		for (let i = this.firstIndex; i < this.firstIndex + this.numPixelsInTile; i++)
+		{
+			let [imgX, imgY] = this.getTilePixelXYFromLabelIndex(this.firstIndex, i);
+			let rIdx = (i - this.firstIndex) * 4;
+			let imgLabel = this.labelArray[i];
+			if (cell && Math.pow(imgX - cellX, 2) + Math.pow(imgY - cellY, 2) <= 25)
+			{
+				// cell center label
+				let [r, g, b] = this.getCellColor(cell);
+				myImageData.data[rIdx] = 255;
+				myImageData.data[rIdx + 1] = 0;
+				myImageData.data[rIdx + 2] = 255;
+				myImageData.data[rIdx + 3] = 255; // alpha
+			}
+			else if (imgLabel === this.cellHovered)
+			{
+				// cell region color
+				let [r, g, b] = this.getCellColor(cell);
+				myImageData.data[rIdx] = r;
+				myImageData.data[rIdx + 1] = g;
+				myImageData.data[rIdx + 2] = b;
+				myImageData.data[rIdx + 3] = 200; // alpha
+			}
+		}
+		this.canvasContext.putImageData(myImageData, 0, 0);
+		let tooltipContent: string = this.getTooltipContent(segmentId, cell, index);
+		let delayOverride: number;
+		if (showTooltipImmediately)
+		{
+			delayOverride = 0;
+		}
+		this.tooltip.Show(tooltipContent, pageX, pageY, delayOverride);
 	}
 
 	public  getTilePixelXYFromLabelIndex(tileStartIndex: number, labelIndex: number): [number, number]

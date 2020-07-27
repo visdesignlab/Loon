@@ -62,7 +62,8 @@
 }
 
 .groupByContainer {
-    width: 100%;
+    /*  2 * (padding + margin) = 2 * (8 + 2) = 20 */
+    width: calc(100% - 20px);
     font-size: 14pt;
     padding: 8px;
     margin: 2px;

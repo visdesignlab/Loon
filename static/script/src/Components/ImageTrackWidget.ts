@@ -6,6 +6,7 @@ import { PointND } from '../DataModel/PointND';
 import { extent, linkVertical, VoronoiEdge } from 'd3';
 import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
+import { DevlibAlgo } from '../devlib/DevlibAlgo';
 
 export class ImageTrackWidget
 {
@@ -121,7 +122,11 @@ export class ImageTrackWidget
         return this._latestScroll;
     }
 
-    
+    private _latestMouseCanvasOffset : [number, number];
+    public get latestMouseCanvasOffset() : [number, number] {
+        return this._latestMouseCanvasOffset;
+    }    
+
     private _sourceDestCell : [Rect, [number, number], PointND][];
     public get sourceDestCell() : [Rect, [number, number], PointND][] {
         return this._sourceDestCell;
@@ -142,10 +147,31 @@ export class ImageTrackWidget
             .classed('cellTimelineInnerContainer', true)
             .classed('overflow-scroll', true);
 
-        this.innerContainer.node().addEventListener('scroll', (e: Event) => this.onCellTimelineScroll(e));
+        this.innerContainer.node().addEventListener('scroll', (e: WheelEvent) => {
+            this.onCellTimelineScroll(e);
+        });
 
         this._selectedImageCanvas = this.innerContainer.append('canvas');
-        this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
+        const canvasElement: HTMLCanvasElement = this.selectedImageCanvas.node() as HTMLCanvasElement;
+        canvasElement.addEventListener('mousemove', (e: MouseEvent) => this.onCanvasMouseMove(e) );
+        canvasElement.addEventListener('click', (e: MouseEvent) => this.onCanvasClick(e));
+        this.selectedImageCanvas.on('mouseleave', () => this.onCanvasMouseLeave() );
+
+        this._canvasContext = canvasElement.getContext('2d');
+
+        document.addEventListener('frameHoverChange', (e: CustomEvent) => 
+        {
+            const frameId = e.detail.frameId;
+            const cellId = e.detail.cellId;
+            if (frameId !== null && cellId !== null)
+            {
+                this.updateLabelsOnMouseMove(cellId, frameId.toString());
+            }
+            else
+            {
+                this.updateLabelsOnMouseMove('', '');
+            }
+        });
     }
 
     public draw(tracks: CurveND[]): void
@@ -318,6 +344,7 @@ export class ImageTrackWidget
                 {
                     const imgBitmap = bitMapList[i];
                     const frameId = trackData.pointList[i].get('Frame ID');
+                    const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
                     const offsetIndex = frameId - minFrame;
                     const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
                     const frameY = verticalOffset;
@@ -325,7 +352,18 @@ export class ImageTrackWidget
 
                     this.canvasContext.beginPath();
                     this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
-                    this.canvasContext.strokeStyle = 'gray';
+                    if (currentFrame)
+                    {
+                        this.canvasContext.strokeStyle = 'MediumSeaGreen';
+                        this.canvasContext.lineWidth = 8; 
+
+                    }
+                    else
+                    {
+                        this.canvasContext.strokeStyle = 'grey';
+                        this.canvasContext.lineWidth = 1; 
+                    }
+
                     this.canvasContext.fillStyle = 'black';
                     this.canvasContext.stroke();
                     this.canvasContext.fill();
@@ -393,6 +431,104 @@ export class ImageTrackWidget
         }
     }
 
+    private onCanvasClick(e: MouseEvent): void
+    {
+        if (!this.parentWidget.labelArray)
+        {
+            return;
+        }
+        let xPos = e.offsetX;
+        let yPos = e.offsetY;
+        const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
+        const locId = this.parentWidget.getCurrentLocationId();
+        let event = new CustomEvent('locFrameClicked', { detail:
+        {
+            locationId: locId,
+            frameId: frameId
+        }});
+		document.dispatchEvent(event);
+    }
+
+    private onCanvasMouseMove(e: MouseEvent): void
+    {
+        if (!this.parentWidget.labelArray)
+        {
+            return;
+        }
+        let xPos = e.offsetX;
+        let yPos = e.offsetY;
+        const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
+        const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
+
+        let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+        this.parentWidget.selectedImgIndex;
+        const displayedFrameId = this.parentWidget.getCurrentFrameId();
+        let point = curve.pointList.find(point => point.get('Frame ID') === displayedFrameId);
+        this.parentWidget.showSegmentHover(point.get('segmentLabel'), true);
+        this.parentWidget.brightenCanvas();
+        this.updateLabelsOnMouseMove(cellId, frameId.toString());
+        const locId = this.parentWidget.getCurrentLocationId();
+        let event = new CustomEvent('frameHoverChange', { detail:
+        {
+            locationId: locId,
+            frameId: frameId,
+            cellId: cellId
+        }});
+		document.dispatchEvent(event);
+    }
+
+    private onCanvasMouseLeave(): void
+    {
+        this.parentWidget.hideSegmentHover(true);
+        this.parentWidget.dimCanvas();
+        this.updateLabelsOnMouseMove('', '');
+        const locId = this.parentWidget.getCurrentLocationId();
+        let event = new CustomEvent('frameHoverChange', { detail:
+            {
+                locationId: locId,
+                frameId: null,
+                cellId: null
+            }});
+            document.dispatchEvent(event);
+    }
+
+    private static getClosestLabel(labelPositions: [string, number][], pos: number): string
+    {
+        let compareFunction = DevlibAlgo.compareProperty<[string, number]>(pos, labelPos =>  labelPos[1]);
+        let indices = DevlibAlgo.BinarySearchIndex(labelPositions, compareFunction);
+        let labelIndex: number;
+        if (typeof indices === 'number')
+        {
+            labelIndex = indices;
+        }
+        else {
+            let [indexLow, indexHigh] = indices;
+            if (typeof indexLow === 'undefined')
+            {
+                labelIndex = indexHigh;
+            }
+            else if (typeof indexHigh === 'undefined')
+            {
+                labelIndex = indexLow;
+            }
+            else {
+                const [ _labelLow, labelPosLow] = labelPositions[indexLow];
+                const [ _labelHeigh, labelPosHigh] = labelPositions[indexHigh];
+                const distToLow = pos - labelPosLow;
+                const distToHigh = labelPosHigh - pos;
+                if (distToLow < distToHigh)
+                {
+                    labelIndex = indexLow;
+                }
+                else
+                {
+                    labelIndex = indexHigh;
+                }
+            }
+        }
+        return labelPositions[labelIndex][0];
+    }
+
     private drawOutlines(): void
     {
         for (let [sourceRect, [dX, dY], point] of this.sourceDestCell)
@@ -453,14 +589,40 @@ export class ImageTrackWidget
             const pos: number = labelPos[1] - this.latestScroll[0];
             return 0 <= pos && pos <= this.innerContainerW;
         });
+        const currentFrame  = this.parentWidget.getCurrentFrameId();
         this.frameLabelGroup.selectAll('text')
             .data(labelsInView)
             .join('text')
             .text(d => d[0])
             .attr('x', d => d[1] - this.latestScroll[0])
             .attr('y', yAnchor)
+            .classed('currentFrame', d => +d[0] === currentFrame)
             .classed('cellAxisLabel', true)
             .classed('right', true);
+    }
+
+    private updateLabelsOnMouseMove(cellId: string, frameId: string): void
+    {
+        let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
+        this.hoverNodeWithText(svgSelection.nodes(), cellId);
+        svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
+        this.hoverNodeWithText(svgSelection.nodes(), frameId);
+    }
+
+    private hoverNodeWithText(svgElementList: SVGElement[], text: string): void
+    {
+        for (let node  of svgElementList)
+        {
+            let nodeEl = (node as SVGElement);
+            if (nodeEl.textContent === text)
+            {
+                nodeEl.classList.add('hovered');
+            }
+            else
+            {
+                nodeEl.classList.remove('hovered');
+            }
+        }
     }
 
     public OnResize(width: number, height: number): void

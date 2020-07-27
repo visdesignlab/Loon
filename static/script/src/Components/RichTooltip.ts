@@ -80,14 +80,23 @@ export class RichTooltip
         return this._hideCallback;
     }
 
-    public Show(htmlString: string, pageX: number, pageY: number): void
+    public Show(htmlString: string, pageX: number, pageY: number, waitOverride?: number): void
     {
         const callbackFunc = () => this.drawTooltip(htmlString, pageX, pageY)
         if (this.showTimerRunning)
         {
             this.showTimer.stop();
         }
-        this._showTimer = d3.timeout(callbackFunc, this.waitToShow);
+        let delay: number
+        if (typeof waitOverride !== 'undefined')
+        {
+            delay = waitOverride;
+        }
+        else
+        {
+            delay = this.waitToShow;
+        }
+        this._showTimer = d3.timeout(callbackFunc, delay);
         this._showTimerRunning = true;
         if (this.hideTimerRunning)
         {
@@ -167,7 +176,7 @@ export class RichTooltip
         return [top, left];
     }
 
-    public Hide(): void
+    public Hide(waitOverride?: number): void
     {
         if (this.showTimerRunning)
         {
@@ -181,7 +190,16 @@ export class RichTooltip
         }
         else
         {
-            this._hideTimer = d3.timeout(this.hideCallback, this.waitToHide);
+            let delay: number;
+            if (typeof waitOverride !== 'undefined')
+            {
+                delay = waitOverride;
+            }
+            else
+            {
+                delay = this.waitToHide;
+            }
+            this._hideTimer = d3.timeout(this.hideCallback, delay);
         }
         this._hideTimerRunning = true;
     }
