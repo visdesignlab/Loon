@@ -434,15 +434,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         const xLow = this.frameScaleX(lowFrameId);
         const xHigh = this.frameScaleX(highFrameId);
 
-        const h1 = this.frameScaleHeight(frameLow.inBrushPercent);
-        const h2 = this.frameScaleHeight(frameLow.inBrushPercent);
+        const h1 = (this.frameScaleHeight(frameLow.inBrushPercent) + this.frameHeight) / 2;
+        const h2 = (this.frameScaleHeight(frameHigh.inBrushPercent) + this.frameHeight) / 2;
 
         const betweenTickMargin = 2;
         const fromBottomMargin = 6;
 
-        const y1 = h1 + this.frameMarginTopBot + betweenTickMargin;
+        const y1 = h1 + betweenTickMargin;
         const y2 = this.frameHeightSelected - fromBottomMargin;
-        const y3 = h2 + this.frameMarginTopBot + betweenTickMargin;
+        const y3 = h2 + betweenTickMargin;
 
         const pointList: [number, number][] = [
             [xLow, y1],
@@ -451,13 +451,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             [xHigh, y3]
         ];
 
-
-
         const lineFunction = d3.line<[number, number]>()
                           .x(d => d[0])
                           .y(d => d[1])
                           .curve(d3.curveBasis);
-                        //   .interpolate("linear");
 
         const path: string = lineFunction(pointList);
         
