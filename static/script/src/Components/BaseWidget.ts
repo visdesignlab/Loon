@@ -1,8 +1,9 @@
+import * as d3 from 'd3';
 import { BaseComponent } from './BaseComponent';
-import { Margin, ButtonProps } from '../devlib/DevLibTypes';
+import { Margin } from '../devlib/DevLibTypes';
 import  { DevlibTSUtil } from '../devlib/DevlibTSUtil';
-import { AppData, DatasetSpec } from '../types';
-import { OptionSelect } from './OptionSelect';
+import { AppData } from '../types';
+import { GroupByWidget } from './GroupByWidget';
 
 export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpecType> extends BaseComponent {
 	
@@ -16,6 +17,15 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		}
 		this.initButtonListContainer();		
 		this._dataSuperset = null;
+
+		document.addEventListener('groupByChanged', (e: CustomEvent) => 
+		{
+			if (this.showingFacetPopup)
+			{
+				this.drawFacetedData(e.detail.groupIndex);
+			}
+		});
+		this._showingFacetPopup = false;
 	}
 
 	private _data : DataType | null;
@@ -35,7 +45,6 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		}
 		return this.data;
 	}
-	
 
 	protected _margin : Margin;
 	public get margin() : Margin {
@@ -64,7 +73,12 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		}
 		this._canFacet = v;
 	}
-	
+
+	private _showingFacetPopup : boolean;
+	public get showingFacetPopup() : boolean {
+		return this._showingFacetPopup;
+	}
+
 	private _buttonList : HTMLButtonElement[];
 	public get buttonList() : HTMLButtonElement[] {
 		if (!this._buttonList)
@@ -119,7 +133,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	private _largePopupContent : HTMLDivElement;
 	public get largePopupContent() : HTMLDivElement {
 		return this._largePopupContent;
-	}	
+	}
 
 	protected initProps(props?: any[]): void
 	{
@@ -180,7 +194,6 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		style.display = 'flex';
 		style.flexDirection = 'row-reverse';
 
-		// this.buttonListContainer.style.background = 'firebrick';
 		this.container.addEventListener('mouseenter', this.onMouseEnter());
 
 		this.container.addEventListener('mouseleave', this.onMouseLeave());
@@ -230,36 +243,16 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	{
 		this.largePopup.innerHTML = null;
 
-		
 		DevlibTSUtil.show(this.largePopupOuter);
-		this.drawGroupBySelection();
+		this._showingFacetPopup = true;
+		const groupByWidget = new GroupByWidget(d3.select(this.largePopup));
+		groupByWidget.updateGroupByOptions(this.data);
+
 		let contentContainer = document.createElement('div');
 		contentContainer.classList.add('largePopupContent');
 		this.largePopup.appendChild(contentContainer);
 		this._largePopupContent = contentContainer;
 		this.drawFacetedData(0);
-	}
-
-	private drawGroupBySelection(): void
-	{
-		let groupByContainer = document.createElement('div');
-		groupByContainer.classList.add('groupByContainer');
-		groupByContainer.id = "largePopupGroupByContainer";
-		this.largePopup.appendChild(groupByContainer);
-		let optionSelect = new OptionSelect("largePopupGroupByContainer", "Group by");
-		let buttonPropsList: ButtonProps[] = [];
-		let facetOptions = this.data.GetFacetOptions();
-		for (let i = 0; i < facetOptions.length; i++)
-		{
-			let facetOption = facetOptions[i];
-			let buttonProps: ButtonProps = {
-				displayName: facetOption.name,
-				callback: () => this.drawFacetedData(i)
-			 }
-			 buttonPropsList.push(buttonProps);
-		}
-		optionSelect.onDataChange(buttonPropsList, 0);
-
 	}
 
 	protected drawFacetedData(facetOptionIndex: number): void
@@ -309,6 +302,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		largePopupOuter.addEventListener('click', () =>
 		{
 			DevlibTSUtil.hide(this.largePopupOuter);
+			this._showingFacetPopup = false;
 		});
 
 		let largePopup = document.createElement('div');
