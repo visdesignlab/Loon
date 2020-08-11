@@ -4,7 +4,7 @@ import {BaseWidget} from './BaseWidget';
 import {ImageStackWidget} from './ImageStackWidget';
 import {ImageMetaData} from '../DataModel/ImageMetaData';
 import { CurveList } from '../DataModel/CurveList';
-import { DatasetSpec } from '../types';
+import { DatasetSpec, Facet } from '../types';
 import { ImageFrame } from '../DataModel/ImageFrame';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { RichTooltip } from './RichTooltip';
@@ -226,26 +226,90 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
     private draw(): void
     {
-        const facetIndex = this.groupByWidget.currentSelectionIndex;
-        let facetOptions = this.data.GetFacetOptions();
-
-        let hardCodedOption = facetOptions[facetIndex];
-        let facetList = hardCodedOption.GetFacets();
         this.locationListContainer.html(null);
-        for (let facet of facetList)
-        {
-            this.drawFacet(facet.name, facet.data);
-        }
+        this.drawFacetRecurse(this.groupByWidget.currentSelectionIndexList);
+
+        // const facetIndex = this.groupByWidget.currentSelectionIndexList[0];
+        // let facetOptions = this.data.GetFacetOptions();
+
+        // let hardCodedOption = facetOptions[facetIndex];
+        // let facetList = hardCodedOption.GetFacets();
+        // this.locationListContainer.html(null);
+        // for (let facet of facetList)
+        // {
+        //     this.drawFacet(facet.name, facet.data);
+        // }
         this.drawSelectedDots();
     }
 
-    private drawFacet(name: string, data: CurveList): void
+    private drawFacetRecurse(remainingSubFacetIndices: number[], facet?: Facet, containerSelection?: HtmlSelection): void
     {
-        this.locationListContainer.append('div')
+        let container: HtmlSelection;
+        if (containerSelection)
+        {
+            container = containerSelection;
+        }
+        else
+        {
+            container = this.locationListContainer;
+        }
+        if (remainingSubFacetIndices.length === 0)
+        {
+            this.drawTerminalFacet(container, facet.name, facet.data);
+            return;
+        }
+
+        let data: CurveList;
+        if (facet)
+        {
+            data = facet.data;
+        }
+        else
+        {
+            data = this.data;
+        }
+
+        const facetIndex = remainingSubFacetIndices[0];
+        let facetOptions = data.GetFacetOptions();
+
+        let hardCodedOption = facetOptions[facetIndex];
+        let facetList = hardCodedOption.GetFacets();
+        let grouperDiv
+        if (facet)
+        {
+            grouperDiv  = this.drawGrouperFacet(container, facet.name);
+        }
+        for (let childFacet of facetList)
+        {
+            this.drawFacetRecurse(remainingSubFacetIndices.slice(1), childFacet, grouperDiv);
+        }
+    }
+
+    private drawGrouperFacet(containerSelection: HtmlSelection, name: string): HtmlSelection
+    {
+        this.drawTitleElement(containerSelection, name);
+
+        const grouperDiv = containerSelection.append('div')
+            .classed('locationListGrouper', true);
+
+        return grouperDiv;
+    }
+
+    private drawTitleElement(containerSelection: HtmlSelection, name: string): void
+    {
+        containerSelection.append('div')
             .text(name)
             .classed('locationListCatTitle', true);
+    }
 
-        const subListContainer = this.locationListContainer.append('ul')
+    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList): void
+    {
+        this.drawTitleElement(containerSelection, name);
+        // this.locationListContainer.append('div')
+        //     .text(name)
+        //     .classed('locationListCatTitle', true);
+
+        const subListContainer = containerSelection.append('ul')
             .classed('subListContainer', true);
 
         const listElement = subListContainer.selectAll('li')

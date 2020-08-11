@@ -5,6 +5,19 @@
     font-family: 'Montserrat', sans-serif;
 }
 
+.locationListGrouper {
+    padding-left: 10px;
+    border: dashed;
+    border-width: 0 0 0 1px;
+    margin-left: 2px;
+    border-color: grey;
+}
+
+.locationListGrouper:hover {
+    border-style: solid;
+    border-color: black;
+}
+
 .imageSelectionContainer {
     display: flex;
     flex-direction: row;
