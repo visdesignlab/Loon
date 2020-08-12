@@ -4,13 +4,14 @@ import {BaseWidget} from './BaseWidget';
 import {ImageStackWidget} from './ImageStackWidget';
 import {ImageMetaData} from '../DataModel/ImageMetaData';
 import { CurveList } from '../DataModel/CurveList';
-import { DatasetSpec } from '../types';
+import { DatasetSpec, Facet } from '../types';
 import { ImageFrame } from '../DataModel/ImageFrame';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { RichTooltip } from './RichTooltip';
-import { timeHours, linkVertical, svg } from 'd3';
 import { OptionSelect } from './OptionSelect';
 import { ImageLocation } from '../DataModel/ImageLocation';
+import { GroupByWidget } from './GroupByWidget';
+import { zip } from 'd3';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -39,16 +40,11 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._locationSelectionContainer;
     }
 
-    private _groupByContainer : HtmlSelection;
-    public get groupByContainer() : HtmlSelection {
-        return this._groupByContainer;
+    private _groupByWidget : GroupByWidget;
+    public get groupByWidget() : GroupByWidget {
+        return this._groupByWidget;
     }
 
-    private _groupByOptionSelect : OptionSelect;
-    public get groupByOptionSelect() : OptionSelect {
-        return this._groupByOptionSelect;
-    }
-    
     private _locationListContainer : HtmlSelection;
     public get locationListContainer() : HtmlSelection {
         return this._locationListContainer;
@@ -58,7 +54,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     public get imageStackContainer() : HtmlSelection {
         return this._imageStackContainer;
     }
-    
     
     private _imageStackWidget : ImageStackWidget;
     public get imageStackWidget() : ImageStackWidget {
@@ -136,12 +131,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
         document.onkeydown = (event) => {this.handleKeyDown(event)};
 
-        this._groupByContainer = this.locationSelectionContainer.append('div')
-            .classed('groupByContainer', true)
-            .attr('id', 'locationListGroupByContainer')
+        this._groupByWidget = new GroupByWidget(this.locationSelectionContainer);
 
-        this._groupByOptionSelect = new OptionSelect("locationListGroupByContainer", "Group by", 0);
-    
         this._locationListContainer = this.locationSelectionContainer.append('div')
             .classed('locationListContainer', true);
 
@@ -165,7 +156,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             this.onClickLocationFrame(locId, frameId);
         });
 
-        this.OnResize()
+        document.addEventListener('groupByChanged', (e: CustomEvent) =>
+        {
+            this.draw();
+        });
+
+        this.OnResize();
 	}
 
 	public OnDataChange()
@@ -174,24 +170,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
         this.setImageStackWidget();
         this.OnBrushChange();
-        this.updateGroupByOptions();
+        this.groupByWidget.updateGroupByOptions(this.data, true);
 
-    }
-
-    private updateGroupByOptions(): void
-    {
-        let buttonPropsList: ButtonProps[] = [];
-        let facetOptions = this.data.GetFacetOptions();
-        for (let i = 0; i < facetOptions.length; i++)
-        {
-            let facetOption = facetOptions[i];
-            let buttonProps: ButtonProps = {
-                displayName: facetOption.name,
-                callback: () => this.draw()
-                }
-                buttonPropsList.push(buttonProps);
-        }
-        this.groupByOptionSelect.onDataChange(buttonPropsList, 0);
     }
     
     public setImageStackWidget(): void
@@ -247,26 +227,86 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
     private draw(): void
     {
-        const facetIndex = this.groupByOptionSelect.currentSelectionIndex;
-        let facetOptions = this.data.GetFacetOptions();
-
-        let hardCodedOption = facetOptions[facetIndex];
-        let facetList = hardCodedOption.GetFacets();
         this.locationListContainer.html(null);
-        for (let facet of facetList)
-        {
-            this.drawFacet(facet.name, facet.data);
-        }
+        this.drawFacetRecurse(this.groupByWidget.currentSelectionIndexList);
         this.drawSelectedDots();
     }
 
-    private drawFacet(name: string, data: CurveList): void
+    private drawFacetRecurse(remainingSubFacetIndices: number[], verticalPosition: number = 0, facet?: Facet, containerSelection?: HtmlSelection): void
     {
-        this.locationListContainer.append('div')
-            .text(name)
-            .classed('locationListCatTitle', true);
+        let container: HtmlSelection;
+        if (containerSelection)
+        {
+            container = containerSelection;
+        }
+        else
+        {
+            container = this.locationListContainer;
+        }
+        if (remainingSubFacetIndices.length === 0)
+        {
+            this.drawTerminalFacet(container, facet.name, facet.data, verticalPosition, 0);
+            return;
+        }
 
-        const subListContainer = this.locationListContainer.append('ul')
+        let data: CurveList;
+        if (facet)
+        {
+            data = facet.data;
+        }
+        else
+        {
+            data = this.data;
+        }
+
+        const facetIndex = remainingSubFacetIndices[0];
+        let facetOptions = data.GetFacetOptions();
+
+        let hardCodedOption = facetOptions[facetIndex];
+        let facetList = hardCodedOption.GetFacets();
+        let grouperDiv
+        if (facet)
+        {
+            grouperDiv  = this.drawGrouperFacet(container, facet.name, verticalPosition, remainingSubFacetIndices.length);
+        }
+        let childPosition = verticalPosition;
+        for (let childFacet of facetList)
+        {
+            childPosition++;
+            this.drawFacetRecurse(remainingSubFacetIndices.slice(1), childPosition, childFacet, grouperDiv);
+        }
+    }
+
+    private drawGrouperFacet(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): HtmlSelection
+    {
+        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
+
+        const grouperDiv = containerSelection.append('div')
+            .classed('locationListGrouper', true);
+
+        return grouperDiv;
+    }
+
+    private drawTitleElement(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): void
+    {
+        const topPos = (verticalPosition - 1) * 19;
+
+        let styleString = `top: ${topPos}px;`;
+        if (zIndex > 0)
+        {
+            styleString += ` z-index: ${zIndex};`;
+        }
+        containerSelection.append('div')
+            .text(name)
+            .classed('locationListCatTitle', true)
+            .attr('style', styleString);
+    }
+
+    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList, verticalPosition: number, zIndex: number): void
+    {
+        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
+
+        const subListContainer = containerSelection.append('ul')
             .classed('subListContainer', true);
 
         const listElement = subListContainer.selectAll('li')

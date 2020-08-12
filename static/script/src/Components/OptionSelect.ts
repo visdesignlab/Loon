@@ -92,17 +92,14 @@ export class OptionSelect {
 		{
 			this._currentSelectionIndex = defaultSelection;
 		}
-		else
-		{
-			this._currentSelectionIndex = null;
-		}
+
 		if (this.data.length < 4)
 		{
-			this.drawQuickSelectButtons(defaultSelection);
+			this.drawQuickSelectButtons(this.currentSelectionIndex);
 		}
 		else
 		{
-			this.drawDropDownButtons(defaultSelection);
+			this.drawDropDownButtons(this.currentSelectionIndex);
 		}
 	}
 

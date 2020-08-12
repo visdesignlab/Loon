@@ -183,9 +183,9 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		this.drawAxis();
 	}
 
-	protected drawFacetedData(facetOptionIndex: number): void
+	protected drawFacetedData(facetOptionIndexList: number[]): void
 	{
-		super.drawFacetedDataDefault(facetOptionIndex, "300px", "300px");
+		this.drawFacetedDataDefaultRecurse(facetOptionIndexList, "300px", "300px");
 	}
 
 	private updateScales(): void
