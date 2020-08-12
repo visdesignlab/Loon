@@ -280,15 +280,6 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		let facetOptions = data.GetFacetOptions();
 		let thisFacetOption = facetOptions[remainingSubFacetIndices[0]];
 		
-		// let titleStart: string
-		// if (titleSoFar)
-		// {
-		// 	titleStart = titleStart;
-		// }
-		// else
-		// {	
-		// 	titleStart = thisFacetOption.name;
-		// }
 		for (let childFacet of thisFacetOption.GetFacets())
 		{
 			let nextTitle: string = titleSoFar ? titleSoFar + ', ' + childFacet.name : childFacet.name;
@@ -299,29 +290,24 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 
 	private drawFacetedDataDefault(title: string, data: DataType, width: string, height: string): void
 	{
-		// this.largePopupContent.innerHTML = null;
-		// let facetOption = this.data.GetFacetOptions()[facetOptionIndexList[0]];
-		// for (let facet of facetOption.GetFacets())
-		// {
-			let outerContainer = document.createElement('div');
-				outerContainer.classList.add('outerFacetContainer');
-				outerContainer.style.width = width;
-				outerContainer.style.height = height;
+		let outerContainer = document.createElement('div');
+			outerContainer.classList.add('outerFacetContainer');
+			outerContainer.style.width = width;
+			outerContainer.style.height = height;
 
-				let titleContainer = document.createElement('div');
-					titleContainer.classList.add('facetTitle')
-					titleContainer.innerText = title;
+			let titleContainer = document.createElement('div');
+				titleContainer.classList.add('facetTitle')
+				titleContainer.innerText = title;
 
-			outerContainer.appendChild(titleContainer);
+		outerContainer.appendChild(titleContainer);
 
-				let newContainer = document.createElement('div');
-					newContainer.classList.add('facetContainer');
-		
-			outerContainer.appendChild(newContainer);
+			let newContainer = document.createElement('div');
+				newContainer.classList.add('facetContainer');
+	
+		outerContainer.appendChild(newContainer);
 
-			this.largePopupContent.appendChild(outerContainer);
-			this.initSubWidget(newContainer, title, data);
-		// }
+		this.largePopupContent.appendChild(outerContainer);
+		this.initSubWidget(newContainer, title, data);
 	}
 
 	private initSubWidget(newContainer: HTMLElement, name: string, data: DataType): void

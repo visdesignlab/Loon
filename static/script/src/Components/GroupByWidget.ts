@@ -10,11 +10,6 @@ export class GroupByWidget
 
 	private static _componentCount: number = 0;
 
-    // private _outerComponentId : string;
-    // public get outerComponentId() : string {
-    //     return this._outerComponentId;
-    // }    
-
     private _outerContainer : HtmlSelection;
     public get outerContainer() : HtmlSelection {
         return this._outerContainer;
@@ -35,7 +30,6 @@ export class GroupByWidget
         return this._groupByOuterContainerList;
     }
 
-    
     private _data : AppData<any>;
     public get data() : AppData<any> {
         return this._data;
@@ -43,12 +37,6 @@ export class GroupByWidget
     public set data(v : AppData<any>) {
         this._data = v;
     }
-    
-    
-    // private _groupByOuterConainerIdList : string[];
-    // public get groupByOuterConainerIdList() : string[] {
-    //     return this._groupByOuterConainerIdList;
-    // }    
 
     private _groupByInnerConainerIdList : string[];
     public get groupByInnerConainerIdList() : string[] {
@@ -71,14 +59,11 @@ export class GroupByWidget
         this._mainContainer = this.outerContainer.append('div')
             .classed('groupByMainContainer', true);
 
-        // this._outerComponentId = 'groupByOuterContainer_' + GroupByWidget._componentCount + '_';
         this._innerComponentId = 'groupByInnerContainer_' + GroupByWidget._componentCount + '_';
         GroupByWidget._componentCount++;
 
         this._groupByInnerConainerIdList = [];
         this.addComponentId();
-        // this.addComponentId();
-        // this.groupByInnerConainerIdList.push(this.innerComponentId + '2');
         this.drawLines([0]);
 
     }
@@ -90,7 +75,7 @@ export class GroupByWidget
             .join('div')
             .classed('groupByElementContainer', true);
             
-        this.groupByOuterContainerList.html(null); // todo, make this more efficient
+        this.groupByOuterContainerList.html(null);
 
         this.groupByOuterContainerList.append('div')
             .classed('groupByContainer', true)
