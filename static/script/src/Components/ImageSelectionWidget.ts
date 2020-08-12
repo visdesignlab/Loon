@@ -305,9 +305,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList, verticalPosition: number, zIndex: number): void
     {
         this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
-        // this.locationListContainer.append('div')
-        //     .text(name)
-        //     .classed('locationListCatTitle', true);
 
         const subListContainer = containerSelection.append('ul')
             .classed('subListContainer', true);

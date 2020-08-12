@@ -76,11 +76,8 @@
 }
 
 .groupByContainer {
-    /*  2 * (padding + margin) = 2 * (8 + 2) = 20 */
-    /* width: calc(100% - 20px); */
     font-size: 14pt;
     padding: 8px;
     margin: 2px;
-    /* margin-bottom: 8px; */
     flex-grow: 0;
 }
