@@ -257,17 +257,14 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 
 	protected drawFacetedData(facetOptionIndexList: number[]): void
 	{
-		this.largePopupContent.innerHTML = null;
 		this.drawFacetedDataDefaultRecurse(facetOptionIndexList);
-		// this.drawFacetedDataDefault(facetOptionIndexList);
-
 	}
 
-	private drawFacetedDataDefaultRecurse(remainingSubFacetIndices: number[], titleSoFar?: string, facet?: Facet): void
+	protected drawFacetedDataDefaultRecurse(remainingSubFacetIndices: number[], width: string = '500px', height: string = '250px', titleSoFar?: string, facet?: Facet): void
 	{
 		if (remainingSubFacetIndices.length === 0)
 		{
-			this.drawFacetedDataDefault(titleSoFar, facet.data);
+			this.drawFacetedDataDefault(titleSoFar, facet.data, width, height);
 			return;
 		}
 		let data: DataType;
@@ -278,6 +275,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		else
 		{
 			data = this.data;
+			this.largePopupContent.innerHTML = null;
 		}
 		let facetOptions = data.GetFacetOptions();
 		let thisFacetOption = facetOptions[remainingSubFacetIndices[0]];
@@ -294,12 +292,12 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		for (let childFacet of thisFacetOption.GetFacets())
 		{
 			let nextTitle: string = titleSoFar ? titleSoFar + ', ' + childFacet.name : childFacet.name;
-			this.drawFacetedDataDefaultRecurse(remainingSubFacetIndices.slice(1), nextTitle, childFacet)
+			this.drawFacetedDataDefaultRecurse(remainingSubFacetIndices.slice(1), width, height, nextTitle, childFacet)
 		}
 
 	}
 
-	protected drawFacetedDataDefault(title: string, data: DataType, width: string = '500px', height: string = '250px'): void
+	private drawFacetedDataDefault(title: string, data: DataType, width: string, height: string): void
 	{
 		// this.largePopupContent.innerHTML = null;
 		// let facetOption = this.data.GetFacetOptions()[facetOptionIndexList[0]];

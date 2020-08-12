@@ -316,9 +316,10 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         this.positionLabels();
     }
 
-	protected drawFacetedData(facetOptionIndex: number): void
+	protected drawFacetedData(facetOptionIndexList: number[]): void
 	{
-		super.drawFacetedDataDefault(facetOptionIndex, "95%", "170px");
+        this.drawFacetedDataDefaultRecurse(facetOptionIndexList, "95%", "170px");
+		// super.drawFacetedDataDefault(facetOptionIndex, "95%", "170px"); 
 	}
 
     private showLabel(): void
