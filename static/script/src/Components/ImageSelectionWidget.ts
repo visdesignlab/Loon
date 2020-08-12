@@ -11,6 +11,7 @@ import { RichTooltip } from './RichTooltip';
 import { OptionSelect } from './OptionSelect';
 import { ImageLocation } from '../DataModel/ImageLocation';
 import { GroupByWidget } from './GroupByWidget';
+import { zip } from 'd3';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -228,21 +229,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     {
         this.locationListContainer.html(null);
         this.drawFacetRecurse(this.groupByWidget.currentSelectionIndexList);
-
-        // const facetIndex = this.groupByWidget.currentSelectionIndexList[0];
-        // let facetOptions = this.data.GetFacetOptions();
-
-        // let hardCodedOption = facetOptions[facetIndex];
-        // let facetList = hardCodedOption.GetFacets();
-        // this.locationListContainer.html(null);
-        // for (let facet of facetList)
-        // {
-        //     this.drawFacet(facet.name, facet.data);
-        // }
         this.drawSelectedDots();
     }
 
-    private drawFacetRecurse(remainingSubFacetIndices: number[], facet?: Facet, containerSelection?: HtmlSelection): void
+    private drawFacetRecurse(remainingSubFacetIndices: number[], verticalPosition: number = 0, facet?: Facet, containerSelection?: HtmlSelection): void
     {
         let container: HtmlSelection;
         if (containerSelection)
@@ -255,7 +245,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
         if (remainingSubFacetIndices.length === 0)
         {
-            this.drawTerminalFacet(container, facet.name, facet.data);
+            this.drawTerminalFacet(container, facet.name, facet.data, verticalPosition, 0);
             return;
         }
 
@@ -277,17 +267,19 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         let grouperDiv
         if (facet)
         {
-            grouperDiv  = this.drawGrouperFacet(container, facet.name);
+            grouperDiv  = this.drawGrouperFacet(container, facet.name, verticalPosition, remainingSubFacetIndices.length);
         }
+        let childPosition = verticalPosition;
         for (let childFacet of facetList)
         {
-            this.drawFacetRecurse(remainingSubFacetIndices.slice(1), childFacet, grouperDiv);
+            childPosition++;
+            this.drawFacetRecurse(remainingSubFacetIndices.slice(1), childPosition, childFacet, grouperDiv);
         }
     }
 
-    private drawGrouperFacet(containerSelection: HtmlSelection, name: string): HtmlSelection
+    private drawGrouperFacet(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): HtmlSelection
     {
-        this.drawTitleElement(containerSelection, name);
+        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
 
         const grouperDiv = containerSelection.append('div')
             .classed('locationListGrouper', true);
@@ -295,16 +287,24 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return grouperDiv;
     }
 
-    private drawTitleElement(containerSelection: HtmlSelection, name: string): void
+    private drawTitleElement(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): void
     {
+        const topPos = (verticalPosition - 1) * 19;
+
+        let styleString = `top: ${topPos}px;`;
+        if (zIndex > 0)
+        {
+            styleString += ` z-index: ${zIndex};`;
+        }
         containerSelection.append('div')
             .text(name)
-            .classed('locationListCatTitle', true);
+            .classed('locationListCatTitle', true)
+            .attr('style', styleString);
     }
 
-    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList): void
+    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList, verticalPosition: number, zIndex: number): void
     {
-        this.drawTitleElement(containerSelection, name);
+        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
         // this.locationListContainer.append('div')
         //     .text(name)
         //     .classed('locationListCatTitle', true);

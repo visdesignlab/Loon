@@ -67,7 +67,7 @@ export class GroupByWidget
         this._groupByInnerConainerIdList = [];
         this.groupByInnerConainerIdList.push(this.innerComponentId + '0');
         this.groupByInnerConainerIdList.push(this.innerComponentId + '1');
-        this.groupByInnerConainerIdList.push(this.innerComponentId + '2');
+        // this.groupByInnerConainerIdList.push(this.innerComponentId + '2');
         
         this._groupByOuterContainerList = this.mainContainer.selectAll<HTMLElement, any>('.groupByElementContainer')
             .data(this.groupByInnerConainerIdList)
