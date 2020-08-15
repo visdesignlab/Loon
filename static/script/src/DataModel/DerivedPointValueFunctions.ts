@@ -5,8 +5,8 @@ export class DerivedPointValueFunctions
     public static GetFunctionList(): [string[], PointDerivationFunction][]
     {
         let functionList = [];
-        functionList.push([['Mass_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Mass', pointList, false)]);
-        functionList.push([['Time_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Time', pointList)]);
+        functionList.push([['Mass_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Mass (pg)', pointList, false)]);
+        functionList.push([['Time_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Time (h)', pointList)]);
         return functionList;
     }
 

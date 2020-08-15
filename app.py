@@ -224,48 +224,110 @@ def getMassOverTimeCsv(folderId: str) -> str:
 
     # generate data
     data_allframes = getData_AllFrames(folderId)
+    colHeaders = getColTracksHeader(folderId, data_allframes)
+    if colHeaders is None:
+        colHeaderString = 'X,Y,Mass (pg),Time (h),id,Mean Value,Shape Factor,Location ID,Frame ID,xShift,yShift,segmentLabel'
+        timeIndex = 3
+        idIndex = 4
+    else:
+        colHeaders = [x[0] for x in colHeaders[0]]
+        timeIndex = colHeaders.index('Time (h)')
+        idIndex = colHeaders.index('id')
+        colHeaderString = ','.join(colHeaders)
 
     massOverTime = getMassOverTimeArray(folderId, data_allframes)
+
     if massOverTime is None:
         raise Exception('Cannot find massOverTime')
-    timeArray = getTimeIndexArray(folderId, data_allframes)
-    if timeArray is None:
-        raise Exception('Cannot find timeArray')
-    locationArray = getLocationArray(folderId, data_allframes)
-    frameArray = getFrameArray(folderId, data_allframes)
-    xShiftArray = getXShiftArray(folderId, data_allframes)
-    yShiftArray = getYShiftArray(folderId, data_allframes)
-    timeToIndex = {}
-    uniqueLocationList = set()
-    for index, time in enumerate(timeArray):
-        # weird [0] indexing here is a result of weird
-        # array structure that has nested arrays at 
-        # surprising places
-        time = time[0]
-        locId = locationArray[0][index]
-        uniqueLocationList.add(locId)
-        frameId = frameArray[index, 0]
-        xShift = xShiftArray[index][0]
-        yShift = yShiftArray[index][0]
-        timeToIndex[time] = (locId, frameId, xShift, yShift)
 
-    uniqueLocationList = list(uniqueLocationList)
-    uniqueLocationList.sort()
-    labelLookup = buildLabelLookup(folderId, massOverTime, timeToIndex, uniqueLocationList)
+    locIncluded =  'Location ID' in colHeaders
+    frameIncluded = 'Frame ID' in colHeaders
+    xShiftIncluded = 'xShift' in colHeaders
+    yShiftIncluded = 'yShift' in colHeaders
+    segLabelIncluded = 'segmentLabel' in colHeaders
+    allIncluded = locIncluded and frameIncluded and xShiftIncluded and yShiftIncluded and segLabelIncluded
 
-    returnStr = 'X,Y,Mass,Time,id,Mean Value,Shape Factor,Location ID,Frame ID,xShift,yShift,segmentLabel\n'
+    if not allIncluded:
+        timeArray = getTimeIndexArray(folderId, data_allframes)
+        if timeArray is None:
+            raise Exception('Cannot find timeArray')
+
+    if not locIncluded:
+        locationArray = getLocationArray(folderId, data_allframes)
+        if colHeaderString is not None:
+            colHeaderString += ',' + 'Location ID'
+    if not frameIncluded:
+        frameArray = getFrameArray(folderId, data_allframes)
+        if colHeaderString is not None:
+            colHeaderString += ',' + 'Frame ID'
+    if not xShiftIncluded:
+        xShiftArray = getXShiftArray(folderId, data_allframes)
+        if colHeaderString is not None:
+            colHeaderString += ',' + 'xShift'
+    if not yShiftIncluded:
+        yShiftArray = getYShiftArray(folderId, data_allframes)
+        if colHeaderString is not None:
+            colHeaderString += ',' + 'yShift'
+    if not segLabelIncluded and colHeaders is not None:
+        colHeaderString += ',' + 'segmentLabel'
+    
+    if not allIncluded:
+        timeToIndex = {}
+        uniqueLocationList = set()
+        for index, time in enumerate(timeArray):
+            # weird [0] indexing here is a result of weird
+            # array structure that has nested arrays at 
+            # surprising places
+            time = time[0]
+            if not locIncluded:
+                locId = locationArray[0][index]
+                uniqueLocationList.add(locId)
+            else:
+                locId = None
+            if not frameIncluded:
+                frameId = frameArray[index, 0]
+            else:
+                frameId = None
+
+            if not xShiftIncluded:
+                xShift = xShiftArray[index][0]
+            else:
+                xShift = None
+
+            if not yShiftIncluded:
+                yShift = yShiftArray[index][0]
+            else:
+                yShift = yShift = None
+            timeToIndex[time] = (locId, frameId, xShift, yShift)
+
+    if not segLabelIncluded:
+        uniqueLocationList = list(uniqueLocationList)
+        uniqueLocationList.sort()
+        labelLookup = buildLabelLookup(folderId, massOverTime, timeToIndex, uniqueLocationList)
+
+    returnStr = colHeaderString + '\n'
     for index, row in enumerate(massOverTime):
-        time = row[3]
-        locationId, frameId, xShift, yShift = timeToIndex[time]
-        # this corrects the xShift/yShift problem.
-        # row[0] += xShift
-        # row[1] += yShift
-        cellId = row[4]
-        label = labelLookup.get(cellId, {}).get(frameId, -1)
-        returnStr += ",".join(map(str, row))
-        returnStr += ',' + str(locationId) + ',' + str(frameId)
-        returnStr += ',' + str(xShift) + ',' + str(yShift)
-        returnStr += ',' + str(label)
+        returnStr += ','.join(map(str, row))
+        if not allIncluded:
+            time = row[timeIndex]
+            if not (locIncluded and frameIncluded and xShiftIncluded and yShiftIncluded):
+                locationId, frameId, xShift, yShift = timeToIndex[time]
+            # this corrects the xShift/yShift problem.
+            # row[0] += xShift
+            # row[1] += yShift
+            if not segLabelIncluded:
+                cellId = row[idIndex]
+                label = labelLookup.get(cellId, {}).get(frameId, -1)
+            if not locIncluded:
+                returnStr += ',' + str(locationId)
+            if not frameIncluded:
+                returnStr += ',' + str(frameId)
+            if not xShiftIncluded:
+                returnStr += ',' + str(xShift)
+            if not yShiftIncluded:
+                returnStr += ',' + str(yShift)
+            if not segLabelIncluded:
+                returnStr += ',' + str(label)
         returnStr += '\n'
 
     # cache file
@@ -362,6 +424,9 @@ def getClosestLabel(imgCenters: List[Tuple[float, float, int]], cellPos: Tuple[f
 def getData_AllFrames(folderId: str) -> Union[Dict, None]:
     return getMatlabObjectFromGoogleDrive(folderId, 'data_allframes.mat')
 
+def getColTracksHeader(folderId: str, matlabDict = None):
+    return getMatlabObjectFromKey(folderId, 'tracksColHeaders',  matlabDict)
+
 def getMassOverTimeArray(folderId: str, matlabDict = None):
     return getMatlabObjectFromKey(folderId, 'tracks',  matlabDict)
     
@@ -396,6 +461,8 @@ def getMatlabObjectFromGoogleDrive(folderId: str, filename: str, matlabKey: str 
     return matlabDict
 
 def getNormalizedMatlabObjectFromKey(matlabDict: Union[dict, h5py.File], key: str):
+    if key not in matlabDict:
+        return None
     if type(matlabDict) == dict:
         return matlabDict[key]
     # else it is an h5py file, which has to be transposed

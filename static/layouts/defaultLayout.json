@@ -37,12 +37,12 @@
 											"yKey": "Mass_norm",
 											"squareAspectRatio": false
 										}, {
-											"xKey": "Time",
+											"xKey": "Time (h)",
 											"yKey": "Mass_norm",
 											"squareAspectRatio": false
 										}, {
-											"xKey": "Time",
-											"yKey": "Mass",
+											"xKey": "Time (h)",
+											"yKey": "Mass (pg)",
 											"squareAspectRatio": false
 										}, {
 											"xKey": "X",
