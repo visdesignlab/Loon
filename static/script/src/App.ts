@@ -157,14 +157,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		{
 			if (component instanceof BaseWidget)
 			{
-				try
-				{
 					component.SetData(newData);
-				}
-				catch
-				{
-					console.error('failed to set data on component ' + component);
-				}
 			}
 		}
 	}

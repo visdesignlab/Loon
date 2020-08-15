@@ -240,11 +240,11 @@ def getMassOverTimeCsv(folderId: str) -> str:
     if massOverTime is None:
         raise Exception('Cannot find massOverTime')
 
-    locIncluded =  'Location ID' in colHeaders
-    frameIncluded = 'Frame ID' in colHeaders
-    xShiftIncluded = 'xShift' in colHeaders
-    yShiftIncluded = 'yShift' in colHeaders
-    segLabelIncluded = 'segmentLabel' in colHeaders
+    locIncluded =  colHeaders is not None and 'Location ID' in colHeaders
+    frameIncluded = colHeaders is not None and 'Frame ID' in colHeaders
+    xShiftIncluded = colHeaders is not None and 'xShift' in colHeaders
+    yShiftIncluded = colHeaders is not None and 'yShift' in colHeaders
+    segLabelIncluded = colHeaders is not None and 'segmentLabel' in colHeaders
     allIncluded = locIncluded and frameIncluded and xShiftIncluded and yShiftIncluded and segLabelIncluded
 
     if not allIncluded:
@@ -254,19 +254,19 @@ def getMassOverTimeCsv(folderId: str) -> str:
 
     if not locIncluded:
         locationArray = getLocationArray(folderId, data_allframes)
-        if colHeaderString is not None:
+        if colHeaders is not None:
             colHeaderString += ',' + 'Location ID'
     if not frameIncluded:
         frameArray = getFrameArray(folderId, data_allframes)
-        if colHeaderString is not None:
+        if colHeaders is not None:
             colHeaderString += ',' + 'Frame ID'
     if not xShiftIncluded:
         xShiftArray = getXShiftArray(folderId, data_allframes)
-        if colHeaderString is not None:
+        if colHeaders is not None:
             colHeaderString += ',' + 'xShift'
     if not yShiftIncluded:
         yShiftArray = getYShiftArray(folderId, data_allframes)
-        if colHeaderString is not None:
+        if colHeaders is not None:
             colHeaderString += ',' + 'yShift'
     if not segLabelIncluded and colHeaders is not None:
         colHeaderString += ',' + 'segmentLabel'
