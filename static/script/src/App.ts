@@ -144,7 +144,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 			// console.log(data);
 			let newData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
 			// console.log(newData);
-			this.SetData(newData)
+			this.SetData(newData);
 		});
 	}
 
@@ -157,7 +157,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		{
 			if (component instanceof BaseWidget)
 			{
-				component.SetData(newData);
+					component.SetData(newData);
 			}
 		}
 	}

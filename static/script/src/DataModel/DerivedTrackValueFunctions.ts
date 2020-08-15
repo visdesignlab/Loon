@@ -13,8 +13,8 @@ export class DerivedTrackValueFunctions
 
     private static trackLength(pointList: StringToNumberObj[]): [number]
     {
-        let firstTime = pointList[0]['Time'];
-        let lastTime = pointList[pointList.length - 1]['Time'];
+        let firstTime = pointList[0]['Time (h)'];
+        let lastTime = pointList[pointList.length - 1]['Time (h)'];
         return [lastTime - firstTime];
     }
 
@@ -23,7 +23,7 @@ export class DerivedTrackValueFunctions
         let totalMass = 0;
         for (let point of pointList)
         {
-            totalMass += point['Mass'];
+            totalMass += point['Mass (pg)'];
         }
         return [totalMass / pointList.length];
     }
@@ -44,8 +44,8 @@ export class DerivedTrackValueFunctions
         }
         for (let point of pointList)
         {
-            let x = point['Time'];
-            let y = point['Mass'];
+            let x = point['Time (h)'];
+            let y = point['Mass (pg)'];
             sumX += x;
             sumY += y;
             sumYY += y*y;
@@ -58,7 +58,7 @@ export class DerivedTrackValueFunctions
         let variance = sumXX - N_inv * sumX * sumX;
         let slope = covariance / variance;
         let intercept = N_inv * (sumY - slope * sumX);
-        let initialMass = pointList[0]['Time'] * slope + intercept;
+        let initialMass = pointList[0]['Time (h)'] * slope + intercept;
         let exponentialGrowthConstant = slope / initialMass;
 
         // r_squared equation from here
