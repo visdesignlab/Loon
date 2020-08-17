@@ -185,14 +185,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             let imgWidth: number;
             let imgHeight: number;
             let numCol: number;
+            let scaleFactor: number;
             if (imageMetaDataString)
             {
                 let imageMetaData = JSON.parse(imageMetaDataString);
                 imgWidth = imageMetaData['tileWidth'];
                 imgHeight = imageMetaData['tileHeight'];
                 numCol = imageMetaData['numberOfColumns'];
+                scaleFactor = imageMetaData['scaleFactor'];
             }
-            this.imageStackWidget.SetImageProperties(xhr.response, imgWidth, imgHeight, numCol);
+            this.imageStackWidget.SetImageProperties(xhr.response, imgWidth, imgHeight, numCol, scaleFactor);
         }
         xhr.open('GET', newUrl);
         xhr.send();

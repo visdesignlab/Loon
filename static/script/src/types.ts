@@ -84,7 +84,8 @@ export interface ImageStackMetaData
 	tileWidth: number,
 	tileHeight: number,
 	numberOfTiles: number,
-	numberOfColumns: number
+	numberOfColumns: number,
+	scaleFactor?: number
 }
 
 export type Rect = [[number, number], [number, number]];

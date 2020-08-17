@@ -473,6 +473,9 @@ def getNormalizedMatlabObjectFromKey(matlabDict: Union[dict, h5py.File], key: st
 def getImageStackMetaData(folderId: str, locationId: int) -> str:
     labeledImageStackArray = getLabeledImageStackArray(folderId, locationId, True)
 
+    S = 4
+    labeledImageStackArray = downSample(labeledImageStackArray, S)
+
     if labeledImageStackArray is None:
         fileObject = io.BytesIO()
         vals = array.array('B', [])
@@ -483,7 +486,7 @@ def getImageStackMetaData(folderId: str, locationId: int) -> str:
         return response
 
     labeledImageStackArray = labeledImageStackArray.astype(np.int32)
-    metaData = getTiledImageMetaData(labeledImageStackArray)
+    metaData = getTiledImageMetaData(labeledImageStackArray, S)
 
     fileObject = io.BytesIO()
     flatList = []
@@ -506,16 +509,20 @@ def getImageStackMetaData(folderId: str, locationId: int) -> str:
 @authRequired
 def getImageStack(folderId: str, locationId: int):
     imageStackArray = getImageStackArray(folderId, locationId)
-    
+    S = 4
+    imageStackArray = downSample(imageStackArray, S)
     shape = np.shape(imageStackArray)
     print("image stack shape = " + str(shape))
 
-    tiledImg, metaData = getTiledImage(imageStackArray, 'F')
+    tiledImg, metaData = getTiledImage(imageStackArray, 'F', False, False, S)
     fileObject = getImageFileObject(tiledImg, metaData)
 
     response = flask.send_file(fileObject, mimetype='image/png')
     response.headers['tiledImageMetaData'] = json.dumps(metaData)
     return response
+
+def downSample(imageStackArray, factor = 3):
+    return imageStackArray[::factor,::factor,:]
 
 def getImageStackArray(folderId: str, locationId: int):
     exampleDatasets = set(['1_adgXIOUOBkx3pplmVPW7k5Ddq0Jof96','1Xzov6WDJPV5V4LK56CQ7QIVTl_apy8dX'])
@@ -523,6 +530,11 @@ def getImageStackArray(folderId: str, locationId: int):
     if (folderId in exampleDatasets):
         filenamePattern = 'Copy of data{}.mat'
     imageFilename = filenamePattern.format(locationId)
+    # this is more for faster development
+    cachePath = './static/cache/' + folderId
+    filePath = cachePath + '/' + imageFilename
+    if os.path.exists(filePath):
+        return loadmat(filePath)['D_stored']
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'D_stored')
 
 def getLabeledImageStackArray(folderId: str, locationId: int, doNotAbort = False):
@@ -531,14 +543,19 @@ def getLabeledImageStackArray(folderId: str, locationId: int, doNotAbort = False
     if (folderId in exampleDatasets):
         filenamePattern = 'Copy of data{}.mat'
     imageFilename = filenamePattern.format(locationId)
+    # this is more for faster development
+    cachePath = './static/cache/' + folderId
+    filePath = cachePath + '/' + imageFilename
+    if os.path.exists(filePath):
+                return loadmat(filePath)['L_stored']
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'L_stored', doNotAbort)
 
 def getTiledImageFileObject(imageStackArray, imageType: str, colorize = False, getOutline = False) -> io.BytesIO:
     tiledImg, metaData = getTiledImage(imageStackArray, imageType, colorize, getOutline)
     return getImageFileObject(tiledImg, metaData)
 
-def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline = False) -> Tuple[any, Dict]:
-    tiledImgMetaData = getTiledImageMetaData(imageStackArray)
+def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline = False, scaleFactor = 1) -> Tuple[any, Dict]:
+    tiledImgMetaData = getTiledImageMetaData(imageStackArray, scaleFactor)
     smallW = tiledImgMetaData['tileWidth']
     smallH = tiledImgMetaData['tileHeight']
     numberOfColumns = tiledImgMetaData['numberOfColumns']
@@ -573,7 +590,7 @@ def getTiledImage(imageStackArray, imageType: str, colorize = False, getOutline 
 
     return bigImg, tiledImgMetaData
 
-def getTiledImageMetaData(imageStackArray) -> Dict:
+def getTiledImageMetaData(imageStackArray, scaleFactor) -> Dict:
     size = np.shape(imageStackArray)
     smallH, smallW, numImages = size
     numberOfColumns = 10
@@ -581,7 +598,8 @@ def getTiledImageMetaData(imageStackArray) -> Dict:
         'tileWidth': smallW,
         'tileHeight': smallH,
         'numberOfColumns': numberOfColumns,
-        'numberOfTiles': numImages
+        'numberOfTiles': numImages,
+        'scaleFactor': scaleFactor
     }
     return tiledImgMetaData
 

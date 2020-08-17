@@ -207,7 +207,7 @@ export class ImageStackWidget {
 		this.draw();
 	}
 
-	public SetImageProperties(blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number): void
+	public SetImageProperties(blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void
 	{
 		// default values for when loading, or if image isn't found
 		if (!imageWidth)  { imageWidth  = 256; }
@@ -226,6 +226,7 @@ export class ImageStackWidget {
 		this.imageStackMetaData.tileWidth = imageWidth;
 		this.imageStackMetaData.tileHeight = imageHeight;
 		this.imageStackMetaData.numberOfColumns = numColumns;
+		this.imageStackMetaData.scaleFactor = scaleFactor;
 		this._imageStackWidth = numColumns * imageWidth;
 		const numRows: number = Math.ceil(this.imageStackMetaData.numberOfTiles / numColumns);
 		this._imageStackHeight = numRows * imageHeight;
@@ -294,7 +295,8 @@ export class ImageStackWidget {
 
 	public getCurrentFrameId(): number
 	{
-		return this.imageLocation.frameList[this.selectedImgIndex].frameId;
+		return this.selectedImgIndex + 1;
+		// return this.imageLocation.frameList[this.selectedImgIndex].frameId;
 	}
 
 	private updateCanvas(skipImageTrackDraw = false): void
@@ -452,6 +454,11 @@ export class ImageStackWidget {
 			let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
 			cellX = cell.get('X') + cell.get('xShift');
 			cellY = cell.get('Y') + cell.get('yShift');
+			if (this.imageStackMetaData.scaleFactor)
+			{
+				cellX /= this.imageStackMetaData.scaleFactor;
+				cellY /= this.imageStackMetaData.scaleFactor;
+			}
 			pageX = canvasBoundRect.x + cellX;
 			pageY = canvasBoundRect.y + cellY;
 
