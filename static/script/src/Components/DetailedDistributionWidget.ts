@@ -447,9 +447,13 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
     public OnResize(): void
     {
         this.svgSelect
-            .attr("width", this.width)
-            .attr("height", this.height);
-            
+            .attr('width', this.width)
+            .attr('height', this.height);
+
+        d3.select(this.canvasElement)
+            .attr('width', this.vizWidth)
+            .attr('height', this.vizHeight - 2 * this.scatterplotPadding)
+  
         this.updateScales();
         this.draw();
     }

@@ -49,6 +49,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._mainGroupSelect;
 	}
 	
+	private _canvasContainer : SvgSelection;
+	public get canvasContainer() : SvgSelection {
+		return this._canvasContainer;
+	}	
+
 	private _canvasElement : HTMLCanvasElement;
 	public get canvasElement() : HTMLCanvasElement {
 		return this._canvasElement;
@@ -177,11 +182,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
-		this._canvasElement = this.mainGroupSelect
+		this._canvasContainer = this.mainGroupSelect
 			.append('foreignObject')
 				.attr('width', this.vizWidth)
-				.attr('height', this.vizHeight)
-			.append('xhtml:canvas')
+				.attr('height', this.vizHeight);
+
+		this._canvasElement = this.canvasContainer.append('xhtml:canvas')
 				.attr('width', this.vizWidth)
 				.attr('height', this.vizHeight)
 			.node() as HTMLCanvasElement;
@@ -415,7 +421,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		if (this.data)
 		{
 			this.svgSelect.attr('width', this.width);
-			this.svgSelect.attr('height', this.height);	
+			this.svgSelect.attr('height', this.height);
+			this.canvasContainer
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight);
+
+			d3.select(this.canvasElement)
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight);
+				
 			this.updateScales();
 			this.updatePaths();
 			this.positionLabels();
