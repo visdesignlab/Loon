@@ -373,17 +373,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.y((d) => { return this.scaleY(d.get(this.yKey)) })
 			.defined(d => d.inBrush);
 		
-		const canvasContex = this.canvasElement.getContext('2d');
-		canvasContex.clearRect(0,0, this.vizWidth, this.vizHeight);
-		canvasContex.strokeStyle = 'black';
-		canvasContex.lineWidth = 1;
-		canvasContex.globalAlpha = 0.25;
-		canvasContex.lineJoin = 'round';
+		const canvasContext = this.canvasElement.getContext('2d');
+		canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight);
+		canvasContext.strokeStyle = 'black';
+		canvasContext.lineWidth = 1;
+		canvasContext.globalAlpha = 0.25;
+		canvasContext.lineJoin = 'round';
 
 		for (let curve of this.data.curveList)
 		{
 			const path = new Path2D(line(curve.pointList));
-			canvasContex.stroke(path);
+			canvasContext.stroke(path);
 		}
 	}
 
