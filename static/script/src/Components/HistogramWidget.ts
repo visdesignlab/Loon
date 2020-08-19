@@ -261,7 +261,10 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			let penultimateBin = bins[bins.length - 2]
 			if (penultimateBin)
 			{
-				penultimateBin.push(...ultimateBin);
+				for (let point of ultimateBin)
+				{
+					penultimateBin.push(point);
+				}
 			}
 		}
 		return bins;
