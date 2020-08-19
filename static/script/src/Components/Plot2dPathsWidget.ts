@@ -48,6 +48,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
 	}
+	
+	private _canvasElement : HTMLCanvasElement;
+	public get canvasElement() : HTMLCanvasElement {
+		return this._canvasElement;
+	}
 
 	private _canBrush : boolean;
 	public get canBrush() : boolean {
@@ -171,6 +176,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._svgSelect = containerSelect.append("svg")
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
+		this._canvasElement = this.mainGroupSelect
+			.append('foreignObject')
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight)
+			.append('xhtml:canvas')
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight)
+			.node() as HTMLCanvasElement;
 
 		if (this.canBrush)
 		{
@@ -358,12 +372,19 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.x((d, i) => { return this.scaleX(d.get(this.xKey)) })
 			.y((d) => { return this.scaleY(d.get(this.yKey)) })
 			.defined(d => d.inBrush);
+		
+		const canvasContex = this.canvasElement.getContext('2d');
+		canvasContex.clearRect(0,0, this.vizWidth, this.vizHeight);
+		canvasContex.strokeStyle = 'black';
+		canvasContex.lineWidth = 1;
+		canvasContex.globalAlpha = 0.25;
+		canvasContex.lineJoin = 'round';
 
-		this.mainGroupSelect.selectAll("path")
-			.data(this.data.curveList)
-			.join("path")
-			.attr("d", d => line(d.pointList))
-			.classed("trajectoryPath", true);
+		for (let curve of this.data.curveList)
+		{
+			const path = new Path2D(line(curve.pointList));
+			canvasContex.stroke(path);
+		}
 	}
 
 	private drawAxis(): void
