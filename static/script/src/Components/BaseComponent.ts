@@ -54,9 +54,8 @@ export abstract class BaseComponent {
 
 	protected setWidthHeight(): void
 	{
-		let rect = this.container.getBoundingClientRect();
-		this._width = rect.width;
-		this._height = rect.height;
+		this._width = this.container.clientWidth;
+		this._height = this.container.clientHeight;
 	}
 
 	protected OnResize(): void

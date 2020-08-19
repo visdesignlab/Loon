@@ -48,6 +48,16 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
 	}
+	
+	private _canvasContainer : SvgSelection;
+	public get canvasContainer() : SvgSelection {
+		return this._canvasContainer;
+	}	
+
+	private _canvasElement : HTMLCanvasElement;
+	public get canvasElement() : HTMLCanvasElement {
+		return this._canvasElement;
+	}
 
 	private _canBrush : boolean;
 	public get canBrush() : boolean {
@@ -171,6 +181,16 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._svgSelect = containerSelect.append("svg")
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
+		this._canvasContainer = this.mainGroupSelect
+			.append('foreignObject')
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight);
+
+		this._canvasElement = this.canvasContainer.append('xhtml:canvas')
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight)
+			.node() as HTMLCanvasElement;
 
 		if (this.canBrush)
 		{
@@ -358,12 +378,19 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.x((d, i) => { return this.scaleX(d.get(this.xKey)) })
 			.y((d) => { return this.scaleY(d.get(this.yKey)) })
 			.defined(d => d.inBrush);
+		
+		const canvasContext = this.canvasElement.getContext('2d');
+		canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight);
+		canvasContext.strokeStyle = 'black';
+		canvasContext.lineWidth = 1;
+		canvasContext.globalAlpha = 0.25;
+		canvasContext.lineJoin = 'round';
 
-		this.mainGroupSelect.selectAll("path")
-			.data(this.data.curveList)
-			.join("path")
-			.attr("d", d => line(d.pointList))
-			.classed("trajectoryPath", true);
+		for (let curve of this.data.curveList)
+		{
+			const path = new Path2D(line(curve.pointList));
+			canvasContext.stroke(path);
+		}
 	}
 
 	private drawAxis(): void
@@ -394,7 +421,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		if (this.data)
 		{
 			this.svgSelect.attr('width', this.width);
-			this.svgSelect.attr('height', this.height);	
+			this.svgSelect.attr('height', this.height);
+			this.canvasContainer
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight);
+
+			d3.select(this.canvasElement)
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight);
+				
 			this.updateScales();
 			this.updatePaths();
 			this.positionLabels();

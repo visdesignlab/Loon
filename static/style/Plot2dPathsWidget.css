@@ -1,11 +1,3 @@
-.trajectoryPath {
-	stroke: black;
-	stroke-width: 1;
-	fill: none;
-	opacity: 0.25;
-}
-
-
 .quickPickContainer {
 	position: absolute;
 }

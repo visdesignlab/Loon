@@ -165,10 +165,3 @@
     width: 224px;
     position: relative;
 }
-
-
-.scatterPoint {
-    fill: #282828;
-    r: .5;
-    stroke: none;
-}

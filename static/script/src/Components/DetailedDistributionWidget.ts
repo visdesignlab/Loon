@@ -73,6 +73,11 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 		return this._mainGroupSelect;
     }
 
+	private _canvasElement : HTMLCanvasElement;
+	public get canvasElement() : HTMLCanvasElement {
+		return this._canvasElement;
+	}
+    
     private _totalBoxplotContainerSelect : SvgSelection;
     public get totalBoxplotContainerSelect() : SvgSelection {
         return this._totalBoxplotContainerSelect;
@@ -149,19 +154,34 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 
     public init(): void
     {
-        this._svgSelect = d3.select(this.container).append("svg")
+        this._scatterplotPadding = 8;
+        const containerSelect = d3.select(this.container);
+        this._canvasElement = containerSelect
+            .append('xhtml:canvas')
+                .attr('width', this.vizWidth)
+                .attr('height', this.vizHeight - 2 * this.scatterplotPadding)
+                .attr('style',
+                `position: absolute;
+                transform: translate(${this.margin.left}px, ${this.margin.top + this.scatterplotPadding}px);
+                z-index: -1`)
+            .node() as HTMLCanvasElement;
+        
+        // I originally put the canvas inside the svg in a foreignObject. This didn't work because
+        // of Chrome bug 148499
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=148499
+
+        this._svgSelect = containerSelect.append("svg")
             .attr("width", this.width)
             .attr("height", this.height);
 
-        this._boxplotStatsPopupSelect = d3.select(this.container).append('div')
+        this._boxplotStatsPopupSelect = containerSelect.append('div')
             .classed('boxplotStatsPopup', true);
 
         this.hideBoxplotStatsPopup();
 
-        this._scatterplotPadding = 8;
         this._mainGroupSelect = this.svgSelect.append("g")
             .attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.scatterplotPadding})`);
-            
+
         this._totalBoxplotContainerSelect = this.svgSelect.append('g')
             .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
@@ -291,13 +311,20 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         let validPoints = this.pointCollection.Array.filter(d => !isNaN(d.get(this.attributeKey)));
 
         // draw jittered scatterplot
-        this.mainGroupSelect.selectAll('circle')
-            .data<NDim>(validPoints)
-          .join('circle')
-            .attr('cx', d => this.scaleX(d.get(this.attributeKey)))
-            .attr('cy', (d, i) => this.scaleY(this.randomNoiseList[i]))
-            .classed('detailedPoint', true)
-            .classed('noDisp', d => !d.inBrush);
+        const canvasContext = this.canvasElement.getContext('2d');
+        canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight - 2 * this.scatterplotPadding);
+        canvasContext.fillStyle = 'black';
+        canvasContext.globalAlpha = 0.6;
+        for (let i = 0; i < validPoints.length; i++)
+        {
+            let point = validPoints[i];
+            let x = this.scaleX(point.get(this.attributeKey));
+            let y = this.scaleY(this.randomNoiseList[i]);
+            canvasContext.beginPath();
+            const radius = 0.5;
+            canvasContext.arc(x, y, radius, 0, 2 * Math.PI);
+            canvasContext.fill();
+        }
 
         if (this.data.brushApplied)
         {
@@ -420,9 +447,13 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
     public OnResize(): void
     {
         this.svgSelect
-            .attr("width", this.width)
-            .attr("height", this.height);
-            
+            .attr('width', this.width)
+            .attr('height', this.height);
+
+        d3.select(this.canvasElement)
+            .attr('width', this.vizWidth)
+            .attr('height', this.vizHeight - 2 * this.scatterplotPadding)
+  
         this.updateScales();
         this.draw();
     }
