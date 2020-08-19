@@ -47,6 +47,11 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		return this._mainGroupSelect;
 	}
 
+	private _canvasElement : HTMLCanvasElement;
+	public get canvasElement() : HTMLCanvasElement {
+		return this._canvasElement;
+	}
+
 	private _canBrush : boolean;
 	public get canBrush() : boolean {
 		return this._canBrush;
@@ -117,6 +122,15 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 		
+		this._canvasElement = this.mainGroupSelect
+			.append('foreignObject')
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight)
+			.append('xhtml:canvas')
+				.attr('width', this.vizWidth)
+				.attr('height', this.vizHeight)
+			.node() as HTMLCanvasElement;
+
 		if (this.canBrush)
 		{
 			this._brushGroupSelect = this.svgSelect.append("g")
@@ -172,15 +186,33 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 	public OnDataChange()
 	{
 		this.updateScales();
-		this.mainGroupSelect.selectAll("circle")
-			.data<NDim>(this.data.Array)
-		  .join("circle")
-			.attr("cx", d => this.scaleX(d.get(this.xKey)))
-			.attr("cy", d => this.scaleY(d.get(this.yKey)))
-			.classed("scatterPoint", true)
-			.classed("noDisp", d => !d.inBrush);
-
+		this.drawPoints();
 		this.drawAxis();
+	}
+
+	private drawPoints(): void
+	{
+		let validPoints = this.data.Array.filter((point: NDim) => 
+			{
+
+				return !isNaN(point.get(this.xKey))
+					&& !isNaN(point.get(this.yKey))
+					&& point.inBrush;
+			});
+
+		const canvasContext = this.canvasElement.getContext('2d');
+		canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight);
+        canvasContext.fillStyle = 'black';
+		for (let i = 0; i < validPoints.length; i++)
+		{
+			let point = validPoints[i];
+			let x = this.scaleX(point.get(this.xKey));
+			let y = this.scaleY(point.get(this.yKey));
+			canvasContext.beginPath();
+			const radius = 0.5;
+			canvasContext.arc(x, y, radius, 0, 2 * Math.PI);
+			canvasContext.fill();
+		}
 	}
 
 	protected drawFacetedData(facetOptionIndexList: number[]): void
@@ -250,10 +282,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		}
 
 		// hide dynamically
-		this.mainGroupSelect.selectAll("circle")
-			.data<NDim>(this.data.Array)
-		  .join("circle")
-			.classed("noDisp", d => !d.inBrush);
+		this.drawPoints();
 	}
 
 }

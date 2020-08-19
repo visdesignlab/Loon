@@ -315,7 +315,6 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight - 2 * this.scatterplotPadding);
         canvasContext.fillStyle = 'black';
         canvasContext.globalAlpha = 0.6;
-        canvasContext.lineJoin = 'round';
         for (let i = 0; i < validPoints.length; i++)
         {
             let point = validPoints[i];
