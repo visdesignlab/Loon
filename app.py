@@ -214,13 +214,39 @@ def combineDatasetSpecs(fileContentList: List[Tuple[str, str]]) -> str:
     totalDatset['datasetList'] = combinedList
     return json.dumps(totalDatset, indent=4)
 
+
+
+def isCached(folderId: str, filename: str) -> bool:
+    return os.path.exists(cachePath(folderId, filename))
+
+def cachePath(folderId: str, filename: str) -> str:
+    cachePath = './static/cache/' + folderId
+    return cachePath + '/' + filename
+
+def getCached(folderId: str, filename: str): # -> flask.Response:
+    filePath = cachePath(folderId, filename)
+    return flask.redirect(filePath[1:]) # don't want '.' here
+
+def cache(folderId: str, filename: str, data, isBinary = False) -> None:
+    folderPath = './static/cache/' + folderId
+
+    # cache file
+    if not os.path.exists(folderPath):
+        os.mkdir(folderPath)
+    mode = 'w'
+    if isBinary:
+        mode += 'b'
+    cache = open(folderPath + '/' + filename, mode)
+    cache.write(data)
+    cache.close()
+    return
+
 @app.route('/data/<string:folderId>/massOverTime.csv')
 @authRequired
-def getMassOverTimeCsv(folderId: str) -> str:
-    cachePath = './static/cache/' + folderId
-    filePath = cachePath + '/' + 'massOverTime.csv'
-    if os.path.exists(filePath):
-        return flask.redirect(filePath[1:]) # don't want '.' here
+def getMassOverTimeCsv(folderId: str): # -> flask.Response:
+    filename = 'massOverTime.csv'
+    if isCached(folderId, filename):
+        return getCached(folderId, filename)
 
     # generate data
     data_allframes = getData_AllFrames(folderId)
@@ -330,12 +356,7 @@ def getMassOverTimeCsv(folderId: str) -> str:
                 returnStr += ',' + str(label)
         returnStr += '\n'
 
-    # cache file
-    if not os.path.exists(cachePath):
-        os.mkdir(cachePath)
-    cache = open(cachePath + '/' + 'massOverTime.csv', 'w')
-    cache.write(returnStr)
-    cache.close()
+    cache(folderId, 'massOverTime.csv', returnStr)
     return returnStr
 
 def buildLabelLookup(folderId: str, massOverTime: Dict, timeToIndex: Dict, locationArray: List) -> Dict:
@@ -547,7 +568,7 @@ def getLabeledImageStackArray(folderId: str, locationId: int, doNotAbort = False
     cachePath = './static/cache/' + folderId
     filePath = cachePath + '/' + imageFilename
     if os.path.exists(filePath):
-                return loadmat(filePath)['L_stored']
+        return loadmat(filePath)['L_stored']
     return getMatlabObjectFromGoogleDrive(folderId, imageFilename, 'L_stored', doNotAbort)
 
 def getTiledImageFileObject(imageStackArray, imageType: str, colorize = False, getOutline = False) -> io.BytesIO:
