@@ -390,6 +390,7 @@ export class ImageTrackWidget
                     }
                     resolve();
                     this.drawOutlines(sourceDestCell);
+                    webWorker.terminate();
                 }
             });
 
