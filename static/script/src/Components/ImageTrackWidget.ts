@@ -7,7 +7,7 @@ import { extent, linkVertical, max, VoronoiEdge } from 'd3';
 import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
-import { ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
+import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
 
 export class ImageTrackWidget
 {
@@ -560,14 +560,20 @@ export class ImageTrackWidget
         let xPos = e.offsetX;
         let yPos = e.offsetY;
         const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
+        // console.log(frameId);
         const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
+        // console.log(cellId);
 
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
         this.parentWidget.selectedImgIndex;
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
         let point = curve.pointList.find(point => point.get('Frame ID') === displayedFrameId);
         // todo
-        // this.parentWidget.showSegmentHover(point.get('segmentLabel'), true);
+        this.parentWidget.imageStackDataRequest.getLabel(point.get('Location ID'), point.get('Frame ID') - 1,
+            (rowArray: ImageLabels, firstIndex: number) =>
+            {
+                this.parentWidget.showSegmentHover(rowArray, point.get('segmentLabel'), firstIndex, true);
+            });
         this.parentWidget.brightenCanvas();
         this.updateLabelsOnMouseMove(cellId, frameId.toString());
         const locId = this.parentWidget.getCurrentLocationId();
@@ -599,6 +605,11 @@ export class ImageTrackWidget
     {
         let compareFunction = DevlibAlgo.compareProperty<[string, number]>(pos, labelPos =>  labelPos[1]);
         let indices = DevlibAlgo.BinarySearchIndex(labelPositions, compareFunction);
+        if (typeof indices === 'undefined')
+        {
+            console.log(pos);
+            return '-1'; // todo
+        }
         let labelIndex: number;
         if (typeof indices === 'number')
         {
