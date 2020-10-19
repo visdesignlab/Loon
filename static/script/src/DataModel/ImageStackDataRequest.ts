@@ -124,10 +124,10 @@ export class ImageStackDataRequest
         let cachedElement = this.blobArray.find(d => d[1] === key);
         if (cachedElement)
         {
-            this.runWithCached(key, top, left, callback);
+            this.runWithCachedImage(key, top, left, callback);
             return;
         }
-        
+        console.time(key);
         const imgUrl = `/data/${this.driveId}/img_${location}_${bundleIndex}.jpg`;
         const thisIndex = this.nextBlobIndex;
         this.blobArray[thisIndex] = [null, key, null];
@@ -141,13 +141,14 @@ export class ImageStackDataRequest
             let url = window.URL.createObjectURL(blob);
             this.blobArray[thisIndex] = [blob, key, url];
             callback(top, left, blob, url);
+            console.timeEnd(key);
         }
         xhr.open('GET', imgUrl);
         xhr.send();
         return;
     }
 
-    private runWithCached(key: string, top: number, left: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): void
+    private runWithCachedImage(key: string, top: number, left: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): void
     {
         let cachedElement = this.blobArray.find(d => d[1] === key);
         if (cachedElement[0])
@@ -158,7 +159,7 @@ export class ImageStackDataRequest
         {
             // loading, try again later
             setTimeout(() => {
-                this.runWithCached(key, top, left, callback);
+                this.runWithCachedImage(key, top, left, callback);
             }, 50);
         }
     }
@@ -201,10 +202,14 @@ export class ImageStackDataRequest
         if (cachedElement)
         {
             // todo - similar runWithCached logic
-            callback(cachedElement[0], firstIndex);
+            this.runWithCachedLabel(key, firstIndex, callback);
             return;
         }
         
+        const thisIndex = this.nextLabelIndex;
+        this._nextLabelIndex = (this.nextLabelIndex + 1) % this.maxBlobCount;
+        this.labelArray[thisIndex] = [null, key];
+
         const labelUrl = `/data/${this.driveId}/label_${location}_${bundleIndex}.pb`;
         load("/static/cache/test/RLE.proto", async (err, root) => {
             if (err)
@@ -217,13 +222,28 @@ export class ImageStackDataRequest
             // Decode an Uint8Array (browser) or Buffer (node) to a message
             let message = ImageLabelsMessage.decode(new Uint8Array(buffer)) as any;
 
-            this.labelArray[this.nextLabelIndex] = [message, key];
-            this._nextLabelIndex = (this.nextLabelIndex + 1) % this.maxBlobCount;
+            this.labelArray[thisIndex] = [message, key];
             console.log(message);
             callback(message, firstIndex);
         });
 
         return;
+    }
+
+    private runWithCachedLabel(key: string, firstIndex: number, callback: (rowData: ImageLabels, firstIndex: number) => void): void
+    {
+        let cachedElement = this.labelArray.find(d => d[1] === key);
+        if (cachedElement[0])
+        {
+            callback(cachedElement[0], firstIndex);
+        }
+        else
+        {
+            // loading, try again later
+            setTimeout(() => {
+                this.runWithCachedLabel(key, firstIndex, callback);
+            }, 50);
+        }
     }
 
     public getLabelPromise(location: number, frameIndex: number): Promise<[ImageLabels, number]>
