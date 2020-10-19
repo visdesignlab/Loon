@@ -299,17 +299,18 @@ export class ImageStackWidget {
 				this.drawDefaultCanvas();
 			});
 
-		// let locId = this.imageLocation.locationId;
-		// const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
-		// if (!skipImageTrackDraw)
-		// {
-		// 	let curveList: CurveND[] = [];
-		// 	for (let point of pointsAtFrame)
-		// 	{
-		// 		curveList.push(point.parent);
-		// 	}
-		// 	this.imageTrackWidget.draw(curveList);
-		// }
+		// todo - get image track widget working again :)
+		let locId = this.imageLocation.locationId;
+		const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
+		if (!skipImageTrackDraw)
+		{
+			let curveList: CurveND[] = [];
+			for (let point of pointsAtFrame)
+			{
+				curveList.push(point.parent);
+			}
+			this.imageTrackWidget.draw(curveList);
+		}
 	}
 
 	private createOutlineImage(rowArray: ImageLabels, firstIndex: number): void
@@ -541,12 +542,12 @@ export class ImageStackWidget {
 		this.tooltip.Show(tooltipContent, pageX, pageY, delayOverride);
 	}
 
-	public  getTilePixelXYFromLabelIndex(tileStartIndex: number, labelIndex: number): [number, number]
-	{
-		let imgX = (labelIndex - tileStartIndex) % this.imageStackDataRequest?.tileWidth;
-		let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackDataRequest?.tileWidth);
-		return [imgX, imgY];
-	}
+	// public  getTilePixelXYFromLabelIndex(tileStartIndex: number, labelIndex: number): [number, number]
+	// {
+	// 	let imgX = (labelIndex - tileStartIndex) % this.imageStackDataRequest?.tileWidth;
+	// 	let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackDataRequest?.tileWidth);
+	// 	return [imgX, imgY];
+	// }
 
 	public getLabelIndexFromBigImgPixelXY(x: number, y: number): number
 	{

@@ -124,11 +124,14 @@ export class ImageStackDataRequest
         let cachedElement = this.blobArray.find(d => d[1] === key);
         if (cachedElement)
         {
-            callback(top, left, cachedElement[0], cachedElement[2]);
+            this.runWithCached(key, top, left, callback);
             return;
         }
         
         const imgUrl = `/data/${this.driveId}/img_${location}_${bundleIndex}.jpg`;
+        const thisIndex = this.nextBlobIndex;
+        this.blobArray[thisIndex] = [null, key, null];
+        this._nextBlobIndex = (this.nextBlobIndex + 1) % this.maxBlobCount;
 
         let xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
@@ -136,8 +139,7 @@ export class ImageStackDataRequest
         {
             let blob = xhr.response;
             let url = window.URL.createObjectURL(blob);
-            this.blobArray[this.nextBlobIndex] = [blob, key, url];
-            this._nextBlobIndex = (this.nextBlobIndex + 1) % this.maxBlobCount;
+            this.blobArray[thisIndex] = [blob, key, url];
             callback(top, left, blob, url);
         }
         xhr.open('GET', imgUrl);
@@ -145,11 +147,38 @@ export class ImageStackDataRequest
         return;
     }
 
+    private runWithCached(key: string, top: number, left: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): void
+    {
+        let cachedElement = this.blobArray.find(d => d[1] === key);
+        if (cachedElement[0])
+        {
+            callback(top, left, cachedElement[0], cachedElement[2]);
+        }
+        else
+        {
+            // loading, try again later
+            setTimeout(() => {
+                this.runWithCached(key, top, left, callback);
+            }, 50);
+        }
+    }
 
-    public getTileTopLeft(frame: number): [number, number]
+    public getImagePromise(location: number, frameIndex: number): Promise<[number, number, Blob, string]>
+    {
+        return new Promise((resolve, reject) =>
+        {
+            this.getImage(location, frameIndex, (top: number, left: number, blob: Blob, imageUrl: string) =>
+            {
+                resolve([top, left, blob, imageUrl]);
+            })
+        });
+    }
+
+
+    public getTileTopLeft(frameIndex: number): [number, number]
 	{
-		const left: number = (frame % this.numberOfColumns) * this.tileWidth;
-        let top: number = Math.floor((frame % this.tilesPerFile) / this.numberOfColumns) * this.tileHeight;
+		const left: number = (frameIndex % this.numberOfColumns) * this.tileWidth;
+        let top: number = Math.floor((frameIndex % this.tilesPerFile) / this.numberOfColumns) * this.tileHeight;
 		return [top, left];
     }
     
@@ -160,7 +189,7 @@ export class ImageStackDataRequest
             setTimeout(() =>
             {
                 this.getLabel(location, frameIndex, callback)
-            }, 250); // todo fallback
+            }, 50); // todo fallback
             return;
         }
         // let [top, left] = this.getTileTopLeft(frameIndex);
@@ -171,6 +200,7 @@ export class ImageStackDataRequest
         let cachedElement = this.labelArray.find(d => d[1] === key);
         if (cachedElement)
         {
+            // todo - similar runWithCached logic
             callback(cachedElement[0], firstIndex);
             return;
         }
@@ -196,6 +226,17 @@ export class ImageStackDataRequest
         return;
     }
 
+    public getLabelPromise(location: number, frameIndex: number): Promise<[ImageLabels, number]>
+    {
+        return new Promise((resolve, reject) =>
+        {
+            this.getLabel(location, frameIndex, (rowData: ImageLabels, firstIndex: number) =>
+            {
+                resolve([rowData, firstIndex]);
+            })
+        });
+    }
+
     public static getLabelValue(rowIdx: number, colIdx: number, rowArray: ImageLabels): number
     {
         // if this is a bottleneck, this could be improved with quicksearch.
@@ -209,6 +250,15 @@ export class ImageStackDataRequest
         }
         return 0;
     }
+
+    // public getTilePixelXXYFromLabelRun(frameIndex: number, labelRun: LabelRun, rowArray: ImageLabels): [number, number, number]
+    // {
+    //     let [top, left] = this.getTileTopLeft(frameIndex);
+    //     return [left + labelRun.start, left + labelRun.start + labelRun.length, top + rowIdx];
+    //     // let imgX = (labelIndex - tileStartIndex) % this.imageStackDataRequest?.tileWidth;
+	// 	// let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackDataRequest?.tileWidth);
+	// 	// return [imgX, imgY];
+    // }
 
         /**
          * --- Meta Data --- 
