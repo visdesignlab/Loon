@@ -1,4 +1,25 @@
 import * as d3 from 'd3';
+import { load } from "protobufjs";
+
+
+
+export interface ImageLabels
+{
+    rowList: Row[]
+}
+
+export interface Row
+{
+    row: LabelRun[]
+}
+
+export interface LabelRun {
+    start: number,
+    length: number,
+    label: number
+}
+
+
 export class ImageStackDataRequest
 {
     public constructor(driveId: string)
@@ -14,8 +35,11 @@ export class ImageStackDataRequest
             this._metaDataLoaded = true;
         });
         this._blobArray= [];
+        this._labelArray= [];
         this._maxBlobCount = 10;
-        this._nextIndex = 0;
+        this._nextBlobIndex = 0;
+        this._nextLabelIndex = 0;
+        this._maxLabelCount = 10;
     }
     
     
@@ -54,31 +78,47 @@ export class ImageStackDataRequest
         return this._maxBlobCount;
     }
 
+    private _maxLabelCount : number;
+    public get maxLabelCount() : number {
+        return this._maxLabelCount;
+    }
+
     // blob, key, url
     private _blobArray : [Blob, string, string][];
     public get blobArray() : [Blob, string, string][] {
         return this._blobArray;
     }
 
-    private _nextIndex : number;
-    public get nextIndex() : number {
-        return this._nextIndex;
+    private _nextBlobIndex : number;
+    public get nextBlobIndex() : number {
+        return this._nextBlobIndex;
     }
 
+    // rows, key
+    private _labelArray : [ImageLabels, string][];
+    public get labelArray() : [ImageLabels, string][] {
+        return this._labelArray;
+    }
+
+    private _nextLabelIndex : number;
+    public get nextLabelIndex() : number {
+        return this._nextLabelIndex;
+    }
+
+
 ; 
-    public getImage(location: number, frame: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): void
+    public getImage(location: number, frameIndex: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): void
     {
-        // todo handle if metadata is not loaded. Maybe fallback timeout.
         if (!this.metaDataLoaded)
         {
             setTimeout(() =>
             {
-                this.getImage(location, frame, callback)
+                this.getImage(location, frameIndex, callback)
             }, 50); // todo fallback
             return;
         }
-        let [top, left] = this.getTileTopLeft(frame);
-        let bundleIndex = Math.floor(frame / this.tilesPerFile);
+        let [top, left] = this.getTileTopLeft(frameIndex);
+        let bundleIndex = Math.floor(frameIndex / this.tilesPerFile);
         let key = [location, bundleIndex].join('-');
         
         let cachedElement = this.blobArray.find(d => d[1] === key);
@@ -96,8 +136,8 @@ export class ImageStackDataRequest
         {
             let blob = xhr.response;
             let url = window.URL.createObjectURL(blob);
-            this.blobArray[this.nextIndex] = [blob, key, url];
-            this._nextIndex = (this.nextIndex + 1) % this.maxBlobCount;
+            this.blobArray[this.nextBlobIndex] = [blob, key, url];
+            this._nextBlobIndex = (this.nextBlobIndex + 1) % this.maxBlobCount;
             callback(top, left, blob, url);
         }
         xhr.open('GET', imgUrl);
@@ -111,7 +151,50 @@ export class ImageStackDataRequest
 		const left: number = (frame % this.numberOfColumns) * this.tileWidth;
         let top: number = Math.floor((frame % this.tilesPerFile) / this.numberOfColumns) * this.tileHeight;
 		return [top, left];
-	}
+    }
+    
+    public getLabel(location: number, frameIndex: number, callback: (rowData: ImageLabels, firstIndex: number) => void): void
+    {
+        if (!this.metaDataLoaded)
+        {
+            setTimeout(() =>
+            {
+                this.getLabel(location, frameIndex, callback)
+            }, 250); // todo fallback
+            return;
+        }
+        // let [top, left] = this.getTileTopLeft(frameIndex);
+        let firstIndex: number = (frameIndex % this.tilesPerFile) * this.tileHeight;
+        let bundleIndex = Math.floor(frameIndex / this.tilesPerFile);
+        let key = [location, bundleIndex].join('-');
+        
+        let cachedElement = this.labelArray.find(d => d[1] === key);
+        if (cachedElement)
+        {
+            callback(cachedElement[0], firstIndex);
+            return;
+        }
+        
+        const labelUrl = `/data/${this.driveId}/label_${location}_${bundleIndex}.pb`;
+        load("/static/cache/test/RLE.proto", async (err, root) => {
+            if (err)
+            {
+                throw err;
+            }
+            // Obtain a message type
+            let ImageLabelsMessage = root.lookupType("imageLabels.ImageLabels");
+            let buffer = await d3.buffer(labelUrl);
+            // Decode an Uint8Array (browser) or Buffer (node) to a message
+            let message = ImageLabelsMessage.decode(new Uint8Array(buffer)) as any;
+
+            this.labelArray[this.nextLabelIndex] = [message, key];
+            this._nextLabelIndex = (this.nextLabelIndex + 1) % this.maxBlobCount;
+            console.log(message);
+            callback(message, firstIndex);
+        });
+
+        return;
+    }
 
         /**
          * --- Meta Data --- 

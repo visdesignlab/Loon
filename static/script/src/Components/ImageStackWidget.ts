@@ -7,7 +7,7 @@ import { RichTooltip } from '../Components/RichTooltip';
 import { ImageStackMetaData } from '../types';
 import { ImageTrackWidget } from './ImageTrackWidget';
 import { CurveND } from '../DataModel/CurveND';
-import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
+import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
 
 export class ImageStackWidget {
 	
@@ -24,7 +24,7 @@ export class ImageStackWidget {
 		// 	numberOfTiles: 0,
 		// 	numberOfColumns: 0
 		// };
-		this._labelArray = null;
+		// this._labelArray = null;
 		this._cellHovered = 0;
 		this._selectedImgIndex = 0;
 		console.log(d3);
@@ -130,10 +130,10 @@ export class ImageStackWidget {
 		return this._imageStackDataRequest;
 	}
 	
-	private _labelArray : Int8Array;
-	public get labelArray() : Int8Array {
-		return this._labelArray;
-	}
+	// private _labelArray : Int8Array;
+	// public get labelArray() : Int8Array {
+	// 	return this._labelArray;
+	// }
 
 	private _defaultCanvasState : ImageData;
 	public get defaultCanvasState() : ImageData {
@@ -240,28 +240,28 @@ export class ImageStackWidget {
 		this.draw();
 	}
 
-	public SetLabelUrl(labelUrl?: string): void
-	{
-		this._imageStackLabelUrl = labelUrl;
-		this._labelArray = null;
-		this.updateCanvas();
-		if (!labelUrl)
-		{
-			return
-		}
-		d3.buffer(this.imageStackLabelUrl).then((data: ArrayBuffer) =>
-		{
-			if (data.byteLength === 0)
-			{
-				this._labelArray = null;
-			}
-			else
-			{
-				this._labelArray = new Int8Array(data);
-			}
-			this.updateCanvas();
-		});
-	}
+	// public SetLabelUrl(labelUrl?: string): void
+	// {
+	// 	this._imageStackLabelUrl = labelUrl;
+	// 	this._labelArray = null;
+	// 	this.updateCanvas();
+	// 	if (!labelUrl)
+	// 	{
+	// 		return
+	// 	}
+	// 	d3.buffer(this.imageStackLabelUrl).then((data: ArrayBuffer) =>
+	// 	{
+	// 		if (data.byteLength === 0)
+	// 		{
+	// 			this._labelArray = null;
+	// 		}
+	// 		else
+	// 		{
+	// 			this._labelArray = new Int8Array(data);
+	// 		}
+	// 		this.updateCanvas();
+	// 	});
+	// }
 
 	public draw(skipImageTrackDraw = false): void
 	{
@@ -308,7 +308,11 @@ export class ImageStackWidget {
 
 	private updateCanvas(skipImageTrackDraw = false): void
 	{
-		return; // todo
+		if (!this.imageStackDataRequest)
+		{
+			return;
+		}
+		// return; // todo
 		// if (!this.imageStackMetaData.url)
 		// {
 		// 	return;
@@ -317,45 +321,75 @@ export class ImageStackWidget {
 			.attr('width', this.imageStackDataRequest?.tileWidth)
 			.attr('height', this.imageStackDataRequest?.tileHeight);
 
-		this.createOutlineImage();
-		this.drawDefaultCanvas();
-		let locId = this.imageLocation.locationId;
-		const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
-		if (!skipImageTrackDraw)
-		{
-			let curveList: CurveND[] = [];
-			for (let point of pointsAtFrame)
+		this.imageStackDataRequest?.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
+			(data: ImageLabels, firstIndex: number) =>
 			{
-				curveList.push(point.parent);
-			}
-			this.imageTrackWidget.draw(curveList);
-		}
+				this.createOutlineImage(data, firstIndex);
+				this.drawDefaultCanvas();
+			});
+
+		// let locId = this.imageLocation.locationId;
+		// const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
+		// if (!skipImageTrackDraw)
+		// {
+		// 	let curveList: CurveND[] = [];
+		// 	for (let point of pointsAtFrame)
+		// 	{
+		// 		curveList.push(point.parent);
+		// 	}
+		// 	this.imageTrackWidget.draw(curveList);
+		// }
 	}
 
-	private createOutlineImage(): void
+	private createOutlineImage(rowArray: ImageLabels, firstIndex: number): void
 	{
-		let myImageData = this.canvasContext.createImageData(this.imageStackDataRequest?.tileWidth, this.imageStackDataRequest?.tileHeight);
-		if (!this.labelArray)
+		if (!this.imageStackDataRequest)
 		{
-			this._defaultCanvasState = myImageData
 			return;
 		}
-		const numPixelsInTile = this.numPixelsInTile;
-		const firstIndex = this.firstIndex;
-		for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
+		let myImageData = this.canvasContext.createImageData(this.imageStackDataRequest.tileWidth, this.imageStackDataRequest.tileHeight);
+		// if (!this.labelArray)
+		// {
+		// 	this._defaultCanvasState = myImageData
+		// 	return;
+		// }
+
+		for (let rowIdx = firstIndex; rowIdx < firstIndex + this.imageStackDataRequest.tileHeight; rowIdx++)
 		{
-			let rIdx = (i - firstIndex) * 4;
-			let label = this.labelArray[i];
-			if (label > 0 && this.isBorder(i))
+			let row: Row = rowArray.rowList[rowIdx];
+			for (let labelRun of row.row)
 			{
-				let [cell, _index] = this.getCell(label)
-				let [r, g, b] = this.getCellColor(cell);
-				myImageData.data[rIdx] = r;
-				myImageData.data[rIdx + 1] = g;
-				myImageData.data[rIdx + 2] = b;
-				myImageData.data[rIdx + 3] = 255;
+				for (let colIdx = labelRun.start; colIdx < labelRun.start + labelRun.length; colIdx++)
+				{
+					let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
+					flatIdx *=4;
+					let [cell, _index] = this.getCell(labelRun.label)
+					let [r, g, b] = this.getCellColor(cell);
+					myImageData.data[flatIdx] = r;
+					myImageData.data[flatIdx + 1] = g;
+					myImageData.data[flatIdx + 2] = b;
+					myImageData.data[flatIdx + 3] = 255;
+				}
 			}
 		}
+
+		// const numPixelsInTile = this.numPixelsInTile;
+		// const firstIndex = this.firstIndex;
+		// for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
+		// {
+		// 	let rIdx = (i - firstIndex) * 4;
+		// 	// let label = this.labelArray[i];
+		// 	let label = 0;
+		// 	if (label > 0 && this.isBorder(i))
+		// 	{
+		// 		let [cell, _index] = this.getCell(label)
+		// 		let [r, g, b] = this.getCellColor(cell);
+		// 		myImageData.data[rIdx] = r;
+		// 		myImageData.data[rIdx + 1] = g;
+		// 		myImageData.data[rIdx + 2] = b;
+		// 		myImageData.data[rIdx + 3] = 255;
+		// 	}
+		// }
 		this._defaultCanvasState = myImageData;
 	}
 
@@ -369,7 +403,8 @@ export class ImageStackWidget {
 		const numPixelsInTile = this.numPixelsInTile;
 		const extra = index % (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);
 		const firstIndex = index - extra;
-		let label = this.labelArray[index];
+		// let label = this.labelArray[index];
+		let label = 0;
 		let neighborIndices: number[] = [];
 		// 4-neighbor
 		neighborIndices.push(index + 1);
@@ -395,7 +430,8 @@ export class ImageStackWidget {
 				// neighbor out of bounds of tile
 				continue;
 			}
-			let nVal = this.labelArray[nIdx];
+			// let nVal = this.labelArray[nIdx];
+			let nVal = 0;
 			if (nVal !== label)
 			{
 				return true
@@ -406,35 +442,35 @@ export class ImageStackWidget {
 
 	private onCanvasMouseMove(e: MouseEvent): void
 	{
-		if (!this.labelArray || !this.defaultCanvasState)
-		{
-			return;
-		}
-		const numPixelsInTile = this.numPixelsInTile;
-		const firstIndex = this.firstIndex;
-		const labelIndex = firstIndex + e.offsetY * this.imageStackDataRequest?.tileWidth + e.offsetX;
-		const label = this.labelArray[labelIndex];
-		if (label === this.cellHovered)
-		{
-			return;
-		}
-		this._cellHovered = label;
-		if (label === 0)
-		{
-			this.drawDefaultCanvas();
-			this.tooltip.Hide();
-			const customEvent = new CustomEvent('frameHoverChange', { detail:
-				{
-					locationId: this.getCurrentLocationId(),
-					frameId: this.getCurrentFrameId(),
-					cellId: null
-				}});
-			document.dispatchEvent(customEvent);
-		}
-		else
-		{
-			this.showSegmentHover(label, false, e);
-		}
+		// if (!this.labelArray || !this.defaultCanvasState)
+		// {
+		// 	return;
+		// }
+		// const numPixelsInTile = this.numPixelsInTile;
+		// const firstIndex = this.firstIndex;
+		// const labelIndex = firstIndex + e.offsetY * this.imageStackDataRequest?.tileWidth + e.offsetX;
+		// const label = this.labelArray[labelIndex];
+		// if (label === this.cellHovered)
+		// {
+		// 	return;
+		// }
+		// this._cellHovered = label;
+		// if (label === 0)
+		// {
+		// 	this.drawDefaultCanvas();
+		// 	this.tooltip.Hide();
+		// 	const customEvent = new CustomEvent('frameHoverChange', { detail:
+		// 		{
+		// 			locationId: this.getCurrentLocationId(),
+		// 			frameId: this.getCurrentFrameId(),
+		// 			cellId: null
+		// 		}});
+		// 	document.dispatchEvent(customEvent);
+		// }
+		// else
+		// {
+		// 	this.showSegmentHover(label, false, e);
+		// }
 	}
 
 	public hideSegmentHover(hideTooltipImmediately: boolean = false): void
@@ -490,7 +526,8 @@ export class ImageStackWidget {
 		{
 			let [imgX, imgY] = this.getTilePixelXYFromLabelIndex(this.firstIndex, i);
 			let rIdx = (i - this.firstIndex) * 4;
-			let imgLabel = this.labelArray[i];
+			// let imgLabel = this.labelArray[i];
+			let imgLabel = 0;
 			if (cell && Math.pow(imgX - cellX, 2) + Math.pow(imgY - cellY, 2) <= 25)
 			{
 				// cell center label

@@ -539,6 +539,13 @@ def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
     cachedUrl = '/static/cache/test/data{}/D{}.jpg'.format(locationId, bundleIndex)
     return flask.redirect(cachedUrl)
 
+@app.route('/data/<string:folderId>/label_<int:locationId>_<int:bundleIndex>.pb')
+@authRequired
+def getImageLabelBundle(folderId: str, locationId: int, bundleIndex: int):
+    # todo - fix when data is loaded in gdrive
+    cachedUrl = '/static/cache/test/data{}/L{}.pb'.format(locationId, bundleIndex)
+    return flask.redirect(cachedUrl)
+
 @app.route('/data/<string:folderId>/img_<int:locationId>.png')
 @authRequired
 def getImageStack(folderId: str, locationId: int):
