@@ -7,6 +7,7 @@ import { RichTooltip } from '../Components/RichTooltip';
 import { ImageStackMetaData } from '../types';
 import { ImageTrackWidget } from './ImageTrackWidget';
 import { CurveND } from '../DataModel/CurveND';
+import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
 
 export class ImageStackWidget {
 	
@@ -16,13 +17,13 @@ export class ImageStackWidget {
 		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this);
 		this._maxHeight = maxHeight;
 		this.init();
-		this._imageStackMetaData = {
-			url: '',
-			tileWidth: 0,
-			tileHeight: 0,
-			numberOfTiles: 0,
-			numberOfColumns: 0
-		};
+		// this._imageStackMetaData = {
+		// 	url: '',
+		// 	tileWidth: 0,
+		// 	tileHeight: 0,
+		// 	numberOfTiles: 0,
+		// 	numberOfColumns: 0
+		// };
 		this._labelArray = null;
 		this._cellHovered = 0;
 		this._selectedImgIndex = 0;
@@ -56,13 +57,13 @@ export class ImageStackWidget {
 		return this._imageStackBlob;
 	}
 
-	private _imageStackMetaData : ImageStackMetaData;
-	public get imageStackMetaData() : ImageStackMetaData {
-		return this._imageStackMetaData;
-	}
+	// private _imageStackMetaData : ImageStackMetaData;
+	// public get imageStackMetaData() : ImageStackMetaData {
+	// 	return this._imageStackMetaData;
+	// }
 
 	public get numPixelsInTile() : number {
-		return this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight;
+		return this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight;
 	}
 
 	public get firstIndex() : number {
@@ -122,6 +123,11 @@ export class ImageStackWidget {
 	private _data : CurveList;
 	public get data() : CurveList {
 		return this._data;
+	}
+	
+	private _imageStackDataRequest : ImageStackDataRequest;
+	public get imageStackDataRequest() : ImageStackDataRequest {
+		return this._imageStackDataRequest;
 	}
 	
 	private _labelArray : Int8Array;
@@ -197,12 +203,13 @@ export class ImageStackWidget {
 		this.selectedImageCanvas.style('opacity', 1);
 	}
 
-	public SetData(data: CurveList, imageLocation: ImageLocation): void
+	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest): void
 	{
 		this._data = data;
+		this._imageStackDataRequest = imageStackDataRequest;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
-		this.imageStackMetaData.numberOfTiles = imageLocation.frameList.length;
+		// this.imageStackMetaData.numberOfTiles = imageLocation.frameList.length;
 		this.SetImageProperties(); // default values before image load
 		this.draw();
 	}
@@ -213,23 +220,23 @@ export class ImageStackWidget {
 		if (!imageWidth)  { imageWidth  = 256; }
 		if (!imageHeight) { imageHeight = 256; }
 		if (!numColumns)  { numColumns  = 10; }
-		if (blob)
-		{
-			this.imageStackMetaData.url = window.URL.createObjectURL(blob);
-		}
-		else
-		{
-			this.imageStackMetaData.url = '';
-		}
+		// if (blob)
+		// {
+		// 	this.imageStackMetaData.url = window.URL.createObjectURL(blob);
+		// }
+		// else
+		// {
+		// 	this.imageStackMetaData.url = '';
+		// }
 		this._imageStackBlob = blob;
 
-		this.imageStackMetaData.tileWidth = imageWidth;
-		this.imageStackMetaData.tileHeight = imageHeight;
-		this.imageStackMetaData.numberOfColumns = numColumns;
-		this.imageStackMetaData.scaleFactor = scaleFactor;
-		this._imageStackWidth = numColumns * imageWidth;
-		const numRows: number = Math.ceil(this.imageStackMetaData.numberOfTiles / numColumns);
-		this._imageStackHeight = numRows * imageHeight;
+		// this.imageStackMetaData.tileWidth = imageWidth;
+		// this.imageStackMetaData.tileHeight = imageHeight;
+		// this.imageStackMetaData.numberOfColumns = numColumns;
+		// this.imageStackMetaData.scaleFactor = scaleFactor;
+		// this._imageStackWidth = numColumns * imageWidth;
+		// const numRows: number = Math.ceil(this.imageStackMetaData.numberOfTiles / numColumns);
+		// this._imageStackHeight = numRows * imageHeight;
 		this.draw();
 	}
 
@@ -277,8 +284,8 @@ export class ImageStackWidget {
 
 	private drawSelectedImage(skipImageTrackDraw = false): void
 	{
-		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackMetaData.url);
-		this.selectedImageContainer.attr("style", styleString);
+		this.setImageInlineStyle(this.selectedImgIndex);
+		// this.selectedImageContainer.attr("style", styleString);
 		this.updateCanvas(skipImageTrackDraw);
 	}
 
@@ -301,13 +308,14 @@ export class ImageStackWidget {
 
 	private updateCanvas(skipImageTrackDraw = false): void
 	{
-		if (!this.imageStackMetaData.url)
-		{
-			return;
-		}
+		return; // todo
+		// if (!this.imageStackMetaData.url)
+		// {
+		// 	return;
+		// }
 		this.selectedImageCanvas
-			.attr('width', this.imageStackMetaData?.tileWidth)
-			.attr('height', this.imageStackMetaData?.tileHeight);
+			.attr('width', this.imageStackDataRequest?.tileWidth)
+			.attr('height', this.imageStackDataRequest?.tileHeight);
 
 		this.createOutlineImage();
 		this.drawDefaultCanvas();
@@ -326,7 +334,7 @@ export class ImageStackWidget {
 
 	private createOutlineImage(): void
 	{
-		let myImageData = this.canvasContext.createImageData(this.imageStackMetaData?.tileWidth, this.imageStackMetaData?.tileHeight);
+		let myImageData = this.canvasContext.createImageData(this.imageStackDataRequest?.tileWidth, this.imageStackDataRequest?.tileHeight);
 		if (!this.labelArray)
 		{
 			this._defaultCanvasState = myImageData
@@ -359,25 +367,25 @@ export class ImageStackWidget {
 	public isBorder(index: number): boolean
 	{
 		const numPixelsInTile = this.numPixelsInTile;
-		const extra = index % (this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight);
+		const extra = index % (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);
 		const firstIndex = index - extra;
 		let label = this.labelArray[index];
 		let neighborIndices: number[] = [];
 		// 4-neighbor
 		neighborIndices.push(index + 1);
 		neighborIndices.push(index - 1);
-		neighborIndices.push(index + this.imageStackMetaData.tileWidth);
-		neighborIndices.push(index - this.imageStackMetaData.tileWidth);
+		neighborIndices.push(index + this.imageStackDataRequest?.tileWidth);
+		neighborIndices.push(index - this.imageStackDataRequest?.tileWidth);
 		// 8-neighbor
-		neighborIndices.push(index - this.imageStackMetaData.tileWidth + 1);
-		neighborIndices.push(index - this.imageStackMetaData.tileWidth - 1);
-		neighborIndices.push(index + this.imageStackMetaData.tileWidth + 1);
-		neighborIndices.push(index + this.imageStackMetaData.tileWidth - 1);
+		neighborIndices.push(index - this.imageStackDataRequest?.tileWidth + 1);
+		neighborIndices.push(index - this.imageStackDataRequest?.tileWidth - 1);
+		neighborIndices.push(index + this.imageStackDataRequest?.tileWidth + 1);
+		neighborIndices.push(index + this.imageStackDataRequest?.tileWidth - 1);
 		// 12-neighbor
 		neighborIndices.push(index + 2);
 		neighborIndices.push(index - 2);
-		neighborIndices.push(index + 2 * this.imageStackMetaData.tileWidth);
-		neighborIndices.push(index - 2 * this.imageStackMetaData.tileWidth);
+		neighborIndices.push(index + 2 * this.imageStackDataRequest?.tileWidth);
+		neighborIndices.push(index - 2 * this.imageStackDataRequest?.tileWidth);
 
 
 		for (let nIdx of neighborIndices)
@@ -404,7 +412,7 @@ export class ImageStackWidget {
 		}
 		const numPixelsInTile = this.numPixelsInTile;
 		const firstIndex = this.firstIndex;
-		const labelIndex = firstIndex + e.offsetY * this.imageStackMetaData.tileWidth + e.offsetX;
+		const labelIndex = firstIndex + e.offsetY * this.imageStackDataRequest?.tileWidth + e.offsetX;
 		const label = this.labelArray[labelIndex];
 		if (label === this.cellHovered)
 		{
@@ -454,11 +462,11 @@ export class ImageStackWidget {
 			let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
 			cellX = cell.get('X') + cell.get('xShift');
 			cellY = cell.get('Y') + cell.get('yShift');
-			if (this.imageStackMetaData.scaleFactor)
-			{
-				cellX /= this.imageStackMetaData.scaleFactor;
-				cellY /= this.imageStackMetaData.scaleFactor;
-			}
+			// if (this.imageStackMetaData.scaleFactor)
+			// {
+			// 	cellX /= this.imageStackMetaData.scaleFactor;
+			// 	cellY /= this.imageStackMetaData.scaleFactor;
+			// }
 			pageX = canvasBoundRect.x + cellX;
 			pageY = canvasBoundRect.y + cellY;
 
@@ -476,7 +484,7 @@ export class ImageStackWidget {
 			pageY = event.pageY;
 		}
 
-		let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
+		let myImageData = this.canvasContext.createImageData(this.imageStackDataRequest?.tileWidth, this.imageStackDataRequest?.tileHeight);
 		myImageData.data.set(this.defaultCanvasState.data);
 		for (let i = this.firstIndex; i < this.firstIndex + this.numPixelsInTile; i++)
 		{
@@ -514,8 +522,8 @@ export class ImageStackWidget {
 
 	public  getTilePixelXYFromLabelIndex(tileStartIndex: number, labelIndex: number): [number, number]
 	{
-		let imgX = (labelIndex - tileStartIndex) % this.imageStackMetaData.tileWidth;
-		let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackMetaData.tileWidth);
+		let imgX = (labelIndex - tileStartIndex) % this.imageStackDataRequest?.tileWidth;
+		let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackDataRequest?.tileWidth);
 		return [imgX, imgY];
 	}
 
@@ -524,19 +532,19 @@ export class ImageStackWidget {
 		x = Math.round(x);
 		y = Math.round(y);
 
-		let tileX = x % this.imageStackMetaData.tileWidth;
-		let tileY = y % this.imageStackMetaData.tileHeight;
+		let tileX = x % this.imageStackDataRequest?.tileWidth;
+		let tileY = y % this.imageStackDataRequest?.tileHeight;
 		let tileIndex = this.getTileIndexFromBigImgPixelXY(x, y);
-		let labelIndex = tileIndex * (this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight);
-		labelIndex += tileX + tileY * this.imageStackMetaData.tileWidth;
+		let labelIndex = tileIndex * (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);
+		labelIndex += tileX + tileY * this.imageStackDataRequest?.tileWidth;
 		return labelIndex;
 	}
 
 	public getTileIndexFromBigImgPixelXY(x: number, y: number): number
 	{
-		let colIndex = Math.floor(x / this.imageStackMetaData.tileWidth);
-		let rowIndex = Math.floor(y / this.imageStackMetaData.tileHeight);
-		return rowIndex * this.imageStackMetaData.numberOfColumns + colIndex;
+		let colIndex = Math.floor(x / this.imageStackDataRequest?.tileWidth);
+		let rowIndex = Math.floor(y / this.imageStackDataRequest?.tileHeight);
+		return rowIndex * this.imageStackDataRequest?.numberOfColumns + colIndex;
 	}
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
@@ -591,45 +599,71 @@ export class ImageStackWidget {
 		this.drawUpdate();
 	}
 
-	private getImageInlineStyle(index: number, imageUrl: string, includeFallback = true,  scale: number = 1): string
+	private setImageInlineStyle(index: number, includeFallback = true): void
 	{
-		const [top, left] = this.getTileTopLeft(index);
-		let styleString: string =
-			`
-			background-position-x: ${-left * scale}px;
-			background-position-y: ${-top * scale}px;
-			width: ${this.imageStackMetaData.tileWidth * scale}px;
-			height: ${this.imageStackMetaData.tileHeight * scale}px;
-			`;
-		if (imageUrl)
-		{
-			styleString += `background-image: url(${imageUrl});`;
-		}
+		// const [top, left] = this.getTileTopLeft(index);
+		// const [top, left, blob] = this.imageStackDataRequest?.getImage(this.getCurrentLocationId(), this.getCurrentFrameId());
+		this.imageStackDataRequest?.getImage(this.getCurrentLocationId(), index,
+			(top, left, _blob, imageUrl) =>
+			{
+				let styleString: string =
+					`
+					background-position-x: ${-left}px;
+					background-position-y: ${-top}px;
+					width: ${this.imageStackDataRequest?.tileWidth}px;
+					height: ${this.imageStackDataRequest?.tileHeight}px;
+					`;
+				if (imageUrl)
+				{
+					styleString += `background-image: url(${imageUrl});`;
+				}
+		
+				if (includeFallback)
+				{
+					styleString += 'background-color: #ebebeb;';
+				}
+				this.selectedImageContainer.attr("style", styleString);
+			});
+		
+		
+		// let styleString: string =
+		// 	`
+		// 	background-position-x: ${-left * scale}px;
+		// 	background-position-y: ${-top * scale}px;
+		// 	width: ${this.imageStackDataRequest?.tileWidth * scale}px;
+		// 	height: ${this.imageStackDataRequest?.tileHeight * scale}px;
+		// 	`;
+		// if (imageUrl)
+		// {
+		// 	styleString += `background-image: url(${imageUrl});`;
+		// }
 
-		if (includeFallback)
-		{
-			styleString += 'background-color: #ebebeb;';
-		}
-		if (scale !== 1)
-		{
-			styleString += `background-size: ${this.imageStackWidth * scale}px ${this.imageStackHeight * scale}px;`
-		}
-		return styleString;
+		// if (includeFallback)
+		// {
+		// 	styleString += 'background-color: #ebebeb;';
+		// }
+		// if (scale !== 1)
+		// {
+		// 	styleString += `background-size: ${this.imageStackWidth * scale}px ${this.imageStackHeight * scale}px;`
+		// }
+		// return styleString;
 	}
 
 	private updateBackgroundPosition(index: number)
 	{
-		const [top, left] = this.getTileTopLeft(index);
+		this.setImageInlineStyle(index);
+		return;
+		const [top, left] = this.imageStackDataRequest?.getTileTopLeft(index);
 		this.selectedImageContainer.node().style.backgroundPositionX =  -left + 'px';
 		this.selectedImageContainer.node().style.backgroundPositionY = -top + 'px';
 	}
 
-	public getTileTopLeft(index: number): [number, number]
-	{
-		const left: number = (index % this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileWidth;
-		const top: number = Math.floor(index / this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileHeight;
-		return [top, left];
-	}
+	// public getTileTopLeft(index: number): [number, number]
+	// {
+	// 	const left: number = (index % this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileWidth;
+	// 	const top: number = Math.floor(index / this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileHeight;
+	// 	return [top, left];
+	// }
 
 	public OnResize(newMaxHeight: number, imageTrackMaxHeight: number, newWidth: number): void
 	{

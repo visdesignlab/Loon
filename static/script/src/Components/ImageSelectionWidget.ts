@@ -8,10 +8,9 @@ import { DatasetSpec, Facet } from '../types';
 import { ImageFrame } from '../DataModel/ImageFrame';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { RichTooltip } from './RichTooltip';
-import { OptionSelect } from './OptionSelect';
 import { ImageLocation } from '../DataModel/ImageLocation';
 import { GroupByWidget } from './GroupByWidget';
-import { zip } from 'd3';
+import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -23,6 +22,11 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     private _imageMetaData : ImageMetaData;
     public get imageMetaData() : ImageMetaData {
         return this._imageMetaData;
+    }
+    
+    private _imageStackDataRequest : ImageStackDataRequest;
+    public get imageStackDataRequest() : ImageStackDataRequest {
+        return this._imageStackDataRequest;
     }
 
     private _innerContainer : HtmlSelection;
@@ -167,6 +171,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public OnDataChange()
 	{
         this._imageMetaData = ImageMetaData.fromPointCollection(this.data);
+        this._imageStackDataRequest = new ImageStackDataRequest(this.data.Specification.googleDriveId);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
         this.setImageStackWidget();
         this.OnBrushChange();
@@ -178,30 +183,38 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     {
         const newUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}.png`
         const labelUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}_labels.dat`
-        let xhr = new XMLHttpRequest();
-        xhr.responseType = 'blob';
-        xhr.onload = () => {
-            let imageMetaDataString: string = xhr.getResponseHeader("tiledImageMetaData");
-            let imgWidth: number;
-            let imgHeight: number;
-            let numCol: number;
-            let scaleFactor: number;
-            if (imageMetaDataString)
-            {
-                let imageMetaData = JSON.parse(imageMetaDataString);
-                imgWidth = imageMetaData['tileWidth'];
-                imgHeight = imageMetaData['tileHeight'];
-                numCol = imageMetaData['numberOfColumns'];
-                scaleFactor = imageMetaData['scaleFactor'];
-            }
-            this.imageStackWidget.SetImageProperties(xhr.response, imgWidth, imgHeight, numCol, scaleFactor);
-        }
-        xhr.open('GET', newUrl);
-        xhr.send();
-        this.imageStackWidget.SetLabelUrl(labelUrl);
+        
+        // let xhr = new XMLHttpRequest();
+        // xhr.responseType = 'blob';
+        // xhr.onload = () => {
+        //     let imageMetaDataString: string = xhr.getResponseHeader("tiledImageMetaData");
+        //     let imgWidth: number;
+        //     let imgHeight: number;
+        //     let numCol: number;
+        //     let scaleFactor: number;
+        //     if (imageMetaDataString)
+        //     {
+        //         let imageMetaData = JSON.parse(imageMetaDataString);
+        //         imgWidth = imageMetaData['tileWidth'];
+        //         imgHeight = imageMetaData['tileHeight'];
+        //         numCol = imageMetaData['numberOfColumns'];
+        //         scaleFactor = imageMetaData['scaleFactor'];
+        //     }
+        //     this.imageStackWidget.SetImageProperties(xhr.response, imgWidth, imgHeight, numCol, scaleFactor);
+        // }
+        // xhr.open('GET', newUrl);
+        // xhr.send();
+
+        const [locId, frameId] = this.selectedLocFrame;
+        this.imageStackDataRequest.getImage(locId, frameId, (top, left, blob) => 
+        {
+            this.imageStackWidget.SetImageProperties(blob);
+        });
+
+        // this.imageStackWidget.SetLabelUrl(labelUrl);
 
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        this.imageStackWidget.SetData(this.data, currentLocation);
+        this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest);
     }
 
 	protected OnResize(): void

@@ -494,7 +494,7 @@ def getNormalizedMatlabObjectFromKey(matlabDict: Union[dict, h5py.File], key: st
 def getImageStackMetaData(folderId: str, locationId: int) -> str:
     labeledImageStackArray = getLabeledImageStackArray(folderId, locationId, True)
 
-    S = 4
+    S = 1
     labeledImageStackArray = downSample(labeledImageStackArray, S)
 
     if labeledImageStackArray is None:
@@ -526,11 +526,24 @@ def getImageStackMetaData(folderId: str, locationId: int) -> str:
     response.headers['tiledImageMetaData'] = json.dumps(metaData)
     return response
 
+@app.route('/data/<string:folderId>/imageMetaData.json')
+@authRequired
+def getImageStackMetaDataJson(folderId: str):
+    # todo - fix when data is loaded in gdrive
+    return flask.redirect('/static/cache/test/.vizMetaData/imageMetaData.json')
+
+@app.route('/data/<string:folderId>/img_<int:locationId>_<int:bundleIndex>.jpg')
+@authRequired
+def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
+    # todo - fix when data is loaded in gdrive
+    cachedUrl = '/static/cache/test/data{}/D{}.jpg'.format(locationId, bundleIndex)
+    return flask.redirect(cachedUrl)
+
 @app.route('/data/<string:folderId>/img_<int:locationId>.png')
 @authRequired
 def getImageStack(folderId: str, locationId: int):
     imageStackArray = getImageStackArray(folderId, locationId)
-    S = 4
+    S = 1
     imageStackArray = downSample(imageStackArray, S)
     shape = np.shape(imageStackArray)
     print("image stack shape = " + str(shape))
