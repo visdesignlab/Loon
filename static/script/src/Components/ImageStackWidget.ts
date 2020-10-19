@@ -352,7 +352,7 @@ export class ImageStackWidget {
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
 	}
 
-	private isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean
+	public isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean
 	{
 		// const numPixelsInTile = this.numPixelsInTile;
 		// const extra = index % (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);
@@ -549,17 +549,18 @@ export class ImageStackWidget {
 	// 	return [imgX, imgY];
 	// }
 
-	public getLabelIndexFromBigImgPixelXY(x: number, y: number): number
+	public getLabelIndexFromBigImgPixelXY(frameIndex: number, x: number, y: number): [number, number]
 	{
 		x = Math.round(x);
 		y = Math.round(y);
 
-		let tileX = x % this.imageStackDataRequest?.tileWidth;
-		let tileY = y % this.imageStackDataRequest?.tileHeight;
-		let tileIndex = this.getTileIndexFromBigImgPixelXY(x, y);
-		let labelIndex = tileIndex * (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);
-		labelIndex += tileX + tileY * this.imageStackDataRequest?.tileWidth;
-		return labelIndex;
+		let colIdx = x % this.imageStackDataRequest?.tileWidth;
+		let rowIdx = (y % this.imageStackDataRequest?.tileHeight) + frameIndex * this.imageStackDataRequest?.tileHeight;
+
+		// let tileIndex = this.getTileIndexFromBigImgPixelXY(x, y);
+		// let labelIndex = tileIndex * (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);
+		// labelIndex += tileX + tileY * this.imageStackDataRequest?.tileWidth;
+		return [rowIdx, colIdx];
 	}
 
 	public getTileIndexFromBigImgPixelXY(x: number, y: number): number

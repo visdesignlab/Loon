@@ -7,7 +7,7 @@ import { extent, linkVertical, max, VoronoiEdge } from 'd3';
 import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
-import { Row } from '../DataModel/ImageStackDataRequest';
+import { ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
 
 export class ImageTrackWidget
 {
@@ -420,7 +420,7 @@ export class ImageTrackWidget
 
                     this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
                 }
-                // this.drawOutlines();
+                this.drawOutlines();
             }
         );
     }
@@ -632,37 +632,42 @@ export class ImageTrackWidget
         return labelPositions[labelIndex][0];
     }
 
-    private drawOutlines(): void
+    private async drawOutlines(): Promise<void>
     {
-        // for (let [sourceRect, [dX, dY], point] of this.sourceDestCell)
-        // {
-        //     let width = ImageTrackWidget.rectWidth(sourceRect);
-        //     let height = ImageTrackWidget.rectHeight(sourceRect);
-        //     let [[sLeft, sTop], [sRight, sBot]] = sourceRect;
-        //     let outlineTileData = this.canvasContext.getImageData(dX, dY, width, height);
-        //     let labelToMatch = point.get('segmentLabel');
-        //     let rIdx = 0;
-        //     for (let y = sTop; y <= sBot; y++)
-        //     {
-        //         for (let x = sLeft; x <= sRight; x++)
-        //         {
-        //             let labelIndex = this.parentWidget.getLabelIndexFromBigImgPixelXY(x, y);
-        //             if (this.parentWidget.labelArray[labelIndex] == labelToMatch)
-        //             {
-        //                 if (this.parentWidget.isBorder(labelIndex))
-        //                 {
-        //                     let [r, g, b] = this.parentWidget.getCellColor(point);
-        //                     outlineTileData.data[rIdx] = r;
-        //                     outlineTileData.data[rIdx + 1] = g;
-        //                     outlineTileData.data[rIdx + 2] = b;
-        //                     outlineTileData.data[rIdx + 3] = 255;
-        //                 }
-        //             }
-        //             rIdx += 4;
-        //         }
-        //     }
-        //     this.canvasContext.putImageData(outlineTileData, dX, dY);
-        // }
+        for (let [sourceRect, [dX, dY], point] of this.sourceDestCell)
+        {
+            let width = ImageTrackWidget.rectWidth(sourceRect);
+            let height = ImageTrackWidget.rectHeight(sourceRect);
+            let [[sLeft, sTop], [sRight, sBot]] = sourceRect;
+            let outlineTileData = this.canvasContext.getImageData(dX, dY, width, height);
+            let labelToMatch = point.get('segmentLabel');
+            let frameIndex = point.get('Frame ID') - 1;
+            let rIdx = 0;
+            let [labelArray, firstIndex] = await this.parentWidget.imageStackDataRequest.getLabelPromise(point.get('Location ID'), frameIndex);
+            for (let y = sTop; y <= sBot; y++)
+            {
+                for (let x = sLeft; x <= sRight; x++)
+                {
+                    let [rowIdx, colIdx] = this.parentWidget.getLabelIndexFromBigImgPixelXY(frameIndex, x, y);
+                    
+                    let label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, labelArray);
+
+                    if (label == labelToMatch)
+                    {
+                        if (this.parentWidget.isBorder(label, rowIdx, colIdx, labelArray))
+                        {
+                            let [r, g, b] = this.parentWidget.getCellColor(point);
+                            outlineTileData.data[rIdx] = r;
+                            outlineTileData.data[rIdx + 1] = g;
+                            outlineTileData.data[rIdx + 2] = b;
+                            outlineTileData.data[rIdx + 3] = 255;
+                        }
+                    }
+                    rIdx += 4;
+                }
+            }
+            this.canvasContext.putImageData(outlineTileData, dX, dY);
+        }
     }
 
     private drawLabels(): void

@@ -127,7 +127,6 @@ export class ImageStackDataRequest
             this.runWithCachedImage(key, top, left, callback);
             return;
         }
-        console.time(key);
         const imgUrl = `/data/${this.driveId}/img_${location}_${bundleIndex}.jpg`;
         const thisIndex = this.nextBlobIndex;
         this.blobArray[thisIndex] = [null, key, null];
@@ -141,7 +140,6 @@ export class ImageStackDataRequest
             let url = window.URL.createObjectURL(blob);
             this.blobArray[thisIndex] = [blob, key, url];
             callback(top, left, blob, url);
-            console.timeEnd(key);
         }
         xhr.open('GET', imgUrl);
         xhr.send();
