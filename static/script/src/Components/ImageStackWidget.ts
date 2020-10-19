@@ -361,14 +361,18 @@ export class ImageStackWidget {
 			{
 				for (let colIdx = labelRun.start; colIdx < labelRun.start + labelRun.length; colIdx++)
 				{
-					let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
-					flatIdx *=4;
-					let [cell, _index] = this.getCell(labelRun.label)
-					let [r, g, b] = this.getCellColor(cell);
-					myImageData.data[flatIdx] = r;
-					myImageData.data[flatIdx + 1] = g;
-					myImageData.data[flatIdx + 2] = b;
-					myImageData.data[flatIdx + 3] = 255;
+					if (this.isBorder(labelRun.label, rowIdx, colIdx, rowArray))
+					{
+
+						let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
+						flatIdx *= 4;
+						let [cell, _index] = this.getCell(labelRun.label)
+						let [r, g, b] = this.getCellColor(cell);
+						myImageData.data[flatIdx] = r;
+						myImageData.data[flatIdx + 1] = g;
+						myImageData.data[flatIdx + 2] = b;
+						myImageData.data[flatIdx + 3] = 255;
+					}
 				}
 			}
 		}
@@ -398,40 +402,41 @@ export class ImageStackWidget {
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
 	}
 
-	public isBorder(index: number): boolean
+	private isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean
 	{
-		const numPixelsInTile = this.numPixelsInTile;
-		const extra = index % (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);
-		const firstIndex = index - extra;
+		// const numPixelsInTile = this.numPixelsInTile;
+		// const extra = index % (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);
+		// const firstIndex = index - extra;
 		// let label = this.labelArray[index];
-		let label = 0;
-		let neighborIndices: number[] = [];
+		let neighborIndices: [number, number][] = [];
 		// 4-neighbor
-		neighborIndices.push(index + 1);
-		neighborIndices.push(index - 1);
-		neighborIndices.push(index + this.imageStackDataRequest?.tileWidth);
-		neighborIndices.push(index - this.imageStackDataRequest?.tileWidth);
+		neighborIndices.push([rowIdx - 1, colIdx]);
+		neighborIndices.push([rowIdx + 1, colIdx]);
+		neighborIndices.push([rowIdx, colIdx - 1]);
+		neighborIndices.push([rowIdx, colIdx + 1]);
 		// 8-neighbor
-		neighborIndices.push(index - this.imageStackDataRequest?.tileWidth + 1);
-		neighborIndices.push(index - this.imageStackDataRequest?.tileWidth - 1);
-		neighborIndices.push(index + this.imageStackDataRequest?.tileWidth + 1);
-		neighborIndices.push(index + this.imageStackDataRequest?.tileWidth - 1);
+		neighborIndices.push([rowIdx - 1, colIdx - 1]);
+		neighborIndices.push([rowIdx + 1, colIdx - 1]);
+		neighborIndices.push([rowIdx + 1, colIdx - 1]);
+		neighborIndices.push([rowIdx - 1, colIdx + 1]);
 		// 12-neighbor
-		neighborIndices.push(index + 2);
-		neighborIndices.push(index - 2);
-		neighborIndices.push(index + 2 * this.imageStackDataRequest?.tileWidth);
-		neighborIndices.push(index - 2 * this.imageStackDataRequest?.tileWidth);
+		neighborIndices.push([rowIdx - 2, colIdx]);
+		neighborIndices.push([rowIdx + 2, colIdx]);
+		neighborIndices.push([rowIdx, colIdx - 2]);
+		neighborIndices.push([rowIdx, colIdx + 2]);
 
 
-		for (let nIdx of neighborIndices)
+		for (let [rI, cI] of neighborIndices)
 		{
-			if (nIdx < firstIndex || (firstIndex + numPixelsInTile) <= nIdx)
+			if (rI < 0
+				|| rI >= rowArray.rowList.length
+				|| cI < 0
+				|| cI >= this.imageStackDataRequest.tileWidth)
 			{
 				// neighbor out of bounds of tile
 				continue;
 			}
-			// let nVal = this.labelArray[nIdx];
-			let nVal = 0;
+			let nVal = ImageStackDataRequest.getLabelValue(rI, cI, rowArray);
 			if (nVal !== label)
 			{
 				return true

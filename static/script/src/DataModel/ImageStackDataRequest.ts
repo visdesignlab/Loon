@@ -196,6 +196,20 @@ export class ImageStackDataRequest
         return;
     }
 
+    public static getLabelValue(rowIdx: number, colIdx: number, rowArray: ImageLabels): number
+    {
+        // if this is a bottleneck, this could be improved with quicksearch.
+        let row: Row = rowArray.rowList[rowIdx];
+        for (let labelRun of row.row)
+        {
+            if (labelRun.start <= colIdx && colIdx < labelRun.start + labelRun.length)
+            {
+                return labelRun.label;
+            }
+        }
+        return 0;
+    }
+
         /**
          * --- Meta Data --- 
          * tile width
