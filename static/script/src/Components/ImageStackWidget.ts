@@ -555,7 +555,7 @@ export class ImageStackWidget {
 		y = Math.round(y);
 
 		let colIdx = x % this.imageStackDataRequest?.tileWidth;
-		let rowIdx = (y % this.imageStackDataRequest?.tileHeight) + frameIndex * this.imageStackDataRequest?.tileHeight;
+		let rowIdx = (y % this.imageStackDataRequest?.tileHeight) + (frameIndex % this.imageStackDataRequest?.tilesPerFile) * this.imageStackDataRequest?.tileHeight;
 
 		// let tileIndex = this.getTileIndexFromBigImgPixelXY(x, y);
 		// let labelIndex = tileIndex * (this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight);

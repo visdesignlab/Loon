@@ -234,12 +234,14 @@ export class ImageTrackWidget
 
         let verticalOffset: number = this.verticalPad;
         this._cellLabelPositions = [];
+        let drawTrackPromises = [];
         for (let i = 0; i < this.trackList.length; i++)
         {
             let track = this.trackList[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
-            this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset);
+            let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset);
+            drawTrackPromises.push(done);
             this._cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
         }
@@ -252,6 +254,8 @@ export class ImageTrackWidget
             offset += maxWidth / 2;
             this._frameLabelPositions.push([frameId, offset]);
         }
+        // await Promise.all(drawTrackPromises);
+        // this.drawOutlines();
     }
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>
@@ -282,6 +286,7 @@ export class ImageTrackWidget
 
 
         let asyncFunctionList = [];
+        let blobRequests = [];
         let offsetArray: [number, number][] = [];
         for (let i = 0; i < boundingBoxList.length; i++)
         {
@@ -301,19 +306,28 @@ export class ImageTrackWidget
             // const offsetIndex = frameId - minFrame;
             const frameIndex = frameId - 1;
 
-            const [tileTop, tileLeft, blob, _imageUrl] = await this.parentWidget.imageStackDataRequest.getImagePromise(point.get('Location ID'), frameIndex);
+            let blobRequest = this.parentWidget.imageStackDataRequest.getImagePromise(point.get('Location ID'), frameIndex);
 
-            // this.parentWidget.imageStackDataRequest.getImage(point.get('Location ID'), frameIndex,
-                // async (tileTop: number, tileLeft: number, blob: Blob, _url: string) =>
-                // {
-                    let bbox = boundingBoxList[i];
+            blobRequests.push(blobRequest);
+        }
+
+        let results = await Promise.all(blobRequests);
+            // .then((results: [number, number, Blob, string][]) =>
+            // {
+        let sourceDestCell = [];
+                let workerData = [];
+                let webWorker = new Worker('/static/script/dist/ImageWorker.js');
+                for (let j = 0; j < results.length; j++)
+                {
+                    let [tileTop, tileLeft, blob, _url] = results[j];
+                    let bbox = boundingBoxList[j];
                     const [sX, sY] = bbox[0];
                     let width = ImageTrackWidget.rectWidth(bbox);
                     let height = ImageTrackWidget.rectHeight(bbox);
                     const extraX = Math.round((maxWidth - width) / 2);
                     const extraY = Math.round((maxHeight - height) / 2);
-                    // const point = trackData.pointList[i];
-                    // const frameId = point.get('Frame ID');
+                    const point = trackData.pointList[j];
+                    const frameId = point.get('Frame ID');
         
                     const offsetIndex = frameId - minFrame;
 
@@ -332,39 +346,124 @@ export class ImageTrackWidget
                     offsetArray.push(destOffset);
                     let sourceRect: Rect = [[copyLeft, copyTop], [copyLeft + copyWidth, copyTop + copyHeight]];
                     this.sourceDestCell.push([sourceRect, destOffset, point]);
-                    asyncFunctionList.push(createImageBitmap(blob, copyLeft, copyTop, copyWidth, copyHeight));
+                    sourceDestCell.push([sourceRect, destOffset, point]);
+                    workerData.push([blob, copyLeft, copyTop, copyWidth, copyHeight]);
 
+                }
+                webWorker.postMessage(workerData);
 
-                    // // const frameId = trackData.pointList[i].get('Frame ID');
-                    // const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
-                    // // const offsetIndex = frameId - minFrame;
-                    // const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
-                    // const frameY = verticalOffset;
-                    // // const [offsetX, offsetY] = offsetArray[i];
+            return new Promise((resolve, reject) =>
+            {
+                webWorker.onmessage = (event) =>
+                {
+                    let bitMapList: ImageBitmap[] = event.data;
+                    for (let i = 0; i < bitMapList.length; i++)
+                    {
+                        const imgBitmap = bitMapList[i];
+                        const frameId = trackData.pointList[i].get('Frame ID');
+                        const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
+                        const offsetIndex = frameId - minFrame;
+                        const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
+                        const frameY = verticalOffset;
+                        const [offsetX, offsetY] = offsetArray[i];
 
-                    // this.canvasContext.beginPath();
-                    // this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
-                    // if (currentFrame)
-                    // {
-                    //     this.canvasContext.strokeStyle = 'MediumSeaGreen';
-                    //     this.canvasContext.lineWidth = 8; 
+                        this.canvasContext.beginPath();
+                        this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
+                        if (currentFrame)
+                        {
+                            this.canvasContext.strokeStyle = 'MediumSeaGreen';
+                            this.canvasContext.lineWidth = 8; 
 
-                    // }
-                    // else
-                    // {
-                    //     this.canvasContext.strokeStyle = 'grey';
-                    //     this.canvasContext.lineWidth = 1; 
-                    // }
+                        }
+                        else
+                        {
+                            this.canvasContext.strokeStyle = 'grey';
+                            this.canvasContext.lineWidth = 1; 
+                        }
 
-                    // this.canvasContext.fillStyle = 'black';
-                    // this.canvasContext.stroke();
-                    // this.canvasContext.fill();
-                    // this.canvasContext.closePath();
+                        this.canvasContext.fillStyle = 'black';
+                        this.canvasContext.stroke();
+                        this.canvasContext.fill();
+                        this.canvasContext.closePath();
 
-                    // this.canvasContext.drawImage(imageBitmap, offsetX, offsetY);
+                        this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
+                    }
+                    resolve();
+                    this.drawOutlines(sourceDestCell);
+                }
+            });
 
-                    // todo = this.drawOutline();
-                // });
+            // });
+
+            // this.parentWidget.imageStackDataRequest.getImage(point.get('Location ID'), frameIndex,
+            //     async (tileTop: number, tileLeft: number, blob: Blob, _url: string) =>
+            //     {
+            //         let bbox = boundingBoxList[i];
+            //         const [sX, sY] = bbox[0];
+            //         let width = ImageTrackWidget.rectWidth(bbox);
+            //         let height = ImageTrackWidget.rectHeight(bbox);
+            //         const extraX = Math.round((maxWidth - width) / 2);
+            //         const extraY = Math.round((maxHeight - height) / 2);
+            //         // const point = trackData.pointList[i];
+            //         // const frameId = point.get('Frame ID');
+        
+            //         const offsetIndex = frameId - minFrame;
+
+            //         const tileBot = tileTop + this.parentWidget.imageStackDataRequest?.tileHeight;
+            //         const tileRight = tileLeft + this.parentWidget.imageStackDataRequest?.tileWidth;
+        
+            //         const copyTop = DevlibMath.clamp(sY - extraY, [tileTop, tileBot]);
+            //         const copyLeft = DevlibMath.clamp(sX - extraX, [tileLeft, tileRight]);
+                    
+            //         const copyWidth = Math.min(maxWidth, tileRight - copyLeft);
+            //         const copyHeight = Math.min(maxHeight, tileBot - copyTop);
+                    
+            //         const offsetX = Math.round(this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad) + (maxWidth - copyWidth) / 2);
+            //         const offsetY = Math.round(verticalOffset + (maxHeight - copyHeight) / 2);
+            //         const destOffset: [number, number] = [offsetX, offsetY];
+            //         offsetArray.push(destOffset);
+            //         let sourceRect: Rect = [[copyLeft, copyTop], [copyLeft + copyWidth, copyTop + copyHeight]];
+            //         this.sourceDestCell.push([sourceRect, destOffset, point]);
+            //         let webWorker = new Worker('/static/script/dist/ImageWorker.js');
+            //         webWorker.postMessage([blob, copyLeft, copyTop, copyWidth, copyHeight]);
+            //         // asyncFunctionList.push(createImageBitmap(blob, copyLeft, copyTop, copyWidth, copyHeight));
+            //         webWorker.onmessage = (event) =>
+            //         {
+            //             let imageBitmap = event.data.imageBitmap
+            //             // result.textContent = e.data;
+            //             // console.log('Message received from worker');
+
+            //             // const frameId = trackData.pointList[i].get('Frame ID');
+            //             const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
+            //             // const offsetIndex = frameId - minFrame;
+            //             const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
+            //             const frameY = verticalOffset;
+            //             // const [offsetX, offsetY] = offsetArray[i];
+
+            //             this.canvasContext.beginPath();
+            //             this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
+            //             if (currentFrame)
+            //             {
+            //                 this.canvasContext.strokeStyle = 'MediumSeaGreen';
+            //                 this.canvasContext.lineWidth = 8; 
+
+            //             }
+            //             else
+            //             {
+            //                 this.canvasContext.strokeStyle = 'grey';
+            //                 this.canvasContext.lineWidth = 1; 
+            //             }
+
+            //             this.canvasContext.fillStyle = 'black';
+            //             this.canvasContext.stroke();
+            //             this.canvasContext.fill();
+            //             this.canvasContext.closePath();
+
+            //             this.canvasContext.drawImage(imageBitmap, offsetX, offsetY);
+            //         }
+
+            //         // todo = this.drawOutline();
+            //     });
 
             // const [tileTop, tileLeft] = this.parentWidget.getTileTopLeft(frameIndex);
             // const tileBot = tileTop + this.parentWidget.imageStackDataRequest?.tileHeight;
@@ -384,45 +483,45 @@ export class ImageTrackWidget
             // this.sourceDestCell.push([sourceRect, destOffset, point]);
             // asyncFunctionList.push(createImageBitmap(this.parentWidget.imageStackBlob, copyLeft, copyTop, copyWidth, copyHeight));
         
-        }
+        // }
 
-        Promise.all(asyncFunctionList).then(
-            (bitMapList: ImageBitmap[]) =>
-            {
-                for (let i = 0; i < bitMapList.length; i++)
-                {
-                    const imgBitmap = bitMapList[i];
-                    const frameId = trackData.pointList[i].get('Frame ID');
-                    const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
-                    const offsetIndex = frameId - minFrame;
-                    const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
-                    const frameY = verticalOffset;
-                    const [offsetX, offsetY] = offsetArray[i];
+        // Promise.all(asyncFunctionList).then(
+        //     (bitMapList: ImageBitmap[]) =>
+        //     {
+        //         for (let i = 0; i < bitMapList.length; i++)
+        //         {
+        //             const imgBitmap = bitMapList[i];
+        //             const frameId = trackData.pointList[i].get('Frame ID');
+        //             const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
+        //             const offsetIndex = frameId - minFrame;
+        //             const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
+        //             const frameY = verticalOffset;
+        //             const [offsetX, offsetY] = offsetArray[i];
 
-                    this.canvasContext.beginPath();
-                    this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
-                    if (currentFrame)
-                    {
-                        this.canvasContext.strokeStyle = 'MediumSeaGreen';
-                        this.canvasContext.lineWidth = 8; 
+        //             this.canvasContext.beginPath();
+        //             this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
+        //             if (currentFrame)
+        //             {
+        //                 this.canvasContext.strokeStyle = 'MediumSeaGreen';
+        //                 this.canvasContext.lineWidth = 8; 
 
-                    }
-                    else
-                    {
-                        this.canvasContext.strokeStyle = 'grey';
-                        this.canvasContext.lineWidth = 1; 
-                    }
+        //             }
+        //             else
+        //             {
+        //                 this.canvasContext.strokeStyle = 'grey';
+        //                 this.canvasContext.lineWidth = 1; 
+        //             }
 
-                    this.canvasContext.fillStyle = 'black';
-                    this.canvasContext.stroke();
-                    this.canvasContext.fill();
-                    this.canvasContext.closePath();
+        //             this.canvasContext.fillStyle = 'black';
+        //             this.canvasContext.stroke();
+        //             this.canvasContext.fill();
+        //             this.canvasContext.closePath();
 
-                    this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
-                }
-                this.drawOutlines();
-            }
-        );
+        //             this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
+        //         }
+        //         this.drawOutlines();
+        //     }
+        // );
     }
 
     private drawTrackBackground(
@@ -643,9 +742,13 @@ export class ImageTrackWidget
         return labelPositions[labelIndex][0];
     }
 
-    private async drawOutlines(): Promise<void>
+    private async drawOutlines(sourceDestCell?: [Rect, [number, number], PointND][]): Promise<void>
     {
-        for (let [sourceRect, [dX, dY], point] of this.sourceDestCell)
+        if (!sourceDestCell)
+        {
+            sourceDestCell = this.sourceDestCell
+        }
+        for (let [sourceRect, [dX, dY], point] of sourceDestCell)
         {
             let width = ImageTrackWidget.rectWidth(sourceRect);
             let height = ImageTrackWidget.rectHeight(sourceRect);
