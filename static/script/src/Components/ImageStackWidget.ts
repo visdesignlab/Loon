@@ -525,6 +525,13 @@ export class ImageStackWidget {
 		// 	}
 		// }
 		this.canvasContext.putImageData(myImageData, 0, 0);
+		this.canvasContext.beginPath();
+		this.canvasContext.arc(cellX, cellY, 5, 0, 2 * Math.PI);
+		this.canvasContext.strokeStyle = 'black';
+		this.canvasContext.stroke();
+		this.canvasContext.fillStyle = '#FF00FF';
+		this.canvasContext.fill();
+
 		let tooltipContent: string = this.getTooltipContent(segmentId, cell, index);
 		let delayOverride: number;
 		if (showTooltipImmediately)
