@@ -198,7 +198,6 @@ export class ImageTrackWidget
 
     private async drawTrackList(): Promise<void>
     {
-        this._cellLabelPositions = [];
         this._sourceDestCell = [];
         let listOfBoundingBoxLists = await this.getBoundingBoxLists(this.trackList);
         let maxHeightList: number[] = [];
@@ -234,6 +233,7 @@ export class ImageTrackWidget
             .attr('height', totalHeight);
 
         let verticalOffset: number = this.verticalPad;
+        this._cellLabelPositions = [];
         for (let i = 0; i < this.trackList.length; i++)
         {
             let track = this.trackList[i];
