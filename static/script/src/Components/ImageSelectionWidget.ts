@@ -183,35 +183,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     {
         const newUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}.png`
         const labelUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}_labels.dat`
-        
-        // let xhr = new XMLHttpRequest();
-        // xhr.responseType = 'blob';
-        // xhr.onload = () => {
-        //     let imageMetaDataString: string = xhr.getResponseHeader("tiledImageMetaData");
-        //     let imgWidth: number;
-        //     let imgHeight: number;
-        //     let numCol: number;
-        //     let scaleFactor: number;
-        //     if (imageMetaDataString)
-        //     {
-        //         let imageMetaData = JSON.parse(imageMetaDataString);
-        //         imgWidth = imageMetaData['tileWidth'];
-        //         imgHeight = imageMetaData['tileHeight'];
-        //         numCol = imageMetaData['numberOfColumns'];
-        //         scaleFactor = imageMetaData['scaleFactor'];
-        //     }
-        //     this.imageStackWidget.SetImageProperties(xhr.response, imgWidth, imgHeight, numCol, scaleFactor);
-        // }
-        // xhr.open('GET', newUrl);
-        // xhr.send();
 
         const [locId, frameId] = this.selectedLocFrame;
         this.imageStackDataRequest.getImage(locId, frameId, (top, left, blob) => 
         {
             this.imageStackWidget.SetImageProperties(blob);
         });
-
-        // this.imageStackWidget.SetLabelUrl(labelUrl);
 
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
         this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest);

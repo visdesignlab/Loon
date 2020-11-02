@@ -268,38 +268,4 @@ export class ImageStackDataRequest
         }
         return 0;
     }
-
-    // public getTilePixelXXYFromLabelRun(frameIndex: number, labelRun: LabelRun, rowArray: ImageLabels): [number, number, number]
-    // {
-    //     let [top, left] = this.getTileTopLeft(frameIndex);
-    //     return [left + labelRun.start, left + labelRun.start + labelRun.length, top + rowIdx];
-    //     // let imgX = (labelIndex - tileStartIndex) % this.imageStackDataRequest?.tileWidth;
-	// 	// let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackDataRequest?.tileWidth);
-	// 	// return [imgX, imgY];
-    // }
-
-        /**
-         * --- Meta Data --- 
-         * tile width
-         * tile height
-         * number of columns
-         * tilesPerFile
-         */
-
-         /**
-          * --- getLocation / Frame ---
-          * gets blob and info to extract
-          */
-
-          /**
-           * --- getLocation / Frame label ---
-           * gets full row list with info to extract
-           */
-
-
-           /** 
-            * Keeps list of blobs / and labels
-            * only hold a certain amount in memory.
-            */
-
 }

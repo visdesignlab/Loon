@@ -311,6 +311,8 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
                 uniqueLocationList.add(locId)
             else:
                 locId = None
+                uniqueLocationList.add(locationArray[0][index])
+
             if not frameIncluded:
                 frameId = frameArray[index, 0]
             else:

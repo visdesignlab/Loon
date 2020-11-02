@@ -294,12 +294,6 @@ export class ImageTrackWidget
             // is accounting for edge cases in the tile of the tiled image.
             // if it gets to an edge only only copies what it can, then centers in
             // a rect of the same size as others in the cell.
-            // let bbox = boundingBoxList[i];
-            // const [sX, sY] = bbox[0];
-            // let width = ImageTrackWidget.rectWidth(bbox);
-            // let height = ImageTrackWidget.rectHeight(bbox);
-            // const extraX = Math.round((maxWidth - width) / 2);
-            // const extraY = Math.round((maxHeight - height) / 2);
             const point = trackData.pointList[i];
             const frameId = point.get('Frame ID');
 
@@ -393,136 +387,6 @@ export class ImageTrackWidget
                     webWorker.terminate();
                 }
             });
-
-            // });
-
-            // this.parentWidget.imageStackDataRequest.getImage(point.get('Location ID'), frameIndex,
-            //     async (tileTop: number, tileLeft: number, blob: Blob, _url: string) =>
-            //     {
-            //         let bbox = boundingBoxList[i];
-            //         const [sX, sY] = bbox[0];
-            //         let width = ImageTrackWidget.rectWidth(bbox);
-            //         let height = ImageTrackWidget.rectHeight(bbox);
-            //         const extraX = Math.round((maxWidth - width) / 2);
-            //         const extraY = Math.round((maxHeight - height) / 2);
-            //         // const point = trackData.pointList[i];
-            //         // const frameId = point.get('Frame ID');
-        
-            //         const offsetIndex = frameId - minFrame;
-
-            //         const tileBot = tileTop + this.parentWidget.imageStackDataRequest?.tileHeight;
-            //         const tileRight = tileLeft + this.parentWidget.imageStackDataRequest?.tileWidth;
-        
-            //         const copyTop = DevlibMath.clamp(sY - extraY, [tileTop, tileBot]);
-            //         const copyLeft = DevlibMath.clamp(sX - extraX, [tileLeft, tileRight]);
-                    
-            //         const copyWidth = Math.min(maxWidth, tileRight - copyLeft);
-            //         const copyHeight = Math.min(maxHeight, tileBot - copyTop);
-                    
-            //         const offsetX = Math.round(this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad) + (maxWidth - copyWidth) / 2);
-            //         const offsetY = Math.round(verticalOffset + (maxHeight - copyHeight) / 2);
-            //         const destOffset: [number, number] = [offsetX, offsetY];
-            //         offsetArray.push(destOffset);
-            //         let sourceRect: Rect = [[copyLeft, copyTop], [copyLeft + copyWidth, copyTop + copyHeight]];
-            //         this.sourceDestCell.push([sourceRect, destOffset, point]);
-            //         let webWorker = new Worker('/static/script/dist/ImageWorker.js');
-            //         webWorker.postMessage([blob, copyLeft, copyTop, copyWidth, copyHeight]);
-            //         // asyncFunctionList.push(createImageBitmap(blob, copyLeft, copyTop, copyWidth, copyHeight));
-            //         webWorker.onmessage = (event) =>
-            //         {
-            //             let imageBitmap = event.data.imageBitmap
-            //             // result.textContent = e.data;
-            //             // console.log('Message received from worker');
-
-            //             // const frameId = trackData.pointList[i].get('Frame ID');
-            //             const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
-            //             // const offsetIndex = frameId - minFrame;
-            //             const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
-            //             const frameY = verticalOffset;
-            //             // const [offsetX, offsetY] = offsetArray[i];
-
-            //             this.canvasContext.beginPath();
-            //             this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
-            //             if (currentFrame)
-            //             {
-            //                 this.canvasContext.strokeStyle = 'MediumSeaGreen';
-            //                 this.canvasContext.lineWidth = 8; 
-
-            //             }
-            //             else
-            //             {
-            //                 this.canvasContext.strokeStyle = 'grey';
-            //                 this.canvasContext.lineWidth = 1; 
-            //             }
-
-            //             this.canvasContext.fillStyle = 'black';
-            //             this.canvasContext.stroke();
-            //             this.canvasContext.fill();
-            //             this.canvasContext.closePath();
-
-            //             this.canvasContext.drawImage(imageBitmap, offsetX, offsetY);
-            //         }
-
-            //         // todo = this.drawOutline();
-            //     });
-
-            // const [tileTop, tileLeft] = this.parentWidget.getTileTopLeft(frameIndex);
-            // const tileBot = tileTop + this.parentWidget.imageStackDataRequest?.tileHeight;
-            // const tileRight = tileLeft + this.parentWidget.imageStackDataRequest?.tileWidth;
-
-            // const copyTop = DevlibMath.clamp(sY - extraY, [tileTop, tileBot]);
-            // const copyLeft = DevlibMath.clamp(sX - extraX, [tileLeft, tileRight]);
-            
-            // const copyWidth = Math.min(maxWidth, tileRight - copyLeft);
-            // const copyHeight = Math.min(maxHeight, tileBot - copyTop);
-            
-            // const offsetX = Math.round(this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad) + (maxWidth - copyWidth) / 2);
-            // const offsetY = Math.round(verticalOffset + (maxHeight - copyHeight) / 2);
-            // const destOffset: [number, number] = [offsetX, offsetY];
-            // offsetArray.push(destOffset);
-            // let sourceRect: Rect = [[copyLeft, copyTop], [copyLeft + copyWidth, copyTop + copyHeight]];
-            // this.sourceDestCell.push([sourceRect, destOffset, point]);
-            // asyncFunctionList.push(createImageBitmap(this.parentWidget.imageStackBlob, copyLeft, copyTop, copyWidth, copyHeight));
-        
-        // }
-
-        // Promise.all(asyncFunctionList).then(
-        //     (bitMapList: ImageBitmap[]) =>
-        //     {
-        //         for (let i = 0; i < bitMapList.length; i++)
-        //         {
-        //             const imgBitmap = bitMapList[i];
-        //             const frameId = trackData.pointList[i].get('Frame ID');
-        //             const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
-        //             const offsetIndex = frameId - minFrame;
-        //             const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
-        //             const frameY = verticalOffset;
-        //             const [offsetX, offsetY] = offsetArray[i];
-
-        //             this.canvasContext.beginPath();
-        //             this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
-        //             if (currentFrame)
-        //             {
-        //                 this.canvasContext.strokeStyle = 'MediumSeaGreen';
-        //                 this.canvasContext.lineWidth = 8; 
-
-        //             }
-        //             else
-        //             {
-        //                 this.canvasContext.strokeStyle = 'grey';
-        //                 this.canvasContext.lineWidth = 1; 
-        //             }
-
-        //             this.canvasContext.fillStyle = 'black';
-        //             this.canvasContext.stroke();
-        //             this.canvasContext.fill();
-        //             this.canvasContext.closePath();
-
-        //             this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
-        //         }
-        //         this.drawOutlines();
-        //     }
-        // );
     }
 
     private drawTrackBackground(
@@ -595,26 +459,7 @@ export class ImageTrackWidget
                 }
 			}
         }
-
-
-        // for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
-        // {
-        //     let [tileX, tileY] = this.parentWidget.getTilePixelXYFromLabelIndex(firstIndex, i);
-        //     let [tileTop, tileLeft] = this.parentWidget.imageStackDataRequest.getTileTopLeft(frameIndex);
-        //     let bigImgX = tileLeft + tileX;
-        //     let bigImgY = tileTop + tileY;
-
-        //     let imgLabel = this.parentWidget.labelArray[i];
-        //     if (imgLabel === segmentId)
-        //     {
-        //         let [[minX, minY], [maxX, maxY]] = extent;
-        //         minX = Math.min(minX, bigImgX);
-        //         minY = Math.min(minY, bigImgY);
-        //         maxX = Math.max(maxX, bigImgX);
-        //         maxY = Math.max(maxY, bigImgY);
-        //         extent = [[minX, minY], [maxX, maxY]];
-        //     }
-        // }
+        
         return extent;
     }
 
