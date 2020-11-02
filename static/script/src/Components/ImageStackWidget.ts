@@ -266,16 +266,22 @@ export class ImageStackWidget {
 			});
 
 		let locId = this.imageLocation.locationId;
-		const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
 		if (!skipImageTrackDraw)
 		{
-			let curveList: CurveND[] = [];
-			for (let point of pointsAtFrame)
-			{
-				curveList.push(point.parent);
-			}
+			let curveList: CurveND[] = this.getCurvesBasedOnPointsAtCurrentFrame();
 			this.imageTrackWidget.draw(curveList);
 		}
+	}
+
+	private getCurvesBasedOnPointsAtCurrentFrame(): CurveND[]
+	{
+		let curveList: CurveND[] = [];
+		const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
+		for (let point of pointsAtFrame)
+		{
+			curveList.push(point.parent);
+		}
+		return curveList
 	}
 
 	private createOutlineImage(rowArray: ImageLabels, firstIndex: number): void
