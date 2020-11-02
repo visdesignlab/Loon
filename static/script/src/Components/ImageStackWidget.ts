@@ -525,9 +525,9 @@ export class ImageStackWidget {
 		// 		myImageData.data[rIdx + 3] = 200; // alpha
 		// 	}
 		// }
+		this.canvasContext.putImageData(myImageData, 0, 0);
 		if (cell)
 		{
-			this.canvasContext.putImageData(myImageData, 0, 0);
 			this.canvasContext.beginPath();
 			this.canvasContext.arc(cellX, cellY, 5, 0, 2 * Math.PI);
 			this.canvasContext.strokeStyle = 'black';

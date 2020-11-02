@@ -328,6 +328,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
             timeToIndex[time] = (locId, frameId, xShift, yShift)
 
     if not segLabelIncluded:
+        # todo - update for new data structure, and make sure uniqueLocationList is created
         uniqueLocationList = list(uniqueLocationList)
         uniqueLocationList.sort()
         labelLookup = buildLabelLookup(folderId, massOverTime, timeToIndex, uniqueLocationList)

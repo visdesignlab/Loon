@@ -115,7 +115,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._useKDEButton;
 	}
 	
-	private static _useKdeInsteadOfHistogram : boolean = true;
+	private static _useKdeInsteadOfHistogram : boolean = false;
 	
 	private static get useKdeInsteadOfHistogram() : boolean {
 		return HistogramWidget._useKdeInsteadOfHistogram;
@@ -225,7 +225,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		{
 			let shallowCopy = [...validNumbers];
 			const key = this.valueKey;
-			this._sortedData = shallowCopy.sort(DevlibAlgo.sortOnProperty<NDim>(d => d.get(key) ));
+			this._sortedData = shallowCopy.sort((a,b) => d3.ascending(a.get(key), b.get(key)));
 			this.drawTotalKDE();
 			this.drawBrushedKDE();
 			this.removeHistograms();
@@ -242,7 +242,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private calculateBins(points: NDim[]): d3.Bin<NDim, number>[]
 	{
-		let count = Math.round(Math.sqrt(this.fullData.length));
+		let count = Math.round(Math.sqrt(this.fullData.length)) / 3;
 		let minMax = this.fullData.getMinMax(this.valueKey);
 		let x = d3.scaleLinear()
 			.domain(minMax)
@@ -526,6 +526,10 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	public OnBrushChange(): void
 	{
+		if (this.container.classList.contains("noDisp"))
+		{
+			return;
+		}
 		if (HistogramWidget._useKdeInsteadOfHistogram)
 		{
 			this.drawBrushedKDE();
