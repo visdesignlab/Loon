@@ -1,3 +1,4 @@
+from io import BytesIO
 import os, io, math, random
 from functools import wraps
 from typing import Dict, Tuple, List, Union
@@ -310,6 +311,8 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
                 uniqueLocationList.add(locId)
             else:
                 locId = None
+                uniqueLocationList.add(locationArray[0][index])
+
             if not frameIncluded:
                 frameId = frameArray[index, 0]
             else:
@@ -327,6 +330,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
             timeToIndex[time] = (locId, frameId, xShift, yShift)
 
     if not segLabelIncluded:
+        # todo - update for new data structure, and make sure uniqueLocationList is created
         uniqueLocationList = list(uniqueLocationList)
         uniqueLocationList.sort()
         labelLookup = buildLabelLookup(folderId, massOverTime, timeToIndex, uniqueLocationList)
@@ -494,7 +498,7 @@ def getNormalizedMatlabObjectFromKey(matlabDict: Union[dict, h5py.File], key: st
 def getImageStackMetaData(folderId: str, locationId: int) -> str:
     labeledImageStackArray = getLabeledImageStackArray(folderId, locationId, True)
 
-    S = 4
+    S = 1
     labeledImageStackArray = downSample(labeledImageStackArray, S)
 
     if labeledImageStackArray is None:
@@ -526,11 +530,50 @@ def getImageStackMetaData(folderId: str, locationId: int) -> str:
     response.headers['tiledImageMetaData'] = json.dumps(metaData)
     return response
 
+@app.route('/data/<string:folderId>/imageMetaData.json')
+@authRequired
+def getImageStackMetaDataJson(folderId: str):
+    innerFolderId, _ = getFileId(folderId, '.vizMetaData',True)
+    if innerFolderId is None:
+        return
+    fileId, service = getFileId(innerFolderId, 'imageMetaData.json', True)
+    if fileId is None:
+        return
+    f = getFileFromGoogleDrive(fileId, service)
+    f.seek(0)
+    return flask.send_file(f, mimetype='application/json')
+
+@app.route('/data/<string:folderId>/img_<int:locationId>_<int:bundleIndex>.jpg')
+@authRequired
+def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
+    innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
+    if innerFolderId is None:
+        return
+    fileId, service = getFileId(innerFolderId, 'D{}.jpg'.format(bundleIndex),)
+    if fileId is None:
+        return
+    f = getFileFromGoogleDrive(fileId, service)
+    f.seek(0)
+    return flask.send_file(f, mimetype='image/jpeg')
+
+@app.route('/data/<string:folderId>/label_<int:locationId>_<int:bundleIndex>.pb')
+@authRequired
+def getImageLabelBundle(folderId: str, locationId: int, bundleIndex: int):
+    innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
+    if innerFolderId is None:
+        return
+    fileId, service = getFileId(innerFolderId, 'L{}.pb'.format(bundleIndex),)
+    if fileId is None:
+        return
+    f = getFileFromGoogleDrive(fileId, service)
+    f.seek(0)
+    return flask.send_file(f, mimetype='application/octet-stream')
+
 @app.route('/data/<string:folderId>/img_<int:locationId>.png')
 @authRequired
 def getImageStack(folderId: str, locationId: int):
     imageStackArray = getImageStackArray(folderId, locationId)
-    S = 4
+    S = 1
     imageStackArray = downSample(imageStackArray, S)
     shape = np.shape(imageStackArray)
     print("image stack shape = " + str(shape))
@@ -692,7 +735,7 @@ def getColoredImage(labeledValueImg, nonZeroColor):
     outputImg.putdata(outputImgData)
     return outputImg
 
-def getFileId(folderId: str, filename: str, doNotAbort = False):
+def getFileId(folderId: str, filename: str, doNotAbort = False) -> Tuple[str, googleapiclient.discovery.Resource]:
     credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
     service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
     
@@ -719,6 +762,12 @@ def credentialsValid() -> bool:
     return credentials.valid and not credentials.expired
 
 def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> Union[dict, h5py.File]:
+    f = getFileFromGoogleDrive(googleFileId, service)
+
+    matlabObject = openAnyMatlabFile(f)
+    return matlabObject
+
+def getFileFromGoogleDrive(googleFileId: str, service: googleapiclient.discovery.Resource) -> BytesIO:
     f = io.BytesIO()
     request = service.files().get_media(fileId=googleFileId)
 
@@ -728,8 +777,7 @@ def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.di
         status, done = downloader.next_chunk()
         print( "Download {} %".format(int(status.progress() * 100)), end='\r')
 
-    matlabObject = openAnyMatlabFile(f)
-    return matlabObject
+    return f
 
 def openAnyMatlabFile(bytesIO) -> Union[dict, h5py.File]:
     try:

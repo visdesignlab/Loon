@@ -7,6 +7,7 @@ import { RichTooltip } from '../Components/RichTooltip';
 import { ImageStackMetaData } from '../types';
 import { ImageTrackWidget } from './ImageTrackWidget';
 import { CurveND } from '../DataModel/CurveND';
+import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
 
 export class ImageStackWidget {
 	
@@ -16,14 +17,6 @@ export class ImageStackWidget {
 		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this);
 		this._maxHeight = maxHeight;
 		this.init();
-		this._imageStackMetaData = {
-			url: '',
-			tileWidth: 0,
-			tileHeight: 0,
-			numberOfTiles: 0,
-			numberOfColumns: 0
-		};
-		this._labelArray = null;
 		this._cellHovered = 0;
 		this._selectedImgIndex = 0;
 		console.log(d3);
@@ -56,13 +49,8 @@ export class ImageStackWidget {
 		return this._imageStackBlob;
 	}
 
-	private _imageStackMetaData : ImageStackMetaData;
-	public get imageStackMetaData() : ImageStackMetaData {
-		return this._imageStackMetaData;
-	}
-
 	public get numPixelsInTile() : number {
-		return this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight;
+		return this.imageStackDataRequest?.tileWidth * this.imageStackDataRequest?.tileHeight;
 	}
 
 	public get firstIndex() : number {
@@ -124,11 +112,11 @@ export class ImageStackWidget {
 		return this._data;
 	}
 	
-	private _labelArray : Int8Array;
-	public get labelArray() : Int8Array {
-		return this._labelArray;
+	private _imageStackDataRequest : ImageStackDataRequest;
+	public get imageStackDataRequest() : ImageStackDataRequest {
+		return this._imageStackDataRequest;
 	}
-
+	
 	private _defaultCanvasState : ImageData;
 	public get defaultCanvasState() : ImageData {
 		return this._defaultCanvasState;
@@ -197,12 +185,12 @@ export class ImageStackWidget {
 		this.selectedImageCanvas.style('opacity', 1);
 	}
 
-	public SetData(data: CurveList, imageLocation: ImageLocation): void
+	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest): void
 	{
 		this._data = data;
+		this._imageStackDataRequest = imageStackDataRequest;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
-		this.imageStackMetaData.numberOfTiles = imageLocation.frameList.length;
 		this.SetImageProperties(); // default values before image load
 		this.draw();
 	}
@@ -213,47 +201,8 @@ export class ImageStackWidget {
 		if (!imageWidth)  { imageWidth  = 256; }
 		if (!imageHeight) { imageHeight = 256; }
 		if (!numColumns)  { numColumns  = 10; }
-		if (blob)
-		{
-			this.imageStackMetaData.url = window.URL.createObjectURL(blob);
-		}
-		else
-		{
-			this.imageStackMetaData.url = '';
-		}
 		this._imageStackBlob = blob;
-
-		this.imageStackMetaData.tileWidth = imageWidth;
-		this.imageStackMetaData.tileHeight = imageHeight;
-		this.imageStackMetaData.numberOfColumns = numColumns;
-		this.imageStackMetaData.scaleFactor = scaleFactor;
-		this._imageStackWidth = numColumns * imageWidth;
-		const numRows: number = Math.ceil(this.imageStackMetaData.numberOfTiles / numColumns);
-		this._imageStackHeight = numRows * imageHeight;
 		this.draw();
-	}
-
-	public SetLabelUrl(labelUrl?: string): void
-	{
-		this._imageStackLabelUrl = labelUrl;
-		this._labelArray = null;
-		this.updateCanvas();
-		if (!labelUrl)
-		{
-			return
-		}
-		d3.buffer(this.imageStackLabelUrl).then((data: ArrayBuffer) =>
-		{
-			if (data.byteLength === 0)
-			{
-				this._labelArray = null;
-			}
-			else
-			{
-				this._labelArray = new Int8Array(data);
-			}
-			this.updateCanvas();
-		});
 	}
 
 	public draw(skipImageTrackDraw = false): void
@@ -277,8 +226,8 @@ export class ImageStackWidget {
 
 	private drawSelectedImage(skipImageTrackDraw = false): void
 	{
-		const styleString: string = this.getImageInlineStyle(this.selectedImgIndex, this.imageStackMetaData.url);
-		this.selectedImageContainer.attr("style", styleString);
+		this.setImageInlineStyle(this.selectedImgIndex);
+		// this.selectedImageContainer.attr("style", styleString);
 		this.updateCanvas(skipImageTrackDraw);
 	}
 
@@ -301,16 +250,21 @@ export class ImageStackWidget {
 
 	private updateCanvas(skipImageTrackDraw = false): void
 	{
-		if (!this.imageStackMetaData.url)
+		if (!this.imageStackDataRequest)
 		{
 			return;
 		}
 		this.selectedImageCanvas
-			.attr('width', this.imageStackMetaData?.tileWidth)
-			.attr('height', this.imageStackMetaData?.tileHeight);
+			.attr('width', this.imageStackDataRequest?.tileWidth)
+			.attr('height', this.imageStackDataRequest?.tileHeight);
 
-		this.createOutlineImage();
-		this.drawDefaultCanvas();
+		this.imageStackDataRequest?.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
+			(data: ImageLabels, firstIndex: number) =>
+			{
+				this.createOutlineImage(data, firstIndex);
+				this.drawDefaultCanvas();
+			});
+
 		let locId = this.imageLocation.locationId;
 		const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
 		if (!skipImageTrackDraw)
@@ -324,30 +278,37 @@ export class ImageStackWidget {
 		}
 	}
 
-	private createOutlineImage(): void
+	private createOutlineImage(rowArray: ImageLabels, firstIndex: number): void
 	{
-		let myImageData = this.canvasContext.createImageData(this.imageStackMetaData?.tileWidth, this.imageStackMetaData?.tileHeight);
-		if (!this.labelArray)
+		if (!this.imageStackDataRequest)
 		{
-			this._defaultCanvasState = myImageData
 			return;
 		}
-		const numPixelsInTile = this.numPixelsInTile;
-		const firstIndex = this.firstIndex;
-		for (let i = firstIndex; i < firstIndex + numPixelsInTile; i++)
+		let myImageData = this.canvasContext.createImageData(this.imageStackDataRequest.tileWidth, this.imageStackDataRequest.tileHeight);
+
+		for (let rowIdx = firstIndex; rowIdx < firstIndex + this.imageStackDataRequest.tileHeight; rowIdx++)
 		{
-			let rIdx = (i - firstIndex) * 4;
-			let label = this.labelArray[i];
-			if (label > 0 && this.isBorder(i))
+			let row: Row = rowArray.rowList[rowIdx];
+			for (let labelRun of row.row)
 			{
-				let [cell, _index] = this.getCell(label)
-				let [r, g, b] = this.getCellColor(cell);
-				myImageData.data[rIdx] = r;
-				myImageData.data[rIdx + 1] = g;
-				myImageData.data[rIdx + 2] = b;
-				myImageData.data[rIdx + 3] = 255;
+				for (let colIdx = labelRun.start; colIdx < labelRun.start + labelRun.length; colIdx++)
+				{
+					if (this.isBorder(labelRun.label, rowIdx, colIdx, rowArray))
+					{
+
+						let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
+						flatIdx *= 4;
+						let [cell, _index] = this.getCell(labelRun.label)
+						let [r, g, b] = this.getCellColor(cell);
+						myImageData.data[flatIdx] = r;
+						myImageData.data[flatIdx + 1] = g;
+						myImageData.data[flatIdx + 2] = b;
+						myImageData.data[flatIdx + 3] = 255;
+					}
+				}
 			}
 		}
+
 		this._defaultCanvasState = myImageData;
 	}
 
@@ -356,38 +317,37 @@ export class ImageStackWidget {
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
 	}
 
-	public isBorder(index: number): boolean
+	public isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean
 	{
-		const numPixelsInTile = this.numPixelsInTile;
-		const extra = index % (this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight);
-		const firstIndex = index - extra;
-		let label = this.labelArray[index];
-		let neighborIndices: number[] = [];
+		let neighborIndices: [number, number][] = [];
 		// 4-neighbor
-		neighborIndices.push(index + 1);
-		neighborIndices.push(index - 1);
-		neighborIndices.push(index + this.imageStackMetaData.tileWidth);
-		neighborIndices.push(index - this.imageStackMetaData.tileWidth);
+		neighborIndices.push([rowIdx - 1, colIdx]);
+		neighborIndices.push([rowIdx + 1, colIdx]);
+		neighborIndices.push([rowIdx, colIdx - 1]);
+		neighborIndices.push([rowIdx, colIdx + 1]);
 		// 8-neighbor
-		neighborIndices.push(index - this.imageStackMetaData.tileWidth + 1);
-		neighborIndices.push(index - this.imageStackMetaData.tileWidth - 1);
-		neighborIndices.push(index + this.imageStackMetaData.tileWidth + 1);
-		neighborIndices.push(index + this.imageStackMetaData.tileWidth - 1);
+		neighborIndices.push([rowIdx - 1, colIdx - 1]);
+		neighborIndices.push([rowIdx + 1, colIdx - 1]);
+		neighborIndices.push([rowIdx + 1, colIdx - 1]);
+		neighborIndices.push([rowIdx - 1, colIdx + 1]);
 		// 12-neighbor
-		neighborIndices.push(index + 2);
-		neighborIndices.push(index - 2);
-		neighborIndices.push(index + 2 * this.imageStackMetaData.tileWidth);
-		neighborIndices.push(index - 2 * this.imageStackMetaData.tileWidth);
+		neighborIndices.push([rowIdx - 2, colIdx]);
+		neighborIndices.push([rowIdx + 2, colIdx]);
+		neighborIndices.push([rowIdx, colIdx - 2]);
+		neighborIndices.push([rowIdx, colIdx + 2]);
 
 
-		for (let nIdx of neighborIndices)
+		for (let [rI, cI] of neighborIndices)
 		{
-			if (nIdx < firstIndex || (firstIndex + numPixelsInTile) <= nIdx)
+			if (rI < 0
+				|| rI >= rowArray.rowList.length
+				|| cI < 0
+				|| cI >= this.imageStackDataRequest.tileWidth)
 			{
 				// neighbor out of bounds of tile
 				continue;
 			}
-			let nVal = this.labelArray[nIdx];
+			let nVal = ImageStackDataRequest.getLabelValue(rI, cI, rowArray);
 			if (nVal !== label)
 			{
 				return true
@@ -398,35 +358,38 @@ export class ImageStackWidget {
 
 	private onCanvasMouseMove(e: MouseEvent): void
 	{
-		if (!this.labelArray || !this.defaultCanvasState)
+		if (!this.imageStackDataRequest || !this.defaultCanvasState)
 		{
 			return;
 		}
-		const numPixelsInTile = this.numPixelsInTile;
-		const firstIndex = this.firstIndex;
-		const labelIndex = firstIndex + e.offsetY * this.imageStackMetaData.tileWidth + e.offsetX;
-		const label = this.labelArray[labelIndex];
-		if (label === this.cellHovered)
-		{
-			return;
-		}
-		this._cellHovered = label;
-		if (label === 0)
-		{
-			this.drawDefaultCanvas();
-			this.tooltip.Hide();
-			const customEvent = new CustomEvent('frameHoverChange', { detail:
+		this.imageStackDataRequest.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
+			(rowArray: ImageLabels, firstIndex: number) =>
+			{
+				const rowIdx = e.offsetY + firstIndex;
+				const colIdx = e.offsetX;
+				const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
+				if (label === this.cellHovered)
 				{
-					locationId: this.getCurrentLocationId(),
-					frameId: this.getCurrentFrameId(),
-					cellId: null
-				}});
-			document.dispatchEvent(customEvent);
-		}
-		else
-		{
-			this.showSegmentHover(label, false, e);
-		}
+					return;
+				}
+				this._cellHovered = label;
+				if (label === 0)
+				{
+					this.drawDefaultCanvas();
+					this.tooltip.Hide();
+					const customEvent = new CustomEvent('frameHoverChange', { detail:
+						{
+							locationId: this.getCurrentLocationId(),
+							frameId: this.getCurrentFrameId(),
+							cellId: null
+						}});
+					document.dispatchEvent(customEvent);
+				}
+				else
+				{
+					this.showSegmentHover(rowArray, label, firstIndex, false, e);
+				}
+			});
 	}
 
 	public hideSegmentHover(hideTooltipImmediately: boolean = false): void
@@ -440,7 +403,7 @@ export class ImageStackWidget {
 		this.tooltip.Hide(delayOverride);
 	}
 
-	public showSegmentHover(segmentId: number, showTooltipImmediately: boolean = false, event?: MouseEvent): void
+	public showSegmentHover(rowArray: ImageLabels, segmentId: number, firstIndex: number, showTooltipImmediately: boolean = false, event?: MouseEvent): void
 	{
 		this._cellHovered = segmentId;
 		let [cell, index] = this.getCell(segmentId);
@@ -454,11 +417,6 @@ export class ImageStackWidget {
 			let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
 			cellX = cell.get('X') + cell.get('xShift');
 			cellY = cell.get('Y') + cell.get('yShift');
-			if (this.imageStackMetaData.scaleFactor)
-			{
-				cellX /= this.imageStackMetaData.scaleFactor;
-				cellY /= this.imageStackMetaData.scaleFactor;
-			}
 			pageX = canvasBoundRect.x + cellX;
 			pageY = canvasBoundRect.y + cellY;
 
@@ -476,33 +434,42 @@ export class ImageStackWidget {
 			pageY = event.pageY;
 		}
 
-		let myImageData = this.canvasContext.createImageData(this.imageStackMetaData.tileWidth, this.imageStackMetaData.tileHeight);
+		let myImageData = this.canvasContext.createImageData(this.imageStackDataRequest?.tileWidth, this.imageStackDataRequest?.tileHeight);
 		myImageData.data.set(this.defaultCanvasState.data);
-		for (let i = this.firstIndex; i < this.firstIndex + this.numPixelsInTile; i++)
+		for (let rowIdx = firstIndex; rowIdx < firstIndex + this.imageStackDataRequest.tileHeight; rowIdx++)
 		{
-			let [imgX, imgY] = this.getTilePixelXYFromLabelIndex(this.firstIndex, i);
-			let rIdx = (i - this.firstIndex) * 4;
-			let imgLabel = this.labelArray[i];
-			if (cell && Math.pow(imgX - cellX, 2) + Math.pow(imgY - cellY, 2) <= 25)
+			let row: Row = rowArray.rowList[rowIdx];
+			for (let labelRun of row.row)
 			{
-				// cell center label
-				let [r, g, b] = this.getCellColor(cell);
-				myImageData.data[rIdx] = 255;
-				myImageData.data[rIdx + 1] = 0;
-				myImageData.data[rIdx + 2] = 255;
-				myImageData.data[rIdx + 3] = 255; // alpha
-			}
-			else if (imgLabel === this.cellHovered)
-			{
-				// cell region color
-				let [r, g, b] = this.getCellColor(cell);
-				myImageData.data[rIdx] = r;
-				myImageData.data[rIdx + 1] = g;
-				myImageData.data[rIdx + 2] = b;
-				myImageData.data[rIdx + 3] = 200; // alpha
+				if (labelRun.label === this.cellHovered)
+				{
+					for (let colIdx = labelRun.start; colIdx < labelRun.start + labelRun.length; colIdx++)
+					{
+							let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
+							flatIdx *= 4;
+							let [cell, _index] = this.getCell(labelRun.label)
+							let [r, g, b] = this.getCellColor(cell);
+							myImageData.data[flatIdx] = r;
+							myImageData.data[flatIdx + 1] = g;
+							myImageData.data[flatIdx + 2] = b;
+							myImageData.data[flatIdx + 3] = 200;
+					}
+				}
+
 			}
 		}
+
 		this.canvasContext.putImageData(myImageData, 0, 0);
+		if (cell)
+		{
+			this.canvasContext.beginPath();
+			this.canvasContext.arc(cellX, cellY, 5, 0, 2 * Math.PI);
+			this.canvasContext.strokeStyle = 'black';
+			this.canvasContext.stroke();
+			this.canvasContext.fillStyle = '#FF00FF';
+			this.canvasContext.fill();
+		}
+
 		let tooltipContent: string = this.getTooltipContent(segmentId, cell, index);
 		let delayOverride: number;
 		if (showTooltipImmediately)
@@ -512,31 +479,22 @@ export class ImageStackWidget {
 		this.tooltip.Show(tooltipContent, pageX, pageY, delayOverride);
 	}
 
-	public  getTilePixelXYFromLabelIndex(tileStartIndex: number, labelIndex: number): [number, number]
-	{
-		let imgX = (labelIndex - tileStartIndex) % this.imageStackMetaData.tileWidth;
-		let imgY = Math.floor((labelIndex - tileStartIndex) / this.imageStackMetaData.tileWidth);
-		return [imgX, imgY];
-	}
-
-	public getLabelIndexFromBigImgPixelXY(x: number, y: number): number
+	public getLabelIndexFromBigImgPixelXY(frameIndex: number, x: number, y: number): [number, number]
 	{
 		x = Math.round(x);
 		y = Math.round(y);
 
-		let tileX = x % this.imageStackMetaData.tileWidth;
-		let tileY = y % this.imageStackMetaData.tileHeight;
-		let tileIndex = this.getTileIndexFromBigImgPixelXY(x, y);
-		let labelIndex = tileIndex * (this.imageStackMetaData.tileWidth * this.imageStackMetaData.tileHeight);
-		labelIndex += tileX + tileY * this.imageStackMetaData.tileWidth;
-		return labelIndex;
+		let colIdx = x % this.imageStackDataRequest?.tileWidth;
+		let rowIdx = (y % this.imageStackDataRequest?.tileHeight) + (frameIndex % this.imageStackDataRequest?.tilesPerFile) * this.imageStackDataRequest?.tileHeight;
+
+		return [rowIdx, colIdx];
 	}
 
 	public getTileIndexFromBigImgPixelXY(x: number, y: number): number
 	{
-		let colIndex = Math.floor(x / this.imageStackMetaData.tileWidth);
-		let rowIndex = Math.floor(y / this.imageStackMetaData.tileHeight);
-		return rowIndex * this.imageStackMetaData.numberOfColumns + colIndex;
+		let colIndex = Math.floor(x / this.imageStackDataRequest?.tileWidth);
+		let rowIndex = Math.floor(y / this.imageStackDataRequest?.tileHeight);
+		return rowIndex * this.imageStackDataRequest?.numberOfColumns + colIndex;
 	}
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string
@@ -591,46 +549,40 @@ export class ImageStackWidget {
 		this.drawUpdate();
 	}
 
-	private getImageInlineStyle(index: number, imageUrl: string, includeFallback = true,  scale: number = 1): string
+	private setImageInlineStyle(index: number, includeFallback = true): void
 	{
-		const [top, left] = this.getTileTopLeft(index);
-		let styleString: string =
-			`
-			background-position-x: ${-left * scale}px;
-			background-position-y: ${-top * scale}px;
-			width: ${this.imageStackMetaData.tileWidth * scale}px;
-			height: ${this.imageStackMetaData.tileHeight * scale}px;
-			`;
-		if (imageUrl)
-		{
-			styleString += `background-image: url(${imageUrl});`;
-		}
-
-		if (includeFallback)
-		{
-			styleString += 'background-color: #ebebeb;';
-		}
-		if (scale !== 1)
-		{
-			styleString += `background-size: ${this.imageStackWidth * scale}px ${this.imageStackHeight * scale}px;`
-		}
-		return styleString;
+		this.imageStackDataRequest?.getImage(this.getCurrentLocationId(), index,
+			(top, left, _blob, imageUrl) =>
+			{
+				let styleString: string =
+					`
+					background-position-x: ${-left}px;
+					background-position-y: ${-top}px;
+					width: ${this.imageStackDataRequest?.tileWidth}px;
+					height: ${this.imageStackDataRequest?.tileHeight}px;
+					`;
+				if (imageUrl)
+				{
+					styleString += `background-image: url(${imageUrl});`;
+				}
+		
+				if (includeFallback)
+				{
+					styleString += 'background-color: #ebebeb;';
+				}
+				this.selectedImageContainer.attr("style", styleString);
+			});
 	}
 
 	private updateBackgroundPosition(index: number)
 	{
-		const [top, left] = this.getTileTopLeft(index);
+		this.setImageInlineStyle(index);
+		return;
+		const [top, left] = this.imageStackDataRequest?.getTileTopLeft(index);
 		this.selectedImageContainer.node().style.backgroundPositionX =  -left + 'px';
 		this.selectedImageContainer.node().style.backgroundPositionY = -top + 'px';
 	}
-
-	public getTileTopLeft(index: number): [number, number]
-	{
-		const left: number = (index % this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileWidth;
-		const top: number = Math.floor(index / this.imageStackMetaData.numberOfColumns) * this.imageStackMetaData.tileHeight;
-		return [top, left];
-	}
-
+	
 	public OnResize(newMaxHeight: number, imageTrackMaxHeight: number, newWidth: number): void
 	{
 		this._maxHeight = newMaxHeight;
