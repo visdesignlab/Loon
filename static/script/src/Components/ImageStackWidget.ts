@@ -273,6 +273,15 @@ export class ImageStackWidget {
 		}
 	}
 
+	private getExemplarCurves(): CurveND[]
+	{
+		let curveList: CurveND[] = [];
+		const trackLevelAttribute = 'Avg Mass';
+		// TODO
+
+		return curveList
+	}
+
 	private getCurvesBasedOnPointsAtCurrentFrame(): CurveND[]
 	{
 		let curveList: CurveND[] = [];
