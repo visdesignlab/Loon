@@ -4,6 +4,7 @@ from functools import wraps
 from typing import Dict, Tuple, List, Union
 import array
 import uuid
+from datetime import datetime
 
 import settings
 
@@ -250,7 +251,12 @@ def cache(folderId: str, filename: str, data, isBinary = False) -> None:
 def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     filename = 'massOverTime.csv'
     if isCached(folderId, filename):
-        return getCached(folderId, filename)
+        filePath = cachePath(folderId, filename)
+        cachedModifiedTime = os.path.getmtime(filePath)
+        fileId, service = getFileId(folderId, 'data_allframes.mat', True)
+        driveModifiedTime = getLastModifiedTimeFromGoogleDrive(fileId, service)
+        if cachedModifiedTime > driveModifiedTime:
+            return getCached(folderId, filename)
 
     # generate data
     data_allframes = getData_AllFrames(folderId)
@@ -780,6 +786,17 @@ def getFileFromGoogleDrive(googleFileId: str, service: googleapiclient.discovery
         print( "Download {} %".format(int(status.progress() * 100)), end='\r')
 
     return f
+
+def getLastModifiedTimeFromGoogleDrive(googleFileId: str, service: googleapiclient.discovery.Resource) -> float:
+    metadata = getFileMetaDataFromGoogleDrive(googleFileId, service, 'modifiedTime')
+    dateObj = datetime.strptime(metadata['modifiedTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+    secondsSinceEpoch = (dateObj - datetime(1970, 1, 1)).total_seconds()
+    return secondsSinceEpoch
+
+def getFileMetaDataFromGoogleDrive(googleFileId: str, service: googleapiclient.discovery.Resource, dataFields: str):
+    request = service.files().get(fileId=googleFileId, fields=dataFields)
+    metadata = request.execute()
+    return metadata
 
 def openAnyMatlabFile(bytesIO) -> Union[dict, h5py.File]:
     try:
