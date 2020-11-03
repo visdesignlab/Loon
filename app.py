@@ -3,6 +3,7 @@ import os, io, math, random
 from functools import wraps
 from typing import Dict, Tuple, List, Union
 import array
+import uuid
 
 import settings
 
@@ -42,6 +43,7 @@ def auth():
     authUrl, state = flow.authorization_url(access_type='offline', include_granted_scopes='true', prompt='consent')
 
     flask.session['state'] = state
+    flask.session['uid'] = uuid.uuid4()
     return flask.redirect(authUrl)
 
 def authRequired(f):
@@ -312,8 +314,6 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
                 uniqueLocationList.add(locId)
             else:
                 locId = None
-                uniqueLocationList.add(locationArray[0][index])
-
             if not frameIncluded:
                 frameId = frameArray[index, 0]
             else:
@@ -785,11 +785,12 @@ def openAnyMatlabFile(bytesIO) -> Union[dict, h5py.File]:
     try:
         outputDict = h5py.File(bytesIO, 'r')
     except:
-        tempFilename = settings.TEMP_FILES_FOLDER + 'temp.mat'
+        tempFilename = settings.TEMP_FILES_FOLDER + flask.session['uid'].hex + '.mat'
         tmpFile = open(tempFilename, 'wb')
         tmpFile.write(bytesIO.getvalue())
         tmpFile.close()
         outputDict = loadmat(tempFilename)
+        os.remove(tempFilename)
     return outputDict
 
 @app.errorhandler(404)
