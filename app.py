@@ -4,6 +4,8 @@ from functools import wraps
 from typing import Dict, Tuple, List, Union
 import array
 
+import settings
+
 # web framework
 import flask
 from flask.helpers import url_for
@@ -27,21 +29,17 @@ import numpy as np
 # for saving structured exif data
 import json
 
-CLIENT_SECRETS_FILENAME = 'config/credentials.json'
-REFRESH_TOKEN = 'TODO: dev token'
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
-TEMP_FILES_FOLDER = 'tmp/'
 app = flask.Flask(__name__)
-app.secret_key = "TODO: replace dev key in production"
-
-TOP_GOOGLE_DRIVE_FOLDER_ID = '1H07fdv5Aj3aGqOAAEbCmmouyC6OWAZln'
+app.secret_key = settings.FLASK_SECRET_KEY
+app.config['SERVER_NAME'] = settings.FLASK_SERVER_NAME
 
 @app.route('/auth')
 def auth():
-    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(CLIENT_SECRETS_FILENAME, scopes=SCOPES)
+    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(settings.CLIENT_SECRETS_FILENAME, scopes=SCOPES)
     flow.redirect_uri = url_for('authCallback', _external=True)
 
-    authUrl, state = flow.authorization_url(access_type='offline', include_granted_scopes='true')
+    authUrl, state = flow.authorization_url(access_type='offline', include_granted_scopes='true', prompt='consent')
 
     flask.session['state'] = state
     return flask.redirect(authUrl)
@@ -50,7 +48,9 @@ def authRequired(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # flask.session.clear()
+        print('@authRequired')
         if not credentialsValid():
+            print('credentials')
             flask.session['nextUrl'] = flask.request.url
             return flask.redirect(url_for('auth'))
         return f(*args, **kwargs)
@@ -58,8 +58,9 @@ def authRequired(f):
 
 @app.route('/authCallback')
 def authCallback():
+    # print('Auth Callback.')
     state = flask.session['state']
-    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(CLIENT_SECRETS_FILENAME, scopes=SCOPES, state=state)
+    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(settings.CLIENT_SECRETS_FILENAME, scopes=SCOPES, state=state)
     flow.redirect_uri = url_for('authCallback', _external=True)
 
     flow.fetch_token(authorization_response=flask.request.url)
@@ -71,7 +72,7 @@ def authCallback():
     # print('###################################')
     flask.session['credentials'] = {
         'token': creds.token,
-        'refresh_token': REFRESH_TOKEN,
+        'refresh_token': creds.refresh_token,
         'token_uri': creds.token_uri,
         'client_id': creds.client_id,
         'client_secret': creds.client_secret,
@@ -156,7 +157,7 @@ def updateDataSpecList() -> str:
 def getDataSpecObj(service, googleDriveFile) -> Union[Dict, None]:
     dataSpecObj = {}
     parentId = googleDriveFile['parents'][0]
-    folderPathList = getFolderPathFromGoogleDrive(service, TOP_GOOGLE_DRIVE_FOLDER_ID, parentId)
+    folderPathList = getFolderPathFromGoogleDrive(service, settings.TOP_GOOGLE_DRIVE_FOLDER_ID, parentId)
     if len(folderPathList) == 0:
         return None
     dataSpecObj['googleDriveId'] = parentId
@@ -752,13 +753,14 @@ def getFileId(folderId: str, filename: str, doNotAbort = False) -> Tuple[str, go
     return fileId, service
 
 def credentialsValid() -> bool:
+    # print('@credentialsValid')
     if 'credentials' not in flask.session:
+        # print('Credentials not found')
         return False
     credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
-    print('@credentialsValid')
-    print(credentials)
-    print(credentials.valid)
-    print(credentials.expired)
+    # print(credentials)
+    # print(credentials.valid)
+    # print(credentials.expired)
     return credentials.valid and not credentials.expired
 
 def getMatlabDictFromGoogleFileId(googleFileId: str, service: googleapiclient.discovery.Resource) -> Union[dict, h5py.File]:
@@ -783,7 +785,7 @@ def openAnyMatlabFile(bytesIO) -> Union[dict, h5py.File]:
     try:
         outputDict = h5py.File(bytesIO, 'r')
     except:
-        tempFilename = TEMP_FILES_FOLDER + 'temp.mat'
+        tempFilename = settings.TEMP_FILES_FOLDER + 'temp.mat'
         tmpFile = open(tempFilename, 'wb')
         tmpFile.write(bytesIO.getvalue())
         tmpFile.close()
@@ -795,6 +797,4 @@ def page_not_found(error):
     return flask.redirect('/static/404.jpg')    
 
 if __name__ == '__main__':
-    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-    os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
-    app.run('localhost', 8080, debug=True)
+    app.run()
