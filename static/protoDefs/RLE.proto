@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package imageLabels;
+
+message ImageLabels
+{
+    repeated Row rowList = 1;
+}
+
+message Row
+{
+    repeated LabelRun row = 1; 
+}
+
+message LabelRun
+{
+    required int32 start = 1;
+    required int32 length = 2;
+    required int32 label = 3;
+}
