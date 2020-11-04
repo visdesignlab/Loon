@@ -209,7 +209,7 @@ export class ImageStackDataRequest
         this.labelArray[thisIndex] = [null, key];
 
         const labelUrl = `/data/${this.driveId}/label_${location}_${bundleIndex}.pb`;
-        load("/static/cache/test/RLE.proto", async (err, root) => {
+        load("/static/protoDefs/RLE.proto", async (err, root) => {
             if (err)
             {
                 throw err;
