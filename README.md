@@ -47,16 +47,6 @@ Mac: `source .venv/bin/activate`
 
 `python3 -m pip install -r requirements.txt`
 
-## Install Gulp (to bundle js)
-
-`npm install -g gulp-cli`
-
-`npm install --save-dev typescript gulp@4.0.0 gulp-typescript`
-
-`npm install --save-dev browserify tsify vinyl-source-stream`
-
-`npm install --save-dev watchify fancy-log`
-
 ### Troubleshooting
 - See docs: [https://www.typescriptlang.org/docs/handbook/gulp.html](https://www.typescriptlang.org/docs/handbook/gulp.html)
 
