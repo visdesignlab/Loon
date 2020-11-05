@@ -33,8 +33,6 @@
 
 ### Create [virtual environment](https://docs.python.org/3/tutorial/venv.html):
 
-`cd cell-growth-util`
-
 `python3 -m venv .venv`
 
 ### Activate virual environment:
