@@ -5,7 +5,7 @@
 
 `cd cell-growth`
 
-`sh setup.sh`
+`sudo sh setup.sh`
 
 - setup will create a .env file with variables to fill out.
 
