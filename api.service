@@ -1,0 +1,12 @@
+[Unit]
+Description=Cell-Growth API and frontend
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/cell-growth/
+ExecStartPre=/usr/bin/gulp
+ExecStart=/home/ubuntu/cell-growth/.venv/bin/python app.py
+Restart=always
+
+[Install]
+WantedBy=default.target
