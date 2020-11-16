@@ -3,9 +3,11 @@ Description=Cell-Growth API and frontend
 
 [Service]
 Type=simple
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/home/ubuntu/cell-growth/
 ExecStartPre=/usr/bin/gulp
-ExecStart=/home/ubuntu/cell-growth/.venv/bin/python app.py
+ExecStart=/home/ubuntu/cell-growth/.venv/bin/python gunicorn --bind 127.0.0.1:5000 wsgi:app
 Restart=always
 
 [Install]
