@@ -12,7 +12,6 @@ import settings
 import flask
 from flask.helpers import url_for
 from flask import abort
-from flask_talisman import Talisman
 
 # Google authentication
 import google.oauth2.credentials
@@ -34,7 +33,6 @@ import json
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 app = flask.Flask(__name__)
-Talisman(app, content_security_policy=None)
 app.secret_key = settings.FLASK_SECRET_KEY
 app.config['SERVER_NAME'] = settings.FLASK_SERVER_NAME
 
@@ -818,3 +816,4 @@ def page_not_found(error):
 
 if __name__ == '__main__':
     app.run()
+
