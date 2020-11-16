@@ -9,6 +9,7 @@ WorkingDirectory=/home/ubuntu/cell-growth/
 ExecStartPre=/usr/bin/gulp
 ExecStart=/home/ubuntu/cell-growth/.venv/bin/gunicorn --bind 127.0.0.1:5000 wsgi:app
 Restart=always
+TimeoutStartSec=900
 
 [Install]
 WantedBy=default.target
