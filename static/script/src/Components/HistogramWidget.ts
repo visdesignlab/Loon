@@ -297,7 +297,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 				DevlibTSUtil.hide(this.useRelativeButton);
 				DevlibTSUtil.show(this.useAbsoluteButton);
 			}
-			this.OnDataChange();
+			this.drawAllHistograms([], true);
 		});
 	}
 
@@ -328,31 +328,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		else
 		{
 			this.drawAllHistograms(validNumbers);
-			// let brushedNumbers = validNumbers.filter(d => d.inBrush);
-			// if (validNumbers.length === brushedNumbers.length)
-			// {
-			// 	this.brushedHistogramGroupSelect.html(null);
-			// 	this._brushedBins = []
-			// }
-			// else
-			// {
-			// 	this._brushedBins = this.calculateBins(brushedNumbers);
-			// }
-
-			// // this.drawHistogram(this.totalHistogramGroupSelect, this.allBins);
-			// // this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
-			// // this.drawBrushedHistogram();		
-
-			// let biggestBinRelativeAll = d3.max(this.allBins, d => d.length / validNumbers.length);
-			// let biggestBinRelativeBrushed = d3.max(this.brushedBins, d => d.length / brushedNumbers.length);
-			// this._scaleYHistogramRelative = d3.scaleLinear<number, number>()
-			// 	.domain([0, d3.max([biggestBinRelativeAll, biggestBinRelativeBrushed])])
-			// 	.range([0, this.vizHeight]);
-
-
-			// this.drawHistogram(this.totalHistogramGroupSelect, this.allBins);
-			// this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
-
 			this.removeKDEs();
 		}
 
@@ -394,43 +369,32 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this.totalHistogramGroupSelect.html(null);
 		this.brushedHistogramGroupSelect.html(null);
 	}
-	
-	// private drawBrushedHistogram(): void
-	// {
-	// 	let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
-	// 	let brushedNumbers = validNumbers.filter(d => d.inBrush);
-	// 	if (validNumbers.length === brushedNumbers.length)
-	// 	{
-	// 		this.brushedHistogramGroupSelect.html(null);
-	// 		return;
-	// 	}
-	// 	this._brushedBins = this.calculateBins(brushedNumbers);
 
-	// 	this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
-	// }
-
-	private drawAllHistograms(validNumbers: NDim[]): void
+	private drawAllHistograms(validNumbers?: NDim[], skipRecalculation = false): void
 	{
-		let brushedNumbers = validNumbers.filter(d => d.inBrush);
-		if (validNumbers.length === brushedNumbers.length)
+		if (this.container.classList.contains("noDisp"))
 		{
-			this.brushedHistogramGroupSelect.html(null);
-			this._brushedBins = []
+			return;
 		}
-		else
+		if (!skipRecalculation)
 		{
-			this._brushedBins = this.calculateBins(brushedNumbers);
+			let brushedNumbers = validNumbers.filter(d => d.inBrush);
+			if (validNumbers.length === brushedNumbers.length)
+			{
+				this.brushedHistogramGroupSelect.html(null);
+				this._brushedBins = []
+			}
+			else
+			{
+				this._brushedBins = this.calculateBins(brushedNumbers);
+			}	
+			
+			let biggestBinRelativeAll = d3.max(this.allBins, d => d.length / validNumbers.length);
+			let biggestBinRelativeBrushed = d3.max(this.brushedBins, d => d.length / brushedNumbers.length);
+			this._scaleYHistogramRelative = d3.scaleLinear<number, number>()
+				.domain([0, d3.max([biggestBinRelativeAll, biggestBinRelativeBrushed])])
+				.range([0, this.vizHeight]);
 		}
-
-		// this.drawHistogram(this.totalHistogramGroupSelect, this.allBins);
-		// this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
-		// this.drawBrushedHistogram();		
-
-		let biggestBinRelativeAll = d3.max(this.allBins, d => d.length / validNumbers.length);
-		let biggestBinRelativeBrushed = d3.max(this.brushedBins, d => d.length / brushedNumbers.length);
-		this._scaleYHistogramRelative = d3.scaleLinear<number, number>()
-			.domain([0, d3.max([biggestBinRelativeAll, biggestBinRelativeBrushed])])
-			.range([0, this.vizHeight]);
 
 
 		this.drawHistogram(this.totalHistogramGroupSelect, this.allBins);
@@ -450,12 +414,14 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			.y(d => d[1])
 			.defined(d => d[0] !== null);
 
-		select.html(null)
-			.append("path")
-			.datum(pathPoints)
+
+		select.selectAll('path')
+			.data([lineFunc(pathPoints)])
+			.join('path')
 			.classed('kdePath', true)
 			.classed('inBrush', inBrush)
-			.attr("d", lineFunc);
+			.transition()
+			.attr("d", d => d);
 	}
 
 	private getHistogramSkyline(bins: d3.Bin<NDim, number>[], singleWidth: number = 18): [number, number][]
@@ -473,11 +439,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			pathPoints.push([right, this.vizHeight]);
 			return pathPoints;
 		}
-
-		// let biggestBinCount = d3.max(bins, d => d.length);
-		// let scaleY = d3.scaleLinear<number, number>()
-		// 	.domain([0, biggestBinCount])
-		// 	.range([0, this.vizHeight]);
 
 		const totalCount = d3.sum(bins, bin => bin.length);
 
@@ -651,11 +612,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this._scaleYHistogramAbsolute = d3.scaleLinear<number, number>()
 			.domain([0, biggestBinCount])
 			.range([0, this.vizHeight]);
-
-		// let biggestBinRelative = d3.max(this.allBins, d => d.length / totalCount);
-		// this._scaleYHistogramRelative = d3.scaleLinear<number, number>()
-		// 	.domain([0, biggestBinRelative])
-		// 	.range([0, this.vizHeight]);
 	}
 
 	public MoveBrush(newRange: [number, number] | null): void
@@ -711,9 +667,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		}
 		else
 		{
-			// todo
-			// this.OnDataChange();
-			// this.drawBrushedHistogram();
 			let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
 			this.drawAllHistograms(validNumbers);
 		}
