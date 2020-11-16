@@ -94,6 +94,36 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return this._scaleX;
 	}
 
+	private _scaleYHistogramAbsolute : d3.ScaleLinear<number, number>;
+	public get scaleYHistogramAbsolute() : d3.ScaleLinear<number, number> {
+		return this._scaleYHistogramAbsolute;
+	}
+	private _scaleYHistogramRelative : d3.ScaleLinear<number, number>;
+	public get scaleYHistogramRelative() : d3.ScaleLinear<number, number> {
+		return this._scaleYHistogramRelative;
+	}
+	// private _scaleY : d3.ScaleLinear<number, number>;
+	// public get scaleY() : d3.ScaleLinear<number, number> {
+	// 	return this._scaleY;
+	// }
+	// private _scaleY : d3.ScaleLinear<number, number>;
+	// public get scaleY() : d3.ScaleLinear<number, number> {
+	// 	return this._scaleY;
+	// }
+
+	private _allBins : d3.Bin<NDim, number>[];
+	public get allBins() : d3.Bin<NDim, number>[] {
+		return this._allBins;
+	}
+	
+	private _brushedBins : d3.Bin<NDim, number>[];
+	public get brushedBins() : d3.Bin<NDim, number>[] {
+		return this._brushedBins;
+	}
+	public set brushedBins(v : d3.Bin<NDim, number>[]) {
+		this._brushedBins = v;
+	}
+
 	private _axisPadding :  number;
 	public get axisPadding() :  number {
 		return this._axisPadding;
@@ -125,6 +155,29 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		HistogramWidget._useKdeInsteadOfHistogram = v;
 		let event = new Event('switchBetweenKdeAndHistogram');
 		document.dispatchEvent(event);
+	}	
+	
+	
+	private _useAbsoluteButton : HTMLButtonElement;
+	public get useAbsoluteButton() : HTMLButtonElement {
+		return this._useAbsoluteButton;
+	}
+
+	private _useRelativeButton : HTMLButtonElement;
+	public get useRelativeButton() : HTMLButtonElement {
+		return this._useRelativeButton;
+	}
+
+	private static _useAbsoluteScaling : boolean = true;
+	
+	private static get useAbsoluteScaling() : boolean {
+		return HistogramWidget._useAbsoluteScaling;
+	}
+
+	private static set useAbsoluteScaling(v : boolean) {
+		HistogramWidget._useAbsoluteScaling = v;
+		let event = new Event('switchBetweenAbsoluteAndRelativeScaling');
+		document.dispatchEvent(event);
 	}
 
 	protected setMargin(): void
@@ -139,39 +192,9 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	public init(): void
 	{
-		this._useHistogramButton = this.AddButton('chart-bar', () =>
-		{
-			HistogramWidget.useKdeInsteadOfHistogram = false;
-		});
 		
-		this._useKDEButton = this.AddButton('chart-area', () =>
-		{
-			HistogramWidget.useKdeInsteadOfHistogram = true;
-		});
-		if (HistogramWidget.useKdeInsteadOfHistogram)
-		{
-			DevlibTSUtil.hide(this.useKDEButton);
-		}
-		else
-		{
-			DevlibTSUtil.hide(this.useHistogramButton);
-		}
-
-		document.addEventListener('switchBetweenKdeAndHistogram', (e: Event) => 
-		{
-			if (HistogramWidget.useKdeInsteadOfHistogram)
-			{
-				DevlibTSUtil.show(this.useHistogramButton);
-				DevlibTSUtil.hide(this.useKDEButton);
-			}
-			else
-			{
-				DevlibTSUtil.hide(this.useHistogramButton);
-				DevlibTSUtil.show(this.useKDEButton);
-			}
-			this.OnDataChange();
-		});
-
+		this.initKDEHIstogramToggle();
+		this.initAbsoluteRelativeToggle();
 
 		this._svgSelect = d3.select(this.container).append("svg")
 			.attr("width", this.width)
@@ -206,6 +229,78 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			.classed('labelColor', true);
 	}
 
+	private initKDEHIstogramToggle(): void
+	{
+		this._useHistogramButton = this.AddButton('chart-bar', () =>
+		{
+			HistogramWidget.useKdeInsteadOfHistogram = false;
+		});
+		
+		this._useKDEButton = this.AddButton('chart-area', () =>
+		{
+			HistogramWidget.useKdeInsteadOfHistogram = true;
+		});
+		if (HistogramWidget.useKdeInsteadOfHistogram)
+		{
+			DevlibTSUtil.hide(this.useKDEButton);
+		}
+		else
+		{
+			DevlibTSUtil.hide(this.useHistogramButton);
+		}
+
+		document.addEventListener('switchBetweenKdeAndHistogram', (e: Event) => 
+		{
+			if (HistogramWidget.useKdeInsteadOfHistogram)
+			{
+				DevlibTSUtil.show(this.useHistogramButton);
+				DevlibTSUtil.hide(this.useKDEButton);
+			}
+			else
+			{
+				DevlibTSUtil.hide(this.useHistogramButton);
+				DevlibTSUtil.show(this.useKDEButton);
+			}
+			this.OnDataChange();
+		});
+	}
+
+	private initAbsoluteRelativeToggle(): void
+	{
+		this._useAbsoluteButton = this.AddButton('hashtag', () =>
+		{
+			HistogramWidget.useAbsoluteScaling = true;
+		});
+		
+		this._useRelativeButton = this.AddButton('percent', () =>
+		{
+			HistogramWidget.useAbsoluteScaling = false;
+		});
+		if (HistogramWidget.useAbsoluteScaling)
+		{
+			DevlibTSUtil.hide(this.useAbsoluteButton);
+		}
+		else
+		{
+			DevlibTSUtil.hide(this.useRelativeButton);
+		}
+
+		document.addEventListener('switchBetweenAbsoluteAndRelativeScaling', (e: Event) => 
+		{
+			if (HistogramWidget.useAbsoluteScaling)
+			{
+				DevlibTSUtil.show(this.useRelativeButton);
+				DevlibTSUtil.hide(this.useAbsoluteButton);
+			}
+			else
+			{
+				DevlibTSUtil.hide(this.useRelativeButton);
+				DevlibTSUtil.show(this.useAbsoluteButton);
+			}
+			this.OnDataChange();
+		});
+	}
+
 	private setLabel(): void
 	{	
 		const bufferForAxis = 32 + this.axisPadding;
@@ -219,8 +314,8 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	public OnDataChange(): void
 	{
 		let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));	
-		let allBins = this.calculateBins(validNumbers);
-		this.updateScales(allBins);
+		this._allBins = this.calculateBins(validNumbers);
+		this.updateScales(validNumbers.length);
 		if (HistogramWidget._useKdeInsteadOfHistogram)
 		{
 			let shallowCopy = [...validNumbers];
@@ -232,8 +327,32 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		}
 		else
 		{
-			this.drawHistogram(this.totalHistogramGroupSelect, allBins);
-			this.drawBrushedHistogram();
+			this.drawAllHistograms(validNumbers);
+			// let brushedNumbers = validNumbers.filter(d => d.inBrush);
+			// if (validNumbers.length === brushedNumbers.length)
+			// {
+			// 	this.brushedHistogramGroupSelect.html(null);
+			// 	this._brushedBins = []
+			// }
+			// else
+			// {
+			// 	this._brushedBins = this.calculateBins(brushedNumbers);
+			// }
+
+			// // this.drawHistogram(this.totalHistogramGroupSelect, this.allBins);
+			// // this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
+			// // this.drawBrushedHistogram();		
+
+			// let biggestBinRelativeAll = d3.max(this.allBins, d => d.length / validNumbers.length);
+			// let biggestBinRelativeBrushed = d3.max(this.brushedBins, d => d.length / brushedNumbers.length);
+			// this._scaleYHistogramRelative = d3.scaleLinear<number, number>()
+			// 	.domain([0, d3.max([biggestBinRelativeAll, biggestBinRelativeBrushed])])
+			// 	.range([0, this.vizHeight]);
+
+
+			// this.drawHistogram(this.totalHistogramGroupSelect, this.allBins);
+			// this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
+
 			this.removeKDEs();
 		}
 
@@ -276,21 +395,55 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this.brushedHistogramGroupSelect.html(null);
 	}
 	
-	private drawBrushedHistogram(): void
+	// private drawBrushedHistogram(): void
+	// {
+	// 	let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
+	// 	let brushedNumbers = validNumbers.filter(d => d.inBrush);
+	// 	if (validNumbers.length === brushedNumbers.length)
+	// 	{
+	// 		this.brushedHistogramGroupSelect.html(null);
+	// 		return;
+	// 	}
+	// 	this._brushedBins = this.calculateBins(brushedNumbers);
+
+	// 	this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
+	// }
+
+	private drawAllHistograms(validNumbers: NDim[]): void
 	{
-		let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
 		let brushedNumbers = validNumbers.filter(d => d.inBrush);
 		if (validNumbers.length === brushedNumbers.length)
 		{
 			this.brushedHistogramGroupSelect.html(null);
-			return;
+			this._brushedBins = []
 		}
-		let brushedBins = this.calculateBins(brushedNumbers);
-		this.drawHistogram(this.brushedHistogramGroupSelect, brushedBins, true);
+		else
+		{
+			this._brushedBins = this.calculateBins(brushedNumbers);
+		}
+
+		// this.drawHistogram(this.totalHistogramGroupSelect, this.allBins);
+		// this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
+		// this.drawBrushedHistogram();		
+
+		let biggestBinRelativeAll = d3.max(this.allBins, d => d.length / validNumbers.length);
+		let biggestBinRelativeBrushed = d3.max(this.brushedBins, d => d.length / brushedNumbers.length);
+		this._scaleYHistogramRelative = d3.scaleLinear<number, number>()
+			.domain([0, d3.max([biggestBinRelativeAll, biggestBinRelativeBrushed])])
+			.range([0, this.vizHeight]);
+
+
+		this.drawHistogram(this.totalHistogramGroupSelect, this.allBins);
+		this.drawHistogram(this.brushedHistogramGroupSelect, this.brushedBins, true);
 	}
 
 	private drawHistogram(select: SvgSelection, bins: d3.Bin<NDim, number>[], inBrush: boolean = false): void
 	{
+		if (bins.length === 0)
+		{
+			select.html(null);
+			return;
+		}
 		let pathPoints = this.getHistogramSkyline(bins);
 		let lineFunc = d3.line()
 			.x(d => d[0])
@@ -321,15 +474,26 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			return pathPoints;
 		}
 
-		let biggestBinCount = d3.max(bins, d => d.length);
-		let scaleY = d3.scaleLinear<number, number>()
-			.domain([0, biggestBinCount])
-			.range([0, this.vizHeight]);
+		// let biggestBinCount = d3.max(bins, d => d.length);
+		// let scaleY = d3.scaleLinear<number, number>()
+		// 	.domain([0, biggestBinCount])
+		// 	.range([0, this.vizHeight]);
+
+		const totalCount = d3.sum(bins, bin => bin.length);
 
 		for (let bin of bins)
 		{
 			let x1: number = this.scaleX(bin.x0);
-			let y: number = this.vizHeight - scaleY(bin.length);
+			let offset: number;
+			if (HistogramWidget.useAbsoluteScaling)
+			{
+				offset = this.scaleYHistogramAbsolute(bin.length);
+			}
+			else
+			{
+				offset = this.scaleYHistogramRelative(bin.length / totalCount);
+			}
+			let y: number = this.vizHeight - offset;
 			pathPoints.push([x1, y]);
 
 			if (bin.length === 0)
@@ -473,14 +637,25 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		return 0;
 	}
 
-	private updateScales(bins: d3.Bin<NDim, number>[]): void
+	private updateScales(totalCount: number): void
 	{
-		let minBinBoundary = bins[0].x0;
-		let maxBinBoundary = bins[bins.length - 1].x1;
+
+		let minBinBoundary = this.allBins[0].x0;
+		let maxBinBoundary = this.allBins[this.allBins.length - 1].x1;
 
 		this._scaleX = d3.scaleLinear<number, number>()
 			.domain([minBinBoundary, maxBinBoundary])
 			.range([0, this.vizWidth]);
+
+		let biggestBinCount = d3.max(this.allBins, d => d.length);
+		this._scaleYHistogramAbsolute = d3.scaleLinear<number, number>()
+			.domain([0, biggestBinCount])
+			.range([0, this.vizHeight]);
+
+		// let biggestBinRelative = d3.max(this.allBins, d => d.length / totalCount);
+		// this._scaleYHistogramRelative = d3.scaleLinear<number, number>()
+		// 	.domain([0, biggestBinRelative])
+		// 	.range([0, this.vizHeight]);
 	}
 
 	public MoveBrush(newRange: [number, number] | null): void
@@ -536,7 +711,11 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		}
 		else
 		{
-			this.drawBrushedHistogram();
+			// todo
+			// this.OnDataChange();
+			// this.drawBrushedHistogram();
+			let validNumbers = this.data.Array.filter(d => !isNaN(d.get(this.valueKey)));
+			this.drawAllHistograms(validNumbers);
 		}
 	}
 
