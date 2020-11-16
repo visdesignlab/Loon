@@ -55,3 +55,7 @@ Mac: `source .venv/bin/activate`
 # Run server
 
 `python3 app.py`
+
+# Deploy with gunicorn
+
+`gunicorn --bind 127.0.0.1:5000 wsgi:app`
