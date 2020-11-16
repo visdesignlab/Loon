@@ -34,7 +34,6 @@ import json
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 app = flask.Flask(__name__)
 app.secret_key = settings.FLASK_SECRET_KEY
-app.config['SERVER_NAME'] = settings.FLASK_SERVER_NAME
 
 @app.route('/auth')
 def auth():
@@ -816,3 +815,4 @@ def page_not_found(error):
 
 if __name__ == '__main__':
     app.run()
+
