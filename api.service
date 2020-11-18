@@ -6,7 +6,7 @@ Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/cell-growth/
-ExecStart=/home/ubuntu/cell-growth/.venv/bin/gunicorn --bind 127.0.0.1:5000 wsgi:app
+ExecStart=/home/ubuntu/cell-growth/.venv/bin/gunicorn --bind 127.0.0.1:5000 --timeout 120 wsgi:app
 Restart=always
 TimeoutStartSec=900
 

@@ -58,4 +58,4 @@ Mac: `source .venv/bin/activate`
 
 # Deploy with gunicorn
 
-`gunicorn --bind 127.0.0.1:5000 wsgi:app`
+`gunicorn --bind 127.0.0.1:5000 --timeout 120 wsgi:app`
