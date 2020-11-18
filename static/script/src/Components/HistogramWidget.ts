@@ -102,14 +102,16 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	public get scaleYHistogramRelative() : d3.ScaleLinear<number, number> {
 		return this._scaleYHistogramRelative;
 	}
-	// private _scaleY : d3.ScaleLinear<number, number>;
-	// public get scaleY() : d3.ScaleLinear<number, number> {
-	// 	return this._scaleY;
-	// }
-	// private _scaleY : d3.ScaleLinear<number, number>;
-	// public get scaleY() : d3.ScaleLinear<number, number> {
-	// 	return this._scaleY;
-	// }
+
+	private _scaleYKdeAbsolute : d3.ScaleLinear<number, number>;
+	public get scaleYKdeAbsolute() : d3.ScaleLinear<number, number> {
+		return this._scaleYKdeAbsolute;
+	}
+	private _scaleYKdeRelative : d3.ScaleLinear<number, number>;
+	public get scaleYKdeRelative() : d3.ScaleLinear<number, number> {
+		return this._scaleYKdeRelative;
+	}
+
 
 	private _allBins : d3.Bin<NDim, number>[];
 	public get allBins() : d3.Bin<NDim, number>[] {
@@ -297,7 +299,14 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 				DevlibTSUtil.hide(this.useRelativeButton);
 				DevlibTSUtil.show(this.useAbsoluteButton);
 			}
-			this.drawAllHistograms([], true);
+			if (HistogramWidget.useKdeInsteadOfHistogram)
+			{
+				this.drawAllKDE();
+			}
+			else
+			{
+				this.drawAllHistograms([], true);
+			}
 		});
 	}
 
@@ -321,8 +330,9 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			let shallowCopy = [...validNumbers];
 			const key = this.valueKey;
 			this._sortedData = shallowCopy.sort((a,b) => d3.ascending(a.get(key), b.get(key)));
-			this.drawTotalKDE();
-			this.drawBrushedKDE();
+			// this.drawTotalKDE();
+			// this.drawBrushedKDE();
+			this.drawAllKDE()
 			this.removeHistograms();
 		}
 		else
@@ -481,35 +491,84 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	}
 	
 
-	private drawTotalKDE(): void
-	{
-		this.drawKDE(this.sortedData, false, this.totalKDEGroupSelect);
-	}
+	// private drawTotalKDE(): void
+	// {
+	// 	this.drawKDE(this.sortedData, false, this.totalKDEGroupSelect);
+	// }
 
-	private drawBrushedKDE(): void
+	// private drawBrushedKDE(): void
+	// {
+	// 	let brushedPoints = this.sortedData.filter(d => d.inBrush);
+	// 	if (brushedPoints.length === this.sortedData.length)
+	// 	{
+	// 		this.brushedKDEGroupSelect.html(null);
+	// 		return;
+	// 	}
+	// 	this.drawKDE(brushedPoints, true, this.brushedKDEGroupSelect);
+	// }
+
+	private drawAllKDE(): void
 	{
+
+
+		// this.drawKDE(this.sortedData, false, this.totalKDEGroupSelect);
 		let brushedPoints = this.sortedData.filter(d => d.inBrush);
+		// if (brushedPoints.length === this.sortedData.length)
+		// {
+		// 	this.brushedKDEGroupSelect.html(null);
+		// 	return;
+		// }
+
+		let allPathPoints = this.kde(this.sortedData);
+		let maxValAll = d3.max(allPathPoints, d => d[1]);
+		let brushedPathPoints = this.kde(brushedPoints);
+
+		let maxDomain = maxValAll;
+		if (!HistogramWidget.useAbsoluteScaling)
+		{
+			let maxValBrushed = d3.max(brushedPathPoints, d => d[1]);
+			maxDomain = d3.max([maxDomain, maxValBrushed])
+		}
+
+		this._scaleYKdeRelative = d3.scaleLinear<number, number>()
+			.domain([0, maxDomain])
+			.range([this.vizHeight, 0]);
+
+		this.drawKDE(this.sortedData.length, allPathPoints, false, this.totalKDEGroupSelect);
 		if (brushedPoints.length === this.sortedData.length)
 		{
 			this.brushedKDEGroupSelect.html(null);
-			return;
 		}
-		this.drawKDE(brushedPoints, true, this.brushedKDEGroupSelect);
+		else
+		{
+			this.drawKDE(brushedPoints.length, brushedPathPoints, true, this.brushedKDEGroupSelect);
+		}
 	}
 
-	private drawKDE(points: NDim[], inbrush: boolean, select: SvgSelection): void
+	private drawKDE(numPoints: number, pathPoints: [number, number][], inbrush: boolean, select: SvgSelection): void
 	{
-		let pathPoints = this.kde(points);
+		// let pathPoints = this.kde(points);
 
-		let maxVal = d3.max(pathPoints, d => d[1]);
-		let kdeScaleY = d3.scaleLinear<number, number>()
-			.domain([0, maxVal])
-			.range([this.vizHeight, 0]);
+		// let maxVal = d3.max(pathPoints, d => d[1]);
+		// let kdeScaleY = d3.scaleLinear<number, number>()
+		// 	.domain([0, maxVal])
+		// 	.range([this.vizHeight, 0]);
+
+		let yFunc: (d: [number, number]) => number;
+
+		if (HistogramWidget.useAbsoluteScaling)
+		{
+			yFunc = d => this.scaleYKdeRelative((numPoints / this.sortedData.length ) * d[1]);
+		}
+		else
+		{
+			yFunc = d => this.scaleYKdeRelative(d[1])
+		}
 
 		let lineFunc = d3.line()
 			.curve(d3.curveBasis)
 			.x(d => this.scaleX(d[0]))
-			.y(d => kdeScaleY(d[1]));
+			.y(yFunc);
 
 		select.html(null)
 			.append("path")
@@ -663,7 +722,8 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		}
 		if (HistogramWidget._useKdeInsteadOfHistogram)
 		{
-			this.drawBrushedKDE();
+			// this.drawBrushedKDE();
+			this.drawAllKDE();
 		}
 		else
 		{
