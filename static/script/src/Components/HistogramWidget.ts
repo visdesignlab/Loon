@@ -358,8 +358,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			let shallowCopy = [...validNumbers];
 			const key = this.valueKey;
 			this._sortedData = shallowCopy.sort((a,b) => d3.ascending(a.get(key), b.get(key)));
-			// this.drawTotalKDE();
-			// this.drawBrushedKDE();
 
 			this._allPathPoints = this.kde(this.sortedData);
 			this._maxDensityAll = d3.max(this.allPathPoints, d => d[1]);
@@ -520,43 +518,13 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this.totalKDEGroupSelect.html(null);
 		this.brushedKDEGroupSelect.html(null);
 	}
-	
-
-	// private drawTotalKDE(): void
-	// {
-	// 	this.drawKDE(this.sortedData, false, this.totalKDEGroupSelect);
-	// }
-
-	// private drawBrushedKDE(): void
-	// {
-	// 	let brushedPoints = this.sortedData.filter(d => d.inBrush);
-	// 	if (brushedPoints.length === this.sortedData.length)
-	// 	{
-	// 		this.brushedKDEGroupSelect.html(null);
-	// 		return;
-	// 	}
-	// 	this.drawKDE(brushedPoints, true, this.brushedKDEGroupSelect);
-	// }
 
 	private drawAllKDE(filterChanged: boolean): void
 	{
 
-
-		// this.drawKDE(this.sortedData, false, this.totalKDEGroupSelect);
-		// if (brushedPoints.length === this.sortedData.length)
-		// {
-			// 	this.brushedKDEGroupSelect.html(null);
-			// 	return;
-			// }
-			
-		// let allPathPoints = this.kde(this.sortedData);
-		// let maxValAll = d3.max(this.allPathPoints, d => d[1]);
-		// if (filterChanged)
-		// {
-			let brushedPoints = this.sortedData.filter(d => d.inBrush);
-			this._brushedPathPoints = this.kde(brushedPoints);
-			this._brushedPointsLength = brushedPoints.length;
-		// }
+		let brushedPoints = this.sortedData.filter(d => d.inBrush);
+		this._brushedPathPoints = this.kde(brushedPoints);
+		this._brushedPointsLength = brushedPoints.length;
 
 		let maxDomain = this.maxDensityAll;
 		if (!HistogramWidget.useAbsoluteScaling)
@@ -585,13 +553,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private drawKDE(numPoints: number, pathPoints: [number, number][], inBrush: boolean, select: SvgSelection): void
 	{
-		// let pathPoints = this.kde(points);
-
-		// let maxVal = d3.max(pathPoints, d => d[1]);
-		// let kdeScaleY = d3.scaleLinear<number, number>()
-		// 	.domain([0, maxVal])
-		// 	.range([this.vizHeight, 0]);
-
 		let yFunc: (d: [number, number]) => number;
 
 		if (HistogramWidget.useAbsoluteScaling)
@@ -607,12 +568,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			// .curve(d3.curveBasis)
 			.x(d => this.scaleX(d[0]))
 			.y(yFunc)
-			// .defined(d => d[0] !== null)
-
-		// let lineFunc = d3.line()
-		// 	.x(d => d[0])
-		// 	.y(d => d[1])
-		// 	.defined(d => d[0] !== null);
 
 		select.selectAll('path')
 			.data([lineFunc(pathPoints)])
@@ -620,13 +575,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			.classed('kdePath', true)
 			.classed('inBrush', inBrush)
 			.transition()
-			// .duration(4000)
-			// .delay(500)
-			// .attrTween('d', function(d)
-			// {
-			// 	let previousPath = d3.select(this).attr('d');
-			// 	return d3.interpolatePath(previousPath, d)
-			// });
 			.attr('d', d => d);
 	}
 
