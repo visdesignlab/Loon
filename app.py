@@ -85,12 +85,12 @@ def authCallback():
 @app.route('/')
 @authRequired
 def index():
-    return flask.render_template('index.html')
+    return flask.render_template('index.html', deploy=settings.FLASK_ENV == 'production')
 
 @app.route('/<string:datasetId>')
 @authRequired
 def detailedView(datasetId: str):
-    return flask.render_template('detailedView.html', datasetId=datasetId)
+    return flask.render_template('detailedView.html', datasetId=datasetId, deploy=settings.FLASK_ENV == 'production')
 
 @app.route('/data/<string:datasetId>.json')
 @authRequired
