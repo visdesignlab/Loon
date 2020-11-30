@@ -91,11 +91,15 @@ def authCallback():
     return flask.redirect(flask.session['nextUrl'])
 
 @app.route('/')
-@authRequired
 def index():
     return flask.render_template('index.html', deploy=settings.FLASK_ENV == 'production')
 
-@app.route('/<string:datasetId>')
+@app.route('/overview')
+@authRequired
+def overview():
+    return flask.render_template('overview.html', deploy=settings.FLASK_ENV == 'production')
+
+@app.route('/detailedView/<string:datasetId>')
 @authRequired
 def detailedView(datasetId: str):
     return flask.render_template('detailedView.html', datasetId=datasetId, deploy=settings.FLASK_ENV == 'production')
