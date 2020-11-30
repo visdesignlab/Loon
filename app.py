@@ -37,13 +37,13 @@ app.secret_key = settings.FLASK_SECRET_KEY
 
 @app.route('/auth')
 def auth():
+    flask.session['uid'] = uuid.uuid4()
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(settings.CLIENT_SECRETS_FILENAME, scopes=SCOPES)
     flow.redirect_uri = url_for('authCallback', _external=True)
 
     authUrl, state = flow.authorization_url(access_type='offline', include_granted_scopes='true', prompt='consent')
 
     flask.session['state'] = state
-    flask.session['uid'] = uuid.uuid4()
     return flask.redirect(authUrl)
 
 def authRequired(f):
@@ -51,12 +51,20 @@ def authRequired(f):
     def decorated_function(*args, **kwargs):
         # flask.session.clear()
         print('@authRequired')
-        if not credentialsValid():
+        flask.session['allowAccessToAll'] = shouldAllowAccessToAll(kwargs)
+        if not credentialsValid() and not flask.session['allowAccessToAll']:
             print('credentials')
             flask.session['nextUrl'] = flask.request.url
             return flask.redirect(url_for('auth'))
         return f(*args, **kwargs)
     return decorated_function
+
+def shouldAllowAccessToAll(args) -> bool:
+    if 'folderId' in args and args['folderId'] == settings.DEMO_ID:
+        return True
+    if 'datasetId' in args and args['datasetId'] == settings.DEMO_NAME:
+        return True
+    return False
 
 @app.route('/authCallback')
 def authCallback():
@@ -83,11 +91,15 @@ def authCallback():
     return flask.redirect(flask.session['nextUrl'])
 
 @app.route('/')
-@authRequired
 def index():
     return flask.render_template('index.html', deploy=settings.FLASK_ENV == 'production')
 
-@app.route('/<string:datasetId>')
+@app.route('/overview')
+@authRequired
+def overview():
+    return flask.render_template('overview.html', deploy=settings.FLASK_ENV == 'production')
+
+@app.route('/detailedView/<string:datasetId>')
 @authRequired
 def detailedView(datasetId: str):
     return flask.render_template('detailedView.html', datasetId=datasetId, deploy=settings.FLASK_ENV == 'production')
@@ -742,7 +754,10 @@ def getColoredImage(labeledValueImg, nonZeroColor):
     return outputImg
 
 def getFileId(folderId: str, filename: str, doNotAbort = False) -> Tuple[str, googleapiclient.discovery.Resource]:
-    credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
+    if flask.session['allowAccessToAll']:
+        credentials = google.oauth2.credentials.Credentials.from_authorized_user_file(settings.DEMO_CREDENTIALS_FILENAME)
+    else:
+        credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
     service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
     
     query = "'" + folderId + "' in parents and name='" + filename + "'"
