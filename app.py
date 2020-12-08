@@ -28,6 +28,9 @@ from PIL import ImageChops
 import piexif
 import numpy as np
 
+# for generating pb files
+import pbCsv_pb2
+
 # for saving structured exif data
 import json
 
@@ -257,10 +260,10 @@ def cache(folderId: str, filename: str, data, isBinary = False) -> None:
     cache.close()
     return
 
-@app.route('/data/<string:folderId>/massOverTime.csv')
+@app.route('/data/<string:folderId>/massOverTime.pb')
 @authRequired
 def getMassOverTimeCsv(folderId: str): # -> flask.Response:
-    filename = 'massOverTime.csv'
+    filename = 'massOverTime.pb'
     if isCached(folderId, filename):
         filePath = cachePath(folderId, filename)
         cachedModifiedTime = os.path.getmtime(filePath)
@@ -273,14 +276,14 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     data_allframes = getData_AllFrames(folderId)
     colHeaders = getColTracksHeader(folderId, data_allframes)
     if colHeaders is None:
-        colHeaderString = 'X,Y,Mass (pg),Time (h),id,Mean Value,Shape Factor,Location ID,Frame ID,xShift,yShift,segmentLabel'
+        colHeaderList = ['X', 'Y', 'Mass (pg)', 'Time (h)', 'id', 'Mean Value', 'Shape Factor', 'Location ID', 'Frame ID', 'xShift', 'yShift', 'segmentLabel']
         timeIndex = 3
         idIndex = 4
     else:
         colHeaders = [x[0] for x in colHeaders[0]]
         timeIndex = colHeaders.index('Time (h)')
         idIndex = colHeaders.index('id')
-        colHeaderString = ','.join(colHeaders)
+        colHeaderList = [x for x in colHeaders]
 
     massOverTime = getMassOverTimeArray(folderId, data_allframes)
 
@@ -302,21 +305,21 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     if not locIncluded:
         locationArray = getLocationArray(folderId, data_allframes)
         if colHeaders is not None:
-            colHeaderString += ',' + 'Location ID'
+            colHeaderList.append('Location ID')
     if not frameIncluded:
         frameArray = getFrameArray(folderId, data_allframes)
         if colHeaders is not None:
-            colHeaderString += ',' + 'Frame ID'
+            colHeaderList.append('Frame ID')
     if not xShiftIncluded:
         xShiftArray = getXShiftArray(folderId, data_allframes)
         if colHeaders is not None:
-            colHeaderString += ',' + 'xShift'
+            colHeaderList.append('xShift')
     if not yShiftIncluded:
         yShiftArray = getYShiftArray(folderId, data_allframes)
         if colHeaders is not None:
-            colHeaderString += ',' + 'yShift'
+            colHeaderList.append('yShift')
     if not segLabelIncluded and colHeaders is not None:
-        colHeaderString += ',' + 'segmentLabel'
+        colHeaderList.append('segmentLabel')
     
     if not allIncluded:
         timeToIndex = {}
@@ -353,33 +356,62 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
         uniqueLocationList.sort()
         labelLookup = buildLabelLookup(folderId, massOverTime, timeToIndex, uniqueLocationList)
 
-    returnStr = colHeaderString + '\n'
+    dataRowList = []
     for index, row in enumerate(massOverTime):
-        returnStr += ','.join(map(str, row))
+        dataRow = [x for x in row] # convert to vanilla python array
         if not allIncluded:
-            time = row[timeIndex]
+            time = dataRow[timeIndex]
             if not (locIncluded and frameIncluded and xShiftIncluded and yShiftIncluded):
                 locationId, frameId, xShift, yShift = timeToIndex[time]
             # this corrects the xShift/yShift problem.
             # row[0] += xShift
             # row[1] += yShift
             if not segLabelIncluded:
-                cellId = row[idIndex]
+                cellId = dataRow[idIndex]
                 label = labelLookup.get(cellId, {}).get(frameId, -1)
             if not locIncluded:
-                returnStr += ',' + str(locationId)
+                dataRow.append(locationId)
             if not frameIncluded:
-                returnStr += ',' + str(frameId)
+                dataRow.append(frameId)
             if not xShiftIncluded:
-                returnStr += ',' + str(xShift)
+                dataRow.append(xShift)
             if not yShiftIncluded:
-                returnStr += ',' + str(yShift)
+                dataRow.append(yShift)
             if not segLabelIncluded:
-                returnStr += ',' + str(label)
-        returnStr += '\n'
+                dataRow.append(label)
+        dataRowList.append(dataRow)
 
-    cache(folderId, 'massOverTime.csv', returnStr)
-    return returnStr
+    pbCsv = pbCsv_pb2.PbCsv()
+    pbCsv.headerList.extend(colHeaderList)
+
+    dataColumnList = [list(x) for x in zip(*dataRowList)]
+    for column in dataColumnList:
+        pbColumn = pbCsv.columnList.add()
+        if any([int(x) != x for x in column]):
+            # float
+            pbColumn.columnFloat.valueList.extend(column)
+        else:
+            pbColumn.columnInt.valueList.extend([int(x) for x in column])
+
+
+
+    # for dataRow in dataRowList:
+    #     pbRow = pbCsv.rowList.add()
+    #     # for val in dataRow:
+    #         # num = pbRow.valueList.add()
+    #         # if int(val) == val:
+    #         #     if abs(val) == val:
+    #         #         num.value_uint = int(val)
+    #         #     else:
+    #         #         num.value_sint = int(val)
+    #         # else:
+    #         #     num.value_float = val
+    #     pbRow.valueList.extend([str(x) for x in dataRow])
+
+    pbString = pbCsv.SerializeToString()
+
+    cache(folderId, 'massOverTime.pb', pbString, True)
+    return pbString
 
 def buildLabelLookup(folderId: str, massOverTime: Dict, timeToIndex: Dict, locationArray: List) -> Dict:
     labelLookup = {}

@@ -4,11 +4,24 @@ package pbCsv;
 
 message PbCsv
 {
-    repeated string header = 1;
-    repeated CsvRow rowList = 2;
+    repeated string headerList = 6;
+    repeated Column columnList = 5;
 }
 
-message CsvRow
+message Column
 {
-    repeated float valueList = 3; 
+    oneof column_typed {
+        ColumnFloat columnFloat = 3;
+        ColumnInt columnInt = 4;
+      }
+}
+
+message ColumnFloat
+{
+    repeated float valueList = 1;
+}
+
+message ColumnInt
+{
+    repeated int32 valueList = 2;
 }
