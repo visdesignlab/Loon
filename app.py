@@ -1,7 +1,7 @@
 from io import BytesIO
 import os, io, math, random
 from functools import wraps
-from typing import Dict, Tuple, List, Union
+from typing import Dict, Tuple, List, Union, Set
 import array
 import uuid
 from datetime import datetime
@@ -354,8 +354,10 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
         labelLookup = buildLabelLookup(folderId, massOverTime, timeToIndex, uniqueLocationList)
 
     returnStr = colHeaderString + '\n'
+    dataRowArray = []
     for index, row in enumerate(massOverTime):
-        returnStr += ','.join(map(str, row))
+        # returnStr += ','.join(map(str, row))
+        dataRow = [x for x in row]
         if not allIncluded:
             time = row[timeIndex]
             if not (locIncluded and frameIncluded and xShiftIncluded and yShiftIncluded):
@@ -363,23 +365,94 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
             # this corrects the xShift/yShift problem.
             # row[0] += xShift
             # row[1] += yShift
+            if not locIncluded:
+                dataRow.append(locationId)
+                # returnStr += ',' + str(locationId)
+            if not frameIncluded:
+                dataRow.append(frameId)
+                # returnStr += ',' + str(frameId)
+            if not xShiftIncluded:
+                dataRow.append(xShift)
+                # returnStr += ',' + str(xShift)
+            if not yShiftIncluded:
+                dataRow.append(yShift)
+                # returnStr += ',' + str(yShift)
             if not segLabelIncluded:
                 cellId = row[idIndex]
                 label = labelLookup.get(cellId, {}).get(frameId, -1)
-            if not locIncluded:
-                returnStr += ',' + str(locationId)
-            if not frameIncluded:
-                returnStr += ',' + str(frameId)
-            if not xShiftIncluded:
-                returnStr += ',' + str(xShift)
-            if not yShiftIncluded:
-                returnStr += ',' + str(yShift)
-            if not segLabelIncluded:
-                returnStr += ',' + str(label)
+                dataRow.append(label)
+                # returnStr += ',' + str(label)
+        dataRowArray.append(dataRow)
+        returnStr += ','.join([str(x) for x in dataRow])
         returnStr += '\n'
 
+    locationMaps = buildLocationMaps(colHeaderString.split(','), dataRowArray)
+    addLocationMaps(folderId, locationMaps)
     cache(folderId, 'massOverTime.csv', returnStr)
     return returnStr
+
+def buildLocationMaps(columnHeaderArray: List[str], dataRowArray: List[List[float]]) -> Dict[str, Dict[str, List[List[int]]]]:
+    locationMaps = {}
+    locationIndex = columnHeaderArray.index('Location ID')
+    conditionIndices = []
+    # Find conditions
+    for index, header in enumerate(columnHeaderArray):
+        if header.startswith('condition_'):
+            conditionName = header.split('_')[1]
+            conditionIndices.append((index, conditionName))
+
+    # init conditions
+    for colIdx, conditionName in conditionIndices:
+        locationMaps[conditionName] = {}
+
+    # populate from data
+    for dataRow in dataRowArray:
+        locationId = dataRow[locationIndex]
+        for colIdx, conditionName in conditionIndices:
+            conditionValue = str(dataRowArray[colIdx])
+            thisMap = locationMaps[conditionName]
+            if conditionValue not in thisMap:
+                thisMap[conditionValue] = set()
+            thisMap[conditionValue].add(locationId)
+
+    # turn sets of locationIDs to list of locationID ranges
+    for _, conditionName in conditionIndices:
+        thisMap = locationMaps[conditionName]
+        for conditionValue, locationSet in thisMap.items():
+            locationRanges = buildRangesFromSet(locationSet)
+            thisMap[conditionValue] = locationRanges
+
+    return locationMaps
+
+def buildRangesFromSet(numberSet: Set[int]) -> List[List[int]]:
+    sortedList = list(numberSet)
+    sortedList.sort()
+
+    rangeListFlat = []
+    for i, val in enumerate(sortedList):
+        if i == 0:
+            prevVal = -math.inf
+        else:
+            prevVal = sortedList[i-1]
+
+        if i == len(sortedList) - 1:
+            nextVal = math.inf
+        else:
+            nextVal = sortedList[i+1]
+
+        # it is intended that val could be added twice here
+        if val - prevVal > 1:
+            rangeListFlat.append(val)
+        if nextVal - val > 1:
+            rangeListFlat.append(val)
+
+    nestedArray = [[rangeListFlat[j], rangeListFlat[j+1]] for j in range(0, len(rangeListFlat), 2)]
+
+    return nestedArray
+
+def addLocationMaps(folderId: str, locationMaps: Dict[str, Dict[str, List[List[int]]]]) -> None:
+    
+    return
 
 def buildLabelLookup(folderId: str, massOverTime: Dict, timeToIndex: Dict, locationArray: List) -> Dict:
     labelLookup = {}
