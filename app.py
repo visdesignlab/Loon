@@ -409,7 +409,7 @@ def buildLocationMaps(columnHeaderArray: List[str], dataRowArray: List[List[floa
     for dataRow in dataRowArray:
         locationId = dataRow[locationIndex]
         for colIdx, conditionName in conditionIndices:
-            conditionValue = str(dataRowArray[colIdx])
+            conditionValue = str(dataRow[colIdx])
             thisMap = locationMaps[conditionName]
             if conditionValue not in thisMap:
                 thisMap[conditionValue] = set()
@@ -451,7 +451,9 @@ def buildRangesFromSet(numberSet: Set[int]) -> List[List[int]]:
     return nestedArray
 
 def addLocationMaps(folderId: str, locationMaps: Dict[str, Dict[str, List[List[int]]]]) -> None:
-    
+    # TODO - add this dynamically instead of just printing it
+    jsonString = json.dumps(locationMaps)
+    print(jsonString)
     return
 
 def buildLabelLookup(folderId: str, massOverTime: Dict, timeToIndex: Dict, locationArray: List) -> Dict:
