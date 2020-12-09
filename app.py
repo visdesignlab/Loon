@@ -356,7 +356,6 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     returnStr = colHeaderString + '\n'
     dataRowArray = []
     for index, row in enumerate(massOverTime):
-        # returnStr += ','.join(map(str, row))
         dataRow = [x for x in row]
         if not allIncluded:
             time = row[timeIndex]
@@ -367,21 +366,16 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
             # row[1] += yShift
             if not locIncluded:
                 dataRow.append(locationId)
-                # returnStr += ',' + str(locationId)
             if not frameIncluded:
                 dataRow.append(frameId)
-                # returnStr += ',' + str(frameId)
             if not xShiftIncluded:
                 dataRow.append(xShift)
-                # returnStr += ',' + str(xShift)
             if not yShiftIncluded:
                 dataRow.append(yShift)
-                # returnStr += ',' + str(yShift)
             if not segLabelIncluded:
                 cellId = row[idIndex]
                 label = labelLookup.get(cellId, {}).get(frameId, -1)
                 dataRow.append(label)
-                # returnStr += ',' + str(label)
         dataRowArray.append(dataRow)
         returnStr += ','.join([str(x) for x in dataRow])
         returnStr += '\n'
