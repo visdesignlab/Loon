@@ -19,7 +19,7 @@
 
 .cellAxisLabel.currentFrame {
     font-size: 18pt;
-    font-weight: 900;
+    font-weight: 700;
     fill: #0f531c;
 }
 .cellAxisLabel.hovered.currentFrame {
@@ -28,5 +28,5 @@
 
 .cellAxisLabel.hovered {
     font-size: 14pt;
-    font-weight: 900;
+    font-weight: 600;
 }

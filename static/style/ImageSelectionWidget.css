@@ -42,7 +42,7 @@
 .locationListCatTitle {
     font-size: 12pt;
     margin-top: 6px;
-    font-weight: 800;
+    font-weight: 500;
     position: sticky;
     top: 0;
     background: white;
@@ -83,6 +83,11 @@
     height: 40px;
     border-width: 2px;
     border-color: black;
+}
+
+.locationButton.hovered {
+    height: 40px;
+    border-width: 2px;
 }
 
 .frameListContainer {

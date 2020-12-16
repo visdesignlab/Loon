@@ -23,6 +23,8 @@ export class ImageStackWidget {
 		console.log(d3);
 		console.log(this);
 		this._tooltip = new RichTooltip();
+		this._exemplarAttribute = 'Avg Mass'; // TODO change default
+		this._inExemplarMode = true; // TODO
 	}
 		
 	private _container : HTMLElement;
@@ -131,6 +133,16 @@ export class ImageStackWidget {
 	private _tooltip : RichTooltip;
 	public get tooltip() : RichTooltip {
 		return this._tooltip;
+	}
+
+	private _exemplarAttribute : string;
+	public get exemplarAttribute() : string {
+		return this._exemplarAttribute;
+	}	
+	
+	private _inExemplarMode : boolean;
+	public get inExemplarMode() : boolean {
+		return this._inExemplarMode;
 	}
 	
 	public init(): void
@@ -269,8 +281,15 @@ export class ImageStackWidget {
 		let locId = this.imageLocation.locationId;
 		if (!skipImageTrackDraw)
 		{
-			// let curveList: CurveND[] = this.getCurvesBasedOnPointsAtCurrentFrame();
-			let curveList: CurveND[] = this.getExemplarCurves();
+			let curveList: CurveND[];
+			if (this.inExemplarMode)
+			{
+				curveList = this.getExemplarCurves();
+			}
+			else
+			{
+				curveList = this.getCurvesBasedOnPointsAtCurrentFrame();
+			}
 			this.imageTrackWidget.draw(curveList);
 		}
 	}
@@ -278,8 +297,6 @@ export class ImageStackWidget {
 	private getExemplarCurves(): CurveND[]
 	{
 		let curveList: CurveND[] = [];
-		const trackLevelAttribute = 'Avg Mass';
-		// TODO
 		let facetOptions = this.data.GetFacetOptions();
 		const firstFacetOption = facetOptions[0];
 		const facetName = firstFacetOption.name;
@@ -291,9 +308,9 @@ export class ImageStackWidget {
 			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
 			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
 			let numCurves = longTracks.length;
-			let lowCurve = quickSelect(longTracks, 1, (curve: CurveND) => curve.get(trackLevelAttribute));
-			let medianCurve = quickSelect(longTracks, Math.floor(numCurves / 2), (curve: CurveND) => curve.get(trackLevelAttribute));
-			let highCurve = quickSelect(longTracks, numCurves - 1, (curve: CurveND) => curve.get(trackLevelAttribute));
+			let lowCurve = quickSelect(longTracks, 1, (curve: CurveND) => curve.get(this.exemplarAttribute));
+			let medianCurve = quickSelect(longTracks, Math.floor(numCurves / 2), (curve: CurveND) => curve.get(this.exemplarAttribute));
+			let highCurve = quickSelect(longTracks, numCurves - 1, (curve: CurveND) => curve.get(this.exemplarAttribute));
 			curveList.push(lowCurve);
 			curveList.push(medianCurve);
 			curveList.push(highCurve);
