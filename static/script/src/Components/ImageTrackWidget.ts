@@ -132,8 +132,8 @@ export class ImageTrackWidget
     public get sourceDestCell() : [Rect, [number, number], PointND][] {
         return this._sourceDestCell;
     }
-    
 
+    
     public init(): void
     {
         const containerSelect = d3.select(this.container);

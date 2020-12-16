@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as quickSelect from 'quickselect.js';
 import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes';
 import { PointND } from '../DataModel/PointND';
 import { ImageLocation } from '../DataModel/ImageLocation';
@@ -268,7 +269,8 @@ export class ImageStackWidget {
 		let locId = this.imageLocation.locationId;
 		if (!skipImageTrackDraw)
 		{
-			let curveList: CurveND[] = this.getCurvesBasedOnPointsAtCurrentFrame();
+			// let curveList: CurveND[] = this.getCurvesBasedOnPointsAtCurrentFrame();
+			let curveList: CurveND[] = this.getExemplarCurves();
 			this.imageTrackWidget.draw(curveList);
 		}
 	}
@@ -278,6 +280,24 @@ export class ImageStackWidget {
 		let curveList: CurveND[] = [];
 		const trackLevelAttribute = 'Avg Mass';
 		// TODO
+		let facetOptions = this.data.GetFacetOptions();
+		const firstFacetOption = facetOptions[0];
+		const facetName = firstFacetOption.name;
+		let facets = firstFacetOption.GetFacets();
+		const trackLengthKey = 'Track Length';
+		for (let facet of facets)
+		{
+			let facetData: CurveList = facet.data;
+			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
+			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
+			let numCurves = longTracks.length;
+			let lowCurve = quickSelect(longTracks, 1, (curve: CurveND) => curve.get(trackLevelAttribute));
+			let medianCurve = quickSelect(longTracks, Math.floor(numCurves / 2), (curve: CurveND) => curve.get(trackLevelAttribute));
+			let highCurve = quickSelect(longTracks, numCurves - 1, (curve: CurveND) => curve.get(trackLevelAttribute));
+			curveList.push(lowCurve);
+			curveList.push(medianCurve);
+			curveList.push(highCurve);
+		}
 
 		return curveList
 	}

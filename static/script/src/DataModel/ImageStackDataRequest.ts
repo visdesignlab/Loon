@@ -36,10 +36,10 @@ export class ImageStackDataRequest
         });
         this._blobArray= [];
         this._labelArray= [];
-        this._maxBlobCount = 10;
+        this._maxBlobCount = 100;
         this._nextBlobIndex = 0;
         this._nextLabelIndex = 0;
-        this._maxLabelCount = 10;
+        this._maxLabelCount = 100;
     }
     
     
