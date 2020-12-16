@@ -466,9 +466,10 @@ export class ImageStackWidget {
 		let pageY = 0;
 		if (cell)
 		{
+			// const scaleFactor = 4; // todo
 			let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
-			cellX = cell.get('X') + cell.get('xShift');
-			cellY = cell.get('Y') + cell.get('yShift');
+			cellX = (cell.get('X') + cell.get('xShift')) / this.imageStackDataRequest.scaleFactor;
+			cellY = (cell.get('Y') + cell.get('yShift')) / this.imageStackDataRequest.scaleFactor;
 			pageX = canvasBoundRect.x + cellX;
 			pageY = canvasBoundRect.y + cellY;
 
