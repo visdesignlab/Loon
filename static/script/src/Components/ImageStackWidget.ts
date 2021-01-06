@@ -186,6 +186,12 @@ export class ImageStackWidget {
 			});
 
 		this.imageTrackWidget.init();
+
+		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => 
+		{
+			this._exemplarAttribute = e.detail;
+			this.updateTracksCanvas();
+		});
 	}
 
 	public dimCanvas(): void
@@ -281,17 +287,22 @@ export class ImageStackWidget {
 		let locId = this.imageLocation.locationId;
 		if (!skipImageTrackDraw)
 		{
-			let curveList: CurveND[];
-			if (this.inExemplarMode)
-			{
-				curveList = this.getExemplarCurves();
-			}
-			else
-			{
-				curveList = this.getCurvesBasedOnPointsAtCurrentFrame();
-			}
-			this.imageTrackWidget.draw(curveList);
+			this.updateTracksCanvas();
 		}
+	}
+
+	private updateTracksCanvas(): void
+	{
+		let curveList: CurveND[];
+		if (this.inExemplarMode)
+		{
+			curveList = this.getExemplarCurves();
+		}
+		else
+		{
+			curveList = this.getCurvesBasedOnPointsAtCurrentFrame();
+		}
+		this.imageTrackWidget.draw(curveList);
 	}
 
 	private getExemplarCurves(): CurveND[]

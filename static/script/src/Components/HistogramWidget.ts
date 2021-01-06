@@ -217,6 +217,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		
 		this.initKDEHIstogramToggle();
 		this.initAbsoluteRelativeToggle();
+		this.initExemplarTrackButton();
 
 		this._svgSelect = d3.select(this.container).append("svg")
 			.attr("width", this.width)
@@ -331,6 +332,15 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			{
 				this.drawAllHistograms([], true);
 			}
+		});
+	}
+
+	private initExemplarTrackButton(): void
+	{
+		this.AddButton('rocket', () =>
+		{
+			let event = new CustomEvent('launchExemplarCurve', {detail: this.valueKey});
+			document.dispatchEvent(event);
 		});
 	}
 
