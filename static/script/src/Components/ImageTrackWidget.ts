@@ -363,7 +363,7 @@ export class ImageTrackWidget
 
                         this.canvasContext.beginPath();
                         this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
-                        if (currentFrame)
+                        if (currentFrame && !this.parentWidget.inExemplarMode)
                         {
                             this.canvasContext.strokeStyle = 'MediumSeaGreen';
                             this.canvasContext.lineWidth = 8; 
@@ -678,7 +678,7 @@ export class ImageTrackWidget
             .text(d => d[0])
             .attr('x', d => d[1] - this.latestScroll[0])
             .attr('y', yAnchor)
-            .classed('currentFrame', d => +d[0] === currentFrame)
+            .classed('currentFrame', d => +d[0] === currentFrame && !this.parentWidget.inExemplarMode)
             .classed('cellAxisLabel', true)
             .classed('right', true);
     }
