@@ -119,6 +119,10 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		return this._metricDistributionCollectionLevel;
 	}
 	
+	private _includeExemplarTrackButton : boolean;
+	public get includeExemplarTrackButton() : boolean {
+		return this._includeExemplarTrackButton;
+	}
 
 	protected init(): void
 	{
@@ -269,12 +273,15 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		{
 			case MetricDistributionCollectionLevel.Point:
 				this._pointCollection = this.data as PointCollection;
+				this._includeExemplarTrackButton = false;
 				break;
 			case MetricDistributionCollectionLevel.Curve:
 				this._pointCollection = this.data.curveCollection as PointCollection;
+				this._includeExemplarTrackButton = true;
 				break;
 			default:
 				this._pointCollection = null;
+				this._includeExemplarTrackButton = false;
 				throw new Error('MetricDistributionCollectionLevel not set.')
 				break;
 		}
@@ -591,7 +598,8 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 			.each(function(d)
 			{
 				let container = this as HTMLDivElement;
-				let newWidget = new HistogramWidget(container, d);
+				const canBrush = true;
+				let newWidget = new HistogramWidget(container, d, canBrush, thisWidget.includeExemplarTrackButton);
 				thisWidget.histogramWidgets.push(newWidget);
 			});
 		this.updateHistograms();
