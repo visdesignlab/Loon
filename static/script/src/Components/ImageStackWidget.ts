@@ -189,6 +189,7 @@ export class ImageStackWidget {
 
 		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => 
 		{
+			this._inExemplarMode = true;
 			this._exemplarAttribute = e.detail;
 			this.updateTracksCanvas();
 		});
@@ -204,24 +205,24 @@ export class ImageStackWidget {
 		this.selectedImageCanvas.style('opacity', 1);
 	}
 
-	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest): void
+	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest, skipImageTrackDraw = false): void
 	{
 		this._data = data;
 		this._imageStackDataRequest = imageStackDataRequest;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
-		this.SetImageProperties(); // default values before image load
-		this.draw();
+		this.SetImageProperties(skipImageTrackDraw); // default values before image load
+		this.draw(skipImageTrackDraw);
 	}
 
-	public SetImageProperties(blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void
+	public SetImageProperties(skipImageTrackDraw: boolean, blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void
 	{
 		// default values for when loading, or if image isn't found
 		if (!imageWidth)  { imageWidth  = 256; }
 		if (!imageHeight) { imageHeight = 256; }
 		if (!numColumns)  { numColumns  = 10; }
 		this._imageStackBlob = blob;
-		this.draw();
+		this.draw(skipImageTrackDraw);
 	}
 
 	public draw(skipImageTrackDraw = false): void
@@ -239,7 +240,7 @@ export class ImageStackWidget {
 	public drawUpdate(): void
 	{
 		this.updateBackgroundPosition(this.selectedImgIndex);
-		this.updateCanvas();
+		this.updateCanvas(this.inExemplarMode);
 		this.updateLocationFrameLabel();
 	}
 
@@ -477,7 +478,6 @@ export class ImageStackWidget {
 		let pageY = 0;
 		if (cell)
 		{
-			// const scaleFactor = 4; // todo
 			let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
 			cellX = (cell.get('X') + cell.get('xShift')) / this.imageStackDataRequest.scaleFactor;
 			cellY = (cell.get('Y') + cell.get('yShift')) / this.imageStackDataRequest.scaleFactor;

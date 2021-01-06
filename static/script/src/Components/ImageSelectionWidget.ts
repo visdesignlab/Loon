@@ -186,16 +186,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     }
     
-    public setImageStackWidget(): void
+    public setImageStackWidget(skipImageTrackDraw = false): void
     {
         const [locId, frameId] = this.selectedLocFrame;
         this.imageStackDataRequest.getImage(locId, frameId, (top, left, blob) => 
         {
-            this.imageStackWidget.SetImageProperties(blob);
+            this.imageStackWidget.SetImageProperties(skipImageTrackDraw, blob);
         });
 
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest);
+        this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
     }
 
 	protected OnResize(): void
@@ -578,7 +578,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             return;
         }
         this.changeLocationSelection(locationId);
-        this.setImageStackWidget();
+        const skipImageTrackDraw = true;
+        this.setImageStackWidget(skipImageTrackDraw);
     }
 
     private onClickLocationFrame(locationId: number, frameId: number): void
