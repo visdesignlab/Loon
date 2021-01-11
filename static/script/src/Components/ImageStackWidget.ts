@@ -25,6 +25,8 @@ export class ImageStackWidget {
 		this._tooltip = new RichTooltip();
 		this._exemplarAttribute = 'Avg Mass'; // TODO change default
 		this._inExemplarMode = true; // TODO
+		this._inCondensedMode = true; // TODO mode
+		this._condensedModeCount = 5;
 	}
 		
 	private _container : HTMLElement;
@@ -144,7 +146,17 @@ export class ImageStackWidget {
 	public get inExemplarMode() : boolean {
 		return this._inExemplarMode;
 	}
-	
+		
+	private _inCondensedMode : boolean;
+	public get inCondensedMode() : boolean {
+		return this._inCondensedMode;
+	}
+
+	private _condensedModeCount : number;
+	public get condensedModeCount() : number {
+		return this._condensedModeCount;
+	}
+
 	public init(): void
 	{
 		const containerSelect = d3.select(this.container);

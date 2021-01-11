@@ -201,6 +201,14 @@ export class ImageTrackWidget
         this._sourceDestCell = [];
         let listOfBoundingBoxLists = await this.getBoundingBoxLists(this.trackList);
         let maxHeightList: number[] = [];
+        // if (this.parentWidget.inCondensedMode)
+        // {
+
+        // }
+        // else
+        // {
+
+        // }
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
             (rectList: Rect[]) =>
             {
@@ -264,14 +272,33 @@ export class ImageTrackWidget
         for (let track of trackList)
         {
             let thisList: Rect[] = [];
-            for (let point of track.pointList)
+            if (this.parentWidget.inCondensedMode)
             {
-                const boundingBox = await this.getCellBoundingBox(point);
-                thisList.push(boundingBox);
+                for (let i = 0; i < this.parentWidget.condensedModeCount; i++)
+                {
+                    let point: PointND = this.getPointInCondensedMode(track, i);
+                    const boundingBox = await this.getCellBoundingBox(point);
+                    thisList.push(boundingBox);
+                }
+            }
+            else
+            {
+                for (let point of track.pointList)
+                {
+                    const boundingBox = await this.getCellBoundingBox(point);
+                    thisList.push(boundingBox);
+                }
             }
             listOfLists.push(thisList);
         }
         return listOfLists;
+    }
+
+    private getPointInCondensedMode(track: CurveND, index: number): PointND
+    {
+        let percent = index / (this.parentWidget.condensedModeCount - 1);
+        let trackIndex = Math.min(Math.round(percent * track.pointList.length), track.pointList.length-1);
+        return track.pointList[trackIndex];
     }
 
     private async drawTrack(
@@ -294,7 +321,15 @@ export class ImageTrackWidget
             // is accounting for edge cases in the tile of the tiled image.
             // if it gets to an edge only only copies what it can, then centers in
             // a rect of the same size as others in the cell.
-            const point = trackData.pointList[i];
+            let point: PointND;
+            if (this.parentWidget.inCondensedMode)
+            {
+                point = this.getPointInCondensedMode(trackData, i);
+            }
+            else
+            {
+                point = trackData.pointList[i];
+            }
             const frameId = point.get('Frame ID');
 
             // const offsetIndex = frameId - minFrame;
@@ -320,10 +355,27 @@ export class ImageTrackWidget
                     let height = ImageTrackWidget.rectHeight(bbox);
                     const extraX = Math.round((maxWidth - width) / 2);
                     const extraY = Math.round((maxHeight - height) / 2);
-                    const point = trackData.pointList[j];
+
+                    let point: PointND;
+                    if (this.parentWidget.inCondensedMode)
+                    {
+                        point = this.getPointInCondensedMode(trackData, j);
+                    }
+                    else
+                    {
+                        point = trackData.pointList[j];
+                    }
                     const frameId = point.get('Frame ID');
         
-                    const offsetIndex = frameId - minFrame;
+                    let offsetIndex: number;
+                    if (this.parentWidget.inCondensedMode)
+                    {
+                        offsetIndex = j;
+                    }
+                    else
+                    {
+                        offsetIndex = frameId - minFrame;
+                    }
 
                     const tileBot = tileTop + this.parentWidget.imageStackDataRequest?.tileHeight;
                     const tileRight = tileLeft + this.parentWidget.imageStackDataRequest?.tileWidth;
