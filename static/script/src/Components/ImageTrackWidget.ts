@@ -746,6 +746,15 @@ export class ImageTrackWidget
             const pos: number = labelPos[1] - this.latestScroll[0];
             return 0 <= pos && pos <= this.innerContainerW;
         });
+        if (this.parentWidget.inCondensedMode)
+        {
+            labelsInView = labelsInView.map((labelPos: [string, number]) => 
+            {
+                let index = +labelPos[0] - 1;
+                let percent = index / (this.parentWidget.condensedModeCount - 1);
+                return [percent.toFixed(2), labelPos[1]];
+            })
+        }
         const currentFrame  = this.parentWidget.getCurrentFrameId();
         this.frameLabelGroup.selectAll('text')
             .data(labelsInView)
