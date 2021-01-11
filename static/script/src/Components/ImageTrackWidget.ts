@@ -8,6 +8,7 @@ import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
+import { EndOfLineState, isFunctionDeclaration } from 'typescript';
 
 export class ImageTrackWidget
 {
@@ -166,11 +167,33 @@ export class ImageTrackWidget
             const cellId = e.detail.cellId;
             if (frameId !== null && cellId !== null)
             {
-                this.updateLabelsOnMouseMove(cellId, frameId.toString());
+                let frameIndex: number;
+                if (this.parentWidget.inCondensedMode)
+                {
+                    let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+                    let pointIndex = curve.pointList.findIndex(point => point.get('Frame ID') === frameId);
+                    let percent = pointIndex / (curve.pointList.length - 1);
+                    frameIndex = percent * (this.parentWidget.condensedModeCount - 1);
+                    let frameIndexRounded = Math.round(frameIndex);
+                    const epsilon = (1 / (curve.pointList.length + 1)) * (this.parentWidget.condensedModeCount - 1);
+                    if (Math.abs(frameIndex - frameIndexRounded) < epsilon)
+                    {
+                        frameIndex = frameIndexRounded;
+                    }
+                    else
+                    {
+                        frameIndex = -1;
+                    }
+                }
+                else
+                {
+                    frameIndex = frameId - 1;
+                }
+                this.updateLabelsOnMouseMove(cellId, frameIndex);
             }
             else
             {
-                this.updateLabelsOnMouseMove('', '');
+                this.updateLabelsOnMouseMove('', -1);
             }
         });
     }
@@ -561,9 +584,21 @@ export class ImageTrackWidget
         }
         let xPos = e.offsetX;
         let yPos = e.offsetY;
-        const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
         const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+
+        let frameId: number
+        const frameIndex = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos) - 1;
+        if (this.parentWidget.inCondensedMode)
+        {
+            let point = this.getPointInCondensedMode(curve, frameIndex);
+            frameId = point.get('Frame ID');
+        }
+        else
+        {
+            frameId = frameIndex + 1;
+        }
+
         let firstPoint = curve.pointList[0];
         const trackLocation = firstPoint.get('Location ID');
         let event = new CustomEvent('locFrameClicked', { detail:
@@ -582,12 +617,21 @@ export class ImageTrackWidget
         }
         let xPos = e.offsetX;
         let yPos = e.offsetY;
-        const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
-        // console.log(frameId);
         const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
-        // console.log(cellId);
-
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+        
+        let frameId: number
+        const frameIndex = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos) - 1;
+        if (this.parentWidget.inCondensedMode)
+        {
+            let point = this.getPointInCondensedMode(curve, frameIndex);
+            frameId = point.get('Frame ID');
+        }
+        else
+        {
+            frameId = frameIndex + 1;
+        }
+
         this.parentWidget.selectedImgIndex;
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
         let firstPoint = curve.pointList[0];
@@ -610,7 +654,7 @@ export class ImageTrackWidget
             this.parentWidget.dimCanvas();
         }
 
-        this.updateLabelsOnMouseMove(cellId, frameId.toString());
+        this.updateLabelsOnMouseMove(cellId, frameIndex);
         let event = new CustomEvent('frameHoverChange', { detail:
         {
             locationId: trackLocation,
@@ -624,7 +668,7 @@ export class ImageTrackWidget
     {
         this.parentWidget.hideSegmentHover(true);
         this.parentWidget.dimCanvas();
-        this.updateLabelsOnMouseMove('', '');
+        this.updateLabelsOnMouseMove('', -1);
         const locId = this.parentWidget.getCurrentLocationId();
         let event = new CustomEvent('frameHoverChange', { detail:
             {
@@ -767,28 +811,46 @@ export class ImageTrackWidget
             .classed('right', true);
     }
 
-    private updateLabelsOnMouseMove(cellId: string, frameId: string): void
+    private updateLabelsOnMouseMove(cellId: string, frameIndex: number): void
     {
         let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
-        this.hoverNodeWithText(svgSelection.nodes(), cellId);
+        let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
         svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
-        this.hoverNodeWithText(svgSelection.nodes(), frameId);
+        if (!foundMatch)
+        {
+            this.hoverNodeWithText(svgSelection.nodes(), '');
+            return
+        }
+        let frameText: string;
+        if (this.parentWidget.inCondensedMode)
+        {
+            let percent = frameIndex / (this.parentWidget.condensedModeCount - 1);
+            frameText = percent.toFixed(2);
+        }
+        else
+        {
+            frameText = (frameIndex + 1).toString();
+        }
+        this.hoverNodeWithText(svgSelection.nodes(), frameText);
     }
 
-    private hoverNodeWithText(svgElementList: SVGElement[], text: string): void
+    private hoverNodeWithText(svgElementList: SVGElement[], text: string): boolean
     {
+        let fountMatch = false;
         for (let node  of svgElementList)
         {
             let nodeEl = (node as SVGElement);
             if (nodeEl.textContent === text)
             {
                 nodeEl.classList.add('hovered');
+                fountMatch = true;
             }
             else
             {
                 nodeEl.classList.remove('hovered');
             }
         }
+        return fountMatch;
     }
 
     public OnResize(width: number, height: number): void
