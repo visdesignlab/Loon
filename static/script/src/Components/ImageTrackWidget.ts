@@ -201,14 +201,6 @@ export class ImageTrackWidget
         this._sourceDestCell = [];
         let listOfBoundingBoxLists = await this.getBoundingBoxLists(this.trackList);
         let maxHeightList: number[] = [];
-        // if (this.parentWidget.inCondensedMode)
-        // {
-
-        // }
-        // else
-        // {
-
-        // }
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
             (rectList: Rect[]) =>
             {
@@ -233,7 +225,15 @@ export class ImageTrackWidget
                 return d3.max(track.pointList, point => point.get('Frame ID'));
             });
 
-        const numFrames = maxFrameId - minFrameId + 1;
+        let numFrames: number;
+        if (this.parentWidget.inCondensedMode)
+        {
+            numFrames = this.parentWidget.condensedModeCount;
+        }
+        else
+        {
+            numFrames = maxFrameId - minFrameId + 1;
+        }
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
         const totalHeight = d3.sum(maxHeightList) + this.verticalPad * (this.trackList.length + 1);
         this.selectedImageCanvas
