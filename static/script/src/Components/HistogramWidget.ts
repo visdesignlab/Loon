@@ -9,9 +9,9 @@ import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
-	constructor(container: HTMLElement, valueKey: string, canBrush: boolean = true)
+	constructor(container: HTMLElement, valueKey: string, canBrush: boolean = true, includeExemplarTrackButton: boolean = false)
 	{
-		super(container, true, canBrush);
+		super(container, true, canBrush, includeExemplarTrackButton);
 		this._valueKey = valueKey;
 		this.setLabel();
 	}
@@ -27,6 +27,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	{
 		super.initProps();
 		this._canBrush = props[0];
+		this._includeExemplarTrackButton = props[1];
 	}
 
 	private _valueKey : string;
@@ -202,6 +203,16 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		document.dispatchEvent(event);
 	}
 
+	
+	private _includeExemplarTrackButton : boolean;
+	public get includeExemplarTrackButton() : boolean {
+		return this._includeExemplarTrackButton;
+	}
+	public set includeExemplarTrackButton(v : boolean) {
+		this._includeExemplarTrackButton = v;
+	}
+	
+
 	protected setMargin(): void
 	{
 		this._margin = {
@@ -217,6 +228,10 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		
 		this.initKDEHIstogramToggle();
 		this.initAbsoluteRelativeToggle();
+		if (this.includeExemplarTrackButton)
+		{
+			this.initExemplarTrackButton();
+		}
 
 		this._svgSelect = d3.select(this.container).append("svg")
 			.attr("width", this.width)
@@ -331,6 +346,15 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 			{
 				this.drawAllHistograms([], true);
 			}
+		});
+	}
+
+	private initExemplarTrackButton(): void
+	{
+		this.AddButton('rocket', () =>
+		{
+			let event = new CustomEvent('launchExemplarCurve', {detail: this.valueKey});
+			document.dispatchEvent(event);
 		});
 	}
 

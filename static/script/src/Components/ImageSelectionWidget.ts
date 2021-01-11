@@ -68,6 +68,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     public get selectedLocationId() : number | null {
         return this._selectedLocationId;
     }
+    
+    // location ID for hovered track
+    private _hoveredLocationId : number | null;
+    public get hoveredLocationId() : number | null {
+        return this._hoveredLocationId;
+    }
 
     private _frameTooltip : RichTooltip;
     public get frameTooltip() : RichTooltip {
@@ -173,25 +179,23 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._imageMetaData = ImageMetaData.fromPointCollection(this.data);
         this._imageStackDataRequest = new ImageStackDataRequest(this.data.Specification.googleDriveId);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
+        this._hoveredLocationId = null;
         this.setImageStackWidget();
         this.OnBrushChange();
         this.groupByWidget.updateGroupByOptions(this.data, true);
 
     }
     
-    public setImageStackWidget(): void
+    public setImageStackWidget(skipImageTrackDraw = false): void
     {
-        const newUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}.png`
-        const labelUrl = `/data/${this.data.Specification.googleDriveId}/img_${this.selectedLocationId}_labels.dat`
-
         const [locId, frameId] = this.selectedLocFrame;
         this.imageStackDataRequest.getImage(locId, frameId, (top, left, blob) => 
         {
-            this.imageStackWidget.SetImageProperties(blob);
+            this.imageStackWidget.SetImageProperties(skipImageTrackDraw, blob);
         });
 
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest);
+        this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
     }
 
 	protected OnResize(): void
@@ -341,6 +345,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 this._hoveredLocId = null;
                 this.hideFrameTooltip();
                 this.removeHoverDots(svgSelection);
+                this.changeHoveredLocation(null);
             })
 
         const marginW = 4;
@@ -421,12 +426,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     private onHoverLocationFrame(locationId: number, frameId: number | null, cellId: string | null, showTooltip: boolean): void
     {
         this._hoveredLocFrame = [locationId, frameId];
+        const lastSvgContainer = d3.select('#frameTicksViz-' + this.hoveredLocationId) as SvgSelection;
+        this.removeHoverDots(lastSvgContainer);
+        this.removeHoverBar(lastSvgContainer);
         const svgContainer = d3.select('#frameTicksViz-' + locationId) as SvgSelection;
+        this.changeHoveredLocation(locationId);
+
+        this.frameTooltip.Hide();
         if (frameId === null)
         {
-            this.removeHoverDots(svgContainer);
-            this.removeHoverBar(svgContainer);
-            this.frameTooltip.Hide();
             return;
         }
         if (showTooltip)
@@ -570,7 +578,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             return;
         }
         this.changeLocationSelection(locationId);
-        this.setImageStackWidget();
+        const skipImageTrackDraw = true;
+        this.setImageStackWidget(skipImageTrackDraw);
     }
 
     private onClickLocationFrame(locationId: number, frameId: number): void
@@ -626,5 +635,30 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         newSelected.classed('selected', true);
         let newSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.selectedLocationId);
         newSelectedFrameTickViz.attr('height', this.frameHeightSelected);
+    }
+
+    private changeHoveredLocation(newId: number | null): void
+    {
+        if (this.hoveredLocationId !== null)
+        {
+
+            let lastSelected = d3.select("#imageLocation-" + this.hoveredLocationId);
+            lastSelected.classed('hovered', false);
+            if (this.hoveredLocationId !== this.selectedLocationId)
+            {
+                let lastSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.hoveredLocationId);
+                lastSelectedFrameTickViz.attr('height', this.frameHeight);
+            }
+        }
+
+        this._hoveredLocationId = newId;
+
+        if (this.hoveredLocationId !== null)
+        {
+            let newSelected = d3.select("#imageLocation-" + this.hoveredLocationId);
+            newSelected.classed('hovered', true);
+            let newSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.hoveredLocationId);
+            newSelectedFrameTickViz.attr('height', this.frameHeightSelected);
+        }
     }
 }

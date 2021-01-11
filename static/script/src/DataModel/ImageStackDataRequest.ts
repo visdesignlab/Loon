@@ -33,13 +33,21 @@ export class ImageStackDataRequest
             this._numberOfColumns = data.numberOfColumns;
             this._tilesPerFile = data.tilesPerFile;
             this._metaDataLoaded = true;
+            if (data.scaleFactor)
+            {
+                this._scaleFactor = data.scaleFactor;
+            }
+            else
+            {
+                this._scaleFactor = 1;
+            }
         });
         this._blobArray= [];
         this._labelArray= [];
-        this._maxBlobCount = 10;
+        this._maxBlobCount = 100;
         this._nextBlobIndex = 0;
         this._nextLabelIndex = 0;
-        this._maxLabelCount = 10;
+        this._maxLabelCount = 100;
     }
     
     
@@ -82,6 +90,11 @@ export class ImageStackDataRequest
     public get maxLabelCount() : number {
         return this._maxLabelCount;
     }
+ 
+    private _scaleFactor : number;
+    public get scaleFactor() : number {
+        return this._scaleFactor;
+    }    
 
     // blob, key, url
     private _blobArray : [Blob, string, string][];

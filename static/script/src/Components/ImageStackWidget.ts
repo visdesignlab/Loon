@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as quickSelect from 'quickselect.js';
 import {HtmlSelection, SvgSelection} from '../devlib/DevlibTypes';
 import { PointND } from '../DataModel/PointND';
 import { ImageLocation } from '../DataModel/ImageLocation';
@@ -22,6 +23,8 @@ export class ImageStackWidget {
 		console.log(d3);
 		console.log(this);
 		this._tooltip = new RichTooltip();
+		this._exemplarAttribute = 'Avg Mass'; // TODO change default
+		this._inExemplarMode = true; // TODO
 	}
 		
 	private _container : HTMLElement;
@@ -131,6 +134,16 @@ export class ImageStackWidget {
 	public get tooltip() : RichTooltip {
 		return this._tooltip;
 	}
+
+	private _exemplarAttribute : string;
+	public get exemplarAttribute() : string {
+		return this._exemplarAttribute;
+	}	
+	
+	private _inExemplarMode : boolean;
+	public get inExemplarMode() : boolean {
+		return this._inExemplarMode;
+	}
 	
 	public init(): void
 	{
@@ -173,6 +186,13 @@ export class ImageStackWidget {
 			});
 
 		this.imageTrackWidget.init();
+
+		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => 
+		{
+			this._inExemplarMode = true;
+			this._exemplarAttribute = e.detail;
+			this.updateTracksCanvas();
+		});
 	}
 
 	public dimCanvas(): void
@@ -185,24 +205,24 @@ export class ImageStackWidget {
 		this.selectedImageCanvas.style('opacity', 1);
 	}
 
-	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest): void
+	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest, skipImageTrackDraw = false): void
 	{
 		this._data = data;
 		this._imageStackDataRequest = imageStackDataRequest;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
-		this.SetImageProperties(); // default values before image load
-		this.draw();
+		this.SetImageProperties(skipImageTrackDraw); // default values before image load
+		this.draw(skipImageTrackDraw);
 	}
 
-	public SetImageProperties(blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void
+	public SetImageProperties(skipImageTrackDraw: boolean, blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void
 	{
 		// default values for when loading, or if image isn't found
 		if (!imageWidth)  { imageWidth  = 256; }
 		if (!imageHeight) { imageHeight = 256; }
 		if (!numColumns)  { numColumns  = 10; }
 		this._imageStackBlob = blob;
-		this.draw();
+		this.draw(skipImageTrackDraw);
 	}
 
 	public draw(skipImageTrackDraw = false): void
@@ -220,7 +240,7 @@ export class ImageStackWidget {
 	public drawUpdate(): void
 	{
 		this.updateBackgroundPosition(this.selectedImgIndex);
-		this.updateCanvas();
+		this.updateCanvas(this.inExemplarMode);
 		this.updateLocationFrameLabel();
 	}
 
@@ -268,16 +288,45 @@ export class ImageStackWidget {
 		let locId = this.imageLocation.locationId;
 		if (!skipImageTrackDraw)
 		{
-			let curveList: CurveND[] = this.getCurvesBasedOnPointsAtCurrentFrame();
-			this.imageTrackWidget.draw(curveList);
+			this.updateTracksCanvas();
 		}
+	}
+
+	private updateTracksCanvas(): void
+	{
+		let curveList: CurveND[];
+		if (this.inExemplarMode)
+		{
+			curveList = this.getExemplarCurves();
+		}
+		else
+		{
+			curveList = this.getCurvesBasedOnPointsAtCurrentFrame();
+		}
+		this.imageTrackWidget.draw(curveList);
 	}
 
 	private getExemplarCurves(): CurveND[]
 	{
 		let curveList: CurveND[] = [];
-		const trackLevelAttribute = 'Avg Mass';
-		// TODO
+		let facetOptions = this.data.GetFacetOptions();
+		const firstFacetOption = facetOptions[0];
+		const facetName = firstFacetOption.name;
+		let facets = firstFacetOption.GetFacets();
+		const trackLengthKey = 'Track Length';
+		for (let facet of facets)
+		{
+			let facetData: CurveList = facet.data;
+			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
+			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
+			let numCurves = longTracks.length;
+			let lowCurve = quickSelect(longTracks, 1, (curve: CurveND) => curve.get(this.exemplarAttribute));
+			let medianCurve = quickSelect(longTracks, Math.floor(numCurves / 2), (curve: CurveND) => curve.get(this.exemplarAttribute));
+			let highCurve = quickSelect(longTracks, numCurves - 1, (curve: CurveND) => curve.get(this.exemplarAttribute));
+			curveList.push(lowCurve);
+			curveList.push(medianCurve);
+			curveList.push(highCurve);
+		}
 
 		return curveList
 	}
@@ -430,8 +479,8 @@ export class ImageStackWidget {
 		if (cell)
 		{
 			let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
-			cellX = cell.get('X') + cell.get('xShift');
-			cellY = cell.get('Y') + cell.get('yShift');
+			cellX = (cell.get('X') + cell.get('xShift')) / this.imageStackDataRequest.scaleFactor;
+			cellY = (cell.get('Y') + cell.get('yShift')) / this.imageStackDataRequest.scaleFactor;
 			pageX = canvasBoundRect.x + cellX;
 			pageY = canvasBoundRect.y + cellY;
 

@@ -132,8 +132,8 @@ export class ImageTrackWidget
     public get sourceDestCell() : [Rect, [number, number], PointND][] {
         return this._sourceDestCell;
     }
-    
 
+    
     public init(): void
     {
         const containerSelect = d3.select(this.container);
@@ -363,7 +363,7 @@ export class ImageTrackWidget
 
                         this.canvasContext.beginPath();
                         this.canvasContext.rect(frameX, frameY, maxWidth, maxHeight);
-                        if (currentFrame)
+                        if (currentFrame && !this.parentWidget.inExemplarMode)
                         {
                             this.canvasContext.strokeStyle = 'MediumSeaGreen';
                             this.canvasContext.lineWidth = 8; 
@@ -487,10 +487,13 @@ export class ImageTrackWidget
         let xPos = e.offsetX;
         let yPos = e.offsetY;
         const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
-        const locId = this.parentWidget.getCurrentLocationId();
+        const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
+        let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+        let firstPoint = curve.pointList[0];
+        const trackLocation = firstPoint.get('Location ID');
         let event = new CustomEvent('locFrameClicked', { detail:
         {
-            locationId: locId,
+            locationId: trackLocation,
             frameId: frameId
         }});
 		document.dispatchEvent(event);
@@ -512,19 +515,30 @@ export class ImageTrackWidget
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
         this.parentWidget.selectedImgIndex;
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
-        let point = curve.pointList.find(point => point.get('Frame ID') === displayedFrameId);
-        // todo
-        this.parentWidget.imageStackDataRequest.getLabel(point.get('Location ID'), point.get('Frame ID') - 1,
+        let firstPoint = curve.pointList[0];
+        const trackLocation = firstPoint.get('Location ID');
+        const currentLocation = this.parentWidget.getCurrentLocationId();
+        
+        if (trackLocation == currentLocation)
+        {
+            let displayedPoint = curve.pointList.find(point => point.get('Frame ID') === displayedFrameId);
+            this.parentWidget.imageStackDataRequest.getLabel(displayedPoint.get('Location ID'), displayedPoint.get('Frame ID') - 1,
             (rowArray: ImageLabels, firstIndex: number) =>
             {
-                this.parentWidget.showSegmentHover(rowArray, point.get('segmentLabel'), firstIndex, true);
+                this.parentWidget.showSegmentHover(rowArray, displayedPoint.get('segmentLabel'), firstIndex, true);
             });
-        this.parentWidget.brightenCanvas();
+            this.parentWidget.brightenCanvas();
+        }
+        else
+        {
+            this.parentWidget.hideSegmentHover(true);
+            this.parentWidget.dimCanvas();
+        }
+
         this.updateLabelsOnMouseMove(cellId, frameId.toString());
-        const locId = this.parentWidget.getCurrentLocationId();
         let event = new CustomEvent('frameHoverChange', { detail:
         {
-            locationId: locId,
+            locationId: trackLocation,
             frameId: frameId,
             cellId: cellId
         }});
@@ -664,7 +678,7 @@ export class ImageTrackWidget
             .text(d => d[0])
             .attr('x', d => d[1] - this.latestScroll[0])
             .attr('y', yAnchor)
-            .classed('currentFrame', d => +d[0] === currentFrame)
+            .classed('currentFrame', d => +d[0] === currentFrame && !this.parentWidget.inExemplarMode)
             .classed('cellAxisLabel', true)
             .classed('right', true);
     }

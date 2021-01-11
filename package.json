@@ -12,6 +12,7 @@
     "gulp": "^4.0.0",
     "gulp-typescript": "^6.0.0-alpha.1",
     "protobufjs": "^6.10.1",
+    "quickselect.js": "^0.1.4",
     "tsc": "^1.20150623.0",
     "tsify": "^4.0.1",
     "typescript": "^3.7.4",
