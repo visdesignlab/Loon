@@ -408,7 +408,15 @@ export class ImageTrackWidget
                         const imgBitmap = bitMapList[i];
                         const frameId = trackData.pointList[i].get('Frame ID');
                         const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
-                        const offsetIndex = frameId - minFrame;
+                        let offsetIndex: number = frameId - minFrame;
+                        if (this.parentWidget.inCondensedMode)
+                        {
+                            offsetIndex = i;
+                        }
+                        else
+                        {
+                            offsetIndex = frameId - minFrame;
+                        }
                         const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
                         const frameY = verticalOffset;
                         const [offsetX, offsetY] = offsetArray[i];
