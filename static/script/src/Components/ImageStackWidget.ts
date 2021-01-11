@@ -27,6 +27,7 @@ export class ImageStackWidget {
 		this._inExemplarMode = true; // TODO
 		this._inCondensedMode = true; // TODO mode
 		this._condensedModeCount = 7;
+		this._exemplarLocations = new Set();
 	}
 		
 	private _container : HTMLElement;
@@ -156,6 +157,11 @@ export class ImageStackWidget {
 	public get condensedModeCount() : number {
 		return this._condensedModeCount;
 	}
+
+	private _exemplarLocations : Set<number>;
+	public get exemplarLocations() : Set<number> {
+		return this._exemplarLocations;
+	}	
 
 	public init(): void
 	{
@@ -310,10 +316,17 @@ export class ImageStackWidget {
 		if (this.inExemplarMode)
 		{
 			curveList = this.getExemplarCurves();
+			this.exemplarLocations.clear();
+			for (let curve of curveList)
+			{
+				const firstPoint = curve.pointList[0];
+				this.exemplarLocations.add(firstPoint.get('Location ID'));
+			}		
 		}
 		else
 		{
 			curveList = this.getCurvesBasedOnPointsAtCurrentFrame();
+			this.exemplarLocations.clear();
 		}
 		this.imageTrackWidget.draw(curveList);
 	}
