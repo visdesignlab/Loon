@@ -26,7 +26,7 @@ export class ImageStackWidget {
 		this._exemplarAttribute = 'Avg Mass'; // TODO change default
 		this._inExemplarMode = true; // TODO
 		this._inCondensedMode = true; // TODO mode
-		this._condensedModeCount = 5;
+		this._condensedModeCount = 7;
 	}
 		
 	private _container : HTMLElement;
