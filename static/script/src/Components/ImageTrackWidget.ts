@@ -448,10 +448,25 @@ export class ImageTrackWidget
         verticalOffset: number): void
     {
         // draw track background
-        let offsetIndex = trackData.pointList[0].get('Frame ID') - minFrame;
+        let offsetIndex: number;
+        if (this.parentWidget.inCondensedMode)
+        {
+            offsetIndex = 0;
+        }
+        else
+        {
+            offsetIndex = trackData.pointList[0].get('Frame ID') - minFrame;
+        }
         const minDestX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
-        const lastIndex = trackData.pointList.length - 1;
-        offsetIndex = trackData.pointList[lastIndex].get('Frame ID') - minFrame + 1;
+        if (this.parentWidget.inCondensedMode)
+        {
+            offsetIndex = this.parentWidget.condensedModeCount;
+        }
+        else
+        {
+            const lastIndex = trackData.pointList.length - 1;
+            offsetIndex = trackData.pointList[lastIndex].get('Frame ID') - minFrame + 1;
+        }
         const maxDestX = offsetIndex * (maxWidth + this.horizontalPad);
         const minDestY = verticalOffset;
 
