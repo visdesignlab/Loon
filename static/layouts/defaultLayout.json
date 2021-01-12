@@ -1,95 +1,115 @@
 {
-	"direction": "col",
-	"inside": [
+	"direction": "row",
+	"inside":[
 		{
-			"direction": "row",
-			"fraction": 15,
-			"inside": 
+			"direction": "col",
+			"fraction": 0,
+			"minSize": 48,
+			"maxSize": 48,
+			"inside":
 			{
-				
-				"type": "DetailedDistribution",
+						
+				"type": "Toolbar",
 				"initArgs":
 				{
-					"metricDistributionCollectionLevel": "Curve",
-					"attributeKey": "Exponential Growth Constant"
 				}
 			}
 		},
 		{
-			"direction": "row",
-			"fraction": 85,
+			"direction": "col",
+			"fraction": 1,
 			"inside": [
 				{
-					"direction": "col",
-					"fraction": 1,
+					"direction": "row",
+					"fraction": 15,
+					"inside": 
+					{
+						
+						"type": "DetailedDistribution",
+						"initArgs":
+						{
+							"metricDistributionCollectionLevel": "Curve",
+							"attributeKey": "Exponential Growth Constant"
+						}
+					}
+				},
+				{
+					"direction": "row",
+					"fraction": 85,
 					"inside": [
 						{
-							"direction": "row",
-							"fraction": 2,
-							"inside": 
-							{
-								"type": "Plot2dPathsWidget",
-								"initArgs":
-								{
-									"quickPickOptions": [
-										{
-											"xKey": "Time_norm",
-											"yKey": "Mass_norm",
-											"squareAspectRatio": false
-										}, {
-											"xKey": "Time (h)",
-											"yKey": "Mass_norm",
-											"squareAspectRatio": false
-										}, {
-											"xKey": "Time (h)",
-											"yKey": "Mass (pg)",
-											"squareAspectRatio": false
-										}, {
-											"xKey": "X",
-											"yKey": "Y",
-											"squareAspectRatio": true
-										}
-									],
-									"squareAspectRatio": false
-								}
-							}
-						},
-						{
-							"direction": "row",
-							"fraction": 3,
+							"direction": "col",
+							"fraction": 1,
 							"inside": [
 								{
-									"direction": "col",
-									"fraction": 1,
+									"direction": "row",
+									"fraction": 2,
 									"inside": 
 									{
-										"type": "MetricDistributionWidget",
+										"type": "Plot2dPathsWidget",
 										"initArgs":
 										{
-											"metricDistributionCollectionLevel": "Point"
+											"quickPickOptions": [
+												{
+													"xKey": "Time_norm",
+													"yKey": "Mass_norm",
+													"squareAspectRatio": false
+												}, {
+													"xKey": "Time (h)",
+													"yKey": "Mass_norm",
+													"squareAspectRatio": false
+												}, {
+													"xKey": "Time (h)",
+													"yKey": "Mass (pg)",
+													"squareAspectRatio": false
+												}, {
+													"xKey": "X",
+													"yKey": "Y",
+													"squareAspectRatio": true
+												}
+											],
+											"squareAspectRatio": false
 										}
 									}
 								},
 								{
-									"direction": "col",
-									"fraction": 1,
-									"inside": 
-									{
-										"type": "MetricDistributionWidget",
-										"initArgs":
+									"direction": "row",
+									"fraction": 3,
+									"inside": [
 										{
-											"metricDistributionCollectionLevel": "Curve"
+											"direction": "col",
+											"fraction": 1,
+											"inside": 
+											{
+												"type": "MetricDistributionWidget",
+												"initArgs":
+												{
+													"metricDistributionCollectionLevel": "Point"
+												}
+											}
+										},
+										{
+											"direction": "col",
+											"fraction": 1,
+											"inside": 
+											{
+												"type": "MetricDistributionWidget",
+												"initArgs":
+												{
+													"metricDistributionCollectionLevel": "Curve"
+												}
+											}
 										}
-									}
+									]
 								}
 							]
+						},
+						{
+							"direction": "col",
+							"fraction": 1,
+							"inside": "ImageSelectionWidget"
 						}
 					]
-				},
-				{
-					"direction": "col",
-					"fraction": 2,
-					"inside": "ImageSelectionWidget"
 				}
 			]
 		}
