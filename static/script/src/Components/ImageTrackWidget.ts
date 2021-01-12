@@ -3,12 +3,10 @@ import { HtmlSelection, SvgSelection, Margin } from '../devlib/DevlibTypes';
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
-import { extent, linkVertical, max, VoronoiEdge } from 'd3';
 import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
-import { EndOfLineState, isFunctionDeclaration } from 'typescript';
 
 export class ImageTrackWidget
 {
