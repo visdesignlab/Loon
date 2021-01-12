@@ -305,8 +305,14 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         const subListContainer = containerSelection.append('ul')
             .classed('subListContainer', true);
 
+        let locationList: number[] = data.locationList;
+        if (this.imageStackWidget.inCondensedMode)
+        {
+            locationList = locationList.filter(loc => this.imageStackWidget.exemplarLocations.has(loc))
+        }
+
         const listElement = subListContainer.selectAll('li')
-            .data(data.locationList)
+            .data(locationList)
             .join('li');
 
         listElement.html(null)
@@ -392,6 +398,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
                 this.onClickLocationFrame(locId, frameId);
+            });
+            document.addEventListener('launchExemplarCurve', (e: CustomEvent) => 
+            {
+                this.draw();
             });
         }
     }

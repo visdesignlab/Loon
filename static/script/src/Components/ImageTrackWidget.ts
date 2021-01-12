@@ -3,7 +3,6 @@ import { HtmlSelection, SvgSelection, Margin } from '../devlib/DevlibTypes';
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
-import { extent, linkVertical, max, VoronoiEdge } from 'd3';
 import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
@@ -166,11 +165,33 @@ export class ImageTrackWidget
             const cellId = e.detail.cellId;
             if (frameId !== null && cellId !== null)
             {
-                this.updateLabelsOnMouseMove(cellId, frameId.toString());
+                let frameIndex: number;
+                if (this.parentWidget.inCondensedMode)
+                {
+                    let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+                    let pointIndex = curve.pointList.findIndex(point => point.get('Frame ID') === frameId);
+                    let percent = pointIndex / (curve.pointList.length - 1);
+                    frameIndex = percent * (this.parentWidget.condensedModeCount - 1);
+                    let frameIndexRounded = Math.round(frameIndex);
+                    const epsilon = (1 / (curve.pointList.length + 1)) * (this.parentWidget.condensedModeCount - 1);
+                    if (Math.abs(frameIndex - frameIndexRounded) < epsilon)
+                    {
+                        frameIndex = frameIndexRounded;
+                    }
+                    else
+                    {
+                        frameIndex = -1;
+                    }
+                }
+                else
+                {
+                    frameIndex = frameId - 1;
+                }
+                this.updateLabelsOnMouseMove(cellId, frameIndex);
             }
             else
             {
-                this.updateLabelsOnMouseMove('', '');
+                this.updateLabelsOnMouseMove('', -1);
             }
         });
     }
@@ -225,7 +246,15 @@ export class ImageTrackWidget
                 return d3.max(track.pointList, point => point.get('Frame ID'));
             });
 
-        const numFrames = maxFrameId - minFrameId + 1;
+        let numFrames: number;
+        if (this.parentWidget.inCondensedMode)
+        {
+            numFrames = this.parentWidget.condensedModeCount;
+        }
+        else
+        {
+            numFrames = maxFrameId - minFrameId + 1;
+        }
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
         const totalHeight = d3.sum(maxHeightList) + this.verticalPad * (this.trackList.length + 1);
         this.selectedImageCanvas
@@ -264,14 +293,33 @@ export class ImageTrackWidget
         for (let track of trackList)
         {
             let thisList: Rect[] = [];
-            for (let point of track.pointList)
+            if (this.parentWidget.inCondensedMode)
             {
-                const boundingBox = await this.getCellBoundingBox(point);
-                thisList.push(boundingBox);
+                for (let i = 0; i < this.parentWidget.condensedModeCount; i++)
+                {
+                    let point: PointND = this.getPointInCondensedMode(track, i);
+                    const boundingBox = await this.getCellBoundingBox(point);
+                    thisList.push(boundingBox);
+                }
+            }
+            else
+            {
+                for (let point of track.pointList)
+                {
+                    const boundingBox = await this.getCellBoundingBox(point);
+                    thisList.push(boundingBox);
+                }
             }
             listOfLists.push(thisList);
         }
         return listOfLists;
+    }
+
+    private getPointInCondensedMode(track: CurveND, index: number): PointND
+    {
+        let percent = index / (this.parentWidget.condensedModeCount - 1);
+        let trackIndex = Math.min(Math.round(percent * track.pointList.length), track.pointList.length-1);
+        return track.pointList[trackIndex];
     }
 
     private async drawTrack(
@@ -294,7 +342,15 @@ export class ImageTrackWidget
             // is accounting for edge cases in the tile of the tiled image.
             // if it gets to an edge only only copies what it can, then centers in
             // a rect of the same size as others in the cell.
-            const point = trackData.pointList[i];
+            let point: PointND;
+            if (this.parentWidget.inCondensedMode)
+            {
+                point = this.getPointInCondensedMode(trackData, i);
+            }
+            else
+            {
+                point = trackData.pointList[i];
+            }
             const frameId = point.get('Frame ID');
 
             // const offsetIndex = frameId - minFrame;
@@ -320,10 +376,27 @@ export class ImageTrackWidget
                     let height = ImageTrackWidget.rectHeight(bbox);
                     const extraX = Math.round((maxWidth - width) / 2);
                     const extraY = Math.round((maxHeight - height) / 2);
-                    const point = trackData.pointList[j];
+
+                    let point: PointND;
+                    if (this.parentWidget.inCondensedMode)
+                    {
+                        point = this.getPointInCondensedMode(trackData, j);
+                    }
+                    else
+                    {
+                        point = trackData.pointList[j];
+                    }
                     const frameId = point.get('Frame ID');
         
-                    const offsetIndex = frameId - minFrame;
+                    let offsetIndex: number;
+                    if (this.parentWidget.inCondensedMode)
+                    {
+                        offsetIndex = j;
+                    }
+                    else
+                    {
+                        offsetIndex = frameId - minFrame;
+                    }
 
                     const tileBot = tileTop + this.parentWidget.imageStackDataRequest?.tileHeight;
                     const tileRight = tileLeft + this.parentWidget.imageStackDataRequest?.tileWidth;
@@ -356,7 +429,15 @@ export class ImageTrackWidget
                         const imgBitmap = bitMapList[i];
                         const frameId = trackData.pointList[i].get('Frame ID');
                         const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
-                        const offsetIndex = frameId - minFrame;
+                        let offsetIndex: number = frameId - minFrame;
+                        if (this.parentWidget.inCondensedMode)
+                        {
+                            offsetIndex = i;
+                        }
+                        else
+                        {
+                            offsetIndex = frameId - minFrame;
+                        }
                         const frameX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
                         const frameY = verticalOffset;
                         const [offsetX, offsetY] = offsetArray[i];
@@ -396,10 +477,25 @@ export class ImageTrackWidget
         verticalOffset: number): void
     {
         // draw track background
-        let offsetIndex = trackData.pointList[0].get('Frame ID') - minFrame;
+        let offsetIndex: number;
+        if (this.parentWidget.inCondensedMode)
+        {
+            offsetIndex = 0;
+        }
+        else
+        {
+            offsetIndex = trackData.pointList[0].get('Frame ID') - minFrame;
+        }
         const minDestX = this.horizontalPad + offsetIndex * (maxWidth + this.horizontalPad);
-        const lastIndex = trackData.pointList.length - 1;
-        offsetIndex = trackData.pointList[lastIndex].get('Frame ID') - minFrame + 1;
+        if (this.parentWidget.inCondensedMode)
+        {
+            offsetIndex = this.parentWidget.condensedModeCount;
+        }
+        else
+        {
+            const lastIndex = trackData.pointList.length - 1;
+            offsetIndex = trackData.pointList[lastIndex].get('Frame ID') - minFrame + 1;
+        }
         const maxDestX = offsetIndex * (maxWidth + this.horizontalPad);
         const minDestY = verticalOffset;
 
@@ -486,9 +582,21 @@ export class ImageTrackWidget
         }
         let xPos = e.offsetX;
         let yPos = e.offsetY;
-        const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
         const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+
+        let frameId: number
+        const frameIndex = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos) - 1;
+        if (this.parentWidget.inCondensedMode)
+        {
+            let point = this.getPointInCondensedMode(curve, frameIndex);
+            frameId = point.get('Frame ID');
+        }
+        else
+        {
+            frameId = frameIndex + 1;
+        }
+
         let firstPoint = curve.pointList[0];
         const trackLocation = firstPoint.get('Location ID');
         let event = new CustomEvent('locFrameClicked', { detail:
@@ -507,12 +615,21 @@ export class ImageTrackWidget
         }
         let xPos = e.offsetX;
         let yPos = e.offsetY;
-        const frameId: number = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
-        // console.log(frameId);
         const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
-        // console.log(cellId);
-
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+        
+        let frameId: number
+        const frameIndex = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos) - 1;
+        if (this.parentWidget.inCondensedMode)
+        {
+            let point = this.getPointInCondensedMode(curve, frameIndex);
+            frameId = point.get('Frame ID');
+        }
+        else
+        {
+            frameId = frameIndex + 1;
+        }
+
         this.parentWidget.selectedImgIndex;
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
         let firstPoint = curve.pointList[0];
@@ -535,7 +652,7 @@ export class ImageTrackWidget
             this.parentWidget.dimCanvas();
         }
 
-        this.updateLabelsOnMouseMove(cellId, frameId.toString());
+        this.updateLabelsOnMouseMove(cellId, frameIndex);
         let event = new CustomEvent('frameHoverChange', { detail:
         {
             locationId: trackLocation,
@@ -549,7 +666,7 @@ export class ImageTrackWidget
     {
         this.parentWidget.hideSegmentHover(true);
         this.parentWidget.dimCanvas();
-        this.updateLabelsOnMouseMove('', '');
+        this.updateLabelsOnMouseMove('', -1);
         const locId = this.parentWidget.getCurrentLocationId();
         let event = new CustomEvent('frameHoverChange', { detail:
             {
@@ -671,6 +788,15 @@ export class ImageTrackWidget
             const pos: number = labelPos[1] - this.latestScroll[0];
             return 0 <= pos && pos <= this.innerContainerW;
         });
+        if (this.parentWidget.inCondensedMode)
+        {
+            labelsInView = labelsInView.map((labelPos: [string, number]) => 
+            {
+                let index = +labelPos[0] - 1;
+                let percent = index / (this.parentWidget.condensedModeCount - 1);
+                return [percent.toFixed(2), labelPos[1]];
+            })
+        }
         const currentFrame  = this.parentWidget.getCurrentFrameId();
         this.frameLabelGroup.selectAll('text')
             .data(labelsInView)
@@ -683,28 +809,46 @@ export class ImageTrackWidget
             .classed('right', true);
     }
 
-    private updateLabelsOnMouseMove(cellId: string, frameId: string): void
+    private updateLabelsOnMouseMove(cellId: string, frameIndex: number): void
     {
         let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
-        this.hoverNodeWithText(svgSelection.nodes(), cellId);
+        let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
         svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
-        this.hoverNodeWithText(svgSelection.nodes(), frameId);
+        if (!foundMatch)
+        {
+            this.hoverNodeWithText(svgSelection.nodes(), '');
+            return
+        }
+        let frameText: string;
+        if (this.parentWidget.inCondensedMode)
+        {
+            let percent = frameIndex / (this.parentWidget.condensedModeCount - 1);
+            frameText = percent.toFixed(2);
+        }
+        else
+        {
+            frameText = (frameIndex + 1).toString();
+        }
+        this.hoverNodeWithText(svgSelection.nodes(), frameText);
     }
 
-    private hoverNodeWithText(svgElementList: SVGElement[], text: string): void
+    private hoverNodeWithText(svgElementList: SVGElement[], text: string): boolean
     {
+        let fountMatch = false;
         for (let node  of svgElementList)
         {
             let nodeEl = (node as SVGElement);
             if (nodeEl.textContent === text)
             {
                 nodeEl.classList.add('hovered');
+                fountMatch = true;
             }
             else
             {
                 nodeEl.classList.remove('hovered');
             }
         }
+        return fountMatch;
     }
 
     public OnResize(width: number, height: number): void

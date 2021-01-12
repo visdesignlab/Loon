@@ -25,6 +25,9 @@ export class ImageStackWidget {
 		this._tooltip = new RichTooltip();
 		this._exemplarAttribute = 'Avg Mass'; // TODO change default
 		this._inExemplarMode = true; // TODO
+		this._inCondensedMode = true; // TODO mode
+		this._condensedModeCount = 7;
+		this._exemplarLocations = new Set();
 	}
 		
 	private _container : HTMLElement;
@@ -144,7 +147,22 @@ export class ImageStackWidget {
 	public get inExemplarMode() : boolean {
 		return this._inExemplarMode;
 	}
-	
+		
+	private _inCondensedMode : boolean;
+	public get inCondensedMode() : boolean {
+		return this._inCondensedMode;
+	}
+
+	private _condensedModeCount : number;
+	public get condensedModeCount() : number {
+		return this._condensedModeCount;
+	}
+
+	private _exemplarLocations : Set<number>;
+	public get exemplarLocations() : Set<number> {
+		return this._exemplarLocations;
+	}	
+
 	public init(): void
 	{
 		const containerSelect = d3.select(this.container);
@@ -298,10 +316,17 @@ export class ImageStackWidget {
 		if (this.inExemplarMode)
 		{
 			curveList = this.getExemplarCurves();
+			this.exemplarLocations.clear();
+			for (let curve of curveList)
+			{
+				const firstPoint = curve.pointList[0];
+				this.exemplarLocations.add(firstPoint.get('Location ID'));
+			}		
 		}
 		else
 		{
 			curveList = this.getCurvesBasedOnPointsAtCurrentFrame();
+			this.exemplarLocations.clear();
 		}
 		this.imageTrackWidget.draw(curveList);
 	}
