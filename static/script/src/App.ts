@@ -117,6 +117,9 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 			case ComponentType.DetailedDistribution:
 				newComponent = new DetailedDistributionWidget(container, initArgs.metricDistributionCollectionLevel, initArgs.attributeKey);
 				break;
+			case ComponentType.Toolbar:
+				newComponent = new Toolbar(container);
+				break;
 			default:
 				console.error(`Cannot Initialize Component of type: ${componentType}`);
 				break;
@@ -131,7 +134,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	
 	private async fetchJson(filename: string): Promise<void>
 	{
-		await d3.json("../../../data/" + filename).then(data =>
+		await d3.json("../../../data/" + filename).then((data: any) =>
 		{
 			this.fetchCsv(`${data.googleDriveId}/massOverTime.csv`, data);
 		});

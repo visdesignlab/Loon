@@ -29,6 +29,27 @@ button, option, select {
 .wrapperDiv {
     display: flex;
     align-items: center;
+    flex-direction: column;
+    margin-top: 2px;
+    flex-grow: 1;
+    background: rgba(255, 228, 196, 0.356);
+}
+
+.optionSelectGrouperDiv {
+    display: flex;
+    flex-direction: column;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    border-top: solid gray 2px;
+    border-bottom: solid gray 2px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+}
+
+.optionSelectGrouperDiv:hover {
+    background: rgba(255, 228, 196, 0.556);
+    border-left: solid grey 1px;
+    border-right: solid grey 1px;
 }
 
 .exampleHeaderOuter {

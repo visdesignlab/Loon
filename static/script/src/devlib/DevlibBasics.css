@@ -7,6 +7,18 @@
     background: rgba(255,255,255,.25);
 }
 
+.basicIconButton.selected {
+    color: black;
+    border: solid gray 1px;
+    background: rgb(226, 226, 226, 0.5);
+}
+
+.basicIconButton.big {
+    width: 42px;
+    height: 42px;
+    font-size: 16pt;
+}
+
 .basicIconButton:hover {
     color: black;
     border: solid gray 1px;
