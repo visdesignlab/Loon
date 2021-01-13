@@ -207,8 +207,23 @@ export class ImageStackWidget {
 
 		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => 
 		{
-			this._inExemplarMode = true;
 			this._exemplarAttribute = e.detail;
+
+			let buttonChangeEvent = new CustomEvent('changeModeSelect', {detail: 0});
+			document.dispatchEvent(buttonChangeEvent);
+
+			let modeChangeEvent = new CustomEvent('modeChange', {detail: {
+				inCondensedMode: true,
+				inExemplarMode: true
+			}});
+			document.dispatchEvent(modeChangeEvent);
+		});
+
+		document.addEventListener('modeChange', (e: CustomEvent) =>
+		{
+			this._inExemplarMode = e.detail.inExemplarMode;
+			this._inCondensedMode = e.detail.inCondensedMode;
+			document.dispatchEvent(new CustomEvent('modeChangeRedraw'));
 			this.updateTracksCanvas();
 		});
 	}

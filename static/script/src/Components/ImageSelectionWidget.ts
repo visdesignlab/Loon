@@ -171,6 +171,11 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             this.draw();
         });
 
+        document.addEventListener('modeChangeRedraw', (e: CustomEvent) => 
+        {
+            this.draw();
+        });
+
         this.OnResize();
 	}
 
@@ -398,10 +403,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
                 this.onClickLocationFrame(locId, frameId);
-            });
-            document.addEventListener('launchExemplarCurve', (e: CustomEvent) => 
-            {
-                this.draw();
             });
         }
     }

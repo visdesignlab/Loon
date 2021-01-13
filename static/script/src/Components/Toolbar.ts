@@ -45,15 +45,47 @@ export class Toolbar extends BaseComponent {
 			},
 			{
 				type: 'toggleButton',
-				iconKeys: ['eye', 'eye-slash'],
+				iconKeys: ['eye-slash', 'eye'],
 				callback: (state: boolean) => console.log('toggle', state),
-				tooltips: ['Showing all cells, click to show only long tracks.', 'Only showing longer tracks, click to show all cells.']
+				tooltips: ['Only showing longer tracks, click to show all cells.', 'Showing all cells, click to show only long tracks.']
 			},
 			{
 				type: 'optionSelect',
 				iconKeys: ['align-justify', 'align-center', 'question', 'question-circle'],
 				defaultIndex: 0,
-				callback: (state: number) => console.log('option', state),
+				callback: (state: number) => {
+					let modeChangeEvent: CustomEvent;
+					switch (state)
+					{
+						case 0:
+							modeChangeEvent = new CustomEvent('modeChange', {detail: {
+								inCondensedMode: true,
+								inExemplarMode: true
+							}});
+							break;
+						case 1:
+							modeChangeEvent = new CustomEvent('modeChange', {detail: {
+								inCondensedMode: false,
+								inExemplarMode: false
+							}});
+							break;
+						case 2:
+							modeChangeEvent = new CustomEvent('modeChange', {detail: {
+								inCondensedMode: true,
+								inExemplarMode: false
+							}});
+							break;
+						case 3:
+							modeChangeEvent = new CustomEvent('modeChange', {detail: {
+								inCondensedMode: false,
+								inExemplarMode: true
+							}});
+							break;
+						default:
+							break;
+					}
+					document.dispatchEvent(modeChangeEvent)
+				},
 				tooltips: ['Exemplar mode.', 'Expanded mode.', '', '']
 			}
 		]
@@ -143,34 +175,15 @@ export class Toolbar extends BaseComponent {
 						toolbarElement.callback(i);
 					}
 				}
+				document.addEventListener('changeModeSelect', (e: CustomEvent) => 
+				{
+					removeSelected();
+					buttonList[e.detail].classList.add('selected');
+				});
 				this.wrapperDiv.append(grouperDiv);
 			}
 		}
 	}
-
-	// private initExampleButtons(): void
-	// {
-	// 	let textWrapper = document.createElement("div");
-	// 	textWrapper.classList.add("exampleHeaderOuter");
-	// 	textWrapper.textContent = "Examples: ";
-	// 	this.wrapperDiv.appendChild(textWrapper);
-
-	// 	for (let buttonProp of this.buttonList)
-	// 	{
-	// 		let button: HTMLButtonElement = document.createElement("button");
-	// 		button.classList.add("exampleButton");
-	// 		button.classList.add("devlibButton");
-	// 		button.textContent = buttonProp.displayName;
-	// 		button.id = "toolbarButton-" + buttonProp.displayName;
-	// 		button.onclick = (ev: Event) => 
-	// 		{
-	// 			// this.uploadFileButton.ResetValue();
-	// 			buttonProp.callback();
-	// 		}
-	// 		this.wrapperDiv.appendChild(button);
-	// 	}
-
-	// }
 
 
 	protected OnResize(): void
