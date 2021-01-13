@@ -1,5 +1,4 @@
 import {BaseComponent} from './BaseComponent';
-// import { UploadFileButton } from './UploadFileButton';
 import {ToolbarElement} from '../devlib/DevLibTypes';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { range } from 'd3';
@@ -9,15 +8,7 @@ export class Toolbar extends BaseComponent {
 	constructor(container: Element)
 	{
 		super(container);
-		// this._callback = fileLoadCallback;
-		// this._buttonList = buttonPropList;
-		// this.initExampleButtons();
 	}
-
-	// private _uploadFileButton : UploadFileButton;
-	// public get uploadFileButton() : UploadFileButton {
-	// 	return this._uploadFileButton;
-	// }
 
 	private _uploadFileButtonWrapper : HTMLDivElement;
 	public get uploadFileButtonWrapper() : HTMLDivElement {
@@ -40,7 +31,7 @@ export class Toolbar extends BaseComponent {
 			{
 				type: 'single',
 				iconKey: 'home',
-				callback: () => console.log('home'),
+				callback: () => location.href = '/overview',
 				tooltip: 'Return to overview screen'
 			},
 			{
@@ -96,13 +87,9 @@ export class Toolbar extends BaseComponent {
 		this._wrapperDiv = document.createElement("div");
 		this.wrapperDiv.classList.add("wrapperDiv");
 
-		// this._uploadFileButtonWrapper = document.createElement("div");
-		// this.wrapperDiv.appendChild(this.uploadFileButtonWrapper);
-		// this._uploadFileButton = new UploadFileButton(this.uploadFileButtonWrapper, (data: string, filename: string) => {this.fileLoadCallback(data, filename)})
 		this.container.appendChild(this.wrapperDiv);
 		this.initToolbarElements();
 		this.drawToolbarElements();
-
 	}
 
 	private drawToolbarElements(): void
@@ -185,19 +172,8 @@ export class Toolbar extends BaseComponent {
 		}
 	}
 
-
 	protected OnResize(): void
 	{
 		// do nothing
-	}
-
-	// private fileLoadCallback(data: string, filename: string): void
-	// {
-	// 	this._callback(data);
-	// }
-
-	private fileFetchCallback(): void
-	{
-
 	}
 }
