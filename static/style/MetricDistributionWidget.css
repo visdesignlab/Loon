@@ -124,8 +124,8 @@
 }
 
 .histogramContainer {
-    height: 112px;
-    width: 200px;
+    height: 150px;
+    width: 400px;
     position: relative;
 }
 
@@ -161,7 +161,7 @@
 }
 
 .scatterPlotContainer {
-    height: 224px;
-    width: 224px;
+    height: 400px;
+    width: 400 px;
     position: relative;
 }
