@@ -893,6 +893,10 @@ def openAnyMatlabFile(bytesIO) -> Union[dict, h5py.File]:
         os.remove(tempFilename)
     return outputDict
 
+@app.route('/spinner.gif')
+def getSpinner():
+    return flask.redirect('/static/assets/spinner.gif')
+
 @app.errorhandler(404)
 def page_not_found(error):
     return flask.redirect('/static/404.jpg')    

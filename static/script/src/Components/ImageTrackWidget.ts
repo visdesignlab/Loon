@@ -7,6 +7,7 @@ import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageTrackWidget
 {
@@ -207,9 +208,11 @@ export class ImageTrackWidget
         {
             return;
         }
+        DevlibTSUtil.launchSpinner();
         this._trackList = tracks;
         await this.drawTrackList();
         this.drawLabels();
+        // DevlibTSUtil.stopSpinner();
     }
 
     public OnBrushChange(): void
@@ -283,7 +286,8 @@ export class ImageTrackWidget
             offset += maxWidth / 2;
             this._frameLabelPositions.push([frameId, offset]);
         }
-        // await Promise.all(drawTrackPromises);
+        await Promise.all(drawTrackPromises);
+        DevlibTSUtil.stopSpinner();
         // this.drawOutlines();
     }
 

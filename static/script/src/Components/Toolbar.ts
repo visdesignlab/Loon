@@ -44,7 +44,7 @@ export class Toolbar extends BaseComponent {
 				type: 'optionSelect',
 				iconKeys: ['align-justify', 'align-center', 'question', 'question-circle'],
 				defaultIndex: 0,
-				callback: (state: number) => {
+				callback: async (state: number) => {
 					let modeChangeEvent: CustomEvent;
 					switch (state)
 					{
@@ -75,7 +75,8 @@ export class Toolbar extends BaseComponent {
 						default:
 							break;
 					}
-					document.dispatchEvent(modeChangeEvent)
+					DevlibTSUtil.launchSpinner();
+					await DevlibTSUtil.makeAsync(() => document.dispatchEvent(modeChangeEvent));
 				},
 				tooltips: ['Exemplar mode.', 'Expanded mode.', '', '']
 			}

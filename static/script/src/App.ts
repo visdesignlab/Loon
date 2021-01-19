@@ -7,9 +7,10 @@ import {MetricDistributionWidget} from './Components/MetricDistributionWidget';
 import {ImageSelectionWidget} from './Components/ImageSelectionWidget';
 import {LayoutFramework} from './LayoutFramework';
 import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData} from './types';
-import {ButtonProps, KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devlib/DevLibTypes';
+import {KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
+import { DevlibTSUtil } from './devlib/DevlibTSUtil';
 
 export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	
@@ -76,8 +77,8 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	public InitializeLayout(frame: Frame<ComponentInitInfo | ComponentType>): void
 	{
 		// console.log(frame);
-
 		this._componentContainers = this.layoutFramework.InitializeLayout(frame);
+		DevlibTSUtil.launchSpinner();
 		for (let [container, componentInfo] of this.componentContainers)
 		{
 			this.InitializeComponent(componentInfo, container);

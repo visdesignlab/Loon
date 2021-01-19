@@ -351,10 +351,11 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private initExemplarTrackButton(): void
 	{
-		this.AddButton('rocket', () =>
+		this.AddButton('rocket', async () =>
 		{
 			let event = new CustomEvent('launchExemplarCurve', {detail: this.valueKey});
-			document.dispatchEvent(event);
+			DevlibTSUtil.launchSpinner();
+			await DevlibTSUtil.makeAsync(() => document.dispatchEvent(event));
 		});
 	}
 
