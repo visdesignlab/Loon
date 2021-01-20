@@ -464,8 +464,14 @@ export class ImageTrackWidget
                         this.canvasContext.stroke();
                         this.canvasContext.fill();
                         this.canvasContext.closePath();
-
-                        this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
+                        try
+                        {
+                            this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
+                        }
+                        catch(error)
+                        {
+                            console.warn(error);
+                        }
                     }
                     resolve();
                     this.drawOutlines(sourceDestCell);

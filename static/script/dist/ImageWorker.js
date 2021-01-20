@@ -5,5 +5,5 @@ onmessage = function(event)
     {
         promises.push(createImageBitmap(blob, copyLeft, copyTop, copyWidth, copyHeight));
     }
-    Promise.all(promises).then(data => self.postMessage(data));
+    Promise.allSettled(promises).then(data => self.postMessage(data));
 }

@@ -180,10 +180,16 @@ export class ImageStackDataRequest
     {
         return new Promise((resolve, reject) =>
         {
-            this.getImage(location, frameIndex, (top: number, left: number, blob: Blob, imageUrl: string) =>
-            {
-                resolve([top, left, blob, imageUrl]);
-            })
+            try {
+                this.getImage(location, frameIndex, (top: number, left: number, blob: Blob, imageUrl: string) =>
+                {
+                    resolve([top, left, blob, imageUrl]);
+                });
+            } catch (error) {
+                console.error(error);
+                reject();
+            }
+
         });
     }
 
