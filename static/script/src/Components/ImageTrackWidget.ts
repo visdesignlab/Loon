@@ -427,7 +427,7 @@ export class ImageTrackWidget
             {
                 webWorker.onmessage = (event) =>
                 {
-                    let bitMapList: ImageBitmap[] = event.data;
+                    let bitMapList: {status: string, value:ImageBitmap}[] = event.data;
                     for (let i = 0; i < bitMapList.length; i++)
                     {
                         const imgBitmap = bitMapList[i];
@@ -464,13 +464,9 @@ export class ImageTrackWidget
                         this.canvasContext.stroke();
                         this.canvasContext.fill();
                         this.canvasContext.closePath();
-                        try
+                        if (imgBitmap.status === 'fulfilled')
                         {
-                            this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
-                        }
-                        catch(error)
-                        {
-                            console.warn(error);
+                            this.canvasContext.drawImage(imgBitmap.value, offsetX, offsetY);
                         }
                     }
                     resolve();

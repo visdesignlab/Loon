@@ -42,7 +42,7 @@ export class Toolbar extends BaseComponent {
 			},
 			{
 				type: 'optionSelect',
-				iconKeys: ['align-justify', 'align-center', 'question', 'question-circle'],
+				iconKeys: ['bars', 'stream', 'clone'],
 				defaultIndex: 0,
 				callback: async (state: number) => {
 					let modeChangeEvent: CustomEvent;
@@ -57,19 +57,13 @@ export class Toolbar extends BaseComponent {
 						case 1:
 							modeChangeEvent = new CustomEvent('modeChange', {detail: {
 								inCondensedMode: false,
-								inExemplarMode: false
+								inExemplarMode: true
 							}});
 							break;
 						case 2:
 							modeChangeEvent = new CustomEvent('modeChange', {detail: {
-								inCondensedMode: true,
-								inExemplarMode: false
-							}});
-							break;
-						case 3:
-							modeChangeEvent = new CustomEvent('modeChange', {detail: {
 								inCondensedMode: false,
-								inExemplarMode: true
+								inExemplarMode: false
 							}});
 							break;
 						default:
@@ -78,7 +72,7 @@ export class Toolbar extends BaseComponent {
 					DevlibTSUtil.launchSpinner();
 					await DevlibTSUtil.makeAsync(() => document.dispatchEvent(modeChangeEvent));
 				},
-				tooltips: ['Exemplar mode.', 'Expanded mode.', '', '']
+				tooltips: ['Condensed Mode', 'Expanded Mode', 'Frame Mode']
 			}
 		]
 	}

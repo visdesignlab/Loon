@@ -155,6 +155,11 @@ export class ImageStackDataRequest
             this.blobArray[thisIndex] = [blob, key, url];
             callback(top, left, blob, url);
         }
+        xhr.onerror = (e) =>
+        {
+            console.warn('Error Fetching: ' + imgUrl)
+            console.warn(e);
+        }
         xhr.open('GET', imgUrl);
         xhr.send();
         return;
