@@ -59,10 +59,21 @@ export class DevlibTSUtil {
 			outer.classList.add('spinnerOuter');
 			outer.id = outerId;
 			
-			let inner = document.createElement('img')
+			let imgDiv = document.createElement('div');
+			imgDiv.classList.add('spinnerWrapper');
+
+			let inner = document.createElement('img');
 			inner.classList.add('spinner');
 			inner.src = '/spinner.gif';
-			outer.appendChild(inner);
+			imgDiv.appendChild(inner);
+			outer.appendChild(imgDiv);
+			
+			let attribution = document.createElement('a');
+			attribution.classList.add('attributionLink');
+			attribution.href = 'https://loading.io/asset/442473';
+			attribution.innerText = "icon 'Double Ring' from loading.io";
+			
+			outer.appendChild(attribution);
 			document.body.appendChild(outer);
 		}
 		if (!DevlibTSUtil.spinnerSpinning())

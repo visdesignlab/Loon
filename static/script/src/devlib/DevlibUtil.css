@@ -21,9 +21,26 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
+}
+
+.spinnerWrapper {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .spinner {
     box-shadow: #dedede 0 0 20px 20px;
     border-radius: 50%;
+}
+
+.attributionLink {
+    align-self: flex-end;
+    padding: 10px;
+    font-size: 10pt;
+    background: #00000017;
+    border-radius: 8px;
+    margin: 2px;
 }

@@ -286,7 +286,7 @@ export class ImageTrackWidget
             offset += maxWidth / 2;
             this._frameLabelPositions.push([frameId, offset]);
         }
-        await Promise.all(drawTrackPromises);
+        await Promise.allSettled(drawTrackPromises);
         DevlibTSUtil.stopSpinner();
         // this.drawOutlines();
     }

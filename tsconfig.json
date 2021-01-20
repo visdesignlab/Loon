@@ -2,7 +2,7 @@
     "compilerOptions": {
         "target": "ES2017",
         "lib":[
-            "es2019",
+            "es2020",
             "DOM",
             "ES6",
             "DOM.Iterable",
