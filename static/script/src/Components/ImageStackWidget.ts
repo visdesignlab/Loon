@@ -224,8 +224,8 @@ export class ImageStackWidget {
 		{
 			this._inExemplarMode = e.detail.inExemplarMode;
 			this._inCondensedMode = e.detail.inCondensedMode;
-			document.dispatchEvent(new CustomEvent('modeChangeRedraw'));
 			this.updateTracksCanvas();
+			document.dispatchEvent(new CustomEvent('modeChangeRedraw'));
 		});
 	}
 
