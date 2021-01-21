@@ -1,5 +1,6 @@
 import * as d3 from 'd3';
 import { load } from "protobufjs";
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 
 
@@ -154,6 +155,11 @@ export class ImageStackDataRequest
             this.blobArray[thisIndex] = [blob, key, url];
             callback(top, left, blob, url);
         }
+        xhr.onerror = (e) =>
+        {
+            console.warn('Error Fetching: ' + imgUrl)
+            console.warn(e);
+        }
         xhr.open('GET', imgUrl);
         xhr.send();
         return;
@@ -179,10 +185,16 @@ export class ImageStackDataRequest
     {
         return new Promise((resolve, reject) =>
         {
-            this.getImage(location, frameIndex, (top: number, left: number, blob: Blob, imageUrl: string) =>
-            {
-                resolve([top, left, blob, imageUrl]);
-            })
+            try {
+                this.getImage(location, frameIndex, (top: number, left: number, blob: Blob, imageUrl: string) =>
+                {
+                    resolve([top, left, blob, imageUrl]);
+                });
+            } catch (error) {
+                console.error(error);
+                reject();
+            }
+
         });
     }
 

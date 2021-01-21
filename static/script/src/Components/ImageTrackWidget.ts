@@ -7,6 +7,7 @@ import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageTrackWidget
 {
@@ -207,6 +208,7 @@ export class ImageTrackWidget
         {
             return;
         }
+        DevlibTSUtil.launchSpinner();
         this._trackList = tracks;
         await this.drawTrackList();
         this.drawLabels();
@@ -283,7 +285,8 @@ export class ImageTrackWidget
             offset += maxWidth / 2;
             this._frameLabelPositions.push([frameId, offset]);
         }
-        // await Promise.all(drawTrackPromises);
+        await Promise.allSettled(drawTrackPromises);
+        DevlibTSUtil.stopSpinner();
         // this.drawOutlines();
     }
 
@@ -423,7 +426,7 @@ export class ImageTrackWidget
             {
                 webWorker.onmessage = (event) =>
                 {
-                    let bitMapList: ImageBitmap[] = event.data;
+                    let bitMapList: {status: string, value:ImageBitmap}[] = event.data;
                     for (let i = 0; i < bitMapList.length; i++)
                     {
                         const imgBitmap = bitMapList[i];
@@ -460,8 +463,10 @@ export class ImageTrackWidget
                         this.canvasContext.stroke();
                         this.canvasContext.fill();
                         this.canvasContext.closePath();
-
-                        this.canvasContext.drawImage(imgBitmap, offsetX, offsetY);
+                        if (imgBitmap.status === 'fulfilled')
+                        {
+                            this.canvasContext.drawImage(imgBitmap.value, offsetX, offsetY);
+                        }
                     }
                     resolve();
                     this.drawOutlines(sourceDestCell);

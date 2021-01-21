@@ -9,6 +9,7 @@ import { ImageStackMetaData } from '../types';
 import { ImageTrackWidget } from './ImageTrackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageStackWidget {
 	
@@ -207,9 +208,24 @@ export class ImageStackWidget {
 
 		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => 
 		{
-			this._inExemplarMode = true;
 			this._exemplarAttribute = e.detail;
+
+			let buttonChangeEvent = new CustomEvent('changeModeSelect', {detail: 0});
+			document.dispatchEvent(buttonChangeEvent);
+
+			let modeChangeEvent = new CustomEvent('modeChange', {detail: {
+				inCondensedMode: true,
+				inExemplarMode: true
+			}});
+			document.dispatchEvent(modeChangeEvent);
+		});
+
+		document.addEventListener('modeChange', (e: CustomEvent) =>
+		{
+			this._inExemplarMode = e.detail.inExemplarMode;
+			this._inCondensedMode = e.detail.inCondensedMode;
 			this.updateTracksCanvas();
+			document.dispatchEvent(new CustomEvent('modeChangeRedraw'));
 		});
 	}
 

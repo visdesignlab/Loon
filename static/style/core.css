@@ -1,3 +1,7 @@
+* {
+    font-family: 'Montserrat', sans-serif;
+}
+
 .test {
     background: firebrick;
     border: solid black 4px;

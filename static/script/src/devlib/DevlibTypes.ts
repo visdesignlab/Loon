@@ -41,5 +41,29 @@ export interface ButtonProps {
 	callback: Function
 }
 
+export type ToolbarElement = ToolbarSingleButton | ToolbarToggleButton | ToolbarOptionSelect;
+
+export interface ToolbarSingleButton {
+	type: 'single',
+	iconKey: string,
+	callback: (state: any) => void,
+	tooltip: string
+}
+
+export interface ToolbarToggleButton {
+	type: 'toggleButton',
+	iconKeys: string[],
+	callback: (state: any) => void,
+	tooltips: string[]
+}
+
+export interface ToolbarOptionSelect {
+	type: 'optionSelect',
+	iconKeys: string[],
+	defaultIndex: number,
+	callback: (state: any) => void,
+	tooltips: string[]
+}
+
 export type SvgSelection = d3.Selection<SVGElement, any, Element, any>;
 export type HtmlSelection = d3.Selection<HTMLElement, any, HTMLElement, any>;
