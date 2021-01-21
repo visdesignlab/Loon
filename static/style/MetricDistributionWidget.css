@@ -129,6 +129,10 @@
     position: relative;
 }
 
+.histogramContainer.selected {
+    background: rgba(255, 228, 196, 0.356);
+}
+
 .histogramBar {
     fill: #272727;
     stroke: #272727;

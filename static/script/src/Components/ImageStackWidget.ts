@@ -226,7 +226,9 @@ export class ImageStackWidget {
 			this._inCondensedMode = e.detail.inCondensedMode;
 			this.updateTracksCanvas();
 			document.dispatchEvent(new CustomEvent('modeChangeRedraw'));
+			document.dispatchEvent(new CustomEvent('exemplarAttributeChange', {detail: this.inExemplarMode ? this.exemplarAttribute : null}));
 		});
+		document.dispatchEvent(new CustomEvent('exemplarAttributeChange', {detail: this.inExemplarMode ? this.exemplarAttribute : null}));
 	}
 
 	public dimCanvas(): void

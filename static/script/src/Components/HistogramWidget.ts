@@ -264,6 +264,19 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		this._axisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight + this.axisPadding})`)
 			.classed('labelColor', true);
+
+		document.addEventListener('exemplarAttributeChange', (e: CustomEvent) => 
+		{
+			let newExemplarAttribute = e.detail;
+			if (newExemplarAttribute === this.valueKey)
+			{
+				this.container.classList.add('selected');
+			}
+			else
+			{
+				this.container.classList.remove('selected');
+			}
+		});
 	}
 
 	private initKDEHIstogramToggle(): void
