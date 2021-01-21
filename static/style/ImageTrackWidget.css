@@ -4,7 +4,8 @@
 
 .cellTimelineInnerContainer {
     position: absolute;
-    top: 0;
+    top: 30px;
+    /* 20px height + 10px padding-top in trackModeTitleContainer */
     right: 0;
     /* If this margin changes, then ImageTrackWidget._cellTimelineMargin needs to be updated */
     margin: 36px 4px 4px 72px;
@@ -23,4 +24,10 @@
 
 .cellAxisLabel.right {
     text-anchor: middle
+}
+
+.trackModeTitleContainer {
+    text-align: center;
+    height: 20px;
+    padding-top: 10px;
 }

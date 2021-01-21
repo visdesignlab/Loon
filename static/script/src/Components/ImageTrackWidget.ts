@@ -57,6 +57,11 @@ export class ImageTrackWidget
         return this._innerContainerH;
     }
 
+    private _titleContainer : HtmlSelection;
+    public get titleContainer() : HtmlSelection {
+        return this._titleContainer;
+    }
+
     private _svgContainer : SvgSelection;
     public get svgContainer() : SvgSelection {
         return this._svgContainer;
@@ -137,6 +142,10 @@ export class ImageTrackWidget
     public init(): void
     {
         const containerSelect = d3.select(this.container);
+        this._titleContainer = containerSelect.append('div')
+            .classed('trackModeTitleContainer', true)
+            .classed('mediumText', true);
+
         this._svgContainer = containerSelect.append('svg');
         this._cellLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
@@ -210,10 +219,23 @@ export class ImageTrackWidget
         }
         DevlibTSUtil.launchSpinner();
         this._trackList = tracks;
+        this.updateTitle();
         await this.drawTrackList();
         this.drawLabels();
     }
 
+    private updateTitle(): void
+    {
+        if (this.parentWidget.inExemplarMode)
+        {
+            this.titleContainer.text('Exemplars of ' + this.parentWidget.exemplarAttribute);
+        }
+        else
+        {
+            this.titleContainer.text('Frame Extraction Mode');
+        }
+    }
+    
     public OnBrushChange(): void
     {
         this.drawOutlines();
@@ -858,8 +880,9 @@ export class ImageTrackWidget
 
     public OnResize(width: number, height: number): void
     {
+        height -= 30; // hacky, but see .cellTimelineInnerContainer.top for explanation
         this.svgContainer
-            .attr('height', height)
+            .attr('height', height - 30)
             .attr('width', width);
 
         const innerW = width - this.cellTimelineMargin.left - this.cellTimelineMargin.right;

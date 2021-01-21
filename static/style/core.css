@@ -85,3 +85,15 @@
     margin: 2px;
     flex-grow: 0;
 }
+
+.smallText {
+    font-size: 10pt;
+}
+
+.mediumText {
+    font-size: 12pt;
+}
+
+.largeText {
+    font-size: 14pt;
+}

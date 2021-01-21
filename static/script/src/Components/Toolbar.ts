@@ -1,7 +1,6 @@
 import {BaseComponent} from './BaseComponent';
 import {ToolbarElement} from '../devlib/DevLibTypes';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
-import { range } from 'd3';
 
 export class Toolbar extends BaseComponent {
 	
