@@ -5,11 +5,9 @@ import { PointND } from '../DataModel/PointND';
 import { ImageLocation } from '../DataModel/ImageLocation';
 import { CurveList } from '../DataModel/CurveList';
 import { RichTooltip } from '../Components/RichTooltip';
-import { ImageStackMetaData } from '../types';
 import { ImageTrackWidget } from './ImageTrackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
-import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageStackWidget {
 	
@@ -29,6 +27,7 @@ export class ImageStackWidget {
 		this._inCondensedMode = true; // TODO mode
 		this._condensedModeCount = 7;
 		this._exemplarLocations = new Set();
+		this._exemplarFrames = new Map();
 	}
 		
 	private _container : HTMLElement;
@@ -162,7 +161,12 @@ export class ImageStackWidget {
 	private _exemplarLocations : Set<number>;
 	public get exemplarLocations() : Set<number> {
 		return this._exemplarLocations;
-	}	
+	}
+	
+	private _exemplarFrames : Map<number, Set<number>>;
+	public get exemplarFrames() : Map<number, Set<number>> {
+		return this._exemplarFrames;
+	}
 
 	public init(): void
 	{
@@ -338,13 +342,26 @@ export class ImageStackWidget {
 			for (let curve of curveList)
 			{
 				const firstPoint = curve.pointList[0];
-				this.exemplarLocations.add(firstPoint.get('Location ID'));
+				const locId = firstPoint.get('Location ID')
+				this.exemplarLocations.add(locId);
+				if (!this.exemplarFrames.has(locId))
+				{
+					this.exemplarFrames.set(locId, new Set());
+				}
+				let frameSet = this.exemplarFrames.get(locId);
+				for (let i = 0; i < this.condensedModeCount; i++)
+                {
+                    const point: PointND = this.imageTrackWidget.getPointInCondensedMode(curve, i);
+					const frame: number = point.get('Frame ID');
+					frameSet.add(frame);
+                }
 			}		
 		}
 		else
 		{
 			curveList = this.getCurvesBasedOnPointsAtCurrentFrame();
 			this.exemplarLocations.clear();
+			this.exemplarFrames.clear();
 		}
 		this.imageTrackWidget.draw(curveList);
 	}

@@ -340,7 +340,7 @@ export class ImageTrackWidget
         return listOfLists;
     }
 
-    private getPointInCondensedMode(track: CurveND, index: number): PointND
+    public getPointInCondensedMode(track: CurveND, index: number): PointND
     {
         let percent = index / (this.parentWidget.condensedModeCount - 1);
         let trackIndex = Math.min(Math.round(percent * track.pointList.length), track.pointList.length-1);

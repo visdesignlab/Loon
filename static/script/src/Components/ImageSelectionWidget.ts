@@ -384,11 +384,18 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
             .classed('tickMark', true);
     
+
+
         let svgList = svgSelection.nodes();
         for (let i = 0; i < svgList.length; i++)
         {
             const svgElement = svgList[i];
             const locId = +svgElement.dataset['locId'];
+            if (this.imageStackWidget.inCondensedMode)
+            {
+                this.drawExtractedDots(d3.select(svgElement), locId, this.imageStackWidget.exemplarFrames.get(locId));
+            }
+
             svgElement.addEventListener('mousemove', (event: MouseEvent) =>
             {
                 this._hoveredLocId = locId;
@@ -523,9 +530,27 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         svgContainer.selectAll('.hoverBar').remove();
     }
 
+    private drawExtractedDots(svgContainer: SvgSelection, locationId: number, frameSet: Set<number>): void
+    {
+        let frameList = Array.from(frameSet);
+        let xyList: [number, number][] = frameList.map(frame => this.getDotCenters(locationId, frame)[0]);
+        const dotR = 1.5;
+        svgContainer.selectAll('.extractDot')
+            .data(xyList)
+            .join('circle')
+            .classed('extractDot', true)
+            .attr('cx', d => d[0])
+            .attr('cy', d => d[1])
+            .attr('fill', '#ECECEC')
+            .attr('stroke', 'black')
+            .attr('r', dotR)
+            .attr('opacity', 0.6)
+            .attr('stroke-width', 0.5);
+    }
+
     private drawHoverDots(svgContainer: SvgSelection, locationId: number, frameId: number): void
     {
-        const xyPositions: [number, number][] =this.getDotCenters(locationId, frameId);
+        const xyPositions: [number, number][] = this.getDotCenters(locationId, frameId);
         const dotR = 2;
         svgContainer.selectAll('.hoverDot')
             .data(xyPositions)
