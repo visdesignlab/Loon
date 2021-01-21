@@ -24,7 +24,7 @@
 }
 
 .locationSelectionContainer {
-    min-width: 200px;
+    min-width: 400px;
     max-width: 400px;
     flex-grow: 2;
 }
