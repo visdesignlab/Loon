@@ -228,7 +228,6 @@ export class ImageStackWidget {
 			document.dispatchEvent(new CustomEvent('modeChangeRedraw'));
 			document.dispatchEvent(new CustomEvent('exemplarAttributeChange', {detail: this.inExemplarMode ? this.exemplarAttribute : null}));
 		});
-		document.dispatchEvent(new CustomEvent('exemplarAttributeChange', {detail: this.inExemplarMode ? this.exemplarAttribute : null}));
 	}
 
 	public dimCanvas(): void
@@ -249,6 +248,7 @@ export class ImageStackWidget {
 		this._imageLocation = imageLocation;
 		this.SetImageProperties(skipImageTrackDraw); // default values before image load
 		this.draw(skipImageTrackDraw);
+		document.dispatchEvent(new CustomEvent('exemplarAttributeChange', {detail: this.inExemplarMode ? this.exemplarAttribute : null}));
 	}
 
 	public SetImageProperties(skipImageTrackDraw: boolean, blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void
