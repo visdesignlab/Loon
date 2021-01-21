@@ -212,7 +212,6 @@ export class ImageTrackWidget
         this._trackList = tracks;
         await this.drawTrackList();
         this.drawLabels();
-        // DevlibTSUtil.stopSpinner();
     }
 
     public OnBrushChange(): void
