@@ -309,7 +309,6 @@ export class ImageTrackWidget
         }
         await Promise.allSettled(drawTrackPromises);
         DevlibTSUtil.stopSpinner();
-        // this.drawOutlines();
     }
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>
@@ -355,7 +354,7 @@ export class ImageTrackWidget
         verticalOffset: number): Promise<void>
     {
         // draw track background
-        this.drawTrackBackground(trackData, maxWidth, maxHeight, minFrame, verticalOffset);
+        this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset);
 
 
         let asyncFunctionList = [];
@@ -497,7 +496,7 @@ export class ImageTrackWidget
             });
     }
 
-    private drawTrackBackground(
+    private drawTrackBackgroundAndTimeRange(
         trackData: CurveND,
         maxWidth: number, maxHeight: number,
         minFrame: number,
@@ -536,6 +535,53 @@ export class ImageTrackWidget
             maxHeight + 2 * marginY);
         this.canvasContext.strokeStyle = 'black';
         this.canvasContext.fillStyle = 'rgb(240,240,240)';
+        this.canvasContext.stroke();
+        this.canvasContext.fill();
+        this.canvasContext.closePath();
+
+        const timeRangeHeight = 1;
+        const timeRangeVerticalOffset = verticalOffset - marginY - timeRangeHeight;
+        this.drawTimeRange(trackData, [minDestX - marginX, maxDestX + marginX], timeRangeHeight, timeRangeVerticalOffset);
+    }
+
+    private drawTimeRange(
+        trackData: CurveND,
+        extentX: [number, number],
+        height: number,
+        verticalOffset: number): void
+    {
+        if (!this.parentWidget.inCondensedMode)
+        {
+            return;
+        }
+        let maxTimeRange = this.parentWidget.data.getMinMax('Frame ID');
+        let scaleX = d3.scaleLinear()
+            .domain(maxTimeRange)
+            .range(extentX)
+
+        let timeRange: [number, number] = d3.extent(trackData.pointList, point => point.get('Frame ID'));
+        let timeRangePx = timeRange.map(t => scaleX(t));
+
+        // Total possible time
+        this.canvasContext.beginPath();
+        this.canvasContext.rect(
+            extentX[0],
+            verticalOffset,
+            extentX[1] - extentX[0] + 1,
+            height);
+        this.canvasContext.fillStyle = 'grey';
+        this.canvasContext.fill();
+        this.canvasContext.closePath();
+        
+        // This time
+        this.canvasContext.beginPath();
+        this.canvasContext.rect(
+            timeRangePx[0],
+            verticalOffset,
+            timeRangePx[1] - timeRangePx[0] + 1,
+            height);
+        this.canvasContext.strokeStyle = 'MidnightBlue';
+        this.canvasContext.fillStyle = 'MidnightBlue';
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();

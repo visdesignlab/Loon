@@ -339,6 +339,7 @@ export class ImageStackWidget {
 		{
 			curveList = this.getExemplarCurves();
 			this.exemplarLocations.clear();
+			this.exemplarFrames.clear();
 			for (let curve of curveList)
 			{
 				const firstPoint = curve.pointList[0];
