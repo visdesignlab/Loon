@@ -928,7 +928,7 @@ export class ImageTrackWidget
     {
         height -= 30; // hacky, but see .cellTimelineInnerContainer.top for explanation
         this.svgContainer
-            .attr('height', height - 30)
+            .attr('height', height)
             .attr('width', width);
 
         const innerW = width - this.cellTimelineMargin.left - this.cellTimelineMargin.right;
