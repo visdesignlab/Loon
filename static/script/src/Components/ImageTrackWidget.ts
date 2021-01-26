@@ -25,7 +25,7 @@ export class ImageTrackWidget
             top: 36,
             right: 4,
             bottom: 4,
-            left: 72
+            left: 84
         }
         this._latestScroll = [0,0];
         this._scrollChangeTicking = false;
@@ -837,26 +837,20 @@ export class ImageTrackWidget
     private drawLabels(): void
     {
         // cell labels
-        let pad = 10;
-        const xAnchor = this.cellTimelineMargin.left - pad;
-        let labelsInView = this.cellLabelPositions.filter((labelPos: [string, number]) =>
+        if (!this.parentWidget.inExemplarMode)
         {
-            const pos: number = labelPos[1] - this.latestScroll[1];
-            return 0 <= pos && pos <= this.innerContainerH;
-        });
-        this.cellLabelGroup.selectAll('text')
-            .data(labelsInView)
-            .join('text')
-            .text(d => d[0])
-            .attr('x', xAnchor)
-            .attr('y', d => d[1] - this.latestScroll[1])
-            .classed('cellAxisLabel', true)
-            .classed('left', true);
+            this.drawCellLabels();
+        }
+        else
+        {
+            this.drawConditionLabels();
+            this.drawScentedWidgets();
+        }
 
         // frame labels
-        pad = 6;
+        let pad = 6;
         const yAnchor = this.cellTimelineMargin.top - pad;
-        labelsInView = this.frameLabelPositions.filter((labelPos: [string, number]) =>
+        let labelsInView = this.frameLabelPositions.filter((labelPos: [string, number]) =>
         {
             const pos: number = labelPos[1] - this.latestScroll[0];
             return 0 <= pos && pos <= this.innerContainerW;
@@ -880,6 +874,35 @@ export class ImageTrackWidget
             .classed('currentFrame', d => +d[0] === currentFrame && !this.parentWidget.inExemplarMode)
             .classed('cellAxisLabel', true)
             .classed('right', true);
+    }
+
+    private drawCellLabels(): void
+    {
+        const pad = 10;
+        const xAnchor = this.cellTimelineMargin.left - pad;
+        let labelsInView = this.cellLabelPositions.filter((labelPos: [string, number]) =>
+        {
+            const pos: number = labelPos[1] - this.latestScroll[1];
+            return 0 <= pos && pos <= this.innerContainerH;
+        });
+        this.cellLabelGroup.selectAll('text')
+            .data(labelsInView)
+            .join('text')
+            .text(d => d[0])
+            .attr('x', xAnchor)
+            .attr('y', d => d[1] - this.latestScroll[1])
+            .classed('cellAxisLabel', true)
+            .classed('left', true);
+    }
+
+    private drawConditionLabels(): void
+    {
+        // TODO
+    }
+
+    private drawScentedWidgets(): void
+    {
+        // TODO
     }
 
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number): void

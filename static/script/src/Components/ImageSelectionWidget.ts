@@ -166,12 +166,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             this.onClickLocationFrame(locId, frameId);
         });
 
-        document.addEventListener('groupByChanged', (e: CustomEvent) =>
-        {
-            this.draw();
-        });
 
-        document.addEventListener('modeChangeRedraw', (e: CustomEvent) => 
+        document.addEventListener('imageSelectionRedraw', (e: CustomEvent) => 
         {
             this.draw();
         });

@@ -8,7 +8,7 @@
     /* 20px height + 10px padding-top in trackModeTitleContainer */
     right: 0;
     /* If this margin changes, then ImageTrackWidget._cellTimelineMargin needs to be updated */
-    margin: 36px 4px 4px 72px;
+    margin: 36px 4px 4px 84px;
     outline: solid gray 1px;
 }
 

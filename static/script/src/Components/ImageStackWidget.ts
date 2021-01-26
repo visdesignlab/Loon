@@ -8,6 +8,7 @@ import { RichTooltip } from '../Components/RichTooltip';
 import { ImageTrackWidget } from './ImageTrackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageStackWidget {
 	
@@ -28,6 +29,7 @@ export class ImageStackWidget {
 		this._condensedModeCount = 7;
 		this._exemplarLocations = new Set();
 		this._exemplarFrames = new Map();
+		this._groupByIndexList = [0];
 	}
 		
 	private _container : HTMLElement;
@@ -168,6 +170,11 @@ export class ImageStackWidget {
 		return this._exemplarFrames;
 	}
 
+	private _groupByIndexList : number[];
+	public get groupByIndexList() : number[] {
+		return this._groupByIndexList;
+	}	
+
 	public init(): void
 	{
 		const containerSelect = d3.select(this.container);
@@ -229,8 +236,17 @@ export class ImageStackWidget {
 			this._inExemplarMode = e.detail.inExemplarMode;
 			this._inCondensedMode = e.detail.inCondensedMode;
 			this.updateTracksCanvas();
-			document.dispatchEvent(new CustomEvent('modeChangeRedraw'));
+			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
 			document.dispatchEvent(new CustomEvent('exemplarAttributeChange', {detail: this.inExemplarMode ? this.exemplarAttribute : null}));
+		});
+
+		document.addEventListener('groupByChanged', async (e: CustomEvent) =>
+		{
+			DevlibTSUtil.launchSpinner();
+			await DevlibTSUtil.makeAsync(() => this._groupByIndexList = e.detail.groupIndex);
+			this.updateTracksCanvas();
+			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
+
 		});
 	}
 
@@ -287,7 +303,6 @@ export class ImageStackWidget {
 	private drawSelectedImage(skipImageTrackDraw = false): void
 	{
 		this.setImageInlineStyle(this.selectedImgIndex);
-		// this.selectedImageContainer.attr("style", styleString);
 		this.updateCanvas(skipImageTrackDraw);
 	}
 
@@ -305,7 +320,6 @@ export class ImageStackWidget {
 	public getCurrentFrameId(): number
 	{
 		return this.selectedImgIndex + 1;
-		// return this.imageLocation.frameList[this.selectedImgIndex].frameId;
 	}
 
 	private updateCanvas(skipImageTrackDraw = false): void
@@ -337,7 +351,9 @@ export class ImageStackWidget {
 		let curveList: CurveND[];
 		if (this.inExemplarMode)
 		{
-			curveList = this.getExemplarCurves();
+			let facetIndex = this._groupByIndexList[0];
+			// todo - handle sub-facets
+			curveList = this.getExemplarCurves(facetIndex);
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
 			for (let curve of curveList)
@@ -367,11 +383,12 @@ export class ImageStackWidget {
 		this.imageTrackWidget.draw(curveList);
 	}
 
-	private getExemplarCurves(): CurveND[]
+	private getExemplarCurves(facetIndex: number): CurveND[]
 	{
 		let curveList: CurveND[] = [];
 		let facetOptions = this.data.GetFacetOptions();
-		const firstFacetOption = facetOptions[0];
+
+		const firstFacetOption = facetOptions[facetIndex];
 		const facetName = firstFacetOption.name;
 		let facets = firstFacetOption.GetFacets();
 		const trackLengthKey = 'Track Length';
@@ -703,9 +720,6 @@ export class ImageStackWidget {
 	{
 		this.setImageInlineStyle(index);
 		return;
-		const [top, left] = this.imageStackDataRequest?.getTileTopLeft(index);
-		this.selectedImageContainer.node().style.backgroundPositionX =  -left + 'px';
-		this.selectedImageContainer.node().style.backgroundPositionY = -top + 'px';
 	}
 	
 	public OnResize(newMaxHeight: number, imageTrackMaxHeight: number, newWidth: number): void
