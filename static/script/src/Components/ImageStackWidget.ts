@@ -30,6 +30,7 @@ export class ImageStackWidget {
 		this._exemplarLocations = new Set();
 		this._exemplarFrames = new Map();
 		this._groupByIndexList = [0];
+		this._numExemplars = 3;
 	}
 		
 	private _container : HTMLElement;
@@ -173,7 +174,12 @@ export class ImageStackWidget {
 	private _groupByIndexList : number[];
 	public get groupByIndexList() : number[] {
 		return this._groupByIndexList;
-	}	
+	}
+
+	private _numExemplars : number;
+	public get numExemplars() : number {
+		return this._numExemplars;
+	}
 
 	public init(): void
 	{
@@ -398,12 +404,13 @@ export class ImageStackWidget {
 			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
 			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
 			let numCurves = longTracks.length;
-			let lowCurve = quickSelect(longTracks, 1, (curve: CurveND) => curve.get(this.exemplarAttribute));
-			let medianCurve = quickSelect(longTracks, Math.floor(numCurves / 2), (curve: CurveND) => curve.get(this.exemplarAttribute));
-			let highCurve = quickSelect(longTracks, numCurves - 1, (curve: CurveND) => curve.get(this.exemplarAttribute));
-			curveList.push(lowCurve);
-			curveList.push(medianCurve);
-			curveList.push(highCurve);
+			for (let i = 0; i < this.numExemplars; i++)
+			{
+				let index = Math.round((numCurves - 1) * i / (this.numExemplars - 1));	
+				let exemplarCurve = quickSelect(longTracks, index, (curve: CurveND) => curve.get(this.exemplarAttribute));
+				curveList.push(exemplarCurve);
+
+			}
 		}
 
 		return curveList

@@ -897,6 +897,16 @@ export class ImageTrackWidget
 
     private drawConditionLabels(): void
     {
+        let facetIndex = this.parentWidget.groupByIndexList[0];
+        let facetOptions = this.parentWidget.data.GetFacetOptions();
+        const firstFacetOption = facetOptions[facetIndex];
+		let facets = firstFacetOption.GetFacets();
+        for (let facet of facets)
+        {
+            let conditionLabel = facet.name;
+            
+        }
+
         // TODO
     }
 

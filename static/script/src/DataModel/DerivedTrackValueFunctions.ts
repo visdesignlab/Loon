@@ -7,6 +7,7 @@ export class DerivedTrackValueFunctions
         let functionList = [];
         functionList.push([['Track Length'], this.trackLength]);
         functionList.push([['Avg Mass'], this.averageMass]);
+        functionList.push([['Avg shape factor'], this.averageShapeFactor]);
         functionList.push([['Growth Rate', 'Intercept', 'Initial Mass', 'Exponential Growth Constant', 'r_squared'], this.growthRateStats]);
         return functionList;
     }
@@ -26,6 +27,16 @@ export class DerivedTrackValueFunctions
             totalMass += point['Mass (pg)'];
         }
         return [totalMass / pointList.length];
+    }
+
+    private static averageShapeFactor(pointList: StringToNumberObj[]): [number]
+    {
+        let totalShapeFactor = 0;
+        for (let point of pointList)
+        {
+            totalShapeFactor += point['shape factor'];
+        }
+        return [totalShapeFactor / pointList.length];
     }
 
     private static growthRateStats(pointList: StringToNumberObj[]): [number, number, number, number, number]
