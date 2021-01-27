@@ -26,6 +26,10 @@
     text-anchor: middle
 }
 
+.cellAxisLabel.rotated {
+    text-anchor: middle;
+}
+
 .trackModeTitleContainer {
     text-align: center;
     height: 20px;

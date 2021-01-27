@@ -113,6 +113,11 @@ export class ImageTrackWidget
         return this._cellLabelPositions;
     }
 
+    private _conditionLabelPositions : [string, [number, number]][];
+    public get conditionLabelPositions() : [string, [number, number]][] {
+        return this._conditionLabelPositions;
+    }
+
     private _cellTimelineMargin : Margin;
     public get cellTimelineMargin() : Margin {
         return this._cellTimelineMargin;
@@ -287,17 +292,36 @@ export class ImageTrackWidget
 
         let verticalOffset: number = this.verticalPad;
         this._cellLabelPositions = [];
+
         let drawTrackPromises = [];
+        let verticalOffsetList = [];
         for (let i = 0; i < this.trackList.length; i++)
         {
             let track = this.trackList[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
+            verticalOffsetList.push(verticalOffset);
             let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset);
             drawTrackPromises.push(done);
-            this._cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
+            this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
         }
+        
+        const numExemplars = this.parentWidget.numExemplars;
+        if (this.parentWidget.inExemplarMode)
+        {
+            this._conditionLabelPositions = [];
+            const conditionNames = this.getConditionNames();
+            for (let i = 0; i < this.trackList.length; i += numExemplars)
+            {
+                let name = conditionNames[i/numExemplars];
+                const top = verticalOffsetList[i];
+                const indexBot = i + numExemplars - 1;
+                const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot];
+                this.conditionLabelPositions.push([name, [top, bot]]);
+            }
+        }
+
         this._frameLabelPositions = [];
         for (let i = 0; i < numFrames; i++)
         {
@@ -309,6 +333,15 @@ export class ImageTrackWidget
         }
         await Promise.allSettled(drawTrackPromises);
         DevlibTSUtil.stopSpinner();
+    }
+
+    private getConditionNames(): string[]
+    {
+        let facetIndex = this.parentWidget.groupByIndexList[0];
+        let facetOptions = this.parentWidget.data.GetFacetOptions();
+        const firstFacetOption = facetOptions[facetIndex];
+        let facets = firstFacetOption.GetFacets();
+        return facets.map(facet => facet.name);
     }
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>
@@ -897,17 +930,35 @@ export class ImageTrackWidget
 
     private drawConditionLabels(): void
     {
-        let facetIndex = this.parentWidget.groupByIndexList[0];
-        let facetOptions = this.parentWidget.data.GetFacetOptions();
-        const firstFacetOption = facetOptions[facetIndex];
-		let facets = firstFacetOption.GetFacets();
-        for (let facet of facets)
+        const pad = 12;
+        const xAnchor = this.cellTimelineMargin.left - pad;
+        const xAnchorLine = this.cellTimelineMargin.left - (pad/2);
+        let labelsInView = this.conditionLabelPositions.filter((labelPos: [string, [number, number]]) =>
         {
-            let conditionLabel = facet.name;
-            
-        }
+            const absPos = (labelPos[1][0] + labelPos[1][1]) / 2;
+            const pos: number = absPos - this.latestScroll[1];
+            return 0 <= pos && pos <= this.innerContainerH;
+        });
+        this.cellLabelGroup.selectAll('text')
+            .data(labelsInView)
+            .join('text')
+            .text(d => d[0])
+            .attr('x', xAnchor)
+            .attr('y', d => (d[1][0] + d[1][1]) / 2 - this.latestScroll[1])
+            .attr('transform', d => `rotate(-90, ${xAnchor}, ${(d[1][0] + d[1][1]) / 2 - this.latestScroll[1]})`)
+            .classed('cellAxisLabel', true)
+            .classed('rotated', true);
 
-        // TODO
+        
+        this.cellLabelGroup.selectAll('line')
+            .data(this.conditionLabelPositions)
+            .join('line')
+            .attr('x1', xAnchorLine)
+            .attr('x2', xAnchorLine)
+            .attr('y1', d => Math.max(0, d[1][0] - this.latestScroll[1]))
+            .attr('y2', d => Math.max(0, d[1][1] - this.latestScroll[1]))
+            .attr('stroke', 'black')
+            .attr('stroke-width', '2px');
     }
 
     private drawScentedWidgets(): void
