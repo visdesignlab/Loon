@@ -907,9 +907,11 @@ export class ImageTrackWidget
         if (!this.parentWidget.inExemplarMode)
         {
             this.drawCellLabels();
+            DevlibTSUtil.hide(this.scentedWidgetGroup.node());
         }
         else
         {
+            DevlibTSUtil.show(this.scentedWidgetGroup.node());
             let xAnchor = this.drawConditionLabels();
             if (onScroll)
             {
