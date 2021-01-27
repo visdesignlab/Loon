@@ -32,6 +32,7 @@ export class ImageTrackWidget
         this._latestScroll = [0,0];
         this._scrollChangeTicking = false;
         this._sourceDestCell = [];
+        this._histogramScaleYList = [];
     }
 
     private _container : HTMLElement;
@@ -78,6 +79,11 @@ export class ImageTrackWidget
     public get scentedWidgetGroup() : SvgSelection {
         return this._scentedWidgetGroup;
     }    
+
+    private _exemplarPinGroup : SvgSelection;
+    public get exemplarPinGroup() : SvgSelection {
+        return this._exemplarPinGroup;
+    }
 
     private _frameLabelGroup : SvgSelection;
     public get frameLabelGroup() : SvgSelection {
@@ -130,6 +136,16 @@ export class ImageTrackWidget
         return this._conditionLabelPositions;
     }
 
+    private _histogramScaleX : d3.ScaleLinear<number, number>;
+    public get histogramScaleX() : d3.ScaleLinear<number, number> {
+        return this._histogramScaleX;
+    }
+
+    private _histogramScaleYList : d3.ScaleLinear<number, number>[];
+    public get histogramScaleYList() : d3.ScaleLinear<number, number>[] {
+        return this._histogramScaleYList;
+    }    
+    
     private _cellTimelineMargin : Margin;
     public get cellTimelineMargin() : Margin {
         return this._cellTimelineMargin;
@@ -170,6 +186,9 @@ export class ImageTrackWidget
         this._scentedWidgetGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);    
 
+        this._exemplarPinGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
+
         this._frameLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
 
@@ -201,6 +220,7 @@ export class ImageTrackWidget
         {
             const frameId = e.detail.frameId;
             const cellId = e.detail.cellId;
+            const rowIndex = e.detail.rowIndex;
             if (frameId !== null && cellId !== null)
             {
                 let frameIndex: number;
@@ -225,11 +245,11 @@ export class ImageTrackWidget
                 {
                     frameIndex = frameId - 1;
                 }
-                this.updateLabelsOnMouseMove(cellId, frameIndex);
+                this.updateLabelsOnMouseMove(cellId, frameIndex, rowIndex);
             }
             else
             {
-                this.updateLabelsOnMouseMove('', -1);
+                this.updateLabelsOnMouseMove('', -1, -1);
             }
         });
     }
@@ -318,6 +338,7 @@ export class ImageTrackWidget
 
         let drawTrackPromises = [];
         let verticalOffsetList = [];
+        this.clearPins();
         for (let i = 0; i < this.trackList.length; i++)
         {
             let track = this.trackList[i];
@@ -419,7 +440,7 @@ export class ImageTrackWidget
     {
         // draw track background
         this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset, categoryIndex);
-
+        this.drawPin(trackData, categoryIndex);
 
         let asyncFunctionList = [];
         let blobRequests = [];
@@ -722,11 +743,12 @@ export class ImageTrackWidget
         }
         let xPos = e.offsetX;
         let yPos = e.offsetY;
-        const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
+        const [cellId, cellIdIndex] = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
 
         let frameId: number
-        const frameIndex = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos) - 1;
+        const [frameLabel, frameLabelIndex]  = ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
+        let frameIndex = +frameLabel - 1;
         if (this.parentWidget.inCondensedMode)
         {
             let point = this.getPointInCondensedMode(curve, frameIndex);
@@ -755,11 +777,13 @@ export class ImageTrackWidget
         }
         let xPos = e.offsetX;
         let yPos = e.offsetY;
-        const cellId: string = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
+        const [cellId, cellIdIndex] = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
         let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
-        
+
         let frameId: number
-        const frameIndex = +ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos) - 1;
+        const [frameLabel, frameLabelIndex]  = ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
+        let frameIndex = +frameLabel - 1;
+
         if (this.parentWidget.inCondensedMode)
         {
             let point = this.getPointInCondensedMode(curve, frameIndex);
@@ -792,12 +816,13 @@ export class ImageTrackWidget
             this.parentWidget.dimCanvas();
         }
 
-        this.updateLabelsOnMouseMove(cellId, frameIndex);
+        this.updateLabelsOnMouseMove(cellId, frameIndex, cellIdIndex);
         let event = new CustomEvent('frameHoverChange', { detail:
         {
             locationId: trackLocation,
             frameId: frameId,
-            cellId: cellId
+            cellId: cellId,
+            rowIndex: cellIdIndex,
         }});
 		document.dispatchEvent(event);
     }
@@ -806,7 +831,7 @@ export class ImageTrackWidget
     {
         this.parentWidget.hideSegmentHover(true);
         this.parentWidget.dimCanvas();
-        this.updateLabelsOnMouseMove('', -1);
+        this.updateLabelsOnMouseMove('', -1, -1);
         const locId = this.parentWidget.getCurrentLocationId();
         let event = new CustomEvent('frameHoverChange', { detail:
             {
@@ -817,14 +842,14 @@ export class ImageTrackWidget
             document.dispatchEvent(event);
     }
 
-    private static getClosestLabel(labelPositions: [string, number][], pos: number): string
+    private static getClosestLabel(labelPositions: [string, number][], pos: number): [string, number]
     {
         let compareFunction = DevlibAlgo.compareProperty<[string, number]>(pos, labelPos =>  labelPos[1]);
         let indices = DevlibAlgo.BinarySearchIndex(labelPositions, compareFunction);
         if (typeof indices === 'undefined')
         {
             console.log(pos);
-            return '-1'; // todo
+            return ['-1', -1]; // todo
         }
         let labelIndex: number;
         if (typeof indices === 'number')
@@ -856,7 +881,7 @@ export class ImageTrackWidget
                 }
             }
         }
-        return labelPositions[labelIndex][0];
+        return [labelPositions[labelIndex][0], labelIndex];
     }
 
     private async drawOutlines(sourceDestCell?: [Rect, [number, number], PointND][]): Promise<void>
@@ -1016,7 +1041,10 @@ export class ImageTrackWidget
     {
         this.scentedWidgetGroup
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
-    }
+
+        this.exemplarPinGroup
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
+        }
 
     private drawScentedWidgets(axisAnchor: number): void
     {
@@ -1024,6 +1052,7 @@ export class ImageTrackWidget
         let binArray: d3.Bin<NDim, number>[][] = [];
         const facetList = this.getCurrentFacets();
         const numBins = 48;
+        this._histogramScaleYList = [];
         for (let i = 0; i < facetList.length; i++)
         {
 
@@ -1036,11 +1065,20 @@ export class ImageTrackWidget
                 numBins,
                 true);
             binArray.push(bins);
+
+            let minBinBoundary = bins[0].x0;
+            let maxBinBoundary = bins[bins.length - 1].x1;
+            let positionExtent = this.conditionLabelPositions[i][1];
+            let scaleY = d3.scaleLinear()
+                .domain([minBinBoundary, maxBinBoundary])
+                .range(positionExtent);
+
+            this.histogramScaleYList.push(scaleY);
         }
         const padding = 4;
 		let biggestBinPercentage = d3.max(binArray, bin => d3.max(bin, d => d.length) / d3.sum(bin, d => d.length));
         const maxWidth = 52;
-        const scaleX = d3.scaleLinear()
+        this._histogramScaleX = d3.scaleLinear()
             .domain([0, biggestBinPercentage])
             .range([axisAnchor - padding, axisAnchor - maxWidth]);
 
@@ -1050,14 +1088,7 @@ export class ImageTrackWidget
             .attr('d', (d, i) =>
             {
                 let bins = binArray[i];
-
-                let minBinBoundary = bins[0].x0;
-                let maxBinBoundary = bins[bins.length - 1].x1;
-                let scaleY = d3.scaleLinear()
-                    .domain([minBinBoundary, maxBinBoundary])
-                    .range([d[1][0], d[1][1]])
-
-                return this.getHistogramSkylinePath(bins, scaleX, scaleY);
+                return this.getHistogramSkylinePath(bins, this.histogramScaleX, this.histogramScaleYList[i]);
             })
             .classed('kdePath', true);
     }
@@ -1119,15 +1150,69 @@ export class ImageTrackWidget
 		return lineFunc(pathPoints);
     }
 
-    private updateLabelsOnMouseMove(cellId: string, frameIndex: number): void
+    private clearPins(): void
+    {
+        this.exemplarPinGroup.html(null);
+    }
+
+    private drawPin(trackData: CurveND, categoryIndex: number): void
+    {
+        let exemplarValue = trackData.get(this.parentWidget.exemplarAttribute);
+        let yPos = this.histogramScaleYList[categoryIndex](exemplarValue);
+        let [xPosPin, xPosHead] = this.histogramScaleX.range();
+        this.exemplarPinGroup.append('line')
+            .attr('x1', xPosHead)
+            .attr('x2', xPosPin)
+            .attr('y1', yPos)
+            .attr('y2', yPos)
+            // .attr('stroke', 'black')
+            // .attr('opacity', 0.4)
+            .classed('pinLine', true);
+
+        this.exemplarPinGroup.append('circle')
+            .attr('cx', xPosHead)
+            .attr('cy', yPos)
+            // .attr('fill', 'grey')
+            // .attr('stroke', 'black')
+            // .attr('r', 3)
+            .classed('pinHead', true);
+    }
+
+    private updateLabelsOnMouseMove(cellId: string, frameIndex: number, rowIndex: number): void
     {
         let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
-        let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
-        svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
-        if (!foundMatch)
+        if (!this.parentWidget.inExemplarMode)
         {
-            this.hoverNodeWithText(svgSelection.nodes(), '');
-            return
+            let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
+            svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
+            if (!foundMatch)
+            {
+                this.hoverNodeWithText(svgSelection.nodes(), '');
+                return
+            }
+        }
+        else if (typeof(rowIndex) !== 'undefined')
+        {
+            this.exemplarPinGroup.selectAll('line')
+                .data(this.trackList)
+                .classed('selected', (d, i) => i === rowIndex);
+
+            this.exemplarPinGroup.selectAll('circle')
+                .data(this.trackList)
+                .classed('selected', (d, i) => i === rowIndex);
+
+            let searchText: string;
+            if (rowIndex < 0)
+            {
+                searchText = ''
+            }
+            else
+            {
+                let categoryIndex = Math.floor(rowIndex / this.parentWidget.numExemplars);
+                searchText = this.conditionLabelPositions[categoryIndex][0];
+            }
+
+            this.hoverNodeWithText(svgSelection.nodes(), searchText);
         }
         let frameText: string;
         if (this.parentWidget.inCondensedMode)

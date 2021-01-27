@@ -36,3 +36,26 @@
     height: 20px;
     padding-top: 10px;
 }
+
+.pinLine {
+    stroke: black;
+    opacity: 0.3;
+    stroke-width: 1;
+}
+
+.pinLine.selected {
+    opacity: 1;
+    stroke-width: 2;
+}
+
+.pinHead {
+    fill: grey;
+    stroke: black;
+    opacity: 0.6
+    r: 3;
+}
+
+.pinHead.selected {
+    r: 5;
+    opacity: 1;
+}
