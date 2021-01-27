@@ -1015,21 +1015,24 @@ export class ImageTrackWidget
 
         let binArray: d3.Bin<NDim, number>[][] = [];
         const facetList = this.getCurrentFacets();
+        const numBins = 48;
         for (let i = 0; i < facetList.length; i++)
         {
 
             let data: CurveList = facetList[i].data;
+
             let bins = HistogramWidget.calculateBins(
                 data.curveCollection.Array.filter(d => !isNaN(d.get(this.parentWidget.exemplarAttribute))),
                 this.parentWidget.exemplarAttribute,
-                data.curveCollection);
+                data.curveCollection,
+                numBins);
             binArray.push(bins);
         }
         const padding = 4;
-		let biggestBinCount = d3.max(binArray, bin => d3.max(bin, d => d.length));
+		let biggestBinPercentage = d3.max(binArray, bin => d3.max(bin, d => d.length) / d3.sum(bin, d => d.length));
         const maxWidth = 52;
         const scaleX = d3.scaleLinear()
-            .domain([0, biggestBinCount])
+            .domain([0, biggestBinPercentage])
             .range([axisAnchor - padding, axisAnchor - maxWidth]);
 
         this.scentedWidgetGroup.selectAll('path')
@@ -1080,7 +1083,7 @@ export class ImageTrackWidget
 			// 	offset = this.scaleYHistogramRelative(bin.length / totalCount);
             // }
 
-            let x = scaleX(bin.length);
+            let x = scaleX(bin.length / totalCount);
             
             
 			// let x: number = this.vizHeight - offset;

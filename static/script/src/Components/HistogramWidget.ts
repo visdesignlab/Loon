@@ -444,9 +444,17 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	}
 
 
-	public static calculateBins(points: NDim[], valueKey: string, fullData: PointCollection): d3.Bin<NDim, number>[]
+	public static calculateBins(points: NDim[], valueKey: string, fullData: PointCollection, numBins?: number): d3.Bin<NDim, number>[]
 	{
-		let count = Math.round(Math.sqrt(fullData.length)) / 3;
+		let count: number;
+		if (numBins)
+		{
+			count = numBins;
+		}
+		else
+		{
+			count = Math.round(Math.sqrt(fullData.length)) / 3;
+		}
 		let minMax = fullData.getMinMax(valueKey);
 		let x = d3.scaleLinear()
 			.domain(minMax)
