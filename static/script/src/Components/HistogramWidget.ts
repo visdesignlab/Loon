@@ -413,32 +413,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private calculateBins(points: NDim[]): d3.Bin<NDim, number>[]
 	{
-		// let count = Math.round(Math.sqrt(this.fullData.length)) / 3;
-		// let minMax = this.fullData.getMinMax(this.valueKey);
-		// let x = d3.scaleLinear()
-		// 	.domain(minMax)
-		// 	.nice(count);
-
-		// let bins = d3.histogram<NDim, number>()
-		// 	.domain(x.domain() as [number, number])
-		// 	.thresholds(x.ticks(count))
-		// 	.value(d => d.get(this.valueKey))
-		// 	(points);
-
-		// // account for degenerate last bin -_-
-		// let ultimateBin = bins[bins.length - 1];
-		// if (ultimateBin.x0 === ultimateBin.x1)
-		// {
-		// 	let penultimateBin = bins[bins.length - 2]
-		// 	if (penultimateBin)
-		// 	{
-		// 		for (let point of ultimateBin)
-		// 		{
-		// 			penultimateBin.push(point);
-		// 		}
-		// 	}
-		// }
-		// return bins;
 		let bins = HistogramWidget.calculateBins(points, this.valueKey, this.fullData);
 		return bins;
 	}

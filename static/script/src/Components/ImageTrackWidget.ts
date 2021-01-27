@@ -1005,14 +1005,7 @@ export class ImageTrackWidget
     {
         const pad = 16;
         const xAnchor = this.cellTimelineMargin.left - pad;
-        // const xAnchorLine = this.cellTimelineMargin.left - (pad/2);
         const xAnchorLine = xAnchor - 4;
-        // let labelsInView = this.conditionLabelPositions.filter((labelPos: [string, [number, number]]) =>
-        // {
-        //     const absPos = (labelPos[1][0] + labelPos[1][1]) / 2;
-        //     const pos: number = absPos - this.latestScroll[1];
-        //     return 0 <= pos && pos <= this.innerContainerH;
-        // });
         this.cellLabelGroup.selectAll('text')
             .data(this.conditionLabelPositions)
             .join('text')
@@ -1096,45 +1089,17 @@ export class ImageTrackWidget
     private getHistogramSkylinePath(bins: d3.Bin<NDim, number>[], scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): string
     {
         let pathPoints: [number, number][] = [];
-
-		// if (bins.length === 1)
-		// {
-		// 	let left = (this.vizWidth - singleWidth) / 2;
-		// 	let right = (this.vizWidth + singleWidth) / 2
-		// 	pathPoints.push([left, this.vizHeight]);
-		// 	pathPoints.push([left, 0]);
-		// 	pathPoints.push([right, 0]);
-		// 	pathPoints.push([right, this.vizHeight]);
-		// 	return pathPoints;
-		// }
-
 		const totalCount = d3.sum(bins, bin => bin.length);
-
 		for (let bin of bins)
 		{
 			let y1: number = scaleY(bin.x0);
-			// let offset: number;
-			// if (HistogramWidget.useAbsoluteScaling)
-			// {
-			// 	offset = this.scaleYHistogramAbsolute(bin.length);
-			// }
-			// else
-			// {
-			// 	offset = this.scaleYHistogramRelative(bin.length / totalCount);
-            // }
-
             let x = scaleX(bin.length / totalCount);
-            
-            
-			// let x: number = this.vizHeight - offset;
 			pathPoints.push([x, y1]);
-
 			if (bin.length === 0)
 			{
 				let splitPoint: [number, number] = [null, null];
 				pathPoints.push(splitPoint);
 			}
-
 			let y2: number = scaleY(bin.x1);
 			pathPoints.push([x, y2]);
 		}
@@ -1165,16 +1130,11 @@ export class ImageTrackWidget
             .attr('x2', xPosPin)
             .attr('y1', yPos)
             .attr('y2', yPos)
-            // .attr('stroke', 'black')
-            // .attr('opacity', 0.4)
             .classed('pinLine', true);
 
         this.exemplarPinGroup.append('circle')
             .attr('cx', xPosHead)
             .attr('cy', yPos)
-            // .attr('fill', 'grey')
-            // .attr('stroke', 'black')
-            // .attr('r', 3)
             .classed('pinHead', true);
     }
 
