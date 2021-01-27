@@ -924,8 +924,12 @@ export class ImageTrackWidget
             .text(d => d[0])
             .attr('x', xAnchor)
             .attr('y', d => d[1] - this.latestScroll[1])
+            .attr('transform', '')
             .classed('cellAxisLabel', true)
-            .classed('left', true);
+            .classed('left', true)
+            .classed('rotated', false);
+
+        this.cellLabelGroup.selectAll('line').remove();
     }
 
     private drawConditionLabels(): void
