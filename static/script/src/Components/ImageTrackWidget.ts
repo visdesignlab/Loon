@@ -324,7 +324,8 @@ export class ImageTrackWidget
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
             verticalOffsetList.push(verticalOffset);
-            let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset);
+            const categoryIndex = Math.floor(i / this.parentWidget.numExemplars)
+            let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex);
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
@@ -413,10 +414,11 @@ export class ImageTrackWidget
         boundingBoxList: Rect[],
         maxWidth: number, maxHeight: number,
         minFrame: number,
-        verticalOffset: number): Promise<void>
+        verticalOffset: number,
+        categoryIndex: number): Promise<void>
     {
         // draw track background
-        this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset);
+        this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset, categoryIndex);
 
 
         let asyncFunctionList = [];
@@ -562,7 +564,8 @@ export class ImageTrackWidget
         trackData: CurveND,
         maxWidth: number, maxHeight: number,
         minFrame: number,
-        verticalOffset: number): void
+        verticalOffset: number,
+        categoryIndex: number): void
     {
         // draw track background
         let offsetIndex: number;
@@ -595,7 +598,7 @@ export class ImageTrackWidget
             minDestY - marginY,
             maxDestX - minDestX + 1 + 2 * marginX,
             maxHeight + 2 * marginY);
-        this.canvasContext.strokeStyle = 'black';
+        this.canvasContext.strokeStyle = 'rgb(240,240,240)';
         this.canvasContext.fillStyle = 'rgb(240,240,240)';
         this.canvasContext.stroke();
         this.canvasContext.fill();
@@ -603,14 +606,15 @@ export class ImageTrackWidget
 
         const timeRangeHeight = 1;
         const timeRangeVerticalOffset = verticalOffset - marginY - timeRangeHeight;
-        this.drawTimeRange(trackData, [minDestX - marginX, maxDestX + marginX], timeRangeHeight, timeRangeVerticalOffset);
+        this.drawTimeRange(trackData, [minDestX - marginX, maxDestX + marginX], timeRangeHeight, timeRangeVerticalOffset, categoryIndex);
     }
 
     private drawTimeRange(
         trackData: CurveND,
         extentX: [number, number],
         height: number,
-        verticalOffset: number): void
+        verticalOffset: number,
+        categoryIndex: number): void
     {
         if (!this.parentWidget.inCondensedMode)
         {
@@ -642,8 +646,9 @@ export class ImageTrackWidget
             verticalOffset,
             timeRangePx[1] - timeRangePx[0] + 1,
             height);
-        this.canvasContext.strokeStyle = 'MidnightBlue';
-        this.canvasContext.fillStyle = 'MidnightBlue';
+
+        this.canvasContext.strokeStyle = d3.schemeCategory10[categoryIndex];
+        this.canvasContext.fillStyle = d3.schemeCategory10[categoryIndex];
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();
@@ -961,6 +966,7 @@ export class ImageTrackWidget
             .attr('x', xAnchor)
             .attr('y', d => d[1] - this.latestScroll[1])
             .attr('transform', '')
+            .attr('fill', 'black')
             .classed('cellAxisLabel', true)
             .classed('left', true)
             .classed('rotated', false);
@@ -974,23 +980,23 @@ export class ImageTrackWidget
         const xAnchor = this.cellTimelineMargin.left - pad;
         // const xAnchorLine = this.cellTimelineMargin.left - (pad/2);
         const xAnchorLine = xAnchor - 4;
-        let labelsInView = this.conditionLabelPositions.filter((labelPos: [string, [number, number]]) =>
-        {
-            const absPos = (labelPos[1][0] + labelPos[1][1]) / 2;
-            const pos: number = absPos - this.latestScroll[1];
-            return 0 <= pos && pos <= this.innerContainerH;
-        });
+        // let labelsInView = this.conditionLabelPositions.filter((labelPos: [string, [number, number]]) =>
+        // {
+        //     const absPos = (labelPos[1][0] + labelPos[1][1]) / 2;
+        //     const pos: number = absPos - this.latestScroll[1];
+        //     return 0 <= pos && pos <= this.innerContainerH;
+        // });
         this.cellLabelGroup.selectAll('text')
-            .data(labelsInView)
+            .data(this.conditionLabelPositions)
             .join('text')
             .text(d => d[0])
             .attr('x', xAnchor)
             .attr('y', d => (d[1][0] + d[1][1]) / 2 - this.latestScroll[1])
             .attr('transform', d => `rotate(-90, ${xAnchor}, ${(d[1][0] + d[1][1]) / 2 - this.latestScroll[1]})`)
+            .attr('fill', (d,i) => d3.schemeCategory10[i])
             .classed('cellAxisLabel', true)
             .classed('rotated', true);
 
-        
         this.cellLabelGroup.selectAll('line')
             .data(this.conditionLabelPositions)
             .join('line')
@@ -998,7 +1004,7 @@ export class ImageTrackWidget
             .attr('x2', xAnchorLine)
             .attr('y1', d => Math.max(0, d[1][0] - this.latestScroll[1]))
             .attr('y2', d => Math.max(0, d[1][1] - this.latestScroll[1]))
-            .attr('stroke', 'black')
+            .attr('stroke', (d,i) => d3.schemeCategory10[i])
             .attr('stroke-width', '2px');
 
         return xAnchorLine;

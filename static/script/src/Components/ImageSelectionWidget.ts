@@ -229,7 +229,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.drawSelectedDots();
     }
 
-    private drawFacetRecurse(remainingSubFacetIndices: number[], verticalPosition: number = 0, facet?: Facet, containerSelection?: HtmlSelection): void
+    private drawFacetRecurse(
+        remainingSubFacetIndices: number[],
+        categoryIndex: number = 0,
+        verticalPosition: number = 0,
+        facet?: Facet,
+        containerSelection?: HtmlSelection): number
     {
         let container: HtmlSelection;
         if (containerSelection)
@@ -242,8 +247,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
         if (remainingSubFacetIndices.length === 0)
         {
-            this.drawTerminalFacet(container, facet.name, facet.data, verticalPosition, 0);
-            return;
+            this.drawTerminalFacet(container, facet.name, facet.data, verticalPosition, 0, categoryIndex);
+            return 1;
         }
 
         let data: CurveList;
@@ -267,16 +272,20 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             grouperDiv  = this.drawGrouperFacet(container, facet.name, verticalPosition, remainingSubFacetIndices.length);
         }
         let childPosition = verticalPosition;
+        let thisCount = 0;
         for (let childFacet of facetList)
         {
             childPosition++;
-            this.drawFacetRecurse(remainingSubFacetIndices.slice(1), childPosition, childFacet, grouperDiv);
+            let count = this.drawFacetRecurse(remainingSubFacetIndices.slice(1), categoryIndex, childPosition, childFacet, grouperDiv);
+            thisCount += count;
+            categoryIndex += count;
         }
+        return thisCount;
     }
 
     private drawGrouperFacet(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): HtmlSelection
     {
-        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
+        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex, -1);
 
         const grouperDiv = containerSelection.append('div')
             .classed('locationListGrouper', true);
@@ -284,7 +293,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return grouperDiv;
     }
 
-    private drawTitleElement(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): void
+    private drawTitleElement(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number,  categoryIndex: number): void
     {
         const topPos = (verticalPosition - 1) * 19;
 
@@ -293,15 +302,26 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         {
             styleString += ` z-index: ${zIndex};`;
         }
+        if (categoryIndex >= 0)
+        {
+            let color = d3.hsl(d3.schemeCategory10[categoryIndex]);
+
+            styleString += `color: ${color.darker(1.0).toString()};`
+            
+            color.l = 0.95;
+
+            styleString += `background: ${color.toString()};`
+        }
+
         containerSelection.append('div')
             .text(name)
             .classed('locationListCatTitle', true)
             .attr('style', styleString);
     }
 
-    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList, verticalPosition: number, zIndex: number): void
+    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList, verticalPosition: number, zIndex: number, categoryIndex: number): void
     {
-        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
+        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex, categoryIndex);
 
         const subListContainer = containerSelection.append('ul')
             .classed('subListContainer', true);
