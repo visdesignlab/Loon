@@ -1,13 +1,15 @@
 import * as d3 from 'd3';
-import { HtmlSelection, SvgSelection, Margin } from '../devlib/DevlibTypes';
+import { HtmlSelection, SvgSelection, Margin, NDim } from '../devlib/DevlibTypes';
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
-import { Rect } from '../types';
+import { Facet, Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
+import { CurveList } from '../DataModel/CurveList';
+import { HistogramWidget } from './HistogramWidget';
 
 export class ImageTrackWidget
 {
@@ -81,6 +83,11 @@ export class ImageTrackWidget
     public get frameLabelGroup() : SvgSelection {
         return this._frameLabelGroup;
     }
+
+    private _shameRectangle : SvgSelection;
+    public get shameRectangle() : SvgSelection {
+        return this._shameRectangle;
+    }    
 
 	private _selectedImageCanvas : HtmlSelection;
 	public get selectedImageCanvas() : HtmlSelection {
@@ -165,6 +172,14 @@ export class ImageTrackWidget
 
         this._frameLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
+
+        this._shameRectangle = this.svgContainer.append('rect')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', this.cellTimelineMargin.left)
+            .attr('height', this.cellTimelineMargin.top)
+            .attr('fill', 'white')
+            .attr('stroke-width', 0);
 
         this._innerContainer = containerSelect.append('div')
             .classed('cellTimelineInnerContainer', true)
@@ -343,12 +358,18 @@ export class ImageTrackWidget
         DevlibTSUtil.stopSpinner();
     }
 
-    private getConditionNames(): string[]
+    private getCurrentFacets(): Facet[]
     {
         let facetIndex = this.parentWidget.groupByIndexList[0];
         let facetOptions = this.parentWidget.data.GetFacetOptions();
         const firstFacetOption = facetOptions[facetIndex];
         let facets = firstFacetOption.GetFacets();
+        return facets;
+    }
+
+    private getConditionNames(): string[]
+    {
+        let facets = this.getCurrentFacets();
         return facets.map(facet => facet.name);
     }
 
@@ -681,7 +702,7 @@ export class ImageTrackWidget
         {
             window.requestAnimationFrame(() =>
             {
-                this.drawLabels()
+                this.drawLabels(true);
                 this._scrollChangeTicking = false;
             });
             this._scrollChangeTicking = true;
@@ -875,7 +896,7 @@ export class ImageTrackWidget
         }
     }
 
-    private drawLabels(): void
+    private drawLabels(onScroll = false): void
     {
         // cell labels
         if (!this.parentWidget.inExemplarMode)
@@ -884,8 +905,15 @@ export class ImageTrackWidget
         }
         else
         {
-            this.drawConditionLabels();
-            this.drawScentedWidgets();
+            let xAnchor = this.drawConditionLabels();
+            if (onScroll)
+            {
+                this.shiftScentedWidgets();
+            }
+            else
+            {
+                this.drawScentedWidgets(xAnchor);
+            }
         }
 
         // frame labels
@@ -940,7 +968,7 @@ export class ImageTrackWidget
         this.cellLabelGroup.selectAll('line').remove();
     }
 
-    private drawConditionLabels(): void
+    private drawConditionLabels(): number
     {
         const pad = 16;
         const xAnchor = this.cellTimelineMargin.left - pad;
@@ -972,11 +1000,111 @@ export class ImageTrackWidget
             .attr('y2', d => Math.max(0, d[1][1] - this.latestScroll[1]))
             .attr('stroke', 'black')
             .attr('stroke-width', '2px');
+
+        return xAnchorLine;
     }
 
-    private drawScentedWidgets(): void
+    private shiftScentedWidgets(): void
     {
-        // TODO
+        this.scentedWidgetGroup
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
+    }
+
+    private drawScentedWidgets(axisAnchor: number): void
+    {
+
+        let binArray: d3.Bin<NDim, number>[][] = [];
+        const facetList = this.getCurrentFacets();
+        for (let i = 0; i < facetList.length; i++)
+        {
+
+            let data: CurveList = facetList[i].data;
+            let bins = HistogramWidget.calculateBins(
+                data.curveCollection.Array.filter(d => !isNaN(d.get(this.parentWidget.exemplarAttribute))),
+                this.parentWidget.exemplarAttribute,
+                data.curveCollection);
+            binArray.push(bins);
+        }
+        const padding = 4;
+		let biggestBinCount = d3.max(binArray, bin => d3.max(bin, d => d.length));
+        const maxWidth = 52;
+        const scaleX = d3.scaleLinear()
+            .domain([0, biggestBinCount])
+            .range([axisAnchor - padding, axisAnchor - maxWidth]);
+
+        this.scentedWidgetGroup.selectAll('path')
+            .data(this.conditionLabelPositions)
+            .join('path')
+            .attr('d', (d, i) =>
+            {
+                let bins = binArray[i];
+
+                let minBinBoundary = bins[0].x0;
+                let maxBinBoundary = bins[bins.length - 1].x1;
+                let scaleY = d3.scaleLinear()
+                    .domain([minBinBoundary, maxBinBoundary])
+                    .range([d[1][0], d[1][1]])
+
+                return this.getHistogramSkylinePath(bins, scaleX, scaleY);
+            })
+            .classed('kdePath', true);
+    }
+
+    private getHistogramSkylinePath(bins: d3.Bin<NDim, number>[], scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): string
+    {
+        let pathPoints: [number, number][] = [];
+
+		// if (bins.length === 1)
+		// {
+		// 	let left = (this.vizWidth - singleWidth) / 2;
+		// 	let right = (this.vizWidth + singleWidth) / 2
+		// 	pathPoints.push([left, this.vizHeight]);
+		// 	pathPoints.push([left, 0]);
+		// 	pathPoints.push([right, 0]);
+		// 	pathPoints.push([right, this.vizHeight]);
+		// 	return pathPoints;
+		// }
+
+		const totalCount = d3.sum(bins, bin => bin.length);
+
+		for (let bin of bins)
+		{
+			let y1: number = scaleY(bin.x0);
+			// let offset: number;
+			// if (HistogramWidget.useAbsoluteScaling)
+			// {
+			// 	offset = this.scaleYHistogramAbsolute(bin.length);
+			// }
+			// else
+			// {
+			// 	offset = this.scaleYHistogramRelative(bin.length / totalCount);
+            // }
+
+            let x = scaleX(bin.length);
+            
+            
+			// let x: number = this.vizHeight - offset;
+			pathPoints.push([x, y1]);
+
+			if (bin.length === 0)
+			{
+				let splitPoint: [number, number] = [null, null];
+				pathPoints.push(splitPoint);
+			}
+
+			let y2: number = scaleY(bin.x1);
+			pathPoints.push([x, y2]);
+		}
+		
+		pathPoints.unshift([scaleX.range()[0], scaleY.range()[0]]);
+		pathPoints.push([scaleX.range()[0], scaleY.range()[1]]);
+
+		let lineFunc = d3.line()
+			.x(d => d[0])
+			.y(d => d[1])
+			.defined(d => d[0] !== null);
+
+		return lineFunc(pathPoints);
     }
 
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number): void

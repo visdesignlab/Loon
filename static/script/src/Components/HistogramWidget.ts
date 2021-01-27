@@ -413,8 +413,41 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private calculateBins(points: NDim[]): d3.Bin<NDim, number>[]
 	{
-		let count = Math.round(Math.sqrt(this.fullData.length)) / 3;
-		let minMax = this.fullData.getMinMax(this.valueKey);
+		// let count = Math.round(Math.sqrt(this.fullData.length)) / 3;
+		// let minMax = this.fullData.getMinMax(this.valueKey);
+		// let x = d3.scaleLinear()
+		// 	.domain(minMax)
+		// 	.nice(count);
+
+		// let bins = d3.histogram<NDim, number>()
+		// 	.domain(x.domain() as [number, number])
+		// 	.thresholds(x.ticks(count))
+		// 	.value(d => d.get(this.valueKey))
+		// 	(points);
+
+		// // account for degenerate last bin -_-
+		// let ultimateBin = bins[bins.length - 1];
+		// if (ultimateBin.x0 === ultimateBin.x1)
+		// {
+		// 	let penultimateBin = bins[bins.length - 2]
+		// 	if (penultimateBin)
+		// 	{
+		// 		for (let point of ultimateBin)
+		// 		{
+		// 			penultimateBin.push(point);
+		// 		}
+		// 	}
+		// }
+		// return bins;
+		let bins = HistogramWidget.calculateBins(points, this.valueKey, this.fullData);
+		return bins;
+	}
+
+
+	public static calculateBins(points: NDim[], valueKey: string, fullData: PointCollection): d3.Bin<NDim, number>[]
+	{
+		let count = Math.round(Math.sqrt(fullData.length)) / 3;
+		let minMax = fullData.getMinMax(valueKey);
 		let x = d3.scaleLinear()
 			.domain(minMax)
 			.nice(count);
@@ -422,7 +455,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		let bins = d3.histogram<NDim, number>()
 			.domain(x.domain() as [number, number])
 			.thresholds(x.ticks(count))
-			.value(d => d.get(this.valueKey))
+			.value(d => d.get(valueKey))
 			(points);
 
 		// account for degenerate last bin -_-
@@ -503,7 +536,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private getHistogramSkyline(bins: d3.Bin<NDim, number>[], singleWidth: number = 18): [number, number][]
 	{
-		
 		let pathPoints: [number, number][] = [];
 
 		if (bins.length === 1)
@@ -550,6 +582,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 		return pathPoints;
 	}
+
 
 	private removeKDEs(): void
 	{
