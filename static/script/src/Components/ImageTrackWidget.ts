@@ -72,6 +72,11 @@ export class ImageTrackWidget
         return this._cellLabelGroup;
     }
 
+    private _scentedWidgetGroup : SvgSelection;
+    public get scentedWidgetGroup() : SvgSelection {
+        return this._scentedWidgetGroup;
+    }    
+
     private _frameLabelGroup : SvgSelection;
     public get frameLabelGroup() : SvgSelection {
         return this._frameLabelGroup;
@@ -155,6 +160,9 @@ export class ImageTrackWidget
         this._cellLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
+        this._scentedWidgetGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);    
+
         this._frameLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
 
@@ -937,7 +945,7 @@ export class ImageTrackWidget
         const pad = 16;
         const xAnchor = this.cellTimelineMargin.left - pad;
         // const xAnchorLine = this.cellTimelineMargin.left - (pad/2);
-        const xAnchorLine = xAnchor + 4;
+        const xAnchorLine = xAnchor - 4;
         let labelsInView = this.conditionLabelPositions.filter((labelPos: [string, [number, number]]) =>
         {
             const absPos = (labelPos[1][0] + labelPos[1][1]) / 2;
