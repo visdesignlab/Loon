@@ -934,9 +934,10 @@ export class ImageTrackWidget
 
     private drawConditionLabels(): void
     {
-        const pad = 12;
+        const pad = 16;
         const xAnchor = this.cellTimelineMargin.left - pad;
-        const xAnchorLine = this.cellTimelineMargin.left - (pad/2);
+        // const xAnchorLine = this.cellTimelineMargin.left - (pad/2);
+        const xAnchorLine = xAnchor + 4;
         let labelsInView = this.conditionLabelPositions.filter((labelPos: [string, [number, number]]) =>
         {
             const absPos = (labelPos[1][0] + labelPos[1][1]) / 2;

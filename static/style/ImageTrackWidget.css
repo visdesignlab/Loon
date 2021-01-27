@@ -28,6 +28,7 @@
 
 .cellAxisLabel.rotated {
     text-anchor: middle;
+    dominant-baseline: hanging;
 }
 
 .trackModeTitleContainer {
