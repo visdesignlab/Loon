@@ -270,6 +270,7 @@ export class ImageTrackWidget
         this.updateTitle();
         await this.drawTrackList();
         this.drawLabels();
+        this.drawAllPins(tracks);
     }
 
     private updateTitle(): void
@@ -338,7 +339,6 @@ export class ImageTrackWidget
 
         let drawTrackPromises = [];
         let verticalOffsetList = [];
-        this.clearPins();
         for (let i = 0; i < this.trackList.length; i++)
         {
             let track = this.trackList[i];
@@ -440,7 +440,6 @@ export class ImageTrackWidget
     {
         // draw track background
         this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset, categoryIndex);
-        this.drawPin(trackData, categoryIndex);
 
         let asyncFunctionList = [];
         let blobRequests = [];
@@ -1118,6 +1117,16 @@ export class ImageTrackWidget
     private clearPins(): void
     {
         this.exemplarPinGroup.html(null);
+    }
+
+    private drawAllPins(curveList: CurveND[]): void
+    {
+        this.clearPins();
+        for (let i = 0; i < curveList.length; i++)
+        {
+            const categoryIndex = Math.floor(i / this.parentWidget.numExemplars);
+            this.drawPin(curveList[i], categoryIndex);
+        }
     }
 
     private drawPin(trackData: CurveND, categoryIndex: number): void
