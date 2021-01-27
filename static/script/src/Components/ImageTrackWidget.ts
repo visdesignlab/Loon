@@ -1033,7 +1033,8 @@ export class ImageTrackWidget
                 data.curveCollection.Array.filter(d => !isNaN(d.get(this.parentWidget.exemplarAttribute))),
                 this.parentWidget.exemplarAttribute,
                 data.curveCollection,
-                numBins);
+                numBins,
+                true);
             binArray.push(bins);
         }
         const padding = 4;

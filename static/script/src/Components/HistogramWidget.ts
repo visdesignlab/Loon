@@ -444,7 +444,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	}
 
 
-	public static calculateBins(points: NDim[], valueKey: string, fullData: PointCollection, numBins?: number): d3.Bin<NDim, number>[]
+	public static calculateBins(points: NDim[], valueKey: string, fullData: PointCollection, numBins?: number, skipNice: boolean = false): d3.Bin<NDim, number>[]
 	{
 		let count: number;
 		if (numBins)
@@ -457,12 +457,22 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 		}
 		let minMax = fullData.getMinMax(valueKey);
 		let x = d3.scaleLinear()
-			.domain(minMax)
-			.nice(count);
+			.domain(minMax);
+
+		let thresholds: number[];
+		if (!skipNice)
+		{
+			x = x.nice(count);
+			thresholds = x.ticks(count);
+		}
+		else
+		{
+			thresholds = d3.range(minMax[0], minMax[1], (minMax[1] - minMax[0]) / count);
+		}
 
 		let bins = d3.histogram<NDim, number>()
 			.domain(x.domain() as [number, number])
-			.thresholds(x.ticks(count))
+			.thresholds(thresholds)
 			.value(d => d.get(valueKey))
 			(points);
 
