@@ -413,16 +413,41 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private calculateBins(points: NDim[]): d3.Bin<NDim, number>[]
 	{
-		let count = Math.round(Math.sqrt(this.fullData.length)) / 3;
-		let minMax = this.fullData.getMinMax(this.valueKey);
+		let bins = HistogramWidget.calculateBins(points, this.valueKey, this.fullData);
+		return bins;
+	}
+
+
+	public static calculateBins(points: NDim[], valueKey: string, fullData: PointCollection, numBins?: number, skipNice: boolean = false): d3.Bin<NDim, number>[]
+	{
+		let count: number;
+		if (numBins)
+		{
+			count = numBins;
+		}
+		else
+		{
+			count = Math.round(Math.sqrt(fullData.length)) / 3;
+		}
+		let minMax = fullData.getMinMax(valueKey);
 		let x = d3.scaleLinear()
-			.domain(minMax)
-			.nice(count);
+			.domain(minMax);
+
+		let thresholds: number[];
+		if (!skipNice)
+		{
+			x = x.nice(count);
+			thresholds = x.ticks(count);
+		}
+		else
+		{
+			thresholds = d3.range(minMax[0], minMax[1], (minMax[1] - minMax[0]) / count);
+		}
 
 		let bins = d3.histogram<NDim, number>()
 			.domain(x.domain() as [number, number])
-			.thresholds(x.ticks(count))
-			.value(d => d.get(this.valueKey))
+			.thresholds(thresholds)
+			.value(d => d.get(valueKey))
 			(points);
 
 		// account for degenerate last bin -_-
@@ -503,7 +528,6 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private getHistogramSkyline(bins: d3.Bin<NDim, number>[], singleWidth: number = 18): [number, number][]
 	{
-		
 		let pathPoints: [number, number][] = [];
 
 		if (bins.length === 1)
@@ -550,6 +574,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 		return pathPoints;
 	}
+
 
 	private removeKDEs(): void
 	{

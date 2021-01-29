@@ -70,7 +70,7 @@
     border-radius: 0px;
     border-width: 0px;
     margin: 0px;
-    height: 24px; 
+    height: 32px; 
     /* changing this will require changing ImageSelectionWidget.frameHeight */
 }
 
@@ -80,13 +80,13 @@
 
 .locationButton.selected {
     font-weight: 800;
-    height: 40px;
+    /* height: 40px; */
     border-width: 2px;
     border-color: black;
 }
 
 .locationButton.hovered {
-    height: 40px;
+    /* height: 40px; */
     border-width: 2px;
 }
 

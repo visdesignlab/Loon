@@ -30,3 +30,8 @@
     font-size: 14pt;
     font-weight: 600;
 }
+
+.cellAxisLabel.hovered.rotated {
+    font-size: 12pt;
+    font-weight: 600;
+}

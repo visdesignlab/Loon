@@ -8,7 +8,7 @@
     /* 20px height + 10px padding-top in trackModeTitleContainer */
     right: 0;
     /* If this margin changes, then ImageTrackWidget._cellTimelineMargin needs to be updated */
-    margin: 36px 4px 4px 72px;
+    margin: 36px 4px 4px 84px;
     outline: solid gray 1px;
 }
 
@@ -26,8 +26,36 @@
     text-anchor: middle
 }
 
+.cellAxisLabel.rotated {
+    text-anchor: middle;
+    dominant-baseline: hanging;
+}
+
 .trackModeTitleContainer {
     text-align: center;
     height: 20px;
     padding-top: 10px;
+}
+
+.pinLine {
+    stroke: black;
+    opacity: 0.3;
+    stroke-width: 1;
+}
+
+.pinLine.selected {
+    opacity: 1;
+    stroke-width: 2;
+}
+
+.pinHead {
+    fill: grey;
+    stroke: black;
+    opacity: 0.6;
+    r: 3;
+}
+
+.pinHead.selected {
+    r: 5;
+    opacity: 1;
 }
