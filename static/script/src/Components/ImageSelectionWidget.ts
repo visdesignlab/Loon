@@ -122,9 +122,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	public init(): void
 	{
-        this._frameHeight = 24; // hardcoded based on CSS
-        this._frameHeightSelected = 40; // also based on CSS
-        this._frameMarginTopBot = 8;
+        this._frameHeight = 32; // hardcoded based on CSS
+        this._frameHeightSelected = 32; // also based on CSS
+        this._frameMarginTopBot = 12;
         this._frameTooltip = new RichTooltip(0, 0);
         this._selectedLocFrame = [1, 1];
         this._hoveredLocFrame = null;

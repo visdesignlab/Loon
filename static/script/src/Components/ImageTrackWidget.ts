@@ -932,10 +932,12 @@ export class ImageTrackWidget
         {
             this.drawCellLabels();
             DevlibTSUtil.hide(this.scentedWidgetGroup.node());
+            DevlibTSUtil.hide(this.exemplarPinGroup.node());
         }
         else
         {
             DevlibTSUtil.show(this.scentedWidgetGroup.node());
+            DevlibTSUtil.show(this.exemplarPinGroup.node());
             let xAnchor = this.drawConditionLabels();
             if (onScroll)
             {
@@ -1183,6 +1185,8 @@ export class ImageTrackWidget
 
             this.hoverNodeWithText(svgSelection.nodes(), searchText);
         }
+
+        svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
         let frameText: string;
         if (this.parentWidget.inCondensedMode)
         {
