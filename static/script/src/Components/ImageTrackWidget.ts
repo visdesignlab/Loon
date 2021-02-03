@@ -10,6 +10,7 @@ import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStack
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { CurveList } from '../DataModel/CurveList';
 import { HistogramWidget } from './HistogramWidget';
+import { group } from 'd3';
 
 export class ImageTrackWidget
 {
@@ -328,8 +329,21 @@ export class ImageTrackWidget
         {
             numFrames = maxFrameId - minFrameId + 1;
         }
+        const maxGroupContentHeight = this.getMaxGroupHeight(maxHeightList);
+        const numExemplars = this.parentWidget.numExemplars;
+
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
-        const totalHeight = d3.sum(maxHeightList) + this.verticalPad * (this.trackList.length + 1);
+        let totalHeight = this.verticalPad * (this.trackList.length + 1);
+        if (this.parentWidget.inExemplarMode)
+        {
+
+            totalHeight += maxGroupContentHeight * (this.trackList.length / numExemplars);
+        }
+        else
+        {
+            totalHeight += d3.sum(maxHeightList);
+
+        }
         this.selectedImageCanvas
             .attr('width', canvasWidth)
             .attr('height', totalHeight);
@@ -339,30 +353,38 @@ export class ImageTrackWidget
 
         let drawTrackPromises = [];
         let verticalOffsetList = [];
+        let extraGroupPadList = [];
         for (let i = 0; i < this.trackList.length; i++)
         {
             let track = this.trackList[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
             verticalOffsetList.push(verticalOffset);
-            const categoryIndex = Math.floor(i / this.parentWidget.numExemplars)
+            const categoryIndex = Math.floor(i / numExemplars)
             let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex);
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
+            if (this.parentWidget.inExemplarMode && i % numExemplars === 2)
+            {
+                let nextIdx = i + 1;
+                let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(nextIdx - numExemplars, nextIdx));
+                verticalOffset += diffBetweenMax;
+                extraGroupPadList.push(diffBetweenMax);
+            }
         }
         
-        const numExemplars = this.parentWidget.numExemplars;
         if (this.parentWidget.inExemplarMode)
         {
             this._conditionLabelPositions = [];
             const conditionNames = this.getConditionNames();
             for (let i = 0; i < this.trackList.length; i += numExemplars)
             {
-                let name = conditionNames[i/numExemplars];
+                const groupIndex = i / numExemplars;
+                let name = conditionNames[groupIndex];
                 const top = verticalOffsetList[i];
                 const indexBot = i + numExemplars - 1;
-                const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot];
+                const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot] + extraGroupPadList[groupIndex];
                 this.conditionLabelPositions.push([name, [top, bot]]);
             }
         }
@@ -378,6 +400,22 @@ export class ImageTrackWidget
         }
         await Promise.allSettled(drawTrackPromises);
         DevlibTSUtil.stopSpinner();
+    }
+
+    private getMaxGroupHeight(maxHeightList: number[]): number
+    {
+        if (!this.parentWidget.inExemplarMode)
+        {
+            // only useful for exemplar mode
+            return 0;
+        }
+        let maxGroupHeight = 0;
+        for (let i = 0; i < maxHeightList.length; i += this.parentWidget.numExemplars)
+        {
+            let groupContentHeight = d3.sum(maxHeightList.slice(i, i + this.parentWidget.numExemplars));
+            maxGroupHeight = Math.max(maxGroupHeight, groupContentHeight);
+        }
+        return maxGroupHeight;
     }
 
     private getCurrentFacets(): Facet[]
