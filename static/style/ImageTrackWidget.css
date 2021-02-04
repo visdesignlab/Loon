@@ -59,3 +59,12 @@
     r: 5;
     opacity: 1;
 }
+
+.exemplarCurve {
+    stroke-width: 1;
+    fill: none;
+}
+
+.exemplarCurve.selected {
+    stroke-width: 2;
+}

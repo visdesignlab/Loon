@@ -90,6 +90,11 @@ export class ImageTrackWidget
     public get frameLabelGroup() : SvgSelection {
         return this._frameLabelGroup;
     }
+    
+    private _exemplarCurvesGroup : SvgSelection;
+    public get exemplarCurvesGroup() : SvgSelection {
+        return this._exemplarCurvesGroup;
+    }
 
     private _shameRectangle : SvgSelection;
     public get shameRectangle() : SvgSelection {
@@ -172,6 +177,10 @@ export class ImageTrackWidget
         return this._sourceDestCell;
     }
 
+    private _facetList : Facet[];
+    public get facetList() : Facet[] {
+        return this._facetList;
+    }    
     
     public init(): void
     {
@@ -185,13 +194,18 @@ export class ImageTrackWidget
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
         this._scentedWidgetGroup = this.svgContainer.append('g')
-            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);    
-
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
+            
         this._exemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
-
+            
         this._frameLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
+            
+        const offsetToExemplarCurves = this.cellTimelineMargin.left;
+        this._exemplarCurvesGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top})`);
+        // todo = the transform will have to update any time tracks are redrawn.
 
         this._shameRectangle = this.svgContainer.append('rect')
             .attr('x', 0)
@@ -269,9 +283,11 @@ export class ImageTrackWidget
         DevlibTSUtil.launchSpinner();
         this._trackList = tracks;
         this.updateTitle();
+        this._facetList = this.getCurrentFacets();
         await this.drawTrackList();
         this.drawLabels();
         this.drawAllPins(tracks);
+        this.drawExemplarGrowthCurves();
     }
 
     private updateTitle(): void
@@ -429,7 +445,7 @@ export class ImageTrackWidget
 
     private getConditionNames(): string[]
     {
-        let facets = this.getCurrentFacets();
+        let facets = this.facetList;
         return facets.map(facet => facet.name);
     }
 
@@ -1076,19 +1092,20 @@ export class ImageTrackWidget
 
         this.exemplarPinGroup
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
-        }
+
+        this.updateExemplarCurvesOffset();
+    }
 
     private drawScentedWidgets(axisAnchor: number): void
     {
 
         let binArray: d3.Bin<NDim, number>[][] = [];
-        const facetList = this.getCurrentFacets();
         const numBins = 48;
         this._histogramScaleYList = [];
-        for (let i = 0; i < facetList.length; i++)
+        for (let i = 0; i < this.facetList.length; i++)
         {
 
-            let data: CurveList = facetList[i].data;
+            let data: CurveList = this.facetList[i].data;
 
             let bins = HistogramWidget.calculateBins(
                 data.curveCollection.Array.filter(d => !isNaN(d.get(this.parentWidget.exemplarAttribute))),
@@ -1187,6 +1204,93 @@ export class ImageTrackWidget
             .classed('pinHead', true);
     }
 
+
+    private drawExemplarGrowthCurves(): void
+    {
+        // const offsetToExemplarCurves = this.cellTimelineMargin.left + Number(this.selectedImageCanvas.attr('width'));
+        // this._exemplarCurvesGroup.attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top})`);
+        this.updateExemplarCurvesOffset();
+
+        let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplarPlotGrouper')
+            .data(this.conditionLabelPositions)
+            .join('g')
+            .classed('exemplarPlotGrouper', true)
+            .attr('transform', d => `translate(0, ${d[1][0]})`);
+
+        const width = 150; // todo 
+        const frameExtent = this.parentWidget.data.getMinMax('Frame ID');
+        const scaleX = d3.scaleLinear()
+            .domain(frameExtent)
+            .range([0, width]);
+        
+        const massExtent = this.parentWidget.data.getMinMax('Mass_norm');
+
+        const firstPosition = this.conditionLabelPositions[0][1];
+        const height = firstPosition[1] - firstPosition[0] + 1;
+        const scaleY = d3.scaleLinear()
+            .domain(massExtent)
+            .range([height, 0]);
+
+        let exemplarGrowthCurves: string[][] = this.generateExemplarGrowthCurves(scaleX, scaleY);
+
+        groupListSelection.selectAll('path')
+            .data((d,i) => exemplarGrowthCurves[i].map(x => [x, i]))
+            .join('path')
+            .attr('d', d => d[0])
+            .attr('stroke', d => d3.schemeCategory10[d[1]])
+            // .attr('fill','none')
+            .classed('exemplarCurve', true);
+
+        // todo - not just append
+        let scaleList: [d3.Axis<number | {
+            valueOf(): number;
+        }>, number][] =
+        [
+            [d3.axisBottom(scaleX).ticks(5), height],
+            [d3.axisLeft(scaleY).ticks(5), 0]
+        ];
+
+
+        groupListSelection.selectAll('.exemplarPlotAxis')
+            .data(d => scaleList)
+            .join('g')
+            .classed('exemplarPlotAxis', true)
+            .attr('transform', (d) => `translate(0, ${d[1]})`)
+            .each(function(d) {
+                d[0](d3.select(this) as any);
+            });
+    }
+
+    private updateExemplarCurvesOffset(): void
+    {
+        const trackToPlotPadding = 16;
+        const offsetToExemplarCurves = this.cellTimelineMargin.left + Number(this.selectedImageCanvas.attr('width')) + trackToPlotPadding;
+        this.exemplarCurvesGroup.attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);
+    }
+
+    private generateExemplarGrowthCurves(scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): string[][]
+    {
+        const xKey = 'Frame ID';
+        const yKey = 'Mass_norm';
+        let line = d3.line<PointND>()
+            .x((d) => scaleX(d.get(xKey)) )
+            .y((d) => scaleY(d.get(yKey)) );
+        // .defined(d => d.inBrush);
+
+        let outerList: string[][] = [];
+        for (let i = 0; i < this.trackList.length; i += this.parentWidget.numExemplars)
+        {
+            let pathList: string[] = [];
+            for (let path of this.trackList.slice(i, i + this.parentWidget.numExemplars))
+            {
+                let pathString = line(path.pointList);
+                pathList.push(pathString);
+            }
+            outerList.push(pathList);
+        }
+        return outerList;
+    }
+
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number, rowIndex: number): void
     {
         let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
@@ -1202,6 +1306,10 @@ export class ImageTrackWidget
         }
         else if (typeof(rowIndex) !== 'undefined')
         {
+            this.exemplarCurvesGroup.selectAll('.exemplarCurve')
+                .data(this.trackList)
+                .classed('selected', (d, i) => i == rowIndex)
+
             this.exemplarPinGroup.selectAll('line')
                 .data(this.trackList)
                 .classed('selected', (d, i) => i === rowIndex);
