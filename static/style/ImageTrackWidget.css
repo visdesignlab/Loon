@@ -68,3 +68,8 @@
 .exemplarCurve.selected {
     stroke-width: 2;
 }
+
+.averageCurve {
+    stroke-width: 3;
+    fill: none;
+}

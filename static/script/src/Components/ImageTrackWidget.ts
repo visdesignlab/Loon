@@ -20,6 +20,7 @@ export class ImageTrackWidget
         this._parentWidget = parent;
         this._verticalPad = 16;
         this._horizontalPad = 8;
+        this._trackToPlotPadding = 48;
         this._frameLabelPositions = [];
         this._cellLabelPositions = [];
 
@@ -127,6 +128,11 @@ export class ImageTrackWidget
         return this._horizontalPad;
     }
 
+    private _trackToPlotPadding : number;
+    public get trackToPlotPadding() : number {
+        return this._trackToPlotPadding;
+    }
+
     private _frameLabelPositions : [string, number][];
     public get frameLabelPositions() : [string, number][] {
         return this._frameLabelPositions;
@@ -199,21 +205,20 @@ export class ImageTrackWidget
         this._exemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
             
-        this._frameLabelGroup = this.svgContainer.append('g')
-            .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
-            
         const offsetToExemplarCurves = this.cellTimelineMargin.left;
         this._exemplarCurvesGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top})`);
-        // todo = the transform will have to update any time tracks are redrawn.
 
         this._shameRectangle = this.svgContainer.append('rect')
             .attr('x', 0)
             .attr('y', 0)
-            .attr('width', this.cellTimelineMargin.left)
+            .attr('width', 10000)
             .attr('height', this.cellTimelineMargin.top)
             .attr('fill', 'white')
             .attr('stroke-width', 0);
+
+        this._frameLabelGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
 
         this._innerContainer = containerSelect.append('div')
             .classed('cellTimelineInnerContainer', true)
@@ -1207,8 +1212,6 @@ export class ImageTrackWidget
 
     private drawExemplarGrowthCurves(): void
     {
-        // const offsetToExemplarCurves = this.cellTimelineMargin.left + Number(this.selectedImageCanvas.attr('width'));
-        // this._exemplarCurvesGroup.attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top})`);
         this.updateExemplarCurvesOffset();
 
         let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplarPlotGrouper')
@@ -1217,65 +1220,85 @@ export class ImageTrackWidget
             .classed('exemplarPlotGrouper', true)
             .attr('transform', d => `translate(0, ${d[1][0]})`);
 
-        const width = 150; // todo 
+        const rightPadding = 4;
+
+        const width = this.innerContainer.node().getBoundingClientRect().width
+                        - Number(this.selectedImageCanvas.attr('width'))
+                        - this.trackToPlotPadding
+                        - rightPadding;
+
         const frameExtent = this.parentWidget.data.getMinMax('Frame ID');
         const scaleX = d3.scaleLinear()
             .domain(frameExtent)
             .range([0, width]);
         
-        const massExtent = this.parentWidget.data.getMinMax('Mass_norm');
+        const massKey = 'Mass (pg)';
+        // todo - I should refactor this so that min/max can account for the average curve as well.
+        const maxMass = d3.max(this.trackList, curve => d3.max(curve.pointList, point => point.get(massKey)));
+        const minMass = d3.min(this.trackList, curve => d3.min(curve.pointList, point => point.get(massKey)));
+
 
         const firstPosition = this.conditionLabelPositions[0][1];
         const height = firstPosition[1] - firstPosition[0] + 1;
         const scaleY = d3.scaleLinear()
-            .domain(massExtent)
+            .domain([minMass, maxMass])
             .range([height, 0]);
 
-        let exemplarGrowthCurves: string[][] = this.generateExemplarGrowthCurves(scaleX, scaleY);
+        let [exemplarGrowthCurves, averageGrowthLines]: [string[][], string[]] = this.generateExemplarGrowthCurves(scaleX, scaleY);
 
-        groupListSelection.selectAll('path')
+        groupListSelection.selectAll('.averageCurve')
+            .data((d,i) => [[averageGrowthLines[i], i] ])
+            .join('path')
+            .attr('d', d => d[0])
+            .attr('stroke', d => d3.schemeCategory10[d[1]])
+            .classed('averageCurve', true);
+
+        groupListSelection.selectAll('.exemplarCurve')
             .data((d,i) => exemplarGrowthCurves[i].map(x => [x, i]))
             .join('path')
             .attr('d', d => d[0])
             .attr('stroke', d => d3.schemeCategory10[d[1]])
-            // .attr('fill','none')
             .classed('exemplarCurve', true);
 
-        // todo - not just append
-        let scaleList: [d3.Axis<number | {
-            valueOf(): number;
-        }>, number][] =
+        let scaleList: [d3.Axis<number | { valueOf(): number; }>, number][] =
         [
-            [d3.axisBottom(scaleX).ticks(5), height],
-            [d3.axisLeft(scaleY).ticks(5), 0]
+            [d3.axisBottom(scaleX), height],
+            [d3.axisLeft(scaleY), 0]
         ];
 
-
         groupListSelection.selectAll('.exemplarPlotAxis')
-            .data(d => scaleList)
+            .data((d, i) => scaleList.map(x => [x, i]))
             .join('g')
             .classed('exemplarPlotAxis', true)
-            .attr('transform', (d) => `translate(0, ${d[1]})`)
+            .attr('transform', (d) => `translate(0, ${d[0][1]})`)
             .each(function(d) {
-                d[0](d3.select(this) as any);
+                let axisFunc: d3.Axis<number | {valueOf(): number;}>;
+                axisFunc = d[0][0];
+                if (d[1] == 0)
+                {
+                    axisFunc.ticks(5)
+                }
+                else
+                {
+                    axisFunc.tickFormat(d => null).tickValues([]);
+                }
+                axisFunc(d3.select(this) as any);
             });
     }
 
     private updateExemplarCurvesOffset(): void
     {
-        const trackToPlotPadding = 16;
-        const offsetToExemplarCurves = this.cellTimelineMargin.left + Number(this.selectedImageCanvas.attr('width')) + trackToPlotPadding;
+        const offsetToExemplarCurves = this.cellTimelineMargin.left + Number(this.selectedImageCanvas.attr('width')) + this.trackToPlotPadding;
         this.exemplarCurvesGroup.attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);
     }
 
-    private generateExemplarGrowthCurves(scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): string[][]
+    private generateExemplarGrowthCurves(scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): [string[][], string[]]
     {
         const xKey = 'Frame ID';
-        const yKey = 'Mass_norm';
+        const yKey = 'Mass (pg)';
         let line = d3.line<PointND>()
-            .x((d) => scaleX(d.get(xKey)) )
-            .y((d) => scaleY(d.get(yKey)) );
-        // .defined(d => d.inBrush);
+            .x(d => scaleX(d.get(xKey)) )
+            .y(d => scaleY(d.get(yKey)) );
 
         let outerList: string[][] = [];
         for (let i = 0; i < this.trackList.length; i += this.parentWidget.numExemplars)
@@ -1288,7 +1311,21 @@ export class ImageTrackWidget
             }
             outerList.push(pathList);
         }
-        return outerList;
+
+        // average growth calculation
+        let lineAvg = d3.line<number>()
+            .x((d, i) => scaleX(i + 1))
+            .y(d => scaleY(d));
+
+        let averageGrowthLines: string[] = [];
+        for (let facet of this.facetList)
+        {
+            let averageGrowthCurve = facet.data.averageGrowthCurve;
+            let averageGrowthCurveString = lineAvg(averageGrowthCurve);
+            averageGrowthLines.push(averageGrowthCurveString);
+        }
+
+        return [outerList, averageGrowthLines];
     }
 
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number, rowIndex: number): void
@@ -1371,6 +1408,8 @@ export class ImageTrackWidget
         this.svgContainer
             .attr('height', height)
             .attr('width', width);
+
+        this.shameRectangle.attr('width', width);
 
         const innerW = width - this.cellTimelineMargin.left - this.cellTimelineMargin.right;
         this._innerContainerW = innerW;
