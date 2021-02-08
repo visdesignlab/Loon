@@ -23,6 +23,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 			if (this.showingFacetPopup)
 			{
 				this.drawFacetedData(e.detail.groupIndex);
+				// todo - use flatFacetList to simplify
 			}
 		});
 		this._showingFacetPopup = false;

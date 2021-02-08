@@ -151,6 +151,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._lastYValueBrushBound;
 	}
 	
+	private _inExemplarMode : boolean;
+	public get inExemplarMode() : boolean {
+		return this._inExemplarMode;
+	}
 
 	protected setMargin(): void
 	{
@@ -212,6 +216,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed("labelColor", true);
 
 		this.initQuickPickOptions();
+
+		document.addEventListener('modeChange', (e: CustomEvent) =>
+		{
+			this._inExemplarMode = e.detail.inExemplarMode;
+		});
 	}
 
 	private initQuickPickOptions(): void

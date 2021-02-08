@@ -288,7 +288,8 @@ export class ImageTrackWidget
         DevlibTSUtil.launchSpinner();
         this._trackList = tracks;
         this.updateTitle();
-        this._facetList = this.getCurrentFacets();
+        // this._facetList = this.getCurrentFacets();
+        this._facetList = this.parentWidget.facetList; // todo just replace
         await this.drawTrackList();
         this.drawLabels();
         this.drawAllPins(tracks);
@@ -439,14 +440,14 @@ export class ImageTrackWidget
         return maxGroupHeight;
     }
 
-    private getCurrentFacets(): Facet[]
-    {
-        let facetIndex = this.parentWidget.groupByIndexList[0];
-        let facetOptions = this.parentWidget.data.GetFacetOptions();
-        const firstFacetOption = facetOptions[facetIndex];
-        let facets = firstFacetOption.GetFacets();
-        return facets;
-    }
+    // private getCurrentFacets(): Facet[]
+    // {
+    //     let facetIndex = this.parentWidget.groupByIndexList[0];
+    //     let facetOptions = this.parentWidget.data.GetFacetOptions();
+    //     const firstFacetOption = facetOptions[facetIndex];
+    //     let facets = firstFacetOption.GetFacets();
+    //     return facets;
+    // }
 
     private getConditionNames(): string[]
     {
@@ -726,8 +727,8 @@ export class ImageTrackWidget
             timeRangePx[1] - timeRangePx[0] + 1,
             height);
 
-        this.canvasContext.strokeStyle = d3.schemeCategory10[categoryIndex];
-        this.canvasContext.fillStyle = d3.schemeCategory10[categoryIndex];
+        this.canvasContext.strokeStyle = d3.schemeCategory10[categoryIndex % 10];
+        this.canvasContext.fillStyle = d3.schemeCategory10[categoryIndex % 10];
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();
@@ -1073,7 +1074,7 @@ export class ImageTrackWidget
             .attr('x', xAnchor)
             .attr('y', d => (d[1][0] + d[1][1]) / 2 - this.latestScroll[1])
             .attr('transform', d => `rotate(-90, ${xAnchor}, ${(d[1][0] + d[1][1]) / 2 - this.latestScroll[1]})`)
-            .attr('fill', (d,i) => d3.schemeCategory10[i])
+            .attr('fill', (d,i) => d3.schemeCategory10[i % 10])
             .classed('cellAxisLabel', true)
             .classed('rotated', true);
 
@@ -1084,7 +1085,7 @@ export class ImageTrackWidget
             .attr('x2', xAnchorLine)
             .attr('y1', d => Math.max(0, d[1][0] - this.latestScroll[1]))
             .attr('y2', d => Math.max(0, d[1][1] - this.latestScroll[1]))
-            .attr('stroke', (d,i) => d3.schemeCategory10[i])
+            .attr('stroke', (d,i) => d3.schemeCategory10[i % 10])
             .attr('stroke-width', '2px');
 
         return xAnchorLine;
@@ -1252,14 +1253,14 @@ export class ImageTrackWidget
             .data((d,i) => [[averageGrowthLines[i], i] ])
             .join('path')
             .attr('d', d => d[0])
-            .attr('stroke', d => d3.schemeCategory10[d[1]])
+            .attr('stroke', d => d3.schemeCategory10[+d[1] % 10])
             .classed('averageCurve', true);
 
         groupListSelection.selectAll('.exemplarCurve')
             .data((d,i) => exemplarGrowthCurves[i].map(x => [x, i]))
             .join('path')
             .attr('d', d => d[0])
-            .attr('stroke', d => d3.schemeCategory10[d[1]])
+            .attr('stroke', d => d3.schemeCategory10[+d[1] % 10])
             .classed('exemplarCurve', true);
 
         let scaleList: [d3.Axis<number | { valueOf(): number; }>, number][] =

@@ -1,9 +1,10 @@
 import * as d3 from 'd3';
 import { OptionSelect } from "./OptionSelect";
 import { HtmlSelection, ButtonProps } from "../devlib/DevLibTypes";
-import { AppData } from "../types";
+import { AppData, Facet } from "../types";
 import { DevlibTSUtil } from "../devlib/DevlibTSUtil";
 import { select } from 'd3';
+import { CurveList } from '../DataModel/CurveList';
 
 export class GroupByWidget
 {
@@ -220,9 +221,36 @@ export class GroupByWidget
     {
         const customEvent: CustomEvent = new CustomEvent('groupByChanged', { detail:
         {
-            groupIndex: this.currentSelectionIndexList
+            groupIndex: this.currentSelectionIndexList,
+            flatFacetList: this.getFlatFacetList()
         }});
         document.dispatchEvent(customEvent);
+    }
+
+    public getFlatFacetList(): Facet[]
+    {
+        let flatFacetList: Facet[] = [{name: '', data: this.data}];
+        for (let index of this.currentSelectionIndexList)
+        {
+            let nextList = [];
+            for (let {name: nameSoFar, data: data} of flatFacetList)
+            {
+                let facetOptions = data.GetFacetOptions();
+                let currentOption = facetOptions[index];
+                let subFacets: Facet[] = currentOption.GetFacets();
+                subFacets = subFacets.map(facet =>
+                {
+                    return {
+                        name: nameSoFar ? nameSoFar + ' ' + facet.name : facet.name,
+                        data: facet.data
+                    }
+                });
+                nextList.push(...subFacets);
+            }
+            flatFacetList = nextList;
+        }
+
+        return flatFacetList;
     }
 
 }
