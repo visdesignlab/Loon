@@ -1222,10 +1222,12 @@ export class ImageTrackWidget
 
         const rightPadding = 4;
 
-        const width = this.innerContainer.node().getBoundingClientRect().width
+        let width = this.innerContainer.node().getBoundingClientRect().width
                         - Number(this.selectedImageCanvas.attr('width'))
                         - this.trackToPlotPadding
                         - rightPadding;
+
+        width = Math.min(width, 200); // max-width: 200
 
         const frameExtent = this.parentWidget.data.getMinMax('Frame ID');
         const scaleX = d3.scaleLinear()
