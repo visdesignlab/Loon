@@ -304,7 +304,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
         if (categoryIndex >= 0)
         {
-            let color = d3.hsl(d3.schemeCategory10[categoryIndex % 10]);
+            let color = d3.hsl(categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex]);
 
             styleString += `color: ${color.darker(1.0).toString()};`
             
