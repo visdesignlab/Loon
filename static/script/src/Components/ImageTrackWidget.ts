@@ -375,7 +375,7 @@ export class ImageTrackWidget
 
         let drawTrackPromises = [];
         let verticalOffsetList = [];
-        let extraGroupPadList = [];
+        const betweenGroupPad = 16;
         for (let i = 0; i < this.trackList.length; i++)
         {
             let track = this.trackList[i];
@@ -387,12 +387,19 @@ export class ImageTrackWidget
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
-            if (this.parentWidget.inExemplarMode && i % numExemplars === 2)
+            if (this.parentWidget.inExemplarMode)
             {
-                let nextIdx = i + 1;
-                let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(nextIdx - numExemplars, nextIdx));
-                verticalOffset += diffBetweenMax;
-                extraGroupPadList.push(diffBetweenMax);
+                let groupStartIdx = i - (i % numExemplars);
+                let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
+                if (i % numExemplars < numExemplars)
+                {
+                    let extraPadding = diffBetweenMax / (numExemplars - 1);
+                    verticalOffset += extraPadding;
+                }
+                else
+                {
+                    verticalOffset += betweenGroupPad;
+                }
             }
         }
         
@@ -406,7 +413,7 @@ export class ImageTrackWidget
                 let name = conditionNames[groupIndex];
                 const top = verticalOffsetList[i];
                 const indexBot = i + numExemplars - 1;
-                const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot] + extraGroupPadList[groupIndex];
+                const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot];
                 this.conditionLabelPositions.push([name, [top, bot]]);
             }
         }
@@ -1265,7 +1272,7 @@ export class ImageTrackWidget
 
         let scaleList: [d3.Axis<number | { valueOf(): number; }>, number][] =
         [
-            [d3.axisBottom(scaleX), height],
+            [d3.axisBottom(scaleX).ticks(5), height],
             [d3.axisLeft(scaleY), 0]
         ];
 
@@ -1277,14 +1284,14 @@ export class ImageTrackWidget
             .each(function(d) {
                 let axisFunc: d3.Axis<number | {valueOf(): number;}>;
                 axisFunc = d[0][0];
-                if (d[1] == 0)
-                {
-                    axisFunc.ticks(5)
-                }
-                else
-                {
-                    axisFunc.tickFormat(d => null).tickValues([]);
-                }
+                // if (d[1] == 0)
+                // {
+                //     axisFunc.ticks(5)
+                // }
+                // else
+                // {
+                //     axisFunc.tickFormat(d => null).tickValues([]);
+                // }
                 axisFunc(d3.select(this) as any);
             });
     }

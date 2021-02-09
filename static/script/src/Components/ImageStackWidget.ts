@@ -10,7 +10,6 @@ import { CurveND } from '../DataModel/CurveND';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { Facet } from '../types';
-import { ImageSelectionWidget } from './ImageSelectionWidget';
 
 export class ImageStackWidget {
 
