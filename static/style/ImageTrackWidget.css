@@ -63,6 +63,7 @@
 .exemplarCurve {
     stroke-width: 1;
     fill: none;
+    stroke-linejoin: round;
 }
 
 .exemplarCurve.selected {
@@ -72,4 +73,5 @@
 .averageCurve {
     stroke-width: 3;
     fill: none;
+    stroke-linejoin: round;
 }

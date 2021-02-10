@@ -51,20 +51,29 @@
 										{
 											"quickPickOptions": [
 												{
+													"xKey": "Frame ID",
+													"yKey": "Mass (pg)",
+													"averaged": true,
+													"squareAspectRatio": false
+												}, {
 													"xKey": "Time_norm",
 													"yKey": "Mass_norm",
+													"averaged": false,
 													"squareAspectRatio": false
 												}, {
 													"xKey": "Time (h)",
 													"yKey": "Mass_norm",
+													"averaged": false,
 													"squareAspectRatio": false
 												}, {
 													"xKey": "Time (h)",
 													"yKey": "Mass (pg)",
+													"averaged": false,
 													"squareAspectRatio": false
 												}, {
 													"xKey": "X",
 													"yKey": "Y",
+													"averaged": false,
 													"squareAspectRatio": true
 												}
 											],
