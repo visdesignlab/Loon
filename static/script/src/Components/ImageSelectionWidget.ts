@@ -180,10 +180,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._imageMetaData = ImageMetaData.fromPointCollection(this.data);
         this._imageStackDataRequest = new ImageStackDataRequest(this.data.Specification.googleDriveId);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
+        this.groupByWidget.updateGroupByOptions(this.data);
         this._hoveredLocationId = null;
         this.setImageStackWidget();
         this.OnBrushChange();
-        this.groupByWidget.updateGroupByOptions(this.data, true);
 
     }
     
@@ -304,7 +304,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
         if (categoryIndex >= 0)
         {
-            let color = d3.hsl(d3.schemeCategory10[categoryIndex]);
+            let color = d3.hsl(categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex]);
 
             styleString += `color: ${color.darker(1.0).toString()};`
             
@@ -331,7 +331,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         {
             locationList = locationList.filter(loc => this.imageStackWidget.exemplarLocations.has(loc))
         }
-
+        if (locationList.length === 0)
+        {
+            return;
+        }
         const listElement = subListContainer.selectAll('li')
             .data(locationList)
             .join('li');
@@ -582,6 +585,10 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     private drawSelectedDots(): void
     {
+        if (!this.frameScaleX)
+        {
+            return;
+        }
         const [locationId, frameId] = this.selectedLocFrame;
         const xyPositions: [number, number][] =this.getDotCenters(locationId, frameId);
         const dotR = 3;

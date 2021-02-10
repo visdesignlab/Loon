@@ -19,6 +19,8 @@ export class ImageTrackWidget
         this._parentWidget = parent;
         this._verticalPad = 16;
         this._horizontalPad = 8;
+        this._trackToPlotPadding = 48;
+        this._exemplarMinWidth = 80;
         this._frameLabelPositions = [];
         this._cellLabelPositions = [];
 
@@ -89,6 +91,11 @@ export class ImageTrackWidget
     public get frameLabelGroup() : SvgSelection {
         return this._frameLabelGroup;
     }
+    
+    private _exemplarCurvesGroup : SvgSelection;
+    public get exemplarCurvesGroup() : SvgSelection {
+        return this._exemplarCurvesGroup;
+    }
 
     private _shameRectangle : SvgSelection;
     public get shameRectangle() : SvgSelection {
@@ -109,7 +116,6 @@ export class ImageTrackWidget
     public get trackList() : CurveND[] {
         return this._trackList;
     }
-
     
     private _verticalPad : number;
     public get verticalPad() : number {
@@ -119,6 +125,11 @@ export class ImageTrackWidget
     private _horizontalPad : number;
     public get horizontalPad() : number {
         return this._horizontalPad;
+    }
+
+    private _trackToPlotPadding : number;
+    public get trackToPlotPadding() : number {
+        return this._trackToPlotPadding;
     }
 
     private _frameLabelPositions : [string, number][];
@@ -170,7 +181,11 @@ export class ImageTrackWidget
     public get sourceDestCell() : [Rect, [number, number], PointND][] {
         return this._sourceDestCell;
     }
-
+    
+    private _exemplarMinWidth : number;
+    public get exemplarMinWidth() : number {
+        return this._exemplarMinWidth;
+    }    
     
     public init(): void
     {
@@ -184,21 +199,25 @@ export class ImageTrackWidget
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
         this._scentedWidgetGroup = this.svgContainer.append('g')
-            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);    
-
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
+            
         this._exemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
-
-        this._frameLabelGroup = this.svgContainer.append('g')
-            .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
+            
+        const offsetToExemplarCurves = this.cellTimelineMargin.left;
+        this._exemplarCurvesGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top})`);
 
         this._shameRectangle = this.svgContainer.append('rect')
             .attr('x', 0)
             .attr('y', 0)
-            .attr('width', this.cellTimelineMargin.left)
+            .attr('width', 10000)
             .attr('height', this.cellTimelineMargin.top)
             .attr('fill', 'white')
             .attr('stroke-width', 0);
+
+        this._frameLabelGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(${this.cellTimelineMargin.left}, 0)`);
 
         this._innerContainer = containerSelect.append('div')
             .classed('cellTimelineInnerContainer', true)
@@ -271,6 +290,7 @@ export class ImageTrackWidget
         await this.drawTrackList();
         this.drawLabels();
         this.drawAllPins(tracks);
+        this.drawExemplarGrowthCurves();
     }
 
     private updateTitle(): void
@@ -328,8 +348,23 @@ export class ImageTrackWidget
         {
             numFrames = maxFrameId - minFrameId + 1;
         }
+        const maxGroupContentHeight = this.getMaxGroupHeight(maxHeightList);
+        const numExemplars = this.parentWidget.numExemplars;
+
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
-        const totalHeight = d3.sum(maxHeightList) + this.verticalPad * (this.trackList.length + 1);
+        let totalHeight = this.verticalPad * (this.trackList.length + 1);
+        const betweenGroupPad = 16;
+        if (this.parentWidget.inExemplarMode)
+        {
+            const numGroups = (this.trackList.length / numExemplars);
+            totalHeight += maxGroupContentHeight * numGroups;
+            totalHeight += betweenGroupPad * numGroups;
+        }
+        else
+        {
+            totalHeight += d3.sum(maxHeightList);
+
+        }
         this.selectedImageCanvas
             .attr('width', canvasWidth)
             .attr('height', totalHeight);
@@ -345,21 +380,35 @@ export class ImageTrackWidget
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
             verticalOffsetList.push(verticalOffset);
-            const categoryIndex = Math.floor(i / this.parentWidget.numExemplars)
+            const categoryIndex = Math.floor(i / numExemplars)
             let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex);
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
+            if (this.parentWidget.inExemplarMode)
+            {
+                let groupStartIdx = i - (i % numExemplars);
+                let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
+                if (i % numExemplars < numExemplars)
+                {
+                    let extraPadding = diffBetweenMax / (numExemplars - 1);
+                    verticalOffset += extraPadding;
+                }
+                else
+                {
+                    verticalOffset += betweenGroupPad;
+                }
+            }
         }
         
-        const numExemplars = this.parentWidget.numExemplars;
         if (this.parentWidget.inExemplarMode)
         {
             this._conditionLabelPositions = [];
             const conditionNames = this.getConditionNames();
             for (let i = 0; i < this.trackList.length; i += numExemplars)
             {
-                let name = conditionNames[i/numExemplars];
+                const groupIndex = i / numExemplars;
+                let name = conditionNames[groupIndex];
                 const top = verticalOffsetList[i];
                 const indexBot = i + numExemplars - 1;
                 const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot];
@@ -380,19 +429,25 @@ export class ImageTrackWidget
         DevlibTSUtil.stopSpinner();
     }
 
-    private getCurrentFacets(): Facet[]
+    private getMaxGroupHeight(maxHeightList: number[]): number
     {
-        let facetIndex = this.parentWidget.groupByIndexList[0];
-        let facetOptions = this.parentWidget.data.GetFacetOptions();
-        const firstFacetOption = facetOptions[facetIndex];
-        let facets = firstFacetOption.GetFacets();
-        return facets;
+        if (!this.parentWidget.inExemplarMode)
+        {
+            // only useful for exemplar mode
+            return 0;
+        }
+        let maxGroupHeight = 0;
+        for (let i = 0; i < maxHeightList.length; i += this.parentWidget.numExemplars)
+        {
+            let groupContentHeight = d3.sum(maxHeightList.slice(i, i + this.parentWidget.numExemplars));
+            maxGroupHeight = Math.max(maxGroupHeight, groupContentHeight);
+        }
+        return maxGroupHeight;
     }
 
     private getConditionNames(): string[]
     {
-        let facets = this.getCurrentFacets();
-        return facets.map(facet => facet.name);
+        return this.parentWidget.facetList.map(facet => facet.name);
     }
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>
@@ -667,8 +722,8 @@ export class ImageTrackWidget
             timeRangePx[1] - timeRangePx[0] + 1,
             height);
 
-        this.canvasContext.strokeStyle = d3.schemeCategory10[categoryIndex];
-        this.canvasContext.fillStyle = d3.schemeCategory10[categoryIndex];
+        this.canvasContext.strokeStyle = categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
+        this.canvasContext.fillStyle = categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();
@@ -1014,7 +1069,7 @@ export class ImageTrackWidget
             .attr('x', xAnchor)
             .attr('y', d => (d[1][0] + d[1][1]) / 2 - this.latestScroll[1])
             .attr('transform', d => `rotate(-90, ${xAnchor}, ${(d[1][0] + d[1][1]) / 2 - this.latestScroll[1]})`)
-            .attr('fill', (d,i) => d3.schemeCategory10[i])
+            .attr('fill', (d,i) => i >= 10 ? 'black' : d3.schemeCategory10[i])
             .classed('cellAxisLabel', true)
             .classed('rotated', true);
 
@@ -1025,7 +1080,7 @@ export class ImageTrackWidget
             .attr('x2', xAnchorLine)
             .attr('y1', d => Math.max(0, d[1][0] - this.latestScroll[1]))
             .attr('y2', d => Math.max(0, d[1][1] - this.latestScroll[1]))
-            .attr('stroke', (d,i) => d3.schemeCategory10[i])
+            .attr('stroke', (d,i) => i >= 10 ? 'black' : d3.schemeCategory10[i])
             .attr('stroke-width', '2px');
 
         return xAnchorLine;
@@ -1038,19 +1093,20 @@ export class ImageTrackWidget
 
         this.exemplarPinGroup
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
-        }
+
+        this.updateExemplarCurvesOffset();
+    }
 
     private drawScentedWidgets(axisAnchor: number): void
     {
 
         let binArray: d3.Bin<NDim, number>[][] = [];
-        const facetList = this.getCurrentFacets();
         const numBins = 48;
         this._histogramScaleYList = [];
-        for (let i = 0; i < facetList.length; i++)
+        for (let i = 0; i < this.parentWidget.facetList.length; i++)
         {
 
-            let data: CurveList = facetList[i].data;
+            let data: CurveList = this.parentWidget.facetList[i].data;
 
             let bins = HistogramWidget.calculateBins(
                 data.curveCollection.Array.filter(d => !isNaN(d.get(this.parentWidget.exemplarAttribute))),
@@ -1149,6 +1205,130 @@ export class ImageTrackWidget
             .classed('pinHead', true);
     }
 
+
+    private drawExemplarGrowthCurves(): void
+    {
+        // todo make this work for exemplar mode when there is not enough space
+        if (!this.parentWidget.inExemplarMode || !this.parentWidget.inCondensedMode)
+        {
+            DevlibTSUtil.hide(this.exemplarCurvesGroup.node());
+            return;
+        }
+        DevlibTSUtil.show(this.exemplarCurvesGroup.node());
+
+        this.updateExemplarCurvesOffset();
+
+        let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplarPlotGrouper')
+            .data(this.conditionLabelPositions)
+            .join('g')
+            .classed('exemplarPlotGrouper', true)
+            .attr('transform', d => `translate(0, ${d[1][0]})`);
+
+        const rightPadding = 4;
+
+        let width = this.innerContainer.node().getBoundingClientRect().width
+                        - Number(this.selectedImageCanvas.attr('width'))
+                        - this.trackToPlotPadding
+                        - rightPadding;
+
+        width = Math.max(width, this.exemplarMinWidth); // min-width: 80
+        width = Math.min(width, 200); // max-width: 200
+
+        const frameExtent = this.parentWidget.data.getMinMax('Frame ID');
+        const scaleX = d3.scaleLinear()
+            .domain(frameExtent)
+            .range([0, width]);
+        
+        const massKey = 'Mass (pg)';
+        // todo - I should refactor this so that min/max can account for the average curve as well.
+        const maxMass = d3.max(this.trackList, curve => d3.max(curve.pointList, point => point.get(massKey)));
+        const minMass = d3.min(this.trackList, curve => d3.min(curve.pointList, point => point.get(massKey)));
+
+
+        const firstPosition = this.conditionLabelPositions[0][1];
+        const height = firstPosition[1] - firstPosition[0] + 1;
+        const scaleY = d3.scaleLinear()
+            .domain([minMass, maxMass])
+            .range([height, 0]);
+
+        let [exemplarGrowthCurves, averageGrowthLines]: [string[][], string[]] = this.generateExemplarGrowthCurves(scaleX, scaleY);
+
+        groupListSelection.selectAll('.averageCurve')
+            .data((d,i) => [[averageGrowthLines[i], i] ])
+            .join('path')
+            .attr('d', d => d[0])
+            .attr('stroke', d => +d[1] >= 10 ? 'black' : d3.schemeCategory10[+d[1]])
+            .classed('averageCurve', true);
+
+        groupListSelection.selectAll('.exemplarCurve')
+            .data((d,i) => exemplarGrowthCurves[i].map(x => [x, i]))
+            .join('path')
+            .attr('d', d => d[0])
+            .attr('stroke', d => +d[1] >= 10 ? 'black' : d3.schemeCategory10[+d[1]])
+            .classed('exemplarCurve', true);
+
+        let scaleList: [d3.Axis<number | { valueOf(): number; }>, number][] =
+        [
+            [d3.axisBottom(scaleX).ticks(5), height],
+            [d3.axisLeft(scaleY), 0]
+        ];
+
+        groupListSelection.selectAll('.exemplarPlotAxis')
+            .data((d, i) => scaleList.map(x => [x, i]))
+            .join('g')
+            .classed('exemplarPlotAxis', true)
+            .attr('transform', (d) => `translate(0, ${d[0][1]})`)
+            .each(function(d) {
+                let axisFunc: d3.Axis<number | {valueOf(): number;}>;
+                axisFunc = d[0][0];
+                axisFunc(d3.select(this) as any);
+            });
+    }
+
+    private updateExemplarCurvesOffset(): void
+    {
+        // const contentOffset = Math.min(Number(this.selectedImageCanvas.attr('width')), this.innerContainerW);
+        const contentOffset = Number(this.selectedImageCanvas.attr('width'));
+        const offsetToExemplarCurves = this.cellTimelineMargin.left + contentOffset + this.trackToPlotPadding;
+        this.exemplarCurvesGroup.attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);
+    }
+
+    private generateExemplarGrowthCurves(scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): [string[][], string[]]
+    {
+        const xKey = 'Frame ID';
+        const yKey = 'Mass (pg)';
+        let line = d3.line<PointND>()
+            .x(d => scaleX(d.get(xKey)) )
+            .y(d => scaleY(d.get(yKey)) );
+
+        let outerList: string[][] = [];
+        for (let i = 0; i < this.trackList.length; i += this.parentWidget.numExemplars)
+        {
+            let pathList: string[] = [];
+            for (let path of this.trackList.slice(i, i + this.parentWidget.numExemplars))
+            {
+                let pathString = line(path.pointList);
+                pathList.push(pathString);
+            }
+            outerList.push(pathList);
+        }
+
+        // average growth calculation
+        let lineAvg = d3.line<number>()
+            .x((d, i) => scaleX(i + 1))
+            .y(d => scaleY(d));
+
+        let averageGrowthLines: string[] = [];
+        for (let facet of this.parentWidget.facetList)
+        {
+            let averageGrowthCurve = facet.data.averageGrowthCurve;
+            let averageGrowthCurveString = lineAvg(averageGrowthCurve);
+            averageGrowthLines.push(averageGrowthCurveString);
+        }
+
+        return [outerList, averageGrowthLines];
+    }
+
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number, rowIndex: number): void
     {
         let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
@@ -1164,6 +1344,10 @@ export class ImageTrackWidget
         }
         else if (typeof(rowIndex) !== 'undefined')
         {
+            this.exemplarCurvesGroup.selectAll('.exemplarCurve')
+                .data(this.trackList)
+                .classed('selected', (d, i) => i == rowIndex)
+
             this.exemplarPinGroup.selectAll('line')
                 .data(this.trackList)
                 .classed('selected', (d, i) => i === rowIndex);
@@ -1225,6 +1409,8 @@ export class ImageTrackWidget
         this.svgContainer
             .attr('height', height)
             .attr('width', width);
+
+        this.shameRectangle.attr('width', width);
 
         const innerW = width - this.cellTimelineMargin.left - this.cellTimelineMargin.right;
         this._innerContainerW = innerW;

@@ -59,3 +59,19 @@
     r: 5;
     opacity: 1;
 }
+
+.exemplarCurve {
+    stroke-width: 1;
+    fill: none;
+    stroke-linejoin: round;
+}
+
+.exemplarCurve.selected {
+    stroke-width: 2;
+}
+
+.averageCurve {
+    stroke-width: 3;
+    fill: none;
+    stroke-linejoin: round;
+}

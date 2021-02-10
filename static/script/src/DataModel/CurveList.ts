@@ -29,6 +29,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
+		this._averageGrowthCurve = [];
 		this._locationFrameSegmentLookup = new Map<number, Map<number, Map<number, [PointND, number]>>>();
 		// this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
 		const locationSet = new Set<number>();
@@ -90,6 +91,28 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			this.updateMinMaxMap()
 		}
 		return this._minMaxMap;
+	}
+
+	private _averageGrowthCurve: number[];
+	public get averageGrowthCurve(): number[]
+	{
+		if (this._averageGrowthCurve.length > 0)
+		{
+			this._averageGrowthCurve;
+		}
+		let [minFrame, maxFrame] = this.getMinMax('Frame ID');
+		let numFrames = maxFrame - minFrame + 1;
+		let sumCountList: [number, number][] = Array(numFrames).fill([0,0]);
+		for (let point of this)
+		{
+			let frame = point.get('Frame ID');
+			let mass = point.get('Mass (pg)');
+			let frameIdx = frame - minFrame;
+			let [sum, count] = sumCountList[frameIdx];
+			sumCountList[frameIdx] = [sum + mass, count + 1];
+		}
+		this._averageGrowthCurve = sumCountList.map(([sum, count]) => sum / count);
+		return this._averageGrowthCurve;
 	}
 
 	// private _locationFrameSegmentLookup : Map<string, [PointND, number]>;

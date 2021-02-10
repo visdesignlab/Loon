@@ -5,12 +5,13 @@ import {PointND} from '../DataModel/PointND';
 import {SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
-import { DatasetSpec } from '../types';
-import { thresholdFreedmanDiaconis } from 'd3';
+import { DatasetSpec, Facet } from '../types';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 interface quickPickOption {
 	xKey: string,
 	yKey: string,
+	averaged: boolean,
 	squareAspectRatio: boolean
 }
 
@@ -21,6 +22,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		super(container, true, quickPickOptions, initialQuickPickOptionIndex, canBrush);
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
+		this._facetList = [];
 	}
 	
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
@@ -34,9 +36,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		super.initProps();
 		this._quickPickOptions = props[0];
 		this._initialQuickPickOptionIndex = props[1];
+		let initialOption = this.quickPickOptions[this.initialQuickPickOptionIndex];
 		this._canBrush = props[2];
-		this._xKey = this.quickPickOptions[this.initialQuickPickOptionIndex].xKey;
-		this._yKey = this.quickPickOptions[this.initialQuickPickOptionIndex].yKey;
+		this._xKey = initialOption.xKey;
+		this._yKey = initialOption.yKey;
+		this._inAverageMode = initialOption.averaged;
 	}
 
 	private _svgSelect : SvgSelection;
@@ -152,6 +156,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._lastYValueBrushBound;
 	}
 	
+	private _inAverageMode : boolean;
+	public get inAverageMode() : boolean {
+		return this._inAverageMode;
+	}
+
+	private _facetList : Facet[];
+	public get facetList() : Facet[] {
+		return this._facetList;
+	}
 
 	protected setMargin(): void
 	{
@@ -196,7 +209,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this._brushGroupSelect = this.svgSelect.append("g")
 				.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
-				.classed("brushContainer", true);
+				.classed('brushContainer', true)
+				.classed('noDisp', this.inAverageMode);
+
 			this.initBrush();
 		}
 
@@ -213,6 +228,21 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed("labelColor", true);
 
 		this.initQuickPickOptions();
+
+		document.addEventListener('groupByChanged', async (e: CustomEvent) =>
+		{
+			let popupContainer = d3.select('#largePopupContainerOuter');
+			if (!popupContainer.empty() && !popupContainer.classed('noDisp'))
+			{
+				return;
+			}
+			 this._facetList = e.detail.flatFacetList;
+			 if (this.inAverageMode)
+			 {
+				 this.OnDataChange();
+			 }
+		});
+
 	}
 
 	private initQuickPickOptions(): void
@@ -228,7 +258,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			let buttonProp: ButtonProps = {
 				displayName: quickPickOption.yKey + " v. " + quickPickOption.xKey,
-				callback: () => this.changeAxes(quickPickOption.xKey, quickPickOption.yKey, quickPickOption.squareAspectRatio)
+				callback: () => this.changeAxes(quickPickOption.xKey, quickPickOption.yKey, quickPickOption.averaged, quickPickOption.squareAspectRatio)
 			}
 			buttonPropList.push(buttonProp);
 		}
@@ -294,10 +324,23 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.showLabel();
 	}
 
-	private changeAxes(xKey: string, yKey: string, squareAspectRatio: boolean): void
+	private changeAxes(xKey: string, yKey: string, inAverageMode: boolean, squareAspectRatio: boolean): void
 	{
 		this._xKey = xKey;
 		this._yKey = yKey;
+		this._inAverageMode = inAverageMode;
+		if (this.canBrush)
+		{
+			let brushElement = this.brushGroupSelect.node();
+			if (this.inAverageMode)
+			{
+				DevlibTSUtil.hide(brushElement);
+			}
+			else
+			{
+				DevlibTSUtil.show(brushElement);
+			}
+		}
 		this._squareAspectRatio = squareAspectRatio;
 		this.removeBrush();
 		this.OnDataChange();
@@ -310,8 +353,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	private updateScales(): void
 	{
-		let [minX, maxX] = this.fullData.minMaxMap.get(this.xKey);
-		let [minY, maxY] = this.fullData.minMaxMap.get(this.yKey);
+		let minX : number, maxX : number, minY : number, maxY : number;
+		if (this.inAverageMode)
+		{
+			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).averageGrowthCurve));
+			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).averageGrowthCurve));
+		}
+		else
+		{
+			[minY, maxY] = this.fullData.minMaxMap.get(this.yKey);
+		}
+		[minX, maxX] = this.fullData.minMaxMap.get(this.xKey);
 		if (this.squareAspectRatio)
 		{
 			this.makeSquareAspectRatioScales(minX, maxX, minY, maxY);
@@ -320,8 +372,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this.makeStretchedAspectRatioScales(minX, maxX, minY, maxY);
 		}
-
-	
 	}
 
 	private makeSquareAspectRatioScales(minX: number, maxX: number, minY: number, maxY: number): void
@@ -374,6 +424,18 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	private updatePaths(): void
 	{
+		if (this.inAverageMode)
+		{
+			this.updateAveragePaths();
+		}
+		else
+		{
+			this.updateAllPaths()
+		}
+	}
+
+	private updateAllPaths(): void
+	{
 		let line = d3.line<PointND>()
 			.x((d, i) => { return this.scaleX(d.get(this.xKey)) })
 			.y((d) => { return this.scaleY(d.get(this.yKey)) })
@@ -389,6 +451,35 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		for (let curve of this.data.curveList)
 		{
 			const path = new Path2D(line(curve.pointList));
+			canvasContext.stroke(path);
+		}
+	}
+
+	private updateAveragePaths(): void
+	{
+        let lineAvg = d3.line<number>()
+            .x((d, i) => this.scaleX(i + 1))
+            .y(d => this.scaleY(d));
+		
+		const canvasContext = this.canvasElement.getContext('2d');
+		canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight);
+		canvasContext.lineJoin = 'round';
+		
+		for (let i = this.facetList.length - 1; i >= 0 ; i--)
+		{
+			if (i < 10)
+			{
+				canvasContext.globalAlpha = 0.85;
+				canvasContext.lineWidth = 2;
+			}
+			else
+			{
+				canvasContext.globalAlpha = 0.4;
+				canvasContext.lineWidth = 1;
+			}
+			let facet = this.facetList[i];
+			canvasContext.strokeStyle = i >= 10 ? 'black' : d3.schemeCategory10[i];
+			const path = new Path2D(lineAvg(facet.data.averageGrowthCurve));
 			canvasContext.stroke(path);
 		}
 	}
