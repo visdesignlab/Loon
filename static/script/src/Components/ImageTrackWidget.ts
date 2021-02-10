@@ -10,7 +10,6 @@ import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStack
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { CurveList } from '../DataModel/CurveList';
 import { HistogramWidget } from './HistogramWidget';
-import { group } from 'd3';
 
 export class ImageTrackWidget
 {
@@ -21,6 +20,7 @@ export class ImageTrackWidget
         this._verticalPad = 16;
         this._horizontalPad = 8;
         this._trackToPlotPadding = 48;
+        this._exemplarMinWidth = 80;
         this._frameLabelPositions = [];
         this._cellLabelPositions = [];
 
@@ -116,7 +116,6 @@ export class ImageTrackWidget
     public get trackList() : CurveND[] {
         return this._trackList;
     }
-
     
     private _verticalPad : number;
     public get verticalPad() : number {
@@ -182,10 +181,10 @@ export class ImageTrackWidget
     public get sourceDestCell() : [Rect, [number, number], PointND][] {
         return this._sourceDestCell;
     }
-
-    private _facetList : Facet[];
-    public get facetList() : Facet[] {
-        return this._facetList;
+    
+    private _exemplarMinWidth : number;
+    public get exemplarMinWidth() : number {
+        return this._exemplarMinWidth;
     }    
     
     public init(): void
@@ -288,8 +287,6 @@ export class ImageTrackWidget
         DevlibTSUtil.launchSpinner();
         this._trackList = tracks;
         this.updateTitle();
-        // this._facetList = this.getCurrentFacets();
-        this._facetList = this.parentWidget.facetList; // todo just replace
         await this.drawTrackList();
         this.drawLabels();
         this.drawAllPins(tracks);
@@ -448,19 +445,9 @@ export class ImageTrackWidget
         return maxGroupHeight;
     }
 
-    // private getCurrentFacets(): Facet[]
-    // {
-    //     let facetIndex = this.parentWidget.groupByIndexList[0];
-    //     let facetOptions = this.parentWidget.data.GetFacetOptions();
-    //     const firstFacetOption = facetOptions[facetIndex];
-    //     let facets = firstFacetOption.GetFacets();
-    //     return facets;
-    // }
-
     private getConditionNames(): string[]
     {
-        let facets = this.facetList;
-        return facets.map(facet => facet.name);
+        return this.parentWidget.facetList.map(facet => facet.name);
     }
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>
@@ -1116,10 +1103,10 @@ export class ImageTrackWidget
         let binArray: d3.Bin<NDim, number>[][] = [];
         const numBins = 48;
         this._histogramScaleYList = [];
-        for (let i = 0; i < this.facetList.length; i++)
+        for (let i = 0; i < this.parentWidget.facetList.length; i++)
         {
 
-            let data: CurveList = this.facetList[i].data;
+            let data: CurveList = this.parentWidget.facetList[i].data;
 
             let bins = HistogramWidget.calculateBins(
                 data.curveCollection.Array.filter(d => !isNaN(d.get(this.parentWidget.exemplarAttribute))),
@@ -1221,6 +1208,14 @@ export class ImageTrackWidget
 
     private drawExemplarGrowthCurves(): void
     {
+        // todo make this work for exemplar mode when there is not enough space
+        if (!this.parentWidget.inExemplarMode || !this.parentWidget.inCondensedMode)
+        {
+            DevlibTSUtil.hide(this.exemplarCurvesGroup.node());
+            return;
+        }
+        DevlibTSUtil.show(this.exemplarCurvesGroup.node());
+
         this.updateExemplarCurvesOffset();
 
         let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplarPlotGrouper')
@@ -1236,6 +1231,7 @@ export class ImageTrackWidget
                         - this.trackToPlotPadding
                         - rightPadding;
 
+        width = Math.max(width, this.exemplarMinWidth); // min-width: 80
         width = Math.min(width, 200); // max-width: 200
 
         const frameExtent = this.parentWidget.data.getMinMax('Frame ID');
@@ -1285,21 +1281,15 @@ export class ImageTrackWidget
             .each(function(d) {
                 let axisFunc: d3.Axis<number | {valueOf(): number;}>;
                 axisFunc = d[0][0];
-                // if (d[1] == 0)
-                // {
-                //     axisFunc.ticks(5)
-                // }
-                // else
-                // {
-                //     axisFunc.tickFormat(d => null).tickValues([]);
-                // }
                 axisFunc(d3.select(this) as any);
             });
     }
 
     private updateExemplarCurvesOffset(): void
     {
-        const offsetToExemplarCurves = this.cellTimelineMargin.left + Number(this.selectedImageCanvas.attr('width')) + this.trackToPlotPadding;
+        // const contentOffset = Math.min(Number(this.selectedImageCanvas.attr('width')), this.innerContainerW);
+        const contentOffset = Number(this.selectedImageCanvas.attr('width'));
+        const offsetToExemplarCurves = this.cellTimelineMargin.left + contentOffset + this.trackToPlotPadding;
         this.exemplarCurvesGroup.attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);
     }
 
@@ -1329,7 +1319,7 @@ export class ImageTrackWidget
             .y(d => scaleY(d));
 
         let averageGrowthLines: string[] = [];
-        for (let facet of this.facetList)
+        for (let facet of this.parentWidget.facetList)
         {
             let averageGrowthCurve = facet.data.averageGrowthCurve;
             let averageGrowthCurveString = lineAvg(averageGrowthCurve);
