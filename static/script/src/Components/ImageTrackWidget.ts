@@ -356,10 +356,12 @@ export class ImageTrackWidget
 
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
         let totalHeight = this.verticalPad * (this.trackList.length + 1);
+        const betweenGroupPad = 16;
         if (this.parentWidget.inExemplarMode)
         {
-
-            totalHeight += maxGroupContentHeight * (this.trackList.length / numExemplars);
+            const numGroups = (this.trackList.length / numExemplars);
+            totalHeight += maxGroupContentHeight * numGroups;
+            totalHeight += betweenGroupPad * numGroups;
         }
         else
         {
@@ -375,7 +377,6 @@ export class ImageTrackWidget
 
         let drawTrackPromises = [];
         let verticalOffsetList = [];
-        const betweenGroupPad = 16;
         for (let i = 0; i < this.trackList.length; i++)
         {
             let track = this.trackList[i];

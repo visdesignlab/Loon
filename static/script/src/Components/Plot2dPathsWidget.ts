@@ -6,6 +6,7 @@ import {SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
 import { DatasetSpec, Facet } from '../types';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 interface quickPickOption {
 	xKey: string,
@@ -208,7 +209,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this._brushGroupSelect = this.svgSelect.append("g")
 				.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
-				.classed("brushContainer", true);
+				.classed('brushContainer', true)
+				.classed('noDisp', this.inAverageMode);
+
 			this.initBrush();
 		}
 
@@ -226,14 +229,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 		this.initQuickPickOptions();
 
-		document.addEventListener('groupByChanged', async (e: CustomEvent) => {
+		document.addEventListener('groupByChanged', async (e: CustomEvent) =>
+		{
 			 this._facetList = e.detail.flatFacetList;
-			 this.OnDataChange();
+			 if (this.inAverageMode)
+			 {
+				 this.OnDataChange();
+			 }
 		});
 
-		document.addEventListener('imageSelectionRedraw', (e: CustomEvent) => {
-			this.OnDataChange();
-		});
 	}
 
 	private initQuickPickOptions(): void
@@ -319,7 +323,16 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		this._xKey = xKey;
 		this._yKey = yKey;
-		this._inAverageMode = inAverageMode
+		this._inAverageMode = inAverageMode;
+		let brushElement = this.brushGroupSelect.node();
+		if (this.inAverageMode)
+		{
+			DevlibTSUtil.hide(brushElement);
+		}
+		else
+		{
+			DevlibTSUtil.show(brushElement);
+		}
 		this._squareAspectRatio = squareAspectRatio;
 		this.removeBrush();
 		this.OnDataChange();
