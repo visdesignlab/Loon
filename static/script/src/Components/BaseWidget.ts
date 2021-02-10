@@ -22,8 +22,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		{
 			if (this.showingFacetPopup)
 			{
-				this.drawFacetedData(e.detail.groupIndex);
-				// todo - use flatFacetList to simplify
+				this.drawFacetedData(e.detail.flatFacetList);
 			}
 		});
 		this._showingFacetPopup = false;
@@ -253,40 +252,18 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		contentContainer.classList.add('largePopupContent');
 		this.largePopup.appendChild(contentContainer);
 		this._largePopupContent = contentContainer;
-		this.drawFacetedData(groupByWidget.currentSelectionIndexList);
+		this.drawFacetedData(groupByWidget.getFlatFacetList());
 	}
 
-	protected drawFacetedData(facetOptionIndexList: number[]): void
+	protected drawFacetedData(facetList: Facet[]): void
 	{
-		this.drawFacetedDataDefaultRecurse(facetOptionIndexList);
-	}
-
-	protected drawFacetedDataDefaultRecurse(remainingSubFacetIndices: number[], width: string = '500px', height: string = '250px', titleSoFar?: string, facet?: Facet): void
-	{
-		if (remainingSubFacetIndices.length === 0)
+		const width: string = '500px';
+		const height: string = '250px';
+		this.largePopupContent.innerHTML = null;
+		for (let facet of facetList)
 		{
-			this.drawFacetedDataDefault(titleSoFar, facet.data, width, height);
-			return;
+			this.drawFacetedDataDefault(facet.name, facet.data, width, height);
 		}
-		let data: DataType;
-		if (facet)
-		{
-			data = facet.data;
-		}
-		else
-		{
-			data = this.data;
-			this.largePopupContent.innerHTML = null;
-		}
-		let facetOptions = data.GetFacetOptions();
-		let thisFacetOption = facetOptions[remainingSubFacetIndices[0]];
-		
-		for (let childFacet of thisFacetOption.GetFacets())
-		{
-			let nextTitle: string = titleSoFar ? titleSoFar + ', ' + childFacet.name : childFacet.name;
-			this.drawFacetedDataDefaultRecurse(remainingSubFacetIndices.slice(1), width, height, nextTitle, childFacet)
-		}
-
 	}
 
 	private drawFacetedDataDefault(title: string, data: DataType, width: string, height: string): void

@@ -324,14 +324,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._xKey = xKey;
 		this._yKey = yKey;
 		this._inAverageMode = inAverageMode;
-		let brushElement = this.brushGroupSelect.node();
-		if (this.inAverageMode)
+		if (this.canBrush)
 		{
-			DevlibTSUtil.hide(brushElement);
-		}
-		else
-		{
-			DevlibTSUtil.show(brushElement);
+			let brushElement = this.brushGroupSelect.node();
+			if (this.inAverageMode)
+			{
+				DevlibTSUtil.hide(brushElement);
+			}
+			else
+			{
+				DevlibTSUtil.show(brushElement);
+			}
 		}
 		this._squareAspectRatio = squareAspectRatio;
 		this.removeBrush();
