@@ -251,6 +251,12 @@ export class ImageStackWidget {
 		});
 
 		document.addEventListener('groupByChanged', async (e: CustomEvent) => {
+			let popupContainer = d3.select('#largePopupContainerOuter');
+			if (!popupContainer.empty() && !popupContainer.classed('noDisp'))
+			{
+				return;
+			}
+
 			DevlibTSUtil.launchSpinner();
 			// await DevlibTSUtil.makeAsync(() => this._groupByIndexList = e.detail.groupIndex);
 			await DevlibTSUtil.makeAsync(() => this._facetList = e.detail.flatFacetList);

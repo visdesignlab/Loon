@@ -231,6 +231,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 		document.addEventListener('groupByChanged', async (e: CustomEvent) =>
 		{
+			let popupContainer = d3.select('#largePopupContainerOuter');
+			if (!popupContainer.empty() && !popupContainer.classed('noDisp'))
+			{
+				return;
+			}
 			 this._facetList = e.detail.flatFacetList;
 			 if (this.inAverageMode)
 			 {

@@ -259,7 +259,10 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	{
 		const width: string = '500px';
 		const height: string = '250px';
-		this.largePopupContent.innerHTML = null;
+		if (this.largePopupContent)
+		{
+			this.largePopupContent.innerHTML = null;
+		}
 		for (let facet of facetList)
 		{
 			this.drawFacetedDataDefault(facet.name, facet.data, width, height);
