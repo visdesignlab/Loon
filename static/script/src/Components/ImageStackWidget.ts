@@ -24,12 +24,11 @@ export class ImageStackWidget {
 		console.log(this);
 		this._tooltip = new RichTooltip();
 		this._exemplarAttribute = 'Avg Mass'; // TODO change default
-		this._inExemplarMode = true; // TODO
-		this._inCondensedMode = true; // TODO mode
+		this._inExemplarMode = true;
+		this._inCondensedMode = true;
 		this._condensedModeCount = 7;
 		this._exemplarLocations = new Set();
 		this._exemplarFrames = new Map();
-		// this._groupByIndexList = [0];
 		this._facetList = [];
 		this._numExemplars = 3;
 	}
@@ -171,11 +170,6 @@ export class ImageStackWidget {
 	public get exemplarFrames(): Map<number, Set<number>> {
 		return this._exemplarFrames;
 	}
-
-	// private _groupByIndexList : number[];
-	// public get groupByIndexList() : number[] {
-	// 	return this._groupByIndexList;
-	// }
 
 	private _facetList: Facet[];
 	public get facetList(): Facet[] {
@@ -350,8 +344,6 @@ export class ImageStackWidget {
 	private updateTracksCanvas(): void {
 		let curveList: CurveND[];
 		if (this.inExemplarMode) {
-			// let facetIndex = this._groupByIndexList[0];
-			// todo - handle sub-facets
 			curveList = this.getExemplarCurves();
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
@@ -380,11 +372,6 @@ export class ImageStackWidget {
 
 	private getExemplarCurves(): CurveND[] {
 		let curveList: CurveND[] = [];
-		// let facetOptions = this.data.GetFacetOptions();
-
-		// const firstFacetOption = facetOptions[facetIndex];
-		// const facetName = firstFacetOption.name;
-		// let facets = firstFacetOption.GetFacets();
 		const trackLengthKey = 'Track Length';
 		for (let facet of this.facetList) {
 			let facetData: CurveList = facet.data;
