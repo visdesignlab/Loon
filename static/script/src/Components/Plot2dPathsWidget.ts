@@ -6,7 +6,6 @@ import {SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
 import { DatasetSpec } from '../types';
-import { thresholdFreedmanDiaconis } from 'd3';
 
 interface quickPickOption {
 	xKey: string,
