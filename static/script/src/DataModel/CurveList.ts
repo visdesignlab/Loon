@@ -1,11 +1,10 @@
-import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
 import { PointCollection, valueFilter } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
-import { DatasetSpec, FacetOption, Facet, AppData, LocationMapList, LocationMapTemplate } from '../types';
+import { DatasetSpec, Facet, AppData, LocationMapList, LocationMapTemplate } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 
 export class CurveList extends PointCollection implements AppData<DatasetSpec>
@@ -313,7 +312,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this.updateBrush();
 	}
 
-	public addCurveBrush(brushKey: string, filters: valueFilter[]): void
+	public addCurveBrush(brushKey: string, filters: [valueFilter, valueFilter]): void
 	{
 		this.curveBrushList.set(brushKey, filters);
 		this.updateBrush();
