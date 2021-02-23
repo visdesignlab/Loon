@@ -5,8 +5,7 @@ import {PointND} from '../DataModel/PointND';
 import {SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
 import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
-import { DatasetSpec, Facet } from '../types';
-import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
+import { DatasetSpec } from '../types';
 
 interface quickPickOption {
 	xKey: string,
