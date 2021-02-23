@@ -148,11 +148,12 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 			// console.log(data);
 			let newData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
 			// console.log(newData);
-			this.SetData(newData);
+			let filteredData = newData;
+			this.SetData(newData, filteredData);
 		});
 	}
 
-	public SetData(newData: DataType): void
+	public SetData(newData: DataType, filteredData: DataType): void
 	{
 		console.log("App.SetData: ");
 		console.log(newData);
@@ -161,7 +162,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		{
 			if (component instanceof BaseWidget)
 			{
-					component.SetData(newData);
+					component.SetData(filteredData, newData);
 			}
 		}
 	}

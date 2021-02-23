@@ -34,10 +34,10 @@ export class Toolbar extends BaseComponent {
 				tooltip: 'Return to overview screen'
 			},
 			{
-				type: 'toggleButton',
-				iconKeys: ['eye-slash', 'eye'],
+				type: 'single',
+				iconKey: 'filter',
 				callback: (state: boolean) => console.log('toggle', state),
-				tooltips: ['Only showing longer tracks, click to show all cells.', 'Showing all cells, click to show only long tracks.']
+				tooltip: 'View and modify filter state'
 			},
 			{
 				type: 'optionSelect',
