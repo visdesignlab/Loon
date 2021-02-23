@@ -1,8 +1,9 @@
 {
     "compilerOptions": {
-        "target": "ES2017",
+        "target": "ES2020",
         "lib":[
-            "es2020",
+            "ES2020",
+            "ES2020.Promise",
             "DOM",
             "ES6",
             "DOM.Iterable",

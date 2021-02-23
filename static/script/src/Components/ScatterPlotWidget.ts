@@ -4,27 +4,34 @@ import {BaseWidget} from './BaseWidget';
 import { NDim } from '../devlib/DevlibTypes';
 import {valueFilter, PointCollection} from '../DataModel/PointCollection';
 import { DatasetSpec, Facet } from '../types';
+import { treemapSquarify } from 'd3';
 
 export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	
-	constructor(container: HTMLElement, xKey: string, yKey: string, canBrush: boolean = true)
+	constructor(container: HTMLElement, xKey: string, yKey: string, canBrush: boolean = true, isClone: boolean = false)
 	{
 		super(container, true, canBrush);
 		this._xKey = xKey;
 		this._yKey = yKey;
+		this._isClone = isClone;
 		this.setLabel();
 	}
 
 	protected Clone(container: HTMLElement): BaseWidget<PointCollection, DatasetSpec>
     {
 		const canBrush = false;
-        return new ScatterPlotWidget(container, this.xKey,  this.yKey, canBrush);
+        return new ScatterPlotWidget(container, this.xKey,  this.yKey, canBrush, true);
 	}
 	
 	protected initProps(props?: any[]): void
 	{
 		super.initProps();
 		this._canBrush = props[0];
+	}
+
+	private _isClone : boolean;
+	public get isClone() : boolean {
+		return this._isClone;
 	}
 
 	private _xKey : string;
@@ -222,12 +229,21 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 
 	private updateScales(): void
 	{
-		let minMaxX = this.fullData.getMinMax(this.xKey);
+		let data: PointCollection;
+		if (this.isClone)
+		{
+			data = this.fullData;
+		}
+		else
+		{
+			data = this.data;
+		}
+		let minMaxX = data.getMinMax(this.xKey);
 		this._scaleX = d3.scaleLinear()
 			.domain(minMaxX)
 			.range([0, this.vizWidth]);
 
-		let minMaxY = this.fullData.getMinMax(this.yKey);
+		let minMaxY = data.getMinMax(this.yKey);
 		this._scaleY = d3.scaleLinear()
 			.domain(minMaxY)
 			.range([this.vizHeight, 0]);

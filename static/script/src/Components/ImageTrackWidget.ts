@@ -425,7 +425,9 @@ export class ImageTrackWidget
             offset += maxWidth / 2;
             this._frameLabelPositions.push([frameId, offset]);
         }
-        await Promise.allSettled(drawTrackPromises);
+        // I don't know why gulp isn't recognizing allSettled. The version should
+        // be correct. But I'm tired of seeing the error.
+        await (Promise as any).allSettled(drawTrackPromises);
         DevlibTSUtil.stopSpinner();
     }
 

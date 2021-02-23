@@ -14,19 +14,29 @@ interface BoxplotStats {
 export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 
-    constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel, attributeKey: string)
+    constructor(
+        container: Element,
+        metricDistributionCollectionLevel: MetricDistributionCollectionLevel,
+        attributeKey: string, 
+        isClone: boolean = false)
     {
         super(container, true);
         this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
         this._attributeKey = attributeKey;
         this.setLabel();
+		this._isClone = isClone;
     }
 
     protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        let clone = new DetailedDistributionWidget(container, this.metricDistributionCollectionLevel, this.attributeKey);
+        let clone = new DetailedDistributionWidget(container, this.metricDistributionCollectionLevel, this.attributeKey, true);
         return clone;
     }
+
+	private _isClone : boolean;
+	public get isClone() : boolean {
+		return this._isClone;
+	}
 
     private _metricDistributionCollectionLevel : MetricDistributionCollectionLevel;
     public get metricDistributionCollectionLevel() : MetricDistributionCollectionLevel {
@@ -293,7 +303,17 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 
     private updateScales(): void
     {
-        let distributionMinMax = this.fullPointCollection.getMinMax(this.attributeKey);
+		let data: PointCollection;
+		if (this.isClone)
+		{
+			data = this.fullPointCollection;
+		}
+		else
+		{
+			data = this.pointCollection;
+		}
+
+        let distributionMinMax = data.getMinMax(this.attributeKey);
         // let distributionMinMax = this.pointCollection.getMinMax(this.attributeKey);
         this._scaleX = d3.scaleLinear<number, number>()
                         .domain(distributionMinMax)

@@ -7,6 +7,7 @@ import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
 import { DatasetSpec, Facet } from '../types';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
+import { textSpanIntersectsWithPosition } from 'typescript';
 
 interface quickPickOption {
 	xKey: string,
@@ -17,18 +18,29 @@ interface quickPickOption {
 
 export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
-	constructor(container: Element, quickPickOptions: quickPickOption[], initialQuickPickOptionIndex: number = 0, squareAspectRatio: boolean = true, canBrush: boolean = true)
+	constructor(container: Element,
+		quickPickOptions: quickPickOption[],
+		initialQuickPickOptionIndex: number = 0,
+		squareAspectRatio: boolean = true,
+		canBrush: boolean = true,
+		isClone: boolean = false)
 	{
 		super(container, true, quickPickOptions, initialQuickPickOptionIndex, canBrush);
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
 		this._facetList = [];
+		this._isClone = isClone;
 	}
 	
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
 		const canBrush = false;
-		return new Plot2dPathsWidget(container, this.quickPickOptions, this.quickPickOptionSelect.currentSelectionIndex, this.squareAspectRatio, canBrush);
+		return new Plot2dPathsWidget(container, this.quickPickOptions, this.quickPickOptionSelect.currentSelectionIndex, this.squareAspectRatio, canBrush, true);
+	}
+
+	private _isClone : boolean;
+	public get isClone() : boolean {
+		return this._isClone;
 	}
 
 	protected initProps(props?: any[]): void
@@ -361,7 +373,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		}
 		else
 		{
-			[minY, maxY] = this.fullData.minMaxMap.get(this.yKey);
+			let data: CurveList;
+			if (this.isClone)
+			{
+				data = this.fullData;
+			}
+			else
+			{
+				data = this.data;
+			}
+
+			[minY, maxY] = data.minMaxMap.get(this.yKey);
 		}
 		[minX, maxX] = this.fullData.minMaxMap.get(this.xKey);
 		if (this.squareAspectRatio)

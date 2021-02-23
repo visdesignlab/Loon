@@ -18,16 +18,24 @@ interface boolWithIndex {
 export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
 
-	constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel)
+	constructor(container: Element,
+		metricDistributionCollectionLevel: MetricDistributionCollectionLevel,
+		isClone: boolean = false)
 	{
 		super(container);
 		this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
+		this._isClone = isClone;
 	}
 
     protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        return new MetricDistributionWidget(container, this.metricDistributionCollectionLevel);
+        return new MetricDistributionWidget(container, this.metricDistributionCollectionLevel, true);
     }
+
+	private _isClone : boolean;
+	public get isClone() : boolean {
+		return this._isClone;
+	}
 
 	private _wrapperContainer : HTMLDivElement;
 	public get wrapperContainer() : HTMLDivElement {

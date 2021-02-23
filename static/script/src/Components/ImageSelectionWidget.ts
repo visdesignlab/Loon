@@ -14,10 +14,21 @@ import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
+    constructor(container: HTMLElement, isClone: boolean = false)
+    {
+        super(container);
+        this._isClone = isClone;
+    }
+
     protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        return new ImageSelectionWidget(container);
+        return new ImageSelectionWidget(container, true);
     }
+
+	private _isClone : boolean;
+	public get isClone() : boolean {
+		return this._isClone;
+	}
 
     private _imageMetaData : ImageMetaData;
     public get imageMetaData() : ImageMetaData {
@@ -177,7 +188,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	public OnDataChange()
 	{
-        this._imageMetaData = ImageMetaData.fromPointCollection(this.data);
+        this._imageMetaData = ImageMetaData.fromPointCollection(this.fullData);
         this._imageStackDataRequest = new ImageStackDataRequest(this.data.Specification.googleDriveId);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
         this.groupByWidget.updateGroupByOptions(this.data);
@@ -196,7 +207,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         });
 
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
+        this.imageStackWidget.SetData(this.fullData, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
     }
 
 	protected OnResize(): void
@@ -379,7 +390,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             })
 
         const marginW = 4;
-        const frameExtent: [number, number] = this.data.getMinMax('Frame ID');
+        const frameExtent: [number, number] = this.fullData.getMinMax('Frame ID');
         this._frameScaleX = d3.scaleLinear()
             .domain(frameExtent)
             .range([marginW, miniWidth -  marginW]);
@@ -499,7 +510,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             this.removeHoverBar(svgContainer);
             return;
         }
-        const curve = this.data.curveLookup.get(cellId);
+        const curve = this.fullData.curveLookup.get(cellId);
         const firstPoint = curve.pointList[0];
         const lowFrameId = firstPoint.get("Frame ID");
         const locId = firstPoint.get('Location ID')

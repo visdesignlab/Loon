@@ -9,19 +9,30 @@ import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
-	constructor(container: HTMLElement, valueKey: string, canBrush: boolean = true, includeExemplarTrackButton: boolean = false)
+	constructor(
+		container: HTMLElement,
+		valueKey: string,
+		canBrush: boolean = true,
+		includeExemplarTrackButton: boolean = false,
+		isClone: boolean = false)
 	{
 		super(container, true, canBrush, includeExemplarTrackButton);
 		this._valueKey = valueKey;
 		this.setLabel();
+		this._isClone = isClone;
 	}
 
     protected Clone(container: HTMLElement): BaseWidget<PointCollection, DatasetSpec>
     {
 		const canBrush = false;
-        let clone = new HistogramWidget(container, this.valueKey, canBrush);
+        let clone = new HistogramWidget(container, this.valueKey, canBrush, true);
         return clone;
     }
+
+	private _isClone : boolean;
+	public get isClone() : boolean {
+		return this._isClone;
+	}
 
 	protected initProps(props?: any[]): void
 	{
