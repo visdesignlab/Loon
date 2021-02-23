@@ -172,8 +172,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
                 .attr('height', this.vizHeight - 2 * this.scatterplotPadding)
                 .attr('style',
                 `position: absolute;
-                transform: translate(${this.margin.left}px, ${this.margin.top + this.scatterplotPadding}px);
-                z-index: -1`)
+                transform: translate(${this.margin.left}px, ${this.margin.top + this.scatterplotPadding}px);`)
             .node() as HTMLCanvasElement;
         
         // I originally put the canvas inside the svg in a foreignObject. This didn't work because
