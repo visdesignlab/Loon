@@ -43,6 +43,8 @@ export enum MetricDistributionCollectionLevel {
 export interface AppData<SpecType> {
 	GetFacetOptions: () => FacetOption[];
 	OnBrushChange: () => void;
+	CreateFilteredCurveList: () => AppData<SpecType>;
+	ApplyDefaultFilters: () => void;
 	Specification: SpecType
 }
 

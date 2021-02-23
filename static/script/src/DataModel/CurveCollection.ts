@@ -2,11 +2,17 @@ import { NDim } from '../devlib/DevlibTypes'
 import { CurveCollectionIterator } from './CurveCollectionIterator';
 import { PointCollection } from './PointCollection';
 import { CurveList } from './CurveList';
-import { Facet, LocationMapList, LocationMapTemplate, DatasetSpec } from '../types';
+import { Facet, LocationMapList, LocationMapTemplate, DatasetSpec, AppData } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 
 export class CurveCollection extends PointCollection
 {
+    public CreateFilteredCurveList(): AppData<DatasetSpec> {
+        throw new Error('Method not implemented.');
+    }
+    public ApplyDefaultFilters(): void {
+        throw new Error('Method not implemented.');
+    }
     constructor(curveList: CurveList, spec: DatasetSpec)
     {
         super();

@@ -37,7 +37,12 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	public get data() : DataType {
 		return this._data;
 	}
-	
+
+	private _filteredData : DataType;
+	public get filteredData() : DataType {
+		return this._filteredData;
+	}
+
 	private _container : HTMLElement;
 	public get container() : HTMLElement {
 		return this._container;
@@ -146,23 +151,26 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		await d3.csv("../../../data/" + filename).then(data =>
 		{
 			// console.log(data);
-			let newData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
+			let allData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
 			// console.log(newData);
-			let filteredData = newData;
-			this.SetData(newData, filteredData);
+			allData.ApplyDefaultFilters();
+			allData.OnBrushChange();
+			let filteredData = allData.CreateFilteredCurveList() as DataType;
+			this.SetData(filteredData, allData);
 		});
 	}
 
-	public SetData(newData: DataType, filteredData: DataType): void
+	public SetData(filteredData: DataType, allData: DataType): void
 	{
 		console.log("App.SetData: ");
-		console.log(newData);
-		this._data = newData;
+		console.log(allData);
+		this._filteredData = filteredData;
+		this._data = allData;
 		for (let component of this.componentList)
 		{
 			if (component instanceof BaseWidget)
 			{
-					component.SetData(filteredData, newData);
+					component.SetData(filteredData, allData);
 			}
 		}
 	}
@@ -177,8 +185,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 
 	private onBrushChange(): void
 	{
-
-		this.data.OnBrushChange();
+		this.filteredData.OnBrushChange();
 		for (let component of this.componentList)
 		{
 			if (component instanceof BaseWidget)

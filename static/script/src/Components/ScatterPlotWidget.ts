@@ -3,7 +3,7 @@ import {SvgSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
 import { NDim } from '../devlib/DevlibTypes';
 import {valueFilter, PointCollection} from '../DataModel/PointCollection';
-import { DatasetSpec } from '../types';
+import { DatasetSpec, Facet } from '../types';
 
 export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	
@@ -215,9 +215,9 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		}
 	}
 
-	protected drawFacetedData(facetOptionIndexList: number[]): void
+	protected drawFacetedData(facetList: Facet[]): void
 	{
-		this.drawFacetedDataDefaultRecurse(facetOptionIndexList, "300px", "300px");
+		this.drawFacetedDataDefault(facetList, "300px", "300px");
 	}
 
 	private updateScales(): void

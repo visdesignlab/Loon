@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { PointCollection } from '../DataModel/PointCollection';
 import { BaseWidget } from './BaseWidget';
-import { MetricDistributionCollectionLevel, DatasetSpec } from '../types';
+import { MetricDistributionCollectionLevel, DatasetSpec, Facet } from '../types';
 import { SvgSelection, NDim, HtmlSelection } from '../devlib/DevLibTypes';
 import { CurveList } from '../DataModel/CurveList';
 
@@ -294,6 +294,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
     private updateScales(): void
     {
         let distributionMinMax = this.fullPointCollection.getMinMax(this.attributeKey);
+        // let distributionMinMax = this.pointCollection.getMinMax(this.attributeKey);
         this._scaleX = d3.scaleLinear<number, number>()
                         .domain(distributionMinMax)
                         .range([0, this.vizWidth]);
@@ -343,9 +344,9 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         this.positionLabels();
     }
 
-	protected drawFacetedData(facetOptionIndexList: number[]): void
+	protected drawFacetedData(facetList: Facet[]): void
 	{
-        this.drawFacetedDataDefaultRecurse(facetOptionIndexList, "95%", "170px");
+        this.drawFacetedDataDefault(facetList, "95%", "170px");
 	}
 
     private showLabel(): void

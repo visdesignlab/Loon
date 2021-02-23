@@ -18,7 +18,7 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		this._minMaxCache = new Map<string, [number, number]>();
 		this._brushList = new Map<string, Map<string, [number, number]>>();
 	}
-	
+
 	abstract [Symbol.iterator](): Iterator<NDim>;
 
 	private _Specification : DatasetSpec;
@@ -82,6 +82,8 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 	}
 
 	public abstract OnBrushChange(): void;
+	public abstract CreateFilteredCurveList(): AppData<DatasetSpec>;
+	public abstract ApplyDefaultFilters(): void;
 
 	public GetFacetOptions(): FacetOption[]
 	{
@@ -145,6 +147,12 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 
 	public addBrush(brushKey: string, ...filters: valueFilter[]): void
 	{
+		this.addBrushNoUpdate(brushKey, ...filters);
+		this.updateBrush();
+	}
+
+	public addBrushNoUpdate(brushKey: string, ...filters: valueFilter[]): void
+	{
 		if (!this.brushList.has(brushKey))
 		{
 			this.brushList.set(brushKey, new Map<string, [number, number]>());
@@ -155,7 +163,7 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 
 			thisMap.set(filter.key, filter.bound)
 		}
-		this.updateBrush();
+		return
 	}
 
 	public removeBrush(brushKey: any): void

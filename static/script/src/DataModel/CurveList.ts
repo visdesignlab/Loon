@@ -122,6 +122,25 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return this._locationList;
 	}	
 
+	public CreateFilteredCurveList(): CurveList
+	{
+		let filteredCurveArray = this.curveList.filter(curve => curve.inBrush);
+		return new CurveList(filteredCurveArray, this.Specification);
+	}
+
+	public ApplyDefaultFilters(): void
+	{
+		const trackLengthKey = 'Track Length';
+
+		const [_, maxLength] = this.curveCollection.getMinMax(trackLengthKey);
+		const filter: valueFilter = {
+			key: trackLengthKey,
+			bound: [maxLength / 2, maxLength]
+		}
+
+		this.curveCollection.addBrushNoUpdate('default', filter);
+	}
+
 	public GetCellsAtFrame(locationId: number, frameId: number): PointND[]
 	{
 		if (this._locationFrameSegmentLookup.has(locationId))
