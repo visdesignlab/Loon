@@ -79,6 +79,7 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 	public abstract OnBrushChange(): void;
 	public abstract CreateFilteredCurveList(): AppData<DatasetSpec>;
 	public abstract ApplyDefaultFilters(): void;
+	public abstract ConsumeFilters(AppData: any): void;
 
 	public GetFacetOptions(): FacetOption[]
 	{

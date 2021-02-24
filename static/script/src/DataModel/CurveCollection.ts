@@ -27,6 +27,7 @@ export class CurveCollection extends PointCollection
     }
     
     public OnBrushChange(): void { }
+	public ConsumeFilters: (AppData: any) => void;
 
 	protected getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[]
 	{
