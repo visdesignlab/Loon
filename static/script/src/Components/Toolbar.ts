@@ -37,18 +37,6 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				tooltip: 'Return to overview screen'
 			},
 			{
-				type: 'toggleButton',
-				iconKeys: ['filter', 'filter'],
-				callback: (state: boolean) => console.log('toggle', state),
-				tooltips: ['View and modify data filters', 'close']
-			},
-			{
-				type: 'toggleButton',
-				iconKeys: ['th', 'th'],
-				callback: (state: boolean) => console.log('toggle', state),
-				tooltips: ['View and modify conditional filters', 'close']
-			},
-			{
 				type: 'optionSelect',
 				iconKeys: ['bars', 'stream', 'clone'],
 				defaultIndex: 0,
@@ -81,6 +69,18 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 					await DevlibTSUtil.makeAsync(() => document.dispatchEvent(modeChangeEvent));
 				},
 				tooltips: ['Condensed Mode', 'Expanded Mode', 'Frame Mode']
+			},
+			{
+				type: 'toggleButton',
+				iconKeys: ['filter', 'filter'],
+				callback: (state: boolean) => console.log('toggle', state),
+				tooltips: ['View and modify data filters', 'close']
+			},
+			{
+				type: 'toggleButton',
+				iconKeys: ['th', 'th'],
+				callback: (state: boolean) => console.log('toggle', state),
+				tooltips: ['View and modify conditional filters', 'close']
 			}
 		]
 	}

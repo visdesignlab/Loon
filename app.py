@@ -634,9 +634,10 @@ def getImageStackMetaDataJson(folderId: str):
 @authRequired
 def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
     # to make local testing less painful
-    filename = 'img_{}_{}.jpg'.format(locationId, bundleIndex)
-    if isCached(folderId, filename):
-        return getCached(folderId, filename)
+    folder = '{}/data{}'.format(folderId, locationId)
+    filename = 'D{}.jpg'.format(bundleIndex)
+    if isCached(folder, filename):
+        return getCached(folder, filename)
 
     innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
     if innerFolderId is None:
@@ -652,9 +653,10 @@ def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
 @authRequired
 def getImageLabelBundle(folderId: str, locationId: int, bundleIndex: int):
     # to make local testing less painful
-    filename = 'label_{}_{}.pb'.format(locationId, bundleIndex)
-    if isCached(folderId, filename):
-        return getCached(folderId, filename)
+    folder = '{}/data{}'.format(folderId, locationId)
+    filename = 'L{}.pb'.format(bundleIndex)
+    if isCached(folder, filename):
+        return getCached(folder, filename)
 
     innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
     if innerFolderId is None:
