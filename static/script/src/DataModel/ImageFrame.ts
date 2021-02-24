@@ -31,6 +31,10 @@ export class ImageFrame
     }
     
     public get inBrushPercent() : number {
+        if (this.totalCount === 0)
+        {
+            return 0;
+        }
         return this.inBrushCount / this.totalCount;
     }
 

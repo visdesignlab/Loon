@@ -408,7 +408,14 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .join('line')
             .attr('x1', d => this.frameScaleX(d.frameId))
             .attr('x2', d => this.frameScaleX(d.frameId))
-            .attr('y1', d => (this.frameHeight - this.frameScaleHeight(d.inBrushPercent)) / 2)
+            .attr('y1', d => 
+                {
+                    // if (isNaN(d.inBrushPercent))
+                    // {
+                    //     return this.frameHeight - this.
+                    // }
+                    return (this.frameHeight - this.frameScaleHeight(d.inBrushPercent)) / 2;
+                })
             .attr('y2', d => this.frameHeight - (this.frameHeight - this.frameScaleHeight(d.inBrushPercent)) / 2)
             .attr('stroke-width', d => scaleLineWidth(d.inBrushPercent))
             .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
