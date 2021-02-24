@@ -384,7 +384,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 			[minY, maxY] = data.minMaxMap.get(this.yKey);
 		}
-		[minX, maxX] = this.fullData.minMaxMap.get(this.xKey);
+		[minX, maxX] = this.data.minMaxMap.get(this.xKey);
 		if (this.squareAspectRatio)
 		{
 			this.makeSquareAspectRatioScales(minX, maxX, minY, maxY);
