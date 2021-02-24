@@ -4,7 +4,7 @@ import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { BaseWidget } from './BaseWidget';
 import { CurveList } from '../DataModel/CurveList';
 import { dataFilter, DatasetSpec, valueFilter } from '../types';
-import { EndOfLineState } from 'typescript';
+import { DataEvents } from '../DataModel/DataEvents';
 
 export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
@@ -220,9 +220,9 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 	private onDataFilterClick(show: boolean): void
 	{
+		this.modalPopupDiv.innerHTML = null;
 		if (!show)
 		{
-			this.modalPopupDiv.innerHTML = null;
 			return;
 		}
 
@@ -239,7 +239,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			this.data.GetAllFilters());
 
 
-		let buttonElement = DevlibTSUtil.getIconButton('long-arrow-alt-right', () => console.log('todo'), 'Convert ');
+		let buttonElement = DevlibTSUtil.getIconButton('long-arrow-alt-right', () => this.triggerSelectionToFilterEvent(), 'Convert ');
 
 		convertDiv.attr('style', 'align-self: center;').node().appendChild(buttonElement);
 
@@ -303,6 +303,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				displayString += ' at least once.';
 				return displayString;
 			});
+	}
+
+	private triggerSelectionToFilterEvent(): void
+	{
+		document.dispatchEvent(new CustomEvent(DataEvents.selectionToFilter));
+		this.onDataFilterClick(true);
 	}
 
 

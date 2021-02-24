@@ -47,7 +47,8 @@ export interface AppData<SpecType> {
 	OnBrushChange: () => void;
 	CreateFilteredCurveList: () => AppData<SpecType>;
 	ApplyDefaultFilters: () => void;
-	Specification: SpecType
+	ConsumeFilters: (AppData) => void;
+	Specification: SpecType;
 }
 
 export interface FacetOption {

@@ -187,6 +187,39 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return dataFilters;
 	}
 
+	public ConsumeFilters(otherCurveList: CurveList): void
+	{
+		// curve filters
+		for (let [key, filters] of otherCurveList.curveBrushList.entries())
+		{
+			this.curveBrushList.set(key, filters);
+		}
+
+		// cell filters
+		for (let [key, filterMap] of otherCurveList.brushList.entries())
+		{
+			for (let [attributeKey, extent] of filterMap.entries())
+			{
+				this.addBrushNoUpdate(key, {
+					key: attributeKey,
+					bound: extent
+				});
+			}
+		}
+
+		// track filters
+		for (let [key, filterMap] of otherCurveList.curveCollection.brushList.entries())
+		{
+			for (let [attributeKey, extent] of filterMap.entries())
+			{
+				this.curveCollection.addBrushNoUpdate(key, {
+					key: attributeKey,
+					bound: extent
+				});
+			}
+		}
+	}
+
 	public GetCellsAtFrame(locationId: number, frameId: number): PointND[]
 	{
 		if (this._locationFrameSegmentLookup.has(locationId))
