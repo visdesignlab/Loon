@@ -189,18 +189,20 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 
 	public ConsumeFilters(otherCurveList: CurveList): void
 	{
+
 		// curve filters
 		for (let [key, filters] of otherCurveList.curveBrushList.entries())
 		{
-			this.curveBrushList.set(key, filters);
+			this.curveBrushList.set(key + Date.now(), filters);
 		}
 
 		// cell filters
 		for (let [key, filterMap] of otherCurveList.brushList.entries())
 		{
+			let timedKey = key + Date.now();
 			for (let [attributeKey, extent] of filterMap.entries())
 			{
-				this.addBrushNoUpdate(key, {
+				this.addBrushNoUpdate(timedKey, {
 					key: attributeKey,
 					bound: extent
 				});
@@ -210,9 +212,10 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		// track filters
 		for (let [key, filterMap] of otherCurveList.curveCollection.brushList.entries())
 		{
+			let timedKey = key + Date.now();
 			for (let [attributeKey, extent] of filterMap.entries())
 			{
-				this.curveCollection.addBrushNoUpdate(key, {
+				this.curveCollection.addBrushNoUpdate(timedKey, {
 					key: attributeKey,
 					bound: extent
 				});
