@@ -1,12 +1,7 @@
-// import { PointND } from './PointND';
 import { NDim } from '../devlib/DevlibTypes'
 import { DataEvents } from './DataEvents';
-import { AppData, FacetOption, Facet, DatasetSpec, LocationMapList, LocationMapTemplate } from '../types';
+import { AppData, FacetOption, Facet, DatasetSpec, LocationMapList, LocationMapTemplate, valueFilter } from '../types';
 
-export interface valueFilter {
-	key: string,
-	bound: [number, number]
-}
 
 export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>, AppData<DatasetSpec> {
 	
@@ -160,7 +155,6 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		let thisMap = this.brushList.get(brushKey);
 		for (let filter of filters)
 		{
-
 			thisMap.set(filter.key, filter.bound)
 		}
 		return

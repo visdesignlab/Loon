@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import {SvgSelection} from '../devlib/DevLibTypes';
 import {BaseWidget} from './BaseWidget';
-import { valueFilter, PointCollection } from '../DataModel/PointCollection';
+import { PointCollection } from '../DataModel/PointCollection';
 import { NDim } from '../devlib/DevlibTypes';
-import { DatasetSpec } from '../types';
+import { DatasetSpec, valueFilter } from '../types';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 

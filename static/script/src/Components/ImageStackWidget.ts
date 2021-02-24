@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import * as quickSelect from 'quickselect.js';
-import { HtmlSelection, SvgSelection } from '../devlib/DevlibTypes';
+import { HtmlSelection } from '../devlib/DevlibTypes';
 import { PointND } from '../DataModel/PointND';
 import { ImageLocation } from '../DataModel/ImageLocation';
 import { CurveList } from '../DataModel/CurveList';

@@ -96,3 +96,29 @@ export type Rect = [[number, number], [number, number]];
 
 // export type LocationMapList = Map<string, [number, number][]>
 // export type LocationMapTemplate = Map<string, string[]>
+
+
+export interface valueFilter {
+	key: string,
+	bound: [number, number]
+}
+
+export type dataFilter = trackFilter | cellFilter | curveFilter;
+
+export interface trackFilter {
+	type: 'track',
+	filterKey: string,
+	filter: valueFilter,
+}
+
+export interface cellFilter {
+	type: 'cell',
+	filterKey: string,
+	filter: valueFilter,
+}
+
+export interface curveFilter {
+	type: 'curve',
+	filterKey: string,
+	filter: [valueFilter, valueFilter],
+}

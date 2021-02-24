@@ -41,7 +41,7 @@ export interface ButtonProps {
 	callback: Function
 }
 
-export type ToolbarElement = ToolbarSingleButton | ToolbarToggleButton | ToolbarOptionSelect;
+export type ToolbarElement = ToolbarSingleButton | ToolbarPopupButton | ToolbarOptionSelect | ToolbarToggleButton;
 
 export interface ToolbarSingleButton {
 	type: 'single',
@@ -55,6 +55,13 @@ export interface ToolbarToggleButton {
 	iconKeys: string[],
 	callback: (state: any) => void,
 	tooltips: string[]
+}
+
+export interface ToolbarPopupButton {
+	type: 'popupButton',
+	iconKey: string,
+	callback: (state: any) => void,
+	tooltip: string
 }
 
 export interface ToolbarOptionSelect {

@@ -1,9 +1,10 @@
-
-import {ToolbarElement} from '../devlib/DevLibTypes';
+import * as d3 from 'd3';
+import {HtmlSelection, ToolbarElement} from '../devlib/DevLibTypes';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { BaseWidget } from './BaseWidget';
 import { CurveList } from '../DataModel/CurveList';
-import { DatasetSpec } from '../types';
+import { dataFilter, DatasetSpec, valueFilter } from '../types';
+import { EndOfLineState } from 'typescript';
 
 export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
@@ -25,6 +26,11 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	private _wrapperDiv : HTMLDivElement;
 	public get wrapperDiv() : HTMLDivElement {
 		return this._wrapperDiv;
+	}
+
+	private _modalPopupDiv : HTMLDivElement;
+	public get modalPopupDiv() : HTMLDivElement {
+		return this._modalPopupDiv;
 	}
 
 	private initToolbarElements(): void
@@ -71,16 +77,16 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				tooltips: ['Condensed Mode', 'Expanded Mode', 'Frame Mode']
 			},
 			{
-				type: 'toggleButton',
-				iconKeys: ['filter', 'filter'],
-				callback: (state: boolean) => console.log('toggle', state),
-				tooltips: ['View and modify data filters', 'close']
+				type: 'popupButton',
+				iconKey: 'filter',
+				callback: (state: boolean) => this.onDataFilterClick(state),
+				tooltip: 'View and modify data filters'
 			},
 			{
-				type: 'toggleButton',
-				iconKeys: ['th', 'th'],
+				type: 'popupButton',
+				iconKey: 'th',
 				callback: (state: boolean) => console.log('toggle', state),
-				tooltips: ['View and modify conditional filters', 'close']
+				tooltip: 'View and modify conditional filters'
 			}
 		]
 	}
@@ -89,10 +95,11 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		this._wrapperDiv = document.createElement("div");
 		this.wrapperDiv.classList.add("wrapperDiv");
-
 		this.container.appendChild(this.wrapperDiv);
+
 		this.initToolbarElements();
 		this.drawToolbarElements();
+		this.initModalPopup();
 	}
 
 	private drawToolbarElements(): void
@@ -104,6 +111,34 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				let button = DevlibTSUtil.getIconButton(toolbarElement.iconKey, toolbarElement.callback);
 				button.classList.add('big');
 				this.wrapperDiv.append(button);
+			}
+			else if (toolbarElement.type === 'popupButton')
+			{
+				let buttonTrue = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
+				buttonTrue.classList.add('big');
+				this.wrapperDiv.append(buttonTrue);
+
+				let buttonFalse = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
+				buttonFalse.classList.add('big');
+				this.wrapperDiv.append(buttonFalse);
+				DevlibTSUtil.hide(buttonFalse);
+
+				buttonTrue.onclick = () =>
+				{
+					DevlibTSUtil.hide(buttonTrue);
+					DevlibTSUtil.show(buttonFalse);
+					toolbarElement.callback(true);
+					DevlibTSUtil.show(this.modalPopupDiv);
+				}
+
+				buttonFalse.onclick = () =>
+				{
+					DevlibTSUtil.show(buttonTrue);
+					DevlibTSUtil.hide(buttonFalse);
+					DevlibTSUtil.hide(this.modalPopupDiv);
+					toolbarElement.callback(false);
+				}
+
 			}
 			else if (toolbarElement.type === 'toggleButton')
 			{
@@ -174,6 +209,102 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			}
 		}
 	}
+
+	private initModalPopup(): void
+	{
+		this._modalPopupDiv = document.createElement("div");
+		this.modalPopupDiv.classList.add("toolbarPopup");
+		DevlibTSUtil.hide(this.modalPopupDiv);
+		this.container.appendChild(this.modalPopupDiv);
+	}
+
+	private onDataFilterClick(show: boolean): void
+	{
+		if (!show)
+		{
+			this.modalPopupDiv.innerHTML = null;
+			return;
+		}
+
+		let outer = d3.select(this.modalPopupDiv);
+		
+		const selectionDiv = outer.append('div');
+		const convertDiv = outer.append('div');
+		const filterDiv = outer.append('div');
+			
+		this.displayFilters(
+			selectionDiv,
+			'Current Selection',
+			'The currently highlighted selection contains data that meet all of the following conditions.',
+			this.data.GetAllFilters());
+
+
+		let buttonElement = DevlibTSUtil.getIconButton('long-arrow-alt-right', () => console.log('todo'), 'Convert ');
+
+		convertDiv.attr('style', 'align-self: center;').node().appendChild(buttonElement);
+
+		this.displayFilters(
+			filterDiv,
+			'Current Filters',
+			'Only show tracks that meet all of the following conditions.',
+			this.fullData.GetAllFilters());
+	}
+
+	private displayFilters(
+		containerSelect: HtmlSelection,
+		title: string,
+		description: string,
+		filterList: dataFilter[]): void
+	{
+		containerSelect.classed('filterDisplayContainer', true)
+		  .append('div')
+			.text(title)
+			.classed('largeText', true)
+		  .append('div')
+			.text(description)
+			.classed('smallText', true);
+		  
+		let filterSelection = containerSelect.append('ul').classed('mediumText', true).selectAll('li')
+			.data(filterList)
+			.join('li');
+
+		filterSelection.filter(d => d.type === 'cell')
+			.html(d => 
+			{
+				let f = d.filter as valueFilter;
+				let low = f.bound[0].toPrecision(5);
+				let high = f.bound[1].toPrecision(5);
+				return `Cell instances where <b>${f.key}</b> is in range [${low}, ${high}]`;
+			});
+
+
+		filterSelection.filter(d => d.type === 'track')
+			.html(d =>
+			{
+				let f = d.filter as valueFilter;
+				let low = f.bound[0].toPrecision(5);
+				let high = f.bound[1].toPrecision(5);
+				return `Tracks with <b>${f.key}</b> in range [${low}, ${high}]`
+			});
+
+		filterSelection.filter(d => d.type === 'curve')
+			.html(d => {
+				let f1 = (d.filter as [valueFilter, valueFilter])[0];
+				let low1 = f1.bound[0].toPrecision(5);
+				let high1 = f1.bound[1].toPrecision(5);
+
+				let f2 = (d.filter as [valueFilter, valueFilter])[1];
+				let low2 = f2.bound[0].toPrecision(5);
+				let high2 = f2.bound[1].toPrecision(5);
+
+				let displayString: string = 'Tracks where ';
+				displayString += `<b>${f1.key}</b> is in range [${low1}, ${high1}] and `;
+				displayString += `<b>${f2.key}</b> is in range [${low2}, ${high2}]`;
+				displayString += ' at least once.';
+				return displayString;
+			});
+	}
+
 
 	protected OnResize(): void
 	{

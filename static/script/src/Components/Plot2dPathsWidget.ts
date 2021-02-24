@@ -3,7 +3,7 @@ import {BaseWidget} from './BaseWidget';
 import {CurveList} from '../DataModel/CurveList';
 import {PointND} from '../DataModel/PointND';
 import {SvgSelection, HtmlSelection, ButtonProps} from '../devlib/DevLibTypes';
-import { valueFilter } from '../DataModel/PointCollection';
+import { valueFilter } from '../types';
 import { OptionSelect } from './OptionSelect';
 import { DatasetSpec, Facet } from '../types';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';

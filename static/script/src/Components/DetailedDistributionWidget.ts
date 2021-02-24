@@ -365,7 +365,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 
 	protected drawFacetedData(facetList: Facet[]): void
 	{
-        this.drawFacetedDataDefault(facetList, "95%", "170px");
+        this.drawFacetedDataDefault(facetList, "95%", "120px");
 	}
 
     private showLabel(): void

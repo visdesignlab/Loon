@@ -1,10 +1,10 @@
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
-import { PointCollection, valueFilter } from './PointCollection';
+import { PointCollection } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
-import { DatasetSpec, Facet, AppData, LocationMapList, LocationMapTemplate } from '../types';
+import { DatasetSpec, Facet, AppData, LocationMapList, LocationMapTemplate, dataFilter, valueFilter } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 
 export class CurveList extends PointCollection implements AppData<DatasetSpec>
@@ -54,11 +54,9 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._locationList = Array.from(locationSet);
 		this.locationList.sort(DevlibAlgo.sortAscend);
 		this._curveCollection = new CurveCollection(this, spec);
-		this._curveBrushList = new Map<string, valueFilter[]>();
+		this._curveBrushList = new Map<string, [valueFilter, valueFilter]>();
 		this.Specification = spec;
 	}
-
-
 
 	private _curveList : CurveND[];
 	public get curveList() : CurveND[] {
@@ -141,6 +139,54 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this.curveCollection.addBrushNoUpdate('default', filter);
 	}
 
+	public GetAllFilters(): dataFilter[]
+	{
+		let dataFilters: dataFilter[] = [];
+		// curve filters
+		for (let [key, filters] of this.curveBrushList.entries())
+		{
+			dataFilters.push({
+				type: 'curve',
+				filterKey: key,
+				filter: filters
+			});
+		}
+
+		// cell filters
+		for (let [key, filterMap] of this.brushList.entries())
+		{
+			for (let [attributeKey, extent] of filterMap.entries())
+			{
+				dataFilters.push({
+					type: 'cell',
+					filterKey: key,
+					filter: {
+						key: attributeKey,
+						bound: extent
+					}
+				});
+			}
+		}
+
+		// track filters
+		for (let [key, filterMap] of this.curveCollection.brushList.entries())
+		{
+			for (let [attributeKey, extent] of filterMap.entries())
+			{
+				dataFilters.push({
+					type: 'track',
+					filterKey: key,
+					filter: {
+						key: attributeKey,
+						bound: extent
+					}
+				});
+			}
+		}
+
+		return dataFilters;
+	}
+
 	public GetCellsAtFrame(locationId: number, frameId: number): PointND[]
 	{
 		if (this._locationFrameSegmentLookup.has(locationId))
@@ -187,8 +233,8 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._brushApplied = v;
 	}
 	
-	private _curveBrushList : Map<string, valueFilter[]>;
-	public get curveBrushList() : Map<string, valueFilter[]> {
+	private _curveBrushList : Map<string, [valueFilter, valueFilter]>;
+	public get curveBrushList() : Map<string, [valueFilter, valueFilter]> {
 		return this._curveBrushList;
 	}	
 
