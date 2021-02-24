@@ -207,7 +207,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         });
 
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        this.imageStackWidget.SetData(this.fullData, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
+        this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
     }
 
 	protected OnResize(): void

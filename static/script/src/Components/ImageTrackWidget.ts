@@ -1316,8 +1316,10 @@ export class ImageTrackWidget
         }
 
         // average growth calculation
+
+		let [minFrame, maxFrame] = this.parentWidget.data.getMinMax('Frame ID');
         let lineAvg = d3.line<number>()
-            .x((d, i) => scaleX(i + 1))
+            .x((d, i) => scaleX(i + minFrame))
             .y(d => scaleY(d));
 
         let averageGrowthLines: string[] = [];
