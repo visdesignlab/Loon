@@ -4,7 +4,6 @@ import {BaseWidget} from './BaseWidget';
 import { NDim } from '../devlib/DevlibTypes';
 import {valueFilter, PointCollection} from '../DataModel/PointCollection';
 import { DatasetSpec, Facet } from '../types';
-import { treemapSquarify } from 'd3';
 
 export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> {
 	
