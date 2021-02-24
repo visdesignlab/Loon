@@ -193,7 +193,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
         this.groupByWidget.updateGroupByOptions(this.data);
         this._hoveredLocationId = null;
-        this.setImageStackWidget();
+        this.setImageStackWidget(true);
         this.OnBrushChange();
 
     }
