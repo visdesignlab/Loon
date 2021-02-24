@@ -1117,9 +1117,12 @@ export class ImageTrackWidget
                 numBins,
                 true);
             binArray.push(bins);
+        }
 
-            let minBinBoundary = bins[0].x0;
-            let maxBinBoundary = bins[bins.length - 1].x1;
+        let minBinBoundary = d3.min(binArray, bins => bins[0].x0);
+        let maxBinBoundary = d3.max(binArray, bins => bins[bins.length - 1].x1);
+        for (let i = 0; i < binArray.length; i++)
+        {
             let positionExtent = this.conditionLabelPositions[i][1];
             let scaleY = d3.scaleLinear()
                 .domain([minBinBoundary, maxBinBoundary])
@@ -1162,9 +1165,11 @@ export class ImageTrackWidget
 			let y2: number = scaleY(bin.x1);
 			pathPoints.push([x, y2]);
 		}
+        let minYval = bins[0].x0;
+        let maxYval = bins[bins.length - 1].x1;
 		
-		pathPoints.unshift([scaleX.range()[0], scaleY.range()[0]]);
-		pathPoints.push([scaleX.range()[0], scaleY.range()[1]]);
+		pathPoints.unshift([scaleX.range()[0], scaleY(minYval)]);
+		pathPoints.push([scaleX.range()[0], scaleY(maxYval)]);
 
 		let lineFunc = d3.line()
 			.x(d => d[0])
