@@ -7,7 +7,6 @@ import { valueFilter } from '../DataModel/PointCollection';
 import { OptionSelect } from './OptionSelect';
 import { DatasetSpec, Facet } from '../types';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
-import { textSpanIntersectsWithPosition } from 'typescript';
 
 interface quickPickOption {
 	xKey: string,

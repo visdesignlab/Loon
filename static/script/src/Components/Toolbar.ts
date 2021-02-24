@@ -1,8 +1,11 @@
-import {BaseComponent} from './BaseComponent';
+
 import {ToolbarElement} from '../devlib/DevLibTypes';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
+import { BaseWidget } from './BaseWidget';
+import { CurveList } from '../DataModel/CurveList';
+import { DatasetSpec } from '../types';
 
-export class Toolbar extends BaseComponent {
+export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
 	constructor(container: Element)
 	{
@@ -34,10 +37,16 @@ export class Toolbar extends BaseComponent {
 				tooltip: 'Return to overview screen'
 			},
 			{
-				type: 'single',
-				iconKey: 'filter',
+				type: 'toggleButton',
+				iconKeys: ['filter', 'filter'],
 				callback: (state: boolean) => console.log('toggle', state),
-				tooltip: 'View and modify filter state'
+				tooltips: ['View and modify data filters', 'close']
+			},
+			{
+				type: 'toggleButton',
+				iconKeys: ['th', 'th'],
+				callback: (state: boolean) => console.log('toggle', state),
+				tooltips: ['View and modify conditional filters', 'close']
 			},
 			{
 				type: 'optionSelect',
@@ -170,4 +179,16 @@ export class Toolbar extends BaseComponent {
 	{
 		// do nothing
 	}
+
+	protected OnDataChange(): void
+	{
+		// not relevant for this class
+	}
+
+	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
+	{
+		// not relevant for this class
+		return null;
+	}
+
 }
