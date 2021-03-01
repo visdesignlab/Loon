@@ -367,8 +367,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		let minX : number, maxX : number, minY : number, maxY : number;
 		if (this.inAverageMode)
 		{
-			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).averageGrowthCurve));
-			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).averageGrowthCurve));
+			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).averageGrowthCurve, d => d[1]));
+			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).averageGrowthCurve, d => d[1]));
 		}
 		else
 		{
@@ -479,8 +479,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private updateAveragePaths(): void
 	{
         let lineAvg = d3.line<number>()
-            .x((d, i) => this.scaleX(i + 1))
-            .y(d => this.scaleY(d));
+            .x(d => this.scaleX(d[0]))
+            .y(d => this.scaleY(d[1]));
 		
 		const canvasContext = this.canvasElement.getContext('2d');
 		canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight);

@@ -371,8 +371,6 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				return data ? data.length : 'empty';
 			});
 
-
-		
 		// todo - add actual curves
 		// todo - add axis labels/buttons, and title
 

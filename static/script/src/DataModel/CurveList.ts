@@ -6,6 +6,7 @@ import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
 import { DatasetSpec, Facet, AppData, LocationMapList, LocationMapTemplate, dataFilter, valueFilter, FacetOption } from '../types';
 import { CurveListFactory } from './CurveListFactory';
+import { timeHours } from 'd3';
 
 export class CurveList extends PointCollection implements AppData<DatasetSpec>
 {
@@ -90,25 +91,36 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return this._minMaxMap;
 	}
 
-	private _averageGrowthCurve: number[];
-	public get averageGrowthCurve(): number[]
+	private _averageGrowthCurve: [number, number][];
+	public get averageGrowthCurve(): [number, number][]
 	{
 		if (this._averageGrowthCurve.length > 0)
 		{
 			this._averageGrowthCurve;
 		}
-		let [minFrame, maxFrame] = this.getMinMax('Frame ID');
-		let numFrames = maxFrame - minFrame + 1;
-		let sumCountList: [number, number][] = Array(numFrames).fill([0,0]);
+		// let [minFrame, maxFrame] = this.getMinMax('Frame ID');
+		// let numFrames = maxFrame - minFrame + 1;
+		// let sumCountList: [number, number][] = Array(numFrames).fill([0,0]);
+		let sumCountMap: Map<number, [number, number]> = new Map<number, [number, number]>();
+
 		for (let point of this)
 		{
 			let frame = point.get('Frame ID');
 			let mass = point.get('Mass (pg)');
-			let frameIdx = frame - minFrame;
-			let [sum, count] = sumCountList[frameIdx];
-			sumCountList[frameIdx] = [sum + mass, count + 1];
+			let [sum, count] = sumCountMap.has(frame) ? sumCountMap.get(frame) : [0, 0];
+			sumCountMap.set(frame, [sum + mass, count + 1] );
+
+			// let frameIdx = frame - minFrame;
+			// let [sum, count] = sumCountList[frameIdx];
+			// sumCountList[frameIdx] = [sum + mass, count + 1];
 		}
-		this._averageGrowthCurve = sumCountList.map(([sum, count]) => sum / count);
+		let frameList = Array.from(sumCountMap.keys()).sort((a,b) => a-b);
+		this._averageGrowthCurve = frameList.map(frame => 
+			{
+				let [sum, count] = sumCountMap.get(frame);
+				return [frame, sum / count];
+			});
+		// this._averageGrowthCurve = sumCountList.map(([sum, count]) => sum / count);
 		return this._averageGrowthCurve;
 	}
 
