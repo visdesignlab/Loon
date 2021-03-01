@@ -112,14 +112,23 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return this._averageGrowthCurve;
 	}
 
-    public getDefaultFacetInfo(): {
+	private _defaultFacetInfo:  {
+		nestedList: Map<string, CurveList>[];
+		axisLabels: [string, string];
+		xAxisTicks: string[];
+		yAxisTicks: string[];
+	}
+    public get defaultFacetInfo(): {
 		nestedList: Map<string, CurveList>[];
 		axisLabels: [string, string];
 		xAxisTicks: string[];
 		yAxisTicks: string[];
 	}
     {
-		// todo - cache
+		if (this._defaultFacetInfo)
+		{
+			return this._defaultFacetInfo
+		}
 		const drugIdx = 0;
 		const concIdx = 1;
 		let facetOptions: FacetOption[] = this.GetFacetOptions();
@@ -148,9 +157,8 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			xAxisTicks: secondFacets.map(f => f.name),
 			yAxisTicks: firtstFacets.map(f => f.name)
 		}
-
+		this._defaultFacetInfo = returnObject;
 		return returnObject;
-
     }
 
 

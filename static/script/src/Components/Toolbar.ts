@@ -321,7 +321,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		}
 
 		let outer = d3.select(this.modalPopupDiv);
-		let defaultFacetInfo = this.data.getDefaultFacetInfo();
+		let defaultFacetInfo = this.data.defaultFacetInfo;
 		
 		const margin = {
 			top: 20,
