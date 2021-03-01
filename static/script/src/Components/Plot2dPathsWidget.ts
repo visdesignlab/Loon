@@ -478,7 +478,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	private updateAveragePaths(): void
 	{
-        let lineAvg = d3.line<number>()
+        let lineAvg = d3.line<[number, number]>()
             .x(d => this.scaleX(d[0]))
             .y(d => this.scaleY(d[1]));
 		

@@ -362,14 +362,59 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('height', miniSize)
 			.classed('miniBox', true);
 		
-		cellSelect.append('text')
+		// cellSelect.append('text')
+		// 	.attr('alignment-baseline', 'hanging')
+		// 	.text(d => 
+		// 	{
+		// 		let [drugIndex, concLabel] = d;
+		// 		let data: CurveList = defaultFacetInfo.nestedList[drugIndex].get(concLabel)
+		// 		return data ? data.length : 'empty';
+		// 	});
+		let frameExtent = this.data.getMinMax('Frame ID');
+		const scaleX = d3.scaleLinear()
+			.domain(frameExtent)
+			.range([0, miniSize]);
+		
+
+		let minMass = Infinity;
+		let maxMass = -Infinity;
+		for (let map of defaultFacetInfo.nestedList)
+		{
+			for (let data of map.values())
+			{
+				let thisMin = d3.min(data.averageGrowthCurve, d => d[1]);
+				minMass = Math.min(thisMin, minMass);
+
+				let thisMax = d3.max(data.averageGrowthCurve, d => d[1]);
+				maxMass = Math.max(thisMax, maxMass);
+			}
+		}
+
+		const scaleY = d3.scaleLinear()
+			.domain([minMass, maxMass])
+			.range([miniSize, 0]);
+
+        let lineAvg = d3.line<[number, number]>()
+            .x(d => scaleX(d[0]))
+            .y(d => scaleY(d[1]));
+					
+		cellSelect.append('path')
 			.attr('alignment-baseline', 'hanging')
-			.text(d => 
+			.classed('miniExemplarCurve', true)
+			.attr('d', d => 
 			{
 				let [drugIndex, concLabel] = d;
-				let data: CurveList = defaultFacetInfo.nestedList[drugIndex].get(concLabel)
-				return data ? data.length : 'empty';
+				let row = defaultFacetInfo.nestedList[drugIndex];
+				if (!row.has(concLabel))
+				{
+					return ''; //todo default curve when empty.
+				}
+				let data: CurveList = row.get(concLabel)
+				let avergeGrowthLine = data.averageGrowthCurve;
+				return lineAvg(avergeGrowthLine);
 			});
+
+		
 
 		// todo - add actual curves
 		// todo - add axis labels/buttons, and title

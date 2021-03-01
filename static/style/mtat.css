@@ -65,11 +65,17 @@ button, option, select {
     padding-bottom: 6px;
 }
 
-
 .miniBox {
     stroke: #828282;
     stroke-width: 1;
     fill: white;
+}
+
+.miniExemplarCurve {
+    stroke: #252525;
+    stroke-width: 2px;
+    fill: none;
+    stroke-linejoin: bevel;
 }
 
 
