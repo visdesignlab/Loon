@@ -85,7 +85,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				type: 'popupButton',
 				iconKey: 'th',
-				callback: (state: boolean) => console.log('toggle', state),
+				callback: (state: boolean) => this.onConditionFilterClick(state),
 				tooltip: 'View and modify conditional filters'
 			}
 		]
@@ -311,6 +311,72 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		this.onDataFilterClick(true);
 	}
 
+
+	private onConditionFilterClick(show: boolean): void
+	{
+		this.modalPopupDiv.innerHTML = null;
+		if (!show)
+		{
+			return;
+		}
+
+		let outer = d3.select(this.modalPopupDiv);
+		let defaultFacetInfo = this.data.getDefaultFacetInfo();
+		
+		const margin = {
+			top: 20,
+			left: 40,
+			right: 40,
+			botton: 20
+		}
+
+
+		const miniSize = 64;
+		const miniPadding = 8;
+
+		const wCount = defaultFacetInfo.xAxisTicks.length;
+		const vizWidth = wCount * miniSize + (wCount - 1) * miniPadding;
+
+		const lCount = defaultFacetInfo.yAxisTicks.length;
+		const vizHeight = lCount * miniSize + (lCount - 1) * miniPadding;
+
+		let svgSelect = outer.append('svg')
+			.attr('width', vizWidth + margin.left + margin.right)
+			.attr('height', vizHeight + margin.top + margin.botton);
+
+		let vizSelect = svgSelect.append('g')
+			.attr('transform', `translate(${margin.left}, ${margin.left})`)
+
+		let rowSelect = vizSelect.selectAll('g')
+			.data(defaultFacetInfo.yAxisTicks)
+			.join('g')
+			.attr('transform', (_, i) => `translate(0, ${i * (miniSize + miniPadding)})`);
+
+		let cellSelect = rowSelect.selectAll('g')
+			.data((d, i) => defaultFacetInfo.xAxisTicks.map(label => [i, label]))
+			.join('g')
+			.attr('transform', (_, i) => `translate(${i * (miniSize + miniPadding)}, 0)`);
+			
+		cellSelect.append('rect')
+			.attr('width', miniSize)
+			.attr('height', miniSize)
+			.classed('miniBox', true);
+		
+		cellSelect.append('text')
+			.attr('alignment-baseline', 'hanging')
+			.text(d => 
+			{
+				let [drugIndex, concLabel] = d;
+				let data: CurveList = defaultFacetInfo.nestedList[drugIndex].get(concLabel)
+				return data ? data.length : 'empty';
+			});
+
+
+		
+		// todo - add actual curves
+		// todo - add axis labels/buttons, and title
+
+	}
 
 	protected OnResize(): void
 	{

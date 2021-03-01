@@ -4,7 +4,7 @@ import { PointND } from './PointND';
 import { PointCollection } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
-import { DatasetSpec, Facet, AppData, LocationMapList, LocationMapTemplate, dataFilter, valueFilter } from '../types';
+import { DatasetSpec, Facet, AppData, LocationMapList, LocationMapTemplate, dataFilter, valueFilter, FacetOption } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 
 export class CurveList extends PointCollection implements AppData<DatasetSpec>
@@ -111,6 +111,48 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._averageGrowthCurve = sumCountList.map(([sum, count]) => sum / count);
 		return this._averageGrowthCurve;
 	}
+
+    public getDefaultFacetInfo(): {
+		nestedList: Map<string, CurveList>[];
+		axisLabels: [string, string];
+		xAxisTicks: string[];
+		yAxisTicks: string[];
+	}
+    {
+		// todo - cache
+		const drugIdx = 0;
+		const concIdx = 1;
+		let facetOptions: FacetOption[] = this.GetFacetOptions();
+		let firstFacetOption = facetOptions[drugIdx];
+		let firtstFacets: Facet[] = firstFacetOption.GetFacets();
+		let secondFacetOpion = facetOptions[concIdx];
+		let secondFacets: Facet[] = secondFacetOpion.GetFacets();
+		let nestedFacetList: Map<string, CurveList>[] = [];
+		for (let {name: categoryName, data: data} of firtstFacets)
+		{
+			let facetOption = data.GetFacetOptions()[concIdx];
+			let subFacets: Facet[] = facetOption.GetFacets();
+			let thisDict = new Map<string, CurveList>();
+			for (let subFacet of subFacets)
+			{
+				thisDict.set(subFacet.name, subFacet.data);
+			}
+			nestedFacetList.push(thisDict);
+		}
+
+		let axisLabels: [string, string] = [firstFacetOption.name, secondFacetOpion.name];
+
+		let returnObject = {
+			nestedList: nestedFacetList,
+			axisLabels: axisLabels,
+			xAxisTicks: secondFacets.map(f => f.name),
+			yAxisTicks: firtstFacets.map(f => f.name)
+		}
+
+		return returnObject;
+
+    }
+
 
 	// private _locationFrameSegmentLookup : Map<string, [PointND, number]>;
 	private _locationFrameSegmentLookup : Map<number, Map<number, Map<number, [PointND, number]>>>;

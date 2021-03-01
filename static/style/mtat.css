@@ -65,6 +65,14 @@ button, option, select {
     padding-bottom: 6px;
 }
 
+
+.miniBox {
+    stroke: #828282;
+    stroke-width: 1;
+    fill: white;
+}
+
+
 .optionSelectGrouperDiv {
     display: flex;
     flex-direction: column;
