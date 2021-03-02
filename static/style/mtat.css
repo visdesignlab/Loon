@@ -66,7 +66,7 @@ button, option, select {
 }
 
 .miniBox {
-    stroke: #828282;
+    stroke: #afafaf;
     stroke-width: 1;
     fill: white;
 }
@@ -76,6 +76,17 @@ button, option, select {
     stroke-width: 2px;
     fill: none;
     stroke-linejoin: bevel;
+}
+
+.y.axisButtonContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.y.axisButtonContainer button {
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 

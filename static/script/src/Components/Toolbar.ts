@@ -228,6 +228,9 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 		let outer = d3.select(this.modalPopupDiv);
 		
+		outer.node().style.flexDirection = 'row';
+		outer.node().style.alignItems = 'flex-start';
+
 		const selectionDiv = outer.append('div');
 		const convertDiv = outer.append('div');
 		const filterDiv = outer.append('div');
@@ -321,18 +324,25 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		}
 
 		let outer = d3.select(this.modalPopupDiv);
-		let defaultFacetInfo = this.data.defaultFacetInfo;
 		
+		outer.node().style.flexDirection = 'column';
+		outer.node().style.alignItems = 'center';
+
 		const margin = {
 			top: 20,
-			left: 40,
+			left: 120,
 			right: 40,
-			botton: 20
+			bottom: 86
 		}
-
 
 		const miniSize = 64;
 		const miniPadding = 8;
+
+		outer.append('div')
+			.classed('largeText', true)
+			.text('Filter by Condition');
+
+		let defaultFacetInfo = this.data.defaultFacetInfo;
 
 		const wCount = defaultFacetInfo.xAxisTicks.length;
 		const vizWidth = wCount * miniSize + (wCount - 1) * miniPadding;
@@ -342,10 +352,10 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 		let svgSelect = outer.append('svg')
 			.attr('width', vizWidth + margin.left + margin.right)
-			.attr('height', vizHeight + margin.top + margin.botton);
+			.attr('height', vizHeight + margin.top + margin.bottom);
 
 		let vizSelect = svgSelect.append('g')
-			.attr('transform', `translate(${margin.left}, ${margin.left})`)
+			.attr('transform', `translate(${margin.left}, ${margin.top})`)
 
 		let rowSelect = vizSelect.selectAll('g')
 			.data(defaultFacetInfo.yAxisTicks)
@@ -355,6 +365,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		let cellSelect = rowSelect.selectAll('g')
 			.data((d, i) => defaultFacetInfo.xAxisTicks.map(label => [i, label]))
 			.join('g')
+			.classed('miniCell', true)
 			.attr('transform', (_, i) => `translate(${i * (miniSize + miniPadding)}, 0)`);
 			
 		cellSelect.append('rect')
@@ -362,14 +373,6 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('height', miniSize)
 			.classed('miniBox', true);
 		
-		// cellSelect.append('text')
-		// 	.attr('alignment-baseline', 'hanging')
-		// 	.text(d => 
-		// 	{
-		// 		let [drugIndex, concLabel] = d;
-		// 		let data: CurveList = defaultFacetInfo.nestedList[drugIndex].get(concLabel)
-		// 		return data ? data.length : 'empty';
-		// 	});
 		let frameExtent = this.data.getMinMax('Frame ID');
 		const scaleX = d3.scaleLinear()
 			.domain(frameExtent)
@@ -414,11 +417,69 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				return lineAvg(avergeGrowthLine);
 			});
 
+
+		let yAxisSelect = svgSelect.append('g')
+			.attr('transform', `translate(${margin.left}, ${margin.top})`);
 		
+		const maxLabelWidth = 70;
+		const labelPadding = 8;
 
-		// todo - add actual curves
-		// todo - add axis labels/buttons, and title
+		const mainLabelSize = 20;
 
+		yAxisSelect.selectAll('text')
+			.data([defaultFacetInfo.axisLabels[0]])
+		  .join('text')
+			.attr('text-anchor', 'middle')
+			.attr('dominant-baseline', 'hanging')
+			.attr('transform', `translate(${-maxLabelWidth - labelPadding - mainLabelSize}, ${vizHeight/2}) rotate(-90)`)
+			.classed('mediumText', true)
+			.text(d => d)
+
+		yAxisSelect.selectAll('foreignObject')
+			.data(defaultFacetInfo.yAxisTicks)
+		  .join('foreignObject')
+			.attr('width', maxLabelWidth)
+			.attr('height', miniSize)
+			.attr('transform', (d, i) => `translate(${-maxLabelWidth - labelPadding}, ${i * (miniSize + miniPadding)})`)
+		  .append('xhtml:div')
+			.attr('style', `height: ${miniSize}px;`)
+			.classed('y', true)
+			.classed('axisButtonContainer', true)
+		  .append('button')
+			.classed('basicIconButton', true)
+			.attr('style', `max-width: ${maxLabelWidth}px; min-width: ${maxLabelWidth}px;`)
+			.attr('title', d => d)
+			.text(d => d);
+
+		
+		const maxLabelHeight = 36;
+
+		let xAxisSelect = svgSelect.append('g')
+			.attr('transform', `translate(${margin.left}, ${margin.top + vizHeight})`);
+		
+		xAxisSelect.selectAll('text')
+			.data([defaultFacetInfo.axisLabels[1]])
+		  .join('text')
+			.attr('text-anchor', 'middle')
+			.attr('dominant-baseline', 'hanging')
+			.attr('transform', `translate(${vizWidth / 2}, ${maxLabelHeight + 2 * labelPadding})`)
+			.classed('mediumText', true)
+			.text(d => d)
+
+		xAxisSelect.selectAll('foreignObject')
+			.data(defaultFacetInfo.xAxisTicks)
+		  .join('foreignObject')
+			.attr('width', miniSize)
+			.attr('height', maxLabelHeight)
+			.attr('transform', (d, i) => `translate(${i * (miniSize + miniPadding)}, ${labelPadding})`)
+		  .append('xhtml:div')
+			.classed('x', true)
+			.classed('axisButtonContainer', true)
+		  .append('button')
+		  	.classed('basicIconButton', true)
+			.attr('style', `max-width: ${miniSize}px; min-width: ${miniSize}px; height: ${maxLabelHeight}px`)
+		  	.attr('title', d => d)
+			.text(d => d);
 	}
 
 	protected OnResize(): void
