@@ -116,17 +116,40 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return this._averageGrowthCurve;
 	}
 
-	private _defaultFacetInfo:  {
-		nestedList: Map<string, CurveList>[];
-		axisLabels: [string, string];
+	private _defaultFacetAxisTicks: {
 		xAxisTicks: string[];
 		yAxisTicks: string[];
 	}
-    public get defaultFacetInfo(): {
-		nestedList: Map<string, CurveList>[];
-		axisLabels: [string, string];
+	public get defaultFacetAxisTicks(): {
 		xAxisTicks: string[];
 		yAxisTicks: string[];
+	}
+	{
+		if (this._defaultFacetAxisTicks)
+		{
+			return this._defaultFacetAxisTicks
+		}
+		let facetOptions: FacetOption[] = this.GetFacetOptions();
+		let firstFacetOption = facetOptions[0];
+		let firstFacets: Facet[] = firstFacetOption.GetFacets();
+		let secondFacetOption = facetOptions[1];
+		let secondFacets: Facet[] = secondFacetOption.GetFacets();
+
+		let returnObject = {
+			xAxisTicks: secondFacets.map(f => f.name),
+			yAxisTicks: firstFacets.map(f => f.name)
+		}
+		this._defaultFacetAxisTicks = returnObject;
+		return returnObject;
+	}
+
+	private _defaultFacetInfo:  {
+		nestedMap: Map<string, Map<string, CurveList>>;
+		axisLabels: [string, string];
+	}
+    public get defaultFacetInfo(): {
+		nestedMap: Map<string, Map<string, CurveList>>;
+		axisLabels: [string, string];
 	}
     {
 		if (this._defaultFacetInfo)
@@ -137,11 +160,10 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		const concIdx = 1;
 		let facetOptions: FacetOption[] = this.GetFacetOptions();
 		let firstFacetOption = facetOptions[drugIdx];
-		let firtstFacets: Facet[] = firstFacetOption.GetFacets();
-		let secondFacetOpion = facetOptions[concIdx];
-		let secondFacets: Facet[] = secondFacetOpion.GetFacets();
-		let nestedFacetList: Map<string, CurveList>[] = [];
-		for (let {name: categoryName, data: data} of firtstFacets)
+		let firstFacets: Facet[] = firstFacetOption.GetFacets();
+		let secondFacetOption = facetOptions[concIdx];
+		let nestedFacetMap: Map<string, Map<string, CurveList>> = new Map();
+		for (let {name: categoryName, data: data} of firstFacets)
 		{
 			let facetOption = data.GetFacetOptions()[concIdx];
 			let subFacets: Facet[] = facetOption.GetFacets();
@@ -150,16 +172,14 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			{
 				thisDict.set(subFacet.name, subFacet.data);
 			}
-			nestedFacetList.push(thisDict);
+			nestedFacetMap.set(categoryName, thisDict);
 		}
 
-		let axisLabels: [string, string] = [firstFacetOption.name, secondFacetOpion.name];
+		let axisLabels: [string, string] = [firstFacetOption.name, secondFacetOption.name];
 
 		let returnObject = {
-			nestedList: nestedFacetList,
-			axisLabels: axisLabels,
-			xAxisTicks: secondFacets.map(f => f.name),
-			yAxisTicks: firtstFacets.map(f => f.name)
+			nestedMap: nestedFacetMap,
+			axisLabels: axisLabels
 		}
 		this._defaultFacetInfo = returnObject;
 		return returnObject;

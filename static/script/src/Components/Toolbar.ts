@@ -343,11 +343,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.text('Filter by Condition');
 
 		let defaultFacetInfo = this.data.defaultFacetInfo;
+		let defaultAxisTicks = this.fullData.defaultFacetAxisTicks;
 
-		const wCount = defaultFacetInfo.xAxisTicks.length;
+		const wCount = defaultAxisTicks.xAxisTicks.length;
 		const vizWidth = wCount * miniSize + (wCount - 1) * miniPadding;
 
-		const lCount = defaultFacetInfo.yAxisTicks.length;
+		const lCount = defaultAxisTicks.yAxisTicks.length;
 		const vizHeight = lCount * miniSize + (lCount - 1) * miniPadding;
 
 		let svgSelect = outer.append('svg')
@@ -358,12 +359,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${margin.left}, ${margin.top})`)
 
 		let rowSelect = vizSelect.selectAll('g')
-			.data(defaultFacetInfo.yAxisTicks)
+			.data(defaultAxisTicks.yAxisTicks)
 			.join('g')
 			.attr('transform', (_, i) => `translate(0, ${i * (miniSize + miniPadding)})`);
 
 		let cellSelect = rowSelect.selectAll('g')
-			.data((d, i) => defaultFacetInfo.xAxisTicks.map(label => [i, label]))
+			.data(d => defaultAxisTicks.xAxisTicks.map(label => [d, label]))
 			.join('g')
 			.classed('miniCell', true)
 			.attr('transform', (_, i) => `translate(${i * (miniSize + miniPadding)}, 0)`);
@@ -381,7 +382,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 		let minMass = Infinity;
 		let maxMass = -Infinity;
-		for (let map of defaultFacetInfo.nestedList)
+		for (let map of defaultFacetInfo.nestedMap.values())
 		{
 			for (let data of map.values())
 			{
@@ -406,11 +407,16 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.classed('miniExemplarCurve', true)
 			.attr('d', d => 
 			{
-				let [drugIndex, concLabel] = d;
-				let row = defaultFacetInfo.nestedList[drugIndex];
+				let [drugLabel, concLabel] = d;
+				let map = defaultFacetInfo.nestedMap;
+				if (!map.has(drugLabel))
+				{
+					return ''; // empty when no data
+				}
+				let row = map.get(drugLabel);
 				if (!row.has(concLabel))
 				{
-					return ''; //todo default curve when empty.
+					return '';
 				}
 				let data: CurveList = row.get(concLabel)
 				let avergeGrowthLine = data.averageGrowthCurve;
@@ -436,7 +442,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.text(d => d)
 
 		yAxisSelect.selectAll('foreignObject')
-			.data(defaultFacetInfo.yAxisTicks)
+			.data(defaultAxisTicks.yAxisTicks)
 		  .join('foreignObject')
 			.attr('width', maxLabelWidth)
 			.attr('height', miniSize)
@@ -467,7 +473,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.text(d => d)
 
 		xAxisSelect.selectAll('foreignObject')
-			.data(defaultFacetInfo.xAxisTicks)
+			.data(defaultAxisTicks.xAxisTicks)
 		  .join('foreignObject')
 			.attr('width', miniSize)
 			.attr('height', maxLabelHeight)
