@@ -1,6 +1,6 @@
 import { NDim } from '../devlib/DevlibTypes'
 import { DataEvents } from './DataEvents';
-import { AppData, FacetOption, Facet, DatasetSpec, LocationMapList, LocationMapTemplate, valueFilter } from '../types';
+import { AppData, FacetOption, Facet, DatasetSpec, LocationMapList, valueFilter } from '../types';
 
 
 export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>, AppData<DatasetSpec> {
@@ -101,7 +101,7 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		return facetOptionList;
 	}
 
-	protected abstract getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[];
+	protected abstract getFacetList(locationMap: LocationMapList): Facet[];
 
 	private initAttributeList(): void
 	{

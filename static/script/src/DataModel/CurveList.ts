@@ -4,7 +4,7 @@ import { PointND } from './PointND';
 import { PointCollection } from './PointCollection';
 import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
-import { DatasetSpec, Facet, AppData, LocationMapList, LocationMapTemplate, dataFilter, valueFilter, FacetOption } from '../types';
+import { DatasetSpec, Facet, AppData, LocationMapList, dataFilter, valueFilter, FacetOption } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 import { timeHours } from 'd3';
 
@@ -131,13 +131,14 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		}
 		let facetOptions: FacetOption[] = this.GetFacetOptions();
 		let firstFacetOption = facetOptions[0];
-		let firstFacets: Facet[] = firstFacetOption.GetFacets();
 		let secondFacetOption = facetOptions[1];
-		let secondFacets: Facet[] = secondFacetOption.GetFacets();
+
+		const yKeys = Object.keys(this.Specification.locationMaps[firstFacetOption.name]);
+		const xKeys = Object.keys(this.Specification.locationMaps[secondFacetOption.name]);
 
 		let returnObject = {
-			xAxisTicks: secondFacets.map(f => f.name),
-			yAxisTicks: firstFacets.map(f => f.name)
+			xAxisTicks: xKeys,
+			yAxisTicks: yKeys
 		}
 		this._defaultFacetAxisTicks = returnObject;
 		return returnObject;
@@ -348,7 +349,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return this._curveBrushList;
 	}	
 
-	protected getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[]
+	protected getFacetList(locationMap: LocationMapList): Facet[]
 	{
 		return CurveListFactory.CreateFacetedDatasets(this, locationMap);
 	}

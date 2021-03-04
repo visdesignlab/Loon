@@ -70,17 +70,12 @@ export interface DatasetSpec {
 }
 
 export interface LocationMaps {
-	[mapName: string]: LocationMapList | LocationMapTemplate
+	[mapName: string]: LocationMapList
 }
 
 export interface LocationMapList
 {
 	[categoryName: string]: [number, number][]
-}
-
-export interface LocationMapTemplate
-{
-	[templateFilename: string]: string[]
 }
 
 export interface ImageStackMetaData
@@ -94,10 +89,6 @@ export interface ImageStackMetaData
 }
 
 export type Rect = [[number, number], [number, number]];
-
-// export type LocationMapList = Map<string, [number, number][]>
-// export type LocationMapTemplate = Map<string, string[]>
-
 
 export interface valueFilter {
 	key: string,

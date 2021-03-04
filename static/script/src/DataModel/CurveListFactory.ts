@@ -4,7 +4,7 @@ import { CurveList } from './CurveList';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
 import { StringToStringObj, StringToNumberObj, KeyedTrackDerivationFunction, KeyedPointDerivationFunction } from '../devlib/DevLibTypes'
-import { DatasetSpec, Facet, LocationMapList, LocationMapTemplate } from '../types';
+import { DatasetSpec, Facet, LocationMapList } from '../types';
 
 interface StringToNumberOrList {
     [key: string]: number | StringToNumberObj[];
@@ -12,7 +12,7 @@ interface StringToNumberOrList {
 
 export class CurveListFactory {
 
-	public static CreateFacetedDatasets(fullData: CurveList, locationMap: LocationMapList | LocationMapTemplate): Facet[]
+	public static CreateFacetedDatasets(fullData: CurveList, locationMap: LocationMapList): Facet[]
 	{
 		let locToCat: Map<number, string> = new Map();
 		

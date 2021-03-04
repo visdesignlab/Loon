@@ -2,7 +2,7 @@ import { NDim } from '../devlib/DevlibTypes'
 import { CurveCollectionIterator } from './CurveCollectionIterator';
 import { PointCollection } from './PointCollection';
 import { CurveList } from './CurveList';
-import { Facet, LocationMapList, LocationMapTemplate, DatasetSpec, AppData } from '../types';
+import { Facet, LocationMapList, DatasetSpec, AppData } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 
 export class CurveCollection extends PointCollection
@@ -29,7 +29,7 @@ export class CurveCollection extends PointCollection
     public OnBrushChange(): void { }
 	public ConsumeFilters: (AppData: any) => void;
 
-	protected getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[]
+	protected getFacetList(locationMap: LocationMapList): Facet[]
 	{
         let facetList = CurveListFactory.CreateFacetedDatasets(this.curveList, locationMap);
         for (let facet of facetList)
