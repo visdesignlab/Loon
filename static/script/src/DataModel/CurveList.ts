@@ -98,9 +98,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		{
 			this._averageGrowthCurve;
 		}
-		// let [minFrame, maxFrame] = this.getMinMax('Frame ID');
-		// let numFrames = maxFrame - minFrame + 1;
-		// let sumCountList: [number, number][] = Array(numFrames).fill([0,0]);
 		let sumCountMap: Map<number, [number, number]> = new Map<number, [number, number]>();
 
 		for (let point of this)
@@ -109,10 +106,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			let mass = point.get('Mass (pg)');
 			let [sum, count] = sumCountMap.has(frame) ? sumCountMap.get(frame) : [0, 0];
 			sumCountMap.set(frame, [sum + mass, count + 1] );
-
-			// let frameIdx = frame - minFrame;
-			// let [sum, count] = sumCountList[frameIdx];
-			// sumCountList[frameIdx] = [sum + mass, count + 1];
 		}
 		let frameList = Array.from(sumCountMap.keys()).sort((a,b) => a-b);
 		this._averageGrowthCurve = frameList.map(frame => 
@@ -120,7 +113,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 				let [sum, count] = sumCountMap.get(frame);
 				return [frame, sum / count];
 			});
-		// this._averageGrowthCurve = sumCountList.map(([sum, count]) => sum / count);
 		return this._averageGrowthCurve;
 	}
 
