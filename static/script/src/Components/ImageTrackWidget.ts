@@ -23,6 +23,7 @@ export class ImageTrackWidget
         this._exemplarMinWidth = 80;
         this._frameLabelPositions = [];
         this._cellLabelPositions = [];
+        this._exemplarYKey = 'Mass_norm';
 
         // hardcoded from css
         this._cellTimelineMargin = {
@@ -185,6 +186,11 @@ export class ImageTrackWidget
     private _exemplarMinWidth : number;
     public get exemplarMinWidth() : number {
         return this._exemplarMinWidth;
+    }
+
+    private _exemplarYKey : string;
+    public get exemplarYKey() : string {
+        return this._exemplarYKey;
     }    
     
     public init(): void
@@ -271,6 +277,12 @@ export class ImageTrackWidget
                 this.updateLabelsOnMouseMove('', -1, -1);
             }
         });
+
+        document.addEventListener('averageCurveKeyChange', (e: CustomEvent) => 
+		{
+			this._exemplarYKey = e.detail.yKey;
+            this.drawExemplarGrowthCurves();
+		});
     }
 
     public async draw(tracks: CurveND[]): Promise<void>
@@ -1246,16 +1258,23 @@ export class ImageTrackWidget
             .domain(frameExtent)
             .range([0, width]);
         
-        const massKey = 'Mass (pg)';
+        const yKey = this.exemplarYKey;
         // todo - I should refactor this so that min/max can account for the average curve as well.
-        const maxMass = d3.max(this.trackList, curve => d3.max(curve.pointList, point => point.get(massKey)));
-        const minMass = d3.min(this.trackList, curve => d3.min(curve.pointList, point => point.get(massKey)));
+        let yMin = d3.min(this.trackList, curve => d3.min(curve.pointList, point => point.get(yKey)));
+        let yMax = d3.max(this.trackList, curve => d3.max(curve.pointList, point => point.get(yKey)));
 
+        for (let facet of this.parentWidget.facetList)
+        {
+            let averageGrowthCurve: [number, number][] = facet.data.getAverageCurve(yKey);
+            let [thisMin, thisMax] = d3.extent(averageGrowthCurve, d => d[1]);
+            yMin = Math.min(yMin, thisMin);
+            yMax = Math.max(yMax, thisMax);
+        }
 
         const firstPosition = this.conditionLabelPositions[0][1];
         const height = firstPosition[1] - firstPosition[0] + 1;
         const scaleY = d3.scaleLinear()
-            .domain([minMass, maxMass])
+            .domain([yMin, yMax])
             .range([height, 0]);
 
         let [exemplarGrowthCurves, averageGrowthLines]: [string[][], string[]] = this.generateExemplarGrowthCurves(scaleX, scaleY);
@@ -1303,7 +1322,7 @@ export class ImageTrackWidget
     private generateExemplarGrowthCurves(scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): [string[][], string[]]
     {
         const xKey = 'Frame ID';
-        const yKey = 'Mass (pg)'; // todo maybe this should be dynamic
+        const yKey = this.exemplarYKey;
         let line = d3.line<PointND>()
             .x(d => scaleX(d.get(xKey)) )
             .y(d => scaleY(d.get(yKey)) );
