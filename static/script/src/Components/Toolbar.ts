@@ -384,6 +384,8 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('width', vizWidth + margin.left + margin.right)
 			.attr('height', vizHeight + margin.top + margin.bottom);
 
+		this.addApplyButton(outer);
+
 		let vizSelect = svgSelect.append('g')
 			.attr('transform', `translate(${margin.left}, ${margin.top})`)
 
@@ -572,7 +574,35 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			return letRowFilters.get(d[1]);
 		});
 
-		// todo, show/hide reset apply button.
+		let applyButton = document.getElementById('conditionFilterApplyButton');
+		if (this.tempConditionsDifferent())
+		{
+			DevlibTSUtil.show(applyButton);
+		}
+		else
+		{
+			DevlibTSUtil.hide(applyButton);
+		}
+	}
+
+	private addApplyButton(container: HtmlSelection): void
+	{	
+		let buttonSelect = container
+			.append('div')
+				.attr('style', 'display: flex; flex-direction: column; align-items: flex-end; width: 100%')
+			.append('button')
+			.attr('id', 'conditionFilterApplyButton')
+			.text('Apply Filter')
+			.classed('devlibButton', true)
+			.classed('devlibButton', true)
+			.attr('style', 'padding: 8px')
+			.on('click', () =>
+			{
+				this.copyTempConditionsToModel();
+				DevlibTSUtil.hide(buttonSelect.node());
+				// TODO - trigger filter event probably.
+			});
+		DevlibTSUtil.hide(buttonSelect.node());
 	}
 
 	private allConditionsTrue(): boolean
@@ -597,6 +627,34 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			for (let key of map.keys())
 			{
 				map.set(key, false);
+			}
+		}
+	}
+
+	private tempConditionsDifferent(): boolean
+	{
+		for (let key1 of this.tempConditionFilterState.keys())
+		{
+			let innerKeyVals = this.tempConditionFilterState.get(key1).entries();
+			for (let [key2, val] of innerKeyVals)
+			{
+				if (val !== this.fullData.conditionFilterState.get(key1)?.get(key2))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private copyTempConditionsToModel(): void
+	{
+		for (let key1 of this.tempConditionFilterState.keys())
+		{
+			let innerKeyVals = this.tempConditionFilterState.get(key1).entries();
+			for (let [key2, val] of innerKeyVals)
+			{
+				this.fullData.conditionFilterState.get(key1)?.set(key2, val);
 			}
 		}
 	}
