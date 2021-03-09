@@ -364,6 +364,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._squareAspectRatio = squareAspectRatio;
 		this.removeBrush();
 		this.OnDataChange();
+		document.dispatchEvent(new CustomEvent('averageCurveKeyChange', {
+			detail: {
+				yKey: yKey
+			}
+		}));
 	}
 	
 	private removeBrush(): void

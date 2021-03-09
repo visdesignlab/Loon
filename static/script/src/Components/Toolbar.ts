@@ -32,6 +32,11 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	public get modalPopupDiv() : HTMLDivElement {
 		return this._modalPopupDiv;
 	}
+	
+	private _yKey : string;
+	public get yKey() : string {
+		return this._yKey;
+	}	
 
 	private initToolbarElements(): void
 	{
@@ -96,10 +101,16 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		this._wrapperDiv = document.createElement("div");
 		this.wrapperDiv.classList.add("wrapperDiv");
 		this.container.appendChild(this.wrapperDiv);
+		this._yKey = 'Mass_norm';
 
 		this.initToolbarElements();
 		this.drawToolbarElements();
 		this.initModalPopup();
+
+		document.addEventListener('averageCurveKeyChange', (e: CustomEvent) => 
+		{
+			this._yKey = e.detail.yKey;
+		});
 	}
 
 	private drawToolbarElements(): void
@@ -382,15 +393,14 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 		let minMass = Infinity;
 		let maxMass = -Infinity;
-        const yKey = 'Mass (pg)'; // todo maybe this should be dynamic
 		for (let map of defaultFacets.values())
 		{
 			for (let data of map.values())
 			{
-				let thisMin = d3.min(data.getAverageCurve(yKey), d => d[1]);
+				let thisMin = d3.min(data.getAverageCurve(this.yKey), d => d[1]);
 				minMass = Math.min(thisMin, minMass);
 
-				let thisMax = d3.max(data.getAverageCurve(yKey), d => d[1]);
+				let thisMax = d3.max(data.getAverageCurve(this.yKey), d => d[1]);
 				maxMass = Math.max(thisMax, maxMass);
 			}
 		}
@@ -419,7 +429,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 					return '';
 				}
 				let data: CurveList = row.get(concLabel)
-				let avergeGrowthLine = data.getAverageCurve(yKey);
+				let avergeGrowthLine = data.getAverageCurve(this.yKey);
 				return lineAvg(avergeGrowthLine);
 			});
 
