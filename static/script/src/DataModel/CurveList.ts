@@ -6,7 +6,6 @@ import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
 import { DatasetSpec, Facet, AppData, LocationMapList, dataFilter, valueFilter, FacetOption } from '../types';
 import { CurveListFactory } from './CurveListFactory';
-import { timeHours } from 'd3';
 
 export class CurveList extends PointCollection implements AppData<DatasetSpec>
 {
@@ -29,7 +28,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
-		this._averageGrowthCurve = [];
+		this._averageCurveCache = new Map<string, [number, number][]>();
 		this._locationFrameSegmentLookup = new Map<number, Map<number, Map<number, [PointND, number]>>>();
 		// this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
 		const locationSet = new Set<number>();
@@ -57,6 +56,17 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._curveCollection = new CurveCollection(this, spec);
 		this._curveBrushList = new Map<string, [valueFilter, valueFilter]>();
 		this.Specification = spec;
+		this._conditionFilterState = new Map<string, Map<string, boolean>>();
+		for (let yKey in this.defaultFacetAxisTicks.yAxisTicks)
+		{
+			let thisMap = new Map<string, boolean>();
+			for (let xKey in this.defaultFacetAxisTicks.xAxisTicks)
+			{
+				thisMap.set(xKey, true);
+			}
+			this.conditionFilterState.set(yKey, thisMap);
+			// TODO fill as axisLabe, val double keys
+		}
 	}
 
 	private _curveList : CurveND[];
@@ -91,38 +101,42 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return this._minMaxMap;
 	}
 
-	private _averageGrowthCurve: [number, number][];
-	public get averageGrowthCurve(): [number, number][]
+	private _averageCurveCache: Map<string, [number, number][]>;
+	public getAverageCurve(avgKey: string): [number, number][]
 	{
-		if (this._averageGrowthCurve.length > 0)
+		if (this._averageCurveCache.has(avgKey))
 		{
-			this._averageGrowthCurve;
+			return this._averageCurveCache.get(avgKey)
 		}
+		
 		let sumCountMap: Map<number, [number, number]> = new Map<number, [number, number]>();
 
 		for (let point of this)
 		{
 			let frame = point.get('Frame ID');
-			let mass = point.get('Mass (pg)');
+			let mass = point.get(avgKey);
 			let [sum, count] = sumCountMap.has(frame) ? sumCountMap.get(frame) : [0, 0];
 			sumCountMap.set(frame, [sum + mass, count + 1] );
 		}
 		let frameList = Array.from(sumCountMap.keys()).sort((a,b) => a-b);
-		this._averageGrowthCurve = frameList.map(frame => 
+		const avgCurve: [number, number][] = frameList.map(frame => 
 			{
 				let [sum, count] = sumCountMap.get(frame);
 				return [frame, sum / count];
 			});
-		return this._averageGrowthCurve;
+		this._averageCurveCache.set(avgKey, avgCurve);
+		return avgCurve;
 	}
 
 	private _defaultFacetAxisTicks: {
-		xAxisTicks: string[];
-		yAxisTicks: string[];
+		xAxisTicks: string[],
+		yAxisTicks: string[],
+		axisLabels: [string, string]
 	}
 	public get defaultFacetAxisTicks(): {
-		xAxisTicks: string[];
-		yAxisTicks: string[];
+		xAxisTicks: string[],
+		yAxisTicks: string[],
+		axisLabels: [string, string]
 	}
 	{
 		if (this._defaultFacetAxisTicks)
@@ -135,34 +149,31 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 
 		const yKeys = Object.keys(this.Specification.locationMaps[firstFacetOption.name]);
 		const xKeys = Object.keys(this.Specification.locationMaps[secondFacetOption.name]);
+		let axisLabels: [string, string] = [firstFacetOption.name, secondFacetOption.name];
+
 
 		let returnObject = {
 			xAxisTicks: xKeys,
-			yAxisTicks: yKeys
+			yAxisTicks: yKeys,
+			axisLabels: axisLabels
 		}
 		this._defaultFacetAxisTicks = returnObject;
 		return returnObject;
 	}
 
-	private _defaultFacetInfo:  {
-		nestedMap: Map<string, Map<string, CurveList>>;
-		axisLabels: [string, string];
-	}
-    public get defaultFacetInfo(): {
-		nestedMap: Map<string, Map<string, CurveList>>;
-		axisLabels: [string, string];
-	}
-    {
-		if (this._defaultFacetInfo)
+	private _defaultFacets:  Map<string, Map<string, CurveList>>
+
+    public get defaultFacets(): Map<string, Map<string, CurveList>>
+	{
+		if (this._defaultFacets)
 		{
-			return this._defaultFacetInfo
+			return this._defaultFacets
 		}
 		const drugIdx = 0;
 		const concIdx = 1;
 		let facetOptions: FacetOption[] = this.GetFacetOptions();
 		let firstFacetOption = facetOptions[drugIdx];
 		let firstFacets: Facet[] = firstFacetOption.GetFacets();
-		let secondFacetOption = facetOptions[concIdx];
 		let nestedFacetMap: Map<string, Map<string, CurveList>> = new Map();
 		for (let {name: categoryName, data: data} of firstFacets)
 		{
@@ -176,14 +187,8 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			nestedFacetMap.set(categoryName, thisDict);
 		}
 
-		let axisLabels: [string, string] = [firstFacetOption.name, secondFacetOption.name];
-
-		let returnObject = {
-			nestedMap: nestedFacetMap,
-			axisLabels: axisLabels
-		}
-		this._defaultFacetInfo = returnObject;
-		return returnObject;
+		this._defaultFacets = nestedFacetMap;
+		return nestedFacetMap;
     }
 
 
@@ -334,7 +339,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		}
 		return [null, null];
 	}
-	
 
 	private _brushApplied : boolean;
 	public get brushApplied() : boolean {
@@ -347,7 +351,12 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 	private _curveBrushList : Map<string, [valueFilter, valueFilter]>;
 	public get curveBrushList() : Map<string, [valueFilter, valueFilter]> {
 		return this._curveBrushList;
-	}	
+	}
+
+	private _conditionFilterState : Map<string, Map<string, boolean>>;
+	public get conditionFilterState() : Map<string, Map<string, boolean>> {
+		return this._conditionFilterState;
+	}
 
 	protected getFacetList(locationMap: LocationMapList): Facet[]
 	{

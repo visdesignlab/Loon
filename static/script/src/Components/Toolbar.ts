@@ -342,8 +342,8 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.classed('largeText', true)
 			.text('Filter by Condition');
 
-		let defaultFacetInfo = this.data.defaultFacetInfo;
-		let defaultAxisTicks = this.fullData.defaultFacetAxisTicks;
+		const defaultFacets = this.data.defaultFacets;
+		const defaultAxisTicks = this.fullData.defaultFacetAxisTicks;
 
 		const wCount = defaultAxisTicks.xAxisTicks.length;
 		const vizWidth = wCount * miniSize + (wCount - 1) * miniPadding;
@@ -382,14 +382,15 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 		let minMass = Infinity;
 		let maxMass = -Infinity;
-		for (let map of defaultFacetInfo.nestedMap.values())
+        const yKey = 'Mass (pg)'; // todo maybe this should be dynamic
+		for (let map of defaultFacets.values())
 		{
 			for (let data of map.values())
 			{
-				let thisMin = d3.min(data.averageGrowthCurve, d => d[1]);
+				let thisMin = d3.min(data.getAverageCurve(yKey), d => d[1]);
 				minMass = Math.min(thisMin, minMass);
 
-				let thisMax = d3.max(data.averageGrowthCurve, d => d[1]);
+				let thisMax = d3.max(data.getAverageCurve(yKey), d => d[1]);
 				maxMass = Math.max(thisMax, maxMass);
 			}
 		}
@@ -408,18 +409,17 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('d', d => 
 			{
 				let [drugLabel, concLabel] = d;
-				let map = defaultFacetInfo.nestedMap;
-				if (!map.has(drugLabel))
+				if (!defaultFacets.has(drugLabel))
 				{
 					return ''; // empty when no data
 				}
-				let row = map.get(drugLabel);
+				let row = defaultFacets.get(drugLabel);
 				if (!row.has(concLabel))
 				{
 					return '';
 				}
 				let data: CurveList = row.get(concLabel)
-				let avergeGrowthLine = data.averageGrowthCurve;
+				let avergeGrowthLine = data.getAverageCurve(yKey);
 				return lineAvg(avergeGrowthLine);
 			});
 
@@ -433,7 +433,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		const mainLabelSize = 20;
 
 		yAxisSelect.selectAll('text')
-			.data([defaultFacetInfo.axisLabels[0]])
+			.data([defaultAxisTicks.axisLabels[0]])
 		  .join('text')
 			.attr('text-anchor', 'middle')
 			.attr('dominant-baseline', 'hanging')
@@ -464,7 +464,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${margin.left}, ${margin.top + vizHeight})`);
 		
 		xAxisSelect.selectAll('text')
-			.data([defaultFacetInfo.axisLabels[1]])
+			.data([defaultAxisTicks.axisLabels[1]])
 		  .join('text')
 			.attr('text-anchor', 'middle')
 			.attr('dominant-baseline', 'hanging')

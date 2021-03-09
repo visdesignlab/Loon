@@ -267,8 +267,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		let buttonPropList: ButtonProps[] = [];
 		for (let quickPickOption of this.quickPickOptions)
 		{
+			let optionName: string;
+			if (quickPickOption.averaged)
+			{
+				optionName = 'Averaged: ' + quickPickOption.yKey + ' over ' + quickPickOption.xKey;
+			}
+			else
+			{
+				optionName = quickPickOption.yKey + " v. " + quickPickOption.xKey;
+			}
 			let buttonProp: ButtonProps = {
-				displayName: quickPickOption.yKey + " v. " + quickPickOption.xKey,
+				displayName: optionName,
 				callback: () => this.changeAxes(quickPickOption.xKey, quickPickOption.yKey, quickPickOption.averaged, quickPickOption.squareAspectRatio)
 			}
 			buttonPropList.push(buttonProp);
@@ -367,8 +376,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		let minX : number, maxX : number, minY : number, maxY : number;
 		if (this.inAverageMode)
 		{
-			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).averageGrowthCurve, d => d[1]));
-			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).averageGrowthCurve, d => d[1]));
+			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey), d => d[1]));
+			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey), d => d[1]));
 		}
 		else
 		{
@@ -500,7 +509,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			}
 			let facet = this.facetList[i];
 			canvasContext.strokeStyle = i >= 10 ? 'black' : d3.schemeCategory10[i];
-			const path = new Path2D(lineAvg(facet.data.averageGrowthCurve));
+			const path = new Path2D(lineAvg(facet.data.getAverageCurve(this.yKey)));
 			canvasContext.stroke(path);
 		}
 	}

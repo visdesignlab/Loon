@@ -52,7 +52,37 @@
 											"quickPickOptions": [
 												{
 													"xKey": "Frame ID",
+													"yKey": "Mass_norm",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
 													"yKey": "Mass (pg)",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "Location ID",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "shape factor",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "Area",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "X",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "Y",
 													"averaged": true,
 													"squareAspectRatio": false
 												}, {

@@ -1303,7 +1303,7 @@ export class ImageTrackWidget
     private generateExemplarGrowthCurves(scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): [string[][], string[]]
     {
         const xKey = 'Frame ID';
-        const yKey = 'Mass (pg)';
+        const yKey = 'Mass (pg)'; // todo maybe this should be dynamic
         let line = d3.line<PointND>()
             .x(d => scaleX(d.get(xKey)) )
             .y(d => scaleY(d.get(yKey)) );
@@ -1330,7 +1330,7 @@ export class ImageTrackWidget
         let averageGrowthLines: string[] = [];
         for (let facet of this.parentWidget.facetList)
         {
-            let averageGrowthCurve = facet.data.averageGrowthCurve;
+            let averageGrowthCurve = facet.data.getAverageCurve(yKey);
             let averageGrowthCurveString = lineAvg(averageGrowthCurve);
             averageGrowthLines.push(averageGrowthCurveString);
         }
