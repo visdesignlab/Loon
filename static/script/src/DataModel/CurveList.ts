@@ -302,6 +302,61 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		}
 	}
 
+	public ApplyNewFilter(): void
+	{
+		this.OnBrushChange();
+		const inFilterLocations: Set<number> = this.generateInFilterLocations();
+		for (let curve of this.curveList)
+		{
+			const firstPoint = curve.pointList[0];
+			const location = firstPoint.get('Location ID');
+			if (!inFilterLocations.has(location))
+			{
+				curve.inBrush = false;
+			}
+		}
+	}
+
+	private generateInFilterLocations(): Set<number>
+	{
+		const inFilterSet = new Set<number>();
+		const [label1, label2] = this.defaultFacetAxisTicks.axisLabels
+		for (let key1 of this.conditionFilterState.keys())
+		{
+			let numberRangeList1 = this.Specification.locationMaps[label1][key1];
+			let numberSet1 = CurveList.numberRangeListToSet(numberRangeList1);
+			let rowMap = this.conditionFilterState.get(key1);
+			for (let [key2, value] of rowMap.entries())
+			{
+				if (value)
+				{
+					let numberRangeList2 = this.Specification.locationMaps[label2][key2];
+					let numberSet2 = CurveList.numberRangeListToSet(numberRangeList2);
+					let intersection: number[] = [...numberSet1].filter(x => numberSet2.has(x));
+					for (let val of intersection)
+					{
+						inFilterSet.add(val);
+					}
+				}
+			}
+		}
+
+		return inFilterSet;
+	}
+
+	private static numberRangeListToSet(numberRangeList: [number, number][]): Set<number>
+	{
+		const numberSet = new Set<number>();
+		for (let [low, high] of numberRangeList)
+		{
+			for (let i = low; i <= high; i++)
+			{
+				numberSet.add(i);
+			}
+		}
+		return numberSet;
+	}
+
 	public GetCellsAtFrame(locationId: number, frameId: number): PointND[]
 	{
 		if (this._locationFrameSegmentLookup.has(locationId))

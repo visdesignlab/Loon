@@ -31,6 +31,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		this._pointDerivationFunctions = derivedPointDataFunctions;
 		document.addEventListener(DataEvents.brushChange, (e: Event) => {this.onBrushChange()});
 		document.addEventListener(DataEvents.selectionToFilter, (e: Event) => {this.onSelectionToFilter()});
+		document.addEventListener(DataEvents.applyNewFilter, (e: Event) => {this.onApplyNewFilter()});
 	}
 
 	
@@ -200,6 +201,13 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	{
 		this.data.ConsumeFilters(this.filteredData);
 		let filteredData = this.filteredData.CreateFilteredCurveList() as DataType;
+		this.SetData(filteredData, this.data);
+	}
+
+	private onApplyNewFilter(): void
+	{
+		this.data.ApplyNewFilter();
+		let filteredData = this.data.CreateFilteredCurveList() as DataType;
 		this.SetData(filteredData, this.data);
 	}
 

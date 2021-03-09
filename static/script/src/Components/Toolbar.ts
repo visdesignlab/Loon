@@ -600,7 +600,8 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				this.copyTempConditionsToModel();
 				DevlibTSUtil.hide(buttonSelect.node());
-				// TODO - trigger filter event probably.
+				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
+				this.onConditionFilterClick(true);
 			});
 		DevlibTSUtil.hide(buttonSelect.node());
 	}

@@ -48,6 +48,7 @@ export interface AppData<SpecType> {
 	CreateFilteredCurveList: () => AppData<SpecType>;
 	ApplyDefaultFilters: () => void;
 	ConsumeFilters: (AppData) => void;
+	ApplyNewFilter();
 	Specification: SpecType;
 }
 

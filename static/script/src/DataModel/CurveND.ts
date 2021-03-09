@@ -61,6 +61,7 @@ export class CurveND extends PointCollection implements NDim {
 
 	public OnBrushChange(): void { }
 	public ConsumeFilters(AppData: any): void {};
+	public ApplyNewFilter(): void {};
 
 	public addValue(key: string, value: number)
 	{
