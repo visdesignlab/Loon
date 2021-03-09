@@ -65,6 +65,14 @@ button, option, select {
     padding-bottom: 6px;
 }
 
+.miniCell {
+    opacity: 0.3;
+}
+
+.miniCell.inFilter {
+    opacity: 1.0;
+}
+
 .miniBox {
     stroke: #afafaf;
     stroke-width: 1;

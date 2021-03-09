@@ -57,15 +57,14 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._curveBrushList = new Map<string, [valueFilter, valueFilter]>();
 		this.Specification = spec;
 		this._conditionFilterState = new Map<string, Map<string, boolean>>();
-		for (let yKey in this.defaultFacetAxisTicks.yAxisTicks)
+		for (let yKey of this.defaultFacetAxisTicks.yAxisTicks)
 		{
 			let thisMap = new Map<string, boolean>();
-			for (let xKey in this.defaultFacetAxisTicks.xAxisTicks)
+			for (let xKey of this.defaultFacetAxisTicks.xAxisTicks)
 			{
 				thisMap.set(xKey, true);
 			}
 			this.conditionFilterState.set(yKey, thisMap);
-			// TODO fill as axisLabe, val double keys
 		}
 	}
 

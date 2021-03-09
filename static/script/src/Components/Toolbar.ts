@@ -1,10 +1,11 @@
 import * as d3 from 'd3';
-import {HtmlSelection, ToolbarElement} from '../devlib/DevLibTypes';
+import {HtmlSelection, SvgSelection, ToolbarElement} from '../devlib/DevLibTypes';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { BaseWidget } from './BaseWidget';
 import { CurveList } from '../DataModel/CurveList';
 import { dataFilter, DatasetSpec, valueFilter } from '../types';
 import { DataEvents } from '../DataModel/DataEvents';
+import { isThisTypeNode } from 'typescript';
 
 export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
@@ -36,7 +37,17 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	private _yKey : string;
 	public get yKey() : string {
 		return this._yKey;
-	}	
+	}
+
+	private _tempConditionFilterState : Map<string, Map<string, boolean>>;
+	public get tempConditionFilterState() : Map<string, Map<string, boolean>> {
+		return this._tempConditionFilterState;
+	}
+
+	private _miniCellSelect : SvgSelection;
+	public get miniCellSelect() : SvgSelection {
+		return this._miniCellSelect;
+	}
 
 	private initToolbarElements(): void
 	{
@@ -102,6 +113,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		this.wrapperDiv.classList.add("wrapperDiv");
 		this.container.appendChild(this.wrapperDiv);
 		this._yKey = 'Mass_norm';
+		this._tempConditionFilterState = new Map<string, Map<string, boolean>>();
 
 		this.initToolbarElements();
 		this.drawToolbarElements();
@@ -333,6 +345,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			return;
 		}
+		// copy
+		this.tempConditionFilterState.clear();
+		for (let [key, value] of this.dataSuperset.conditionFilterState.entries())
+		{
+			this.tempConditionFilterState.set(key, new Map(value));
+		}
 
 		let outer = d3.select(this.modalPopupDiv);
 		
@@ -362,7 +380,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		const lCount = defaultAxisTicks.yAxisTicks.length;
 		const vizHeight = lCount * miniSize + (lCount - 1) * miniPadding;
 
-		let svgSelect = outer.append('svg')
+		const svgSelect = outer.append('svg')
 			.attr('width', vizWidth + margin.left + margin.right)
 			.attr('height', vizHeight + margin.top + margin.bottom);
 
@@ -372,15 +390,28 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		let rowSelect = vizSelect.selectAll('g')
 			.data(defaultAxisTicks.yAxisTicks)
 			.join('g')
+			.classed('row', true)
 			.attr('transform', (_, i) => `translate(0, ${i * (miniSize + miniPadding)})`);
 
-		let cellSelect = rowSelect.selectAll('g')
+		this._miniCellSelect = rowSelect.selectAll('g')
 			.data(d => defaultAxisTicks.xAxisTicks.map(label => [d, label]))
 			.join('g')
 			.classed('miniCell', true)
-			.attr('transform', (_, i) => `translate(${i * (miniSize + miniPadding)}, 0)`);
+			.on('click', (d) =>
+			{
+				if (this.allConditionsTrue())
+				{
+					this.setAllConditionsFalse();
+				}
+				let oldVal = this.tempConditionFilterState.get(d[0])?.get(d[1]);
+				this.tempConditionFilterState.get(d[0])?.set(d[1], !oldVal);
+				this.updateConditionFilterSelection();
+			})
+			.attr('transform', (_, i) => `translate(${i * (miniSize + miniPadding)}, 0)`) as SvgSelection;
 			
-		cellSelect.append('rect')
+		this.updateConditionFilterSelection()
+		
+		this.miniCellSelect.append('rect')
 			.attr('width', miniSize)
 			.attr('height', miniSize)
 			.classed('miniBox', true);
@@ -390,7 +421,6 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.domain(frameExtent)
 			.range([0, miniSize]);
 		
-
 		let minMass = Infinity;
 		let maxMass = -Infinity;
 		for (let map of defaultFacets.values())
@@ -413,7 +443,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
             .x(d => scaleX(d[0]))
             .y(d => scaleY(d[1]));
 					
-		cellSelect.append('path')
+		this.miniCellSelect.append('path')
 			.attr('alignment-baseline', 'hanging')
 			.classed('miniExemplarCurve', true)
 			.attr('d', d => 
@@ -465,8 +495,21 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.classed('basicIconButton', true)
 			.attr('style', `max-width: ${maxLabelWidth}px; min-width: ${maxLabelWidth}px;`)
 			.attr('title', d => d)
+			.on('click', (d) => 
+			{
+				if (this.allConditionsTrue())
+				{
+					this.setAllConditionsFalse();
+				}
+				let rowMap = this.tempConditionFilterState.get(d);
+				let newValue: boolean = !Array(...rowMap.values()).every(x => x)
+				for (let key of rowMap.keys())
+				{
+					rowMap.set(key, newValue);
+				}
+				this.updateConditionFilterSelection();
+			})
 			.text(d => d);
-
 		
 		const maxLabelHeight = 36;
 
@@ -495,7 +538,67 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		  	.classed('basicIconButton', true)
 			.attr('style', `max-width: ${miniSize}px; min-width: ${miniSize}px; height: ${maxLabelHeight}px`)
 		  	.attr('title', d => d)
+			.on('click', (d) => 
+			{
+				if (this.allConditionsTrue())
+				{
+					this.setAllConditionsFalse();
+				}
+				const rowList: Map<string, boolean>[] = Array(...this.tempConditionFilterState.values())
+				const colValues: boolean[] = rowList.map(m => m.get(d))
+				const newValue: boolean = !colValues.every(x => x)
+				for (let map of rowList)
+				{
+					map.set(d, newValue);
+				}
+				this.updateConditionFilterSelection();
+			})
 			.text(d => d);
+	}
+
+	private updateConditionFilterSelection(): void
+	{
+		this.miniCellSelect.classed('inFilter', d => 
+		{
+			if (!this.tempConditionFilterState.has(d[0]))
+			{
+				return false;
+			}
+			let letRowFilters = this.tempConditionFilterState.get(d[0])
+			if (this.tempConditionFilterState.has(d[1]))
+			{
+				return false;
+			}
+			return letRowFilters.get(d[1]);
+		});
+
+		// todo, show/hide reset apply button.
+	}
+
+	private allConditionsTrue(): boolean
+	{
+		for (let map of this.tempConditionFilterState.values())
+		{
+			for (let val of map.values())
+			{
+				if (!val)
+				{
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private setAllConditionsFalse(): void
+	{
+		for (let map of this.tempConditionFilterState.values())
+		{
+			for (let key of map.keys())
+			{
+				map.set(key, false);
+			}
+		}
 	}
 
 	protected OnResize(): void
