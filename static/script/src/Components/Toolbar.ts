@@ -329,6 +329,27 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				displayString += ' at least once.';
 				return displayString;
 			});
+
+		filterSelection.append('button')
+			.classed('basicIconButton', true)
+			.on('click', d =>
+			{
+				if (d.type === 'curve')
+				{
+					this.fullData.removeCurveBrush(d.filterKey);
+				}
+				else if (d.type === 'track')
+				{
+					this.fullData.curveCollection.removeBrush(d.filterKey);
+				}
+				else if (d.type === 'cell')
+				{
+					this.fullData.removeBrush(d.filterKey);
+				}
+				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
+				this.onDataFilterClick(true);
+			})
+			.html('<i class="fas fa-minus"></i>');
 	}
 
 	private triggerSelectionToFilterEvent(): void
@@ -336,7 +357,6 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		document.dispatchEvent(new CustomEvent(DataEvents.selectionToFilter));
 		this.onDataFilterClick(true);
 	}
-
 
 	private onConditionFilterClick(show: boolean): void
 	{
