@@ -88,10 +88,20 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 		return this._canvasElement;
 	}
     
+    private _totalBoxplotContainerSelectOutline : SvgSelection;
+    public get totalBoxplotContainerSelectOutline() : SvgSelection {
+        return this._totalBoxplotContainerSelectOutline;
+    }
+
     private _totalBoxplotContainerSelect : SvgSelection;
     public get totalBoxplotContainerSelect() : SvgSelection {
         return this._totalBoxplotContainerSelect;
     }  
+
+    private _filteredBoxplotContainerSelectOutline : SvgSelection;
+    public get filteredBoxplotContainerSelectOutline() : SvgSelection {
+        return this._filteredBoxplotContainerSelectOutline;
+    }
 
     private _filteredBoxplotContainerSelect : SvgSelection;
     public get filteredBoxplotContainerSelect() : SvgSelection {
@@ -192,11 +202,21 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         this._mainGroupSelect = this.svgSelect.append("g")
             .attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.scatterplotPadding})`);
 
+        this._totalBoxplotContainerSelectOutline = this.svgSelect.append('g')
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+            .classed('boxplot-container', true);
+            
         this._totalBoxplotContainerSelect = this.svgSelect.append('g')
-            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+            .classed('boxplot-container', true);
+
+        this._filteredBoxplotContainerSelectOutline = this.svgSelect.append('g')
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+            .classed('boxplot-container', true);
 
         this._filteredBoxplotContainerSelect = this.svgSelect.append('g')
-            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+            .attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
+            .classed('boxplot-container', true);
             
         this._brushGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
@@ -350,13 +370,18 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         if (this.data.brushApplied)
         {
             const smallBoxplotHeight = (this.vizHeight - this.betweenBoxplotPadding) / 2;
+            this.drawBoxplot(this.totalBoxplotContainerSelectOutline, this.totalBoxplotStats, 0, smallBoxplotHeight, true);       
             this.drawBoxplot(this.totalBoxplotContainerSelect, this.totalBoxplotStats, 0, smallBoxplotHeight);       
-            this.drawBoxplot(this.filteredBoxplotContainerSelect, this.filteredBoxplotStats, smallBoxplotHeight + this.betweenBoxplotPadding, smallBoxplotHeight)
+            this.drawBoxplot(this.filteredBoxplotContainerSelectOutline, this.filteredBoxplotStats, smallBoxplotHeight + this.betweenBoxplotPadding, smallBoxplotHeight, true, true)
+            this.drawBoxplot(this.filteredBoxplotContainerSelect, this.filteredBoxplotStats, smallBoxplotHeight + this.betweenBoxplotPadding, smallBoxplotHeight, false, true)
+            this.filteredBoxplotContainerSelectOutline.classed('noDisp', false);
             this.filteredBoxplotContainerSelect.classed('noDisp', false);
         }
         else
         {
+            this.drawBoxplot(this.totalBoxplotContainerSelectOutline, this.totalBoxplotStats, 0, this.vizHeight, true);       
             this.drawBoxplot(this.totalBoxplotContainerSelect, this.totalBoxplotStats, 0, this.vizHeight);       
+            this.filteredBoxplotContainerSelectOutline.classed('noDisp', true);
             this.filteredBoxplotContainerSelect.classed('noDisp', true);
         }
 
@@ -374,7 +399,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         this.xLabelTextSelect.classed('noDisp', false);
     }
 
-    private drawBoxplot(containerSelect: SvgSelection, boxplotStats: BoxplotStats, top: number, height: number): void
+    private drawBoxplot(containerSelect: SvgSelection, boxplotStats: BoxplotStats, top: number, height: number, outline: boolean = false, selection: boolean = false): void
     {
         // Median
         containerSelect.selectAll('.boxplotMedianLine')
@@ -384,13 +409,17 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
             .attr('y1', top)
             .attr('x2', d => this.scaleX(d))
             .attr('y2', top + height)
-            .classed('boxplotMedianLine', true);
+            .classed('boxplotMedianLine', true)
+            .classed('outline', outline)
+            .classed('selection', selection);
 
         // IQR Box
         containerSelect.selectAll('rect')
             .data<[number, number]>([boxplotStats.quartileRange])
           .join('rect')
             .classed('IQR-Box', true)
+            .classed('selection', selection)
+            .classed('outline', outline)
             .attr('x', d => this.scaleX(d[0]))
             .attr('y', top)
             .attr('width', d => this.scaleX(d[1]) - this.scaleX(d[0]))
@@ -415,6 +444,8 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
             .attr('y1', vertMiddle)
             .attr('x2', d => this.scaleX(d[1]))
             .attr('y2', vertMiddle)
+            .classed('selection', selection)
+            .classed('outline', outline)
             .classed('boxplotWhiskers', true);
 
         // vertical whisker endpoints
@@ -427,6 +458,8 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
             .attr('y1', top + padSize)
             .attr('x2', d => this.scaleX(d))
             .attr('y2', top + height - padSize)
+            .classed('selection', selection)
+            .classed('outline', outline)
             .classed('boxplotWhiskerEnds', true);
     }
 
