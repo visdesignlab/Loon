@@ -5,6 +5,7 @@ import { BaseWidget } from './BaseWidget';
 import { CurveList } from '../DataModel/CurveList';
 import { dataFilter, DatasetSpec, valueFilter } from '../types';
 import { DataEvents } from '../DataModel/DataEvents';
+import { IDBPDatabase, openDB } from 'idb';
 
 export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
@@ -51,6 +52,11 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	private _miniCellSelect : SvgSelection;
 	public get miniCellSelect() : SvgSelection {
 		return this._miniCellSelect;
+	}
+	
+	private _dataStore : IDBPDatabase<unknown>;
+	public get dataStore() : IDBPDatabase<unknown> {
+		return this._dataStore;
 	}
 
 	private initToolbarElements(): void
@@ -107,6 +113,27 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				iconKey: 'th',
 				callback: (state: boolean) => this.onConditionFilterClick(state),
 				tooltip: 'View and modify conditional filters'
+			},
+			{
+				type: 'single', // todo this might be better as a popupButton actually.
+				iconKey: 'trash',
+				callback: async () =>
+				{
+					if (this.dataStore)
+					{
+						const key = this.data.Specification.googleDriveId;
+						this.dataStore.delete('tracks', key);
+						let keys = await this.dataStore.getAllKeys('images');
+						for (let imgKey of keys)
+						{
+							if (imgKey.toString().includes(key))
+							{
+								this.dataStore.delete('images', imgKey)
+							}
+						}
+					}
+				},
+				tooltip: 'Delete cached data'
 			}
 		]
 	}
@@ -128,6 +155,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this._yKey = e.detail.yKey;
 		});
+        openDB('loon-db').then(dataStore => this._dataStore = dataStore);
 	}
 
 	private drawToolbarElements(): void
