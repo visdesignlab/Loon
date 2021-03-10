@@ -119,19 +119,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				iconKey: 'trash',
 				callback: async () =>
 				{
-					if (this.dataStore)
-					{
-						const key = this.data.Specification.googleDriveId;
-						this.dataStore.delete('tracks', key);
-						let keys = await this.dataStore.getAllKeys('images');
-						for (let imgKey of keys)
-						{
-							if (imgKey.toString().includes(key))
-							{
-								this.dataStore.delete('images', imgKey)
-							}
-						}
-					}
+					this.clearIDBCache();
 				},
 				tooltip: 'Delete cached data'
 			}
@@ -768,6 +756,23 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			for (let [key2, val] of innerKeyVals)
 			{
 				this.fullData.conditionFilterState.get(key1)?.set(key2, val);
+			}
+		}
+	}
+
+	private async clearIDBCache(): Promise<void>
+	{
+		if (this.dataStore)
+		{
+			const key = this.data.Specification.googleDriveId;
+			this.dataStore.delete('tracks', key);
+			let keys = await this.dataStore.getAllKeys('images');
+			for (let imgKey of keys)
+			{
+				if (imgKey.toString().includes(key))
+				{
+					this.dataStore.delete('images', imgKey)
+				}
 			}
 		}
 	}
