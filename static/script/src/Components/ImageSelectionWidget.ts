@@ -350,6 +350,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .data(locationList)
             .join('li');
 
+        let countToPercent: d3.ScaleLinear<number, number>
+        if (!this.data.brushApplied)
+        {
+            const maxTotalCells = d3.max(this.imageMetaData.locationList, loc => loc.totalCount);
+            // const totalCellsExtent = d3.extent(this.imageMetaData.locationList, loc => loc.totalCount);
+            countToPercent = d3.scaleLinear()
+                .domain([0, maxTotalCells])
+                .range([0, 1.0]);
+        }
+
         listElement.html(null)
             .append('button')
             .text(d => d)
@@ -360,7 +370,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('style', d => 
             {
                 const location = this.imageMetaData.locationLookup.get(d);
-                const stop = (1 - location.inBrushPercent) * 100
+                const percent = this.data.brushApplied ? location.inBrushPercent : countToPercent(location.totalCount);
+                const stop = (1 - percent) * 100
                 const barColor = '#EDCAC9'; // lighter firebrick
                 return `background: linear-gradient(to left, rgba(255,255,255,0), rgba(255,255,255,0) ${stop}%, ${barColor}, ${stop}%, ${barColor})`
             })
@@ -395,12 +406,22 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .domain(frameExtent)
             .range([marginW, miniWidth -  marginW]);
 
+        let domainMax: number;
+        if (this.data.brushApplied)
+        {
+            domainMax = 1; // max percent is 1.0
+        }
+        else
+        {
+            domainMax = d3.max(this.imageMetaData.locationList, imgLoc=> d3.max(imgLoc.frameList, frame => frame.totalCount));
+        }
+
         const scaleLineWidth = d3.scaleLinear()
-            .domain([0, 1])
+            .domain([0, domainMax])
             .range([1.0, 3.0]);
 
         this._frameScaleHeight = d3.scaleLinear()
-            .domain([0, 1])
+            .domain([0, domainMax])
             .range([1, this.frameHeight - 2 * this.frameMarginTopBot]);
 
         svgSelection.selectAll('line')
@@ -410,14 +431,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('x2', d => this.frameScaleX(d.frameId))
             .attr('y1', d => 
                 {
-                    // if (isNaN(d.inBrushPercent))
-                    // {
-                    //     return this.frameHeight - this.
-                    // }
-                    return (this.frameHeight - this.frameScaleHeight(d.inBrushPercent)) / 2;
+                    let toScale = this.data.brushApplied ? d.inBrushPercent : d.totalCount;
+                    return (this.frameHeight - this.frameScaleHeight(toScale)) / 2;
                 })
-            .attr('y2', d => this.frameHeight - (this.frameHeight - this.frameScaleHeight(d.inBrushPercent)) / 2)
-            .attr('stroke-width', d => scaleLineWidth(d.inBrushPercent))
+            .attr('y2', d => 
+                {
+                    let toScale = this.data.brushApplied ? d.inBrushPercent : d.totalCount;
+                    return this.frameHeight - (this.frameHeight - this.frameScaleHeight(toScale)) / 2
+                })
+            .attr('stroke-width', d => this.data.brushApplied ? scaleLineWidth(d.inBrushPercent) : scaleLineWidth(d.totalCount))
             .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
             .classed('tickMark', true);
     
@@ -454,26 +476,21 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private handleKeyDown(event: KeyboardEvent): void
 	{
         let newIndex: number;
-        const [locId, frameId] = this.hoveredLocFrame;
+        // const [locId, frameId] = this.hoveredLocFrame;
+        const [locId, frameId] = this.selectedLocFrame;
         const location = this.imageMetaData.locationLookup.get(locId);
         let nextFrameId: number;
 		switch (event.keyCode)
 		{
             case 37: // left
-                if (this.hoveredLocId !== locId) { return; }
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
-                this.onHoverLocationFrame(locId, nextFrameId, null, true)
+                this.onClickLocationFrame(locId, nextFrameId);
 				break;
             case 39: // right
-                if (this.hoveredLocId !== locId) { return; }
                 const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
                 nextFrameId = Math.min(frameId + 1, maxFrameId);
-                this.onHoverLocationFrame(locId, nextFrameId, null, true);
-                break;
-            case 13: // enter
-                if (this.hoveredLocId !== locId) { return; }
-                this.switchToHovered();
+                this.onClickLocationFrame(locId, nextFrameId);
                 break;
 		}
 	}

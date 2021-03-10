@@ -86,6 +86,11 @@ button, option, select {
     stroke-linejoin: bevel;
 }
 
+.miniExemplarCurve.selection {
+    stroke: firebrick;
+    stroke-opacity: 0.6;
+}
+
 .y.axisButtonContainer {
     display: flex;
     flex-direction: row;

@@ -1,23 +1,57 @@
+.boxplot-container .outline {
+    stroke: white !important;
+    opacity: 0.5;
+}
+
 .IQR-Box {
-    stroke: #1565c0;
+    /* stroke: #1565c0; */
+    /* stroke: #102742; */
+    stroke: black;
     stroke-width: 2px;
     /* fill:blue; */
     fill-opacity: 0;
 }
-
-.boxplotMedianLine {
+.IQR-Box.selection {
     stroke: firebrick;
-    stroke-width: 2px;
+}
+.IQR-Box.outline {
+    stroke-width: 4px;
 }
 
+.boxplotMedianLine {
+    stroke: black;
+    stroke-width: 2px;
+}
+.boxplotMedianLine.selection {
+    stroke :firebrick
+}
+.boxplotMedianLine.outline {
+    stroke-width: 4px;
+}
+
+
 .boxplotWhiskers {
-    stroke: #1565c0;
+    stroke: black;
+    /* stroke: #1565c0; */
     stroke-width: 1px;
+}
+.boxplotWhiskers.selection {
+    stroke: firebrick;
+}
+.boxplotWhiskers.outline {
+    stroke-width: 4px;
 }
 
 .boxplotWhiskerEnds {
-    stroke: #1565c0;
+    stroke: black;
+    /* stroke: #1565c0; */
     stroke-width: 2px;
+}
+.boxplotWhiskerEnds.selection {
+    stroke: firebrick;
+}
+.boxplotWhiskerEnds.outline {
+    stroke-width: 4px;
 }
 
 .boxplotStatsPopup {
