@@ -514,7 +514,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			}
 			let facet = this.facetList[i];
 			canvasContext.strokeStyle = i >= 10 ? 'black' : d3.schemeCategory10[i];
-			const path = new Path2D(lineAvg(facet.data.getAverageCurve(this.yKey)));
+			let dataPoints = facet.data.getAverageCurve(this.yKey);
+			if (dataPoints.length === 0)
+			{
+				continue;
+			}
+			const path = new Path2D(lineAvg(dataPoints));
 			canvasContext.stroke(path);
 		}
 	}

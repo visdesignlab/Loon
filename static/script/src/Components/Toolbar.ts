@@ -449,17 +449,18 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			for (let data of map.values())
 			{
+				let dataPoints = data.getAverageCurve(this.yKey, true);
 				let thisMin = d3.min(data.getAverageCurve(this.yKey), d => d[1]);
-				if (this.data.brushApplied)
+				if (this.data.brushApplied && dataPoints.length > 0)
 				{
-					thisMin = Math.min(thisMin, d3.min(data.getAverageCurve(this.yKey, true), d => d[1]));
+					thisMin = Math.min(thisMin, d3.min(dataPoints, d => d[1]));
 				}
 				minMass = Math.min(thisMin, minMass);
 
 				let thisMax = d3.max(data.getAverageCurve(this.yKey), d => d[1]);
-				if (this.data.brushApplied)
+				if (this.data.brushApplied && dataPoints.length > 0)
 				{
-					thisMax = Math.max(thisMax, d3.max(data.getAverageCurve(this.yKey, true), d => d[1]));
+					thisMax = Math.max(thisMax, d3.max(dataPoints, d => d[1]));
 				}
 				maxMass = Math.max(thisMax, maxMass);
 			}
@@ -489,6 +490,10 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				}
 				let data: CurveList = row.get(concLabel)
 				let avergeGrowthLine = data.getAverageCurve(this.yKey);
+				if (avergeGrowthLine.length === 0)
+				{
+					return '';
+				}
 				return lineAvg(avergeGrowthLine);
 			});
 
@@ -511,6 +516,10 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 					}
 					let data: CurveList = row.get(concLabel)
 					let avergeGrowthLine = data.getAverageCurve(this.yKey, true);
+					if (avergeGrowthLine.length === 0)
+					{
+						return '';
+					}
 					return lineAvg(avergeGrowthLine);
 				});
 		}
