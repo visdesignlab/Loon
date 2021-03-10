@@ -2,11 +2,17 @@ import { NDim } from '../devlib/DevlibTypes'
 import { CurveCollectionIterator } from './CurveCollectionIterator';
 import { PointCollection } from './PointCollection';
 import { CurveList } from './CurveList';
-import { Facet, LocationMapList, LocationMapTemplate, DatasetSpec } from '../types';
+import { Facet, LocationMapList, DatasetSpec, AppData } from '../types';
 import { CurveListFactory } from './CurveListFactory';
 
 export class CurveCollection extends PointCollection
 {
+    public CreateFilteredCurveList(): AppData<DatasetSpec> {
+        throw new Error('Method not implemented.');
+    }
+    public ApplyDefaultFilters(): void {
+        throw new Error('Method not implemented.');
+    }
     constructor(curveList: CurveList, spec: DatasetSpec)
     {
         super();
@@ -21,8 +27,10 @@ export class CurveCollection extends PointCollection
     }
     
     public OnBrushChange(): void { }
+	public ConsumeFilters: (AppData: any) => void;
+	public ApplyNewFilter: () => void;
 
-	protected getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[]
+	protected getFacetList(locationMap: LocationMapList): Facet[]
 	{
         let facetList = CurveListFactory.CreateFacetedDatasets(this.curveList, locationMap);
         for (let facet of facetList)

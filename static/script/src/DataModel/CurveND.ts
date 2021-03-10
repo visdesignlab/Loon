@@ -3,9 +3,15 @@ import { PointND } from './PointND';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { PointCollection } from './PointCollection';
 import { CurveIterator } from './CurveIterator';
-import { Facet } from '../types';
+import { AppData, DatasetSpec, Facet } from '../types';
 
 export class CurveND extends PointCollection implements NDim {
+	public CreateFilteredCurveList(): AppData<DatasetSpec> {
+		throw new Error('Method not implemented.');
+	}
+	public ApplyDefaultFilters(): void {
+		throw new Error('Method not implemented.');
+	}
 	
 	constructor(id: string) {
 		super();
@@ -54,6 +60,8 @@ export class CurveND extends PointCollection implements NDim {
 	}
 
 	public OnBrushChange(): void { }
+	public ConsumeFilters(AppData: any): void {};
+	public ApplyNewFilter(): void {};
 
 	public addValue(key: string, value: number)
 	{

@@ -277,7 +277,16 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
         timeIndex = 3
         idIndex = 4
     else:
-        colHeaders = [x[0] for x in colHeaders[0]]
+        colHeaders = colHeaders[0]
+        if type(colHeaders[0]) is h5py.h5r.Reference:
+            # strings are stored as h5 references
+            # You have to dereference to get the value, which is then a list of char ints..
+            charLists = [data_allframes[ref] for ref in colHeaders]
+            colHeaders = [''.join([chr(c[0]) for c in charList[:]]) for charList in charLists]
+        else:
+            # nd array of srtrings, just get the only string in the nested arrays
+            colHeaders = [x[0] for x in colHeaders]
+
         timeIndex = colHeaders.index('Time (h)')
         idIndex = colHeaders.index('id')
         colHeaderString = ','.join(colHeaders)
@@ -633,6 +642,12 @@ def getImageStackMetaDataJson(folderId: str):
 @app.route('/data/<string:folderId>/img_<int:locationId>_<int:bundleIndex>.jpg')
 @authRequired
 def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
+    # to make local testing less painful
+    folder = '{}/data{}'.format(folderId, locationId)
+    filename = 'D{}.jpg'.format(bundleIndex)
+    if isCached(folder, filename):
+        return getCached(folder, filename)
+
     innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
     if innerFolderId is None:
         return
@@ -646,6 +661,12 @@ def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
 @app.route('/data/<string:folderId>/label_<int:locationId>_<int:bundleIndex>.pb')
 @authRequired
 def getImageLabelBundle(folderId: str, locationId: int, bundleIndex: int):
+    # to make local testing less painful
+    folder = '{}/data{}'.format(folderId, locationId)
+    filename = 'L{}.pb'.format(bundleIndex)
+    if isCached(folder, filename):
+        return getCached(folder, filename)
+
     innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
     if innerFolderId is None:
         return

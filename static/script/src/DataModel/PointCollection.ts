@@ -1,12 +1,7 @@
-// import { PointND } from './PointND';
 import { NDim } from '../devlib/DevlibTypes'
 import { DataEvents } from './DataEvents';
-import { AppData, FacetOption, Facet, DatasetSpec, LocationMapList, LocationMapTemplate } from '../types';
+import { AppData, FacetOption, Facet, DatasetSpec, LocationMapList, valueFilter } from '../types';
 
-export interface valueFilter {
-	key: string,
-	bound: [number, number]
-}
 
 export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>, AppData<DatasetSpec> {
 	
@@ -18,7 +13,7 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		this._minMaxCache = new Map<string, [number, number]>();
 		this._brushList = new Map<string, Map<string, [number, number]>>();
 	}
-	
+
 	abstract [Symbol.iterator](): Iterator<NDim>;
 
 	private _Specification : DatasetSpec;
@@ -82,6 +77,10 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 	}
 
 	public abstract OnBrushChange(): void;
+	public abstract CreateFilteredCurveList(): AppData<DatasetSpec>;
+	public abstract ApplyDefaultFilters(): void;
+	public abstract ConsumeFilters(AppData: any): void;
+	public abstract ApplyNewFilter(): void;
 
 	public GetFacetOptions(): FacetOption[]
 	{
@@ -103,7 +102,7 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		return facetOptionList;
 	}
 
-	protected abstract getFacetList(locationMap: LocationMapList | LocationMapTemplate): Facet[];
+	protected abstract getFacetList(locationMap: LocationMapList): Facet[];
 
 	private initAttributeList(): void
 	{
@@ -145,6 +144,12 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 
 	public addBrush(brushKey: string, ...filters: valueFilter[]): void
 	{
+		this.addBrushNoUpdate(brushKey, ...filters);
+		this.updateBrush();
+	}
+
+	public addBrushNoUpdate(brushKey: string, ...filters: valueFilter[]): void
+	{
 		if (!this.brushList.has(brushKey))
 		{
 			this.brushList.set(brushKey, new Map<string, [number, number]>());
@@ -152,10 +157,9 @@ export abstract class PointCollection implements Iterable<NDim>, ArrayLike<NDim>
 		let thisMap = this.brushList.get(brushKey);
 		for (let filter of filters)
 		{
-
 			thisMap.set(filter.key, filter.bound)
 		}
-		this.updateBrush();
+		return
 	}
 
 	public removeBrush(brushKey: any): void

@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import * as quickSelect from 'quickselect.js';
-import { HtmlSelection, SvgSelection } from '../devlib/DevlibTypes';
+import { HtmlSelection } from '../devlib/DevlibTypes';
 import { PointND } from '../DataModel/PointND';
 import { ImageLocation } from '../DataModel/ImageLocation';
 import { CurveList } from '../DataModel/CurveList';
@@ -378,8 +378,10 @@ export class ImageStackWidget {
 			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
 			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
 			let numCurves = longTracks.length;
-			for (let i = 0; i < this.numExemplars; i++) {
-				let index = Math.round((numCurves - 1) * i / (this.numExemplars - 1));
+			const percentages = [0.05, 0.50, 0.95]; // todo make this more general
+			for (let p of percentages)
+			{
+				let index = Math.round((numCurves - 1) * p);
 				let exemplarCurve = quickSelect(longTracks, index, (curve: CurveND) => curve.get(this.exemplarAttribute));
 				curveList.push(exemplarCurve);
 			}

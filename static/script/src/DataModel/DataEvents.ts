@@ -1,3 +1,5 @@
 export enum DataEvents {
-	brushChange = "brushChange"
+	brushChange = 'brushChange',
+	selectionToFilter = 'selectionToFilter',
+	applyNewFilter = 'applyNewFilter'
 }

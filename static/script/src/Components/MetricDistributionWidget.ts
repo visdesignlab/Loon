@@ -18,16 +18,24 @@ interface boolWithIndex {
 export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
 
-	constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel)
+	constructor(container: Element,
+		metricDistributionCollectionLevel: MetricDistributionCollectionLevel,
+		isClone: boolean = false)
 	{
 		super(container);
 		this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
+		this._isClone = isClone;
 	}
 
     protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        return new MetricDistributionWidget(container, this.metricDistributionCollectionLevel);
+        return new MetricDistributionWidget(container, this.metricDistributionCollectionLevel, true);
     }
+
+	private _isClone : boolean;
+	public get isClone() : boolean {
+		return this._isClone;
+	}
 
 	private _wrapperContainer : HTMLDivElement;
 	public get wrapperContainer() : HTMLDivElement {
@@ -133,6 +141,8 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		this._layoutFramework = new LayoutFramework(this.wrapperContainer, false);
 		let layout: Frame<MetricDistributionSubComponentTypes> = {
 			direction: Direction.row,
+			wrap: true,
+			overflowScroll: true,
 			inside: [
 				{
 					direction: Direction.column,
@@ -188,9 +198,14 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 					break;
 				case MetricDistributionSubComponentTypes.DistributionPlot:
 					this._distributionPlotContainerSelection = this.initSubComponent(container, "distributionPlotContainer");
+					this.distributionPlotContainerSelection.node().style.minWidth = '300px'; // this is hardcoded based on max width of histogram
+					this.distributionPlotContainerSelection.node().style.maxWidth = '300px'; // this is hardcoded based on max width of histogram
 					break;
 				case MetricDistributionSubComponentTypes.Scatterplot:
 					this._scatterPlotContainerSelection = this.initSubComponent(container, "scatterPlotOuterContainer");
+					
+					this._scatterPlotContainerSelection.node().style.minWidth = '300px'; // this is hardcoded based on max width of scatterplot
+					this._scatterPlotContainerSelection.node().style.maxWidth = '300px'; // this is hardcoded based on max width of scatterplot
 					break;
 				default:
 					break;
@@ -204,7 +219,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		return d3.select(container)			
 			.append("div")
 			.classed(className, true)
-			.classed("overflow-scroll", true)
+			// .classed("overflow-scroll", true)
 			.attr("id", className);
 	}
 
@@ -738,9 +753,11 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 
 	private resizeSubComponents(): void
 	{
-		this.basisSelectContainerSelection.node().style.maxHeight = this.height + "px"
-		this.scatterPlotSelectContainerSelection.node().style.maxHeight = this.height + "px"
-		this.distributionPlotContainerSelection.node().style.maxHeight = this.height + "px"
+		// this.layoutFramework.container.chil
+		// this.basisSelectContainerSelection.node().style.maxHeight = this.height + "px"
+		// this.basisSelectContainerSelection.node().style.maxHeight = this.height + "px"
+		// this.scatterPlotSelectContainerSelection.node().style.maxHeight = this.height + "px"
+		// this.distributionPlotContainerSelection.node().style.maxHeight = this.height + "px"
 		this.scatterPlotContainerSelection.node().style.maxHeight = this.height + "px"
 	}
 

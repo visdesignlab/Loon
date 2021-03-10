@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { PointCollection } from '../DataModel/PointCollection';
 import { BaseWidget } from './BaseWidget';
-import { MetricDistributionCollectionLevel, DatasetSpec } from '../types';
+import { MetricDistributionCollectionLevel, DatasetSpec, Facet } from '../types';
 import { SvgSelection, NDim, HtmlSelection } from '../devlib/DevLibTypes';
 import { CurveList } from '../DataModel/CurveList';
 
@@ -14,19 +14,29 @@ interface BoxplotStats {
 export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 
-    constructor(container: Element, metricDistributionCollectionLevel: MetricDistributionCollectionLevel, attributeKey: string)
+    constructor(
+        container: Element,
+        metricDistributionCollectionLevel: MetricDistributionCollectionLevel,
+        attributeKey: string, 
+        isClone: boolean = false)
     {
         super(container, true);
         this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
         this._attributeKey = attributeKey;
         this.setLabel();
+		this._isClone = isClone;
     }
 
     protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        let clone = new DetailedDistributionWidget(container, this.metricDistributionCollectionLevel, this.attributeKey);
+        let clone = new DetailedDistributionWidget(container, this.metricDistributionCollectionLevel, this.attributeKey, true);
         return clone;
     }
+
+	private _isClone : boolean;
+	public get isClone() : boolean {
+		return this._isClone;
+	}
 
     private _metricDistributionCollectionLevel : MetricDistributionCollectionLevel;
     public get metricDistributionCollectionLevel() : MetricDistributionCollectionLevel {
@@ -162,8 +172,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
                 .attr('height', this.vizHeight - 2 * this.scatterplotPadding)
                 .attr('style',
                 `position: absolute;
-                transform: translate(${this.margin.left}px, ${this.margin.top + this.scatterplotPadding}px);
-                z-index: -1`)
+                transform: translate(${this.margin.left}px, ${this.margin.top + this.scatterplotPadding}px);`)
             .node() as HTMLCanvasElement;
         
         // I originally put the canvas inside the svg in a foreignObject. This didn't work because
@@ -293,7 +302,18 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 
     private updateScales(): void
     {
-        let distributionMinMax = this.fullPointCollection.getMinMax(this.attributeKey);
+		let data: PointCollection;
+		if (this.isClone)
+		{
+			data = this.fullPointCollection;
+		}
+		else
+		{
+			data = this.pointCollection;
+		}
+
+        let distributionMinMax = data.getMinMax(this.attributeKey);
+        // let distributionMinMax = this.pointCollection.getMinMax(this.attributeKey);
         this._scaleX = d3.scaleLinear<number, number>()
                         .domain(distributionMinMax)
                         .range([0, this.vizWidth]);
@@ -343,9 +363,9 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         this.positionLabels();
     }
 
-	protected drawFacetedData(facetOptionIndexList: number[]): void
+	protected drawFacetedData(facetList: Facet[]): void
 	{
-        this.drawFacetedDataDefaultRecurse(facetOptionIndexList, "95%", "170px");
+        this.drawFacetedDataDefault(facetList, "95%", "120px");
 	}
 
     private showLabel(): void

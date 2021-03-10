@@ -35,6 +35,69 @@ button, option, select {
     background: rgba(255, 228, 196, 0.356);
 }
 
+.toolbarPopup {
+    position: absolute;
+    background: #fff5ea;
+    display: flex;
+    border: solid #888888 1px;
+    z-index: 99;
+    width: 800px;
+    top: 180px;
+    left: 50px;
+    padding: 20px;
+    border-radius: 4px;
+    box-shadow: hsl(0deg 0% 53%) 2px 2px 4px 0px;
+    flex-direction: row;
+}
+
+.filterDisplayContainer {
+    width: 400px;
+    text-align: center;
+}
+
+.filterDisplayContainer ul {
+    text-align: left;
+    list-style-type: square;
+}
+
+.filterDisplayContainer li {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+}
+
+.miniCell {
+    opacity: 0.3;
+}
+
+.miniCell.inFilter {
+    opacity: 1.0;
+}
+
+.miniBox {
+    stroke: #afafaf;
+    stroke-width: 1;
+    fill: white;
+}
+
+.miniExemplarCurve {
+    stroke: #252525;
+    stroke-width: 2px;
+    fill: none;
+    stroke-linejoin: bevel;
+}
+
+.y.axisButtonContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.y.axisButtonContainer button {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+
 .optionSelectGrouperDiv {
     display: flex;
     flex-direction: column;

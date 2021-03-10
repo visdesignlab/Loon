@@ -246,7 +246,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		DevlibTSUtil.show(this.largePopupOuter);
 		this._showingFacetPopup = true;
 		const groupByWidget = new GroupByWidget(d3.select(this.largePopup));
-		groupByWidget.updateGroupByOptions(this.data);
+		groupByWidget.updateGroupByOptions(this.data, true);
 
 		let contentContainer = document.createElement('div');
 		contentContainer.classList.add('largePopupContent');
@@ -259,31 +259,38 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 	{
 		const width: string = '500px';
 		const height: string = '250px';
+		this.drawFacetedDataDefault(facetList, width, height);
+	}
+
+	protected drawFacetedDataDefault(facetList: Facet[], width: string, height: string): void
+	{
 		if (this.largePopupContent)
 		{
 			this.largePopupContent.innerHTML = null;
 		}
 		for (let facet of facetList)
 		{
-			this.drawFacetedDataDefault(facet.name, facet.data, width, height);
+			this.drawSingleFacetedData(facet.name, facet.data, width, height);
 		}
 	}
 
-	private drawFacetedDataDefault(title: string, data: DataType, width: string, height: string): void
+	private drawSingleFacetedData(title: string, data: DataType, width: string, height: string): void
 	{
 		let outerContainer = document.createElement('div');
-			outerContainer.classList.add('outerFacetContainer');
-			outerContainer.style.width = width;
-			outerContainer.style.height = height;
+		outerContainer.classList.add('outerFacetContainer');
+		outerContainer.style.width = width;
+		outerContainer.style.height = height;
 
-			let titleContainer = document.createElement('div');
-				titleContainer.classList.add('facetTitle')
-				titleContainer.innerText = title;
+		// this.largePopupContent.appendChild(outerContainer);
+		
+		let titleContainer = document.createElement('div');
+		titleContainer.classList.add('facetTitle')
+		titleContainer.innerText = title;
 
 		outerContainer.appendChild(titleContainer);
 
-			let newContainer = document.createElement('div');
-				newContainer.classList.add('facetContainer');
+		let newContainer = document.createElement('div');
+		newContainer.classList.add('facetContainer');
 	
 		outerContainer.appendChild(newContainer);
 

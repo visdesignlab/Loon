@@ -55,6 +55,16 @@ export class LayoutFramework {
 			inlineStyle += `max-${dirPostFix}: ${frame.maxSize}px; `;			
 		}
 
+		if (frame.wrap)
+		{
+			inlineStyle += 'flex-wrap: wrap; ';
+		}
+
+		if (frame.overflowScroll)
+		{
+			inlineStyle += 'overflow: auto; ';
+		}
+
 		if (typeof frame.fraction === "undefined")
 		{
 			frame.fraction = 1;
