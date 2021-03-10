@@ -11,6 +11,8 @@ import {KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devl
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
 import { DevlibTSUtil } from './devlib/DevlibTSUtil';
+import { openDB, deleteDB, wrap, unwrap, IDBPDatabase } from 'idb';
+import { CurveList } from './DataModel/CurveList';
 
 export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	
@@ -27,6 +29,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		this._componentList = [];
 		this._layoutFramework = new LayoutFramework(container);
 		this._dataFromCSVObject = fromCsvObject;
+
 		this._trackDerivationFunctions = derivedTrackDataFunctions;
 		this._pointDerivationFunctions = derivedPointDataFunctions;
 		document.addEventListener(DataEvents.brushChange, (e: Event) => {this.onBrushChange()});
@@ -79,6 +82,25 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	private _pointDerivationFunctions : KeyedPointDerivationFunction[];
 	public get pointDerivationFunctions() : KeyedPointDerivationFunction[] {
 		return this._pointDerivationFunctions;
+	}
+
+	private _dataStore : IDBPDatabase<unknown>;
+	public get dataStore() : IDBPDatabase<unknown> {
+		return this._dataStore;
+	}
+
+	public async InitDataStore(): Promise<void>
+	{
+		const dataStore = await openDB('loon-db', 1, {
+			upgrade(db, oldVersion, newVersion, transaction)
+			{
+				if (!db.objectStoreNames.contains('tracks'))
+				{
+					db.createObjectStore('tracks');
+				}
+			}
+		});
+		this._dataStore = dataStore;
 	}
 
 	public InitializeLayout(frame: Frame<ComponentInitInfo | ComponentType>): void
@@ -142,24 +164,41 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	
 	private async fetchJson(filename: string): Promise<void>
 	{
-		await d3.json("../../../data/" + filename).then((data: any) =>
+		await d3.json("../../../data/" + filename).then(async (data: any) =>
 		{
-			this.fetchCsv(`${data.googleDriveId}/massOverTime.csv`, data);
+			if (this.dataStore)
+			{
+				let store = this.dataStore.transaction('tracks', 'readonly').objectStore('tracks');
+				let storedAllData = await store.get(data.googleDriveId);
+				if (storedAllData)
+				{
+					this.initData(storedAllData, data);
+					return;
+				}
+			}
+			this.fetchCsv(`${data.googleDriveId}/massOverTime.csv`, data, data.googleDriveId);
 		});
 	}
 
-	private async fetchCsv(filename: string, dataSpec: DataSpecType): Promise<void>
+	private async fetchCsv(filename: string, dataSpec: DataSpecType, key: string): Promise<void>
 	{
-		await d3.csv("../../../data/" + filename).then(data =>
+		await d3.csv("../../../data/" + filename).then(async data =>
 		{
-			// console.log(data);
-			let allData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
-			// console.log(newData);
-			allData.ApplyDefaultFilters();
-			allData.OnBrushChange();
-			let filteredData = allData.CreateFilteredCurveList() as DataType;
-			this.SetData(filteredData, allData);
+			if (this.dataStore)
+			{
+				await this.dataStore.put<any>('tracks', data, key);
+			}
+			this.initData(data, dataSpec);
 		});
+	}
+
+	private initData(data: d3.DSVRowArray<string>, dataSpec: DataSpecType): void
+	{	
+		let allData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
+		allData.ApplyDefaultFilters();
+		allData.OnBrushChange();
+		let filteredData = allData.CreateFilteredCurveList() as DataType;
+		this.SetData(filteredData, allData);
 	}
 
 	public SetData(filteredData: DataType, allData: DataType): void

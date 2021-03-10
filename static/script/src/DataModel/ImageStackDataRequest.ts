@@ -1,8 +1,5 @@
 import * as d3 from 'd3';
 import { load } from "protobufjs";
-import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
-
-
 
 export interface ImageLabels
 {

@@ -66,6 +66,11 @@ export class CurveListFactory {
 		return facetList;
 	}
 
+	// public static CreateCurveListFromPOJO(pojo: Object): CurveList
+	// {
+
+	// }
+
 	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], dataSpec: DatasetSpec, idkey: string = "id", tKeyOptions: string[] = ["Time (h)"]): CurveList
 	{
 		console.log(csvObject);
