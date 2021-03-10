@@ -28,6 +28,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
+		this._averageFilteredCurveCache = new Map<string, [number, number][]>();
 		this._averageCurveCache = new Map<string, [number, number][]>();
 		this._locationFrameSegmentLookup = new Map<number, Map<number, Map<number, [PointND, number]>>>();
 		// this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
@@ -100,18 +101,32 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return this._minMaxMap;
 	}
 
+	private _averageFilteredCurveCache: Map<string, [number, number][]>;
 	private _averageCurveCache: Map<string, [number, number][]>;
-	public getAverageCurve(avgKey: string): [number, number][]
+	public getAverageCurve(avgKey: string, filteredOnly: boolean = false): [number, number][]
 	{
-		if (this._averageCurveCache.has(avgKey))
+		let cache: Map<string, [number, number][]>
+		if (filteredOnly)
 		{
-			return this._averageCurveCache.get(avgKey)
+			cache = this._averageFilteredCurveCache;
+		}
+		else
+		{
+			cache = this._averageCurveCache;
+		}
+		if (cache.has(avgKey))
+		{
+			return cache.get(avgKey)
 		}
 		
 		let sumCountMap: Map<number, [number, number]> = new Map<number, [number, number]>();
 
 		for (let point of this)
 		{
+			if (filteredOnly && !point.inBrush)
+			{
+				continue;
+			}
 			let frame = point.get('Frame ID');
 			let mass = point.get(avgKey);
 			let [sum, count] = sumCountMap.has(frame) ? sumCountMap.get(frame) : [0, 0];
@@ -123,7 +138,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 				let [sum, count] = sumCountMap.get(frame);
 				return [frame, sum / count];
 			});
-		this._averageCurveCache.set(avgKey, avgCurve);
+		cache.set(avgKey, avgCurve);
 		return avgCurve;
 	}
 
@@ -189,6 +204,17 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._defaultFacets = nestedFacetMap;
 		return nestedFacetMap;
     }
+
+	private clearDefaultFacetCache(): void
+	{
+		for (let map of this.defaultFacets.values())
+		{
+			for (let curveList of map.values())
+			{
+				curveList._averageFilteredCurveCache.clear();
+			}
+		}
+	}
 
 
 	// private _locationFrameSegmentLookup : Map<string, [PointND, number]>;
@@ -419,6 +445,8 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 
 	public OnBrushChange(): void
 	{
+		this.clearDefaultFacetCache();
+		this._averageFilteredCurveCache.clear();
 		for (let curve of this.curveList)
 		{
 			curve.inBrush = true;
