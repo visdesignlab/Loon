@@ -5,7 +5,6 @@ import { BaseWidget } from './BaseWidget';
 import { CurveList } from '../DataModel/CurveList';
 import { dataFilter, DatasetSpec, valueFilter } from '../types';
 import { DataEvents } from '../DataModel/DataEvents';
-import { isThisTypeNode } from 'typescript';
 
 export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
@@ -33,7 +32,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	public get modalPopupDiv() : HTMLDivElement {
 		return this._modalPopupDiv;
 	}
-	
+
+	private _modalBooleans : boolean[];
+	public get modalBooleans() : boolean[] {
+		return this._modalBooleans;
+	}
+
 	private _yKey : string;
 	public get yKey() : string {
 		return this._yKey;
@@ -114,6 +118,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		this.container.appendChild(this.wrapperDiv);
 		this._yKey = 'Mass_norm';
 		this._tempConditionFilterState = new Map<string, Map<string, boolean>>();
+		this._modalBooleans = [];
 
 		this.initToolbarElements();
 		this.drawToolbarElements();
@@ -137,31 +142,38 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			}
 			else if (toolbarElement.type === 'popupButton')
 			{
-				let buttonTrue = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
-				buttonTrue.classList.add('big');
-				this.wrapperDiv.append(buttonTrue);
+				const thisIndex = this.modalBooleans.length;
+				this.modalBooleans.push(false);
 
-				let buttonFalse = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
-				buttonFalse.classList.add('big');
-				this.wrapperDiv.append(buttonFalse);
-				DevlibTSUtil.hide(buttonFalse);
-
-				buttonTrue.onclick = () =>
+				let button = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
+				button.classList.add('big');
+				this.wrapperDiv.append(button);
+				button.onclick = () =>
 				{
-					DevlibTSUtil.hide(buttonTrue);
-					DevlibTSUtil.show(buttonFalse);
-					toolbarElement.callback(true);
-					DevlibTSUtil.show(this.modalPopupDiv);
-				}
+					if (this.modalBooleans[thisIndex])
+					{
+						this.modalBooleans[thisIndex] = false;
+					}
+					else
+					{
+						for (let i = 0; i < this.modalBooleans.length; i++)
+						{
+							this.modalBooleans[i] = false;
+						}
+						this.modalBooleans[thisIndex] = true;
+					}
 
-				buttonFalse.onclick = () =>
-				{
-					DevlibTSUtil.show(buttonTrue);
-					DevlibTSUtil.hide(buttonFalse);
-					DevlibTSUtil.hide(this.modalPopupDiv);
-					toolbarElement.callback(false);
+					const show = this.modalBooleans[thisIndex]
+					toolbarElement.callback(show);
+					if (show)
+					{
+						DevlibTSUtil.show(this.modalPopupDiv);
+					}
+					else
+					{
+						DevlibTSUtil.hide(this.modalPopupDiv);
+					}
 				}
-
 			}
 			else if (toolbarElement.type === 'toggleButton')
 			{
