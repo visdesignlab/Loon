@@ -92,11 +92,15 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	public async InitDataStore(): Promise<void>
 	{
 		const dataStore = await openDB('loon-db', 1, {
-			upgrade(db, oldVersion, newVersion, transaction)
+			upgrade(db, _oldVersion, _newVersion, _transaction)
 			{
 				if (!db.objectStoreNames.contains('tracks'))
 				{
 					db.createObjectStore('tracks');
+				}
+				if (!db.objectStoreNames.contains('images'))
+				{
+					db.createObjectStore('images');
 				}
 			}
 		});
