@@ -262,7 +262,8 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			selectionDiv,
 			'Current Selection',
 			'The currently highlighted selection contains data that meet all of the following conditions.',
-			this.data.GetAllFilters());
+			this.data.GetAllFilters(),
+			false);
 
 
 		let buttonElement = DevlibTSUtil.getIconButton('long-arrow-alt-right', () => this.triggerSelectionToFilterEvent(), 'Convert ');
@@ -273,14 +274,16 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			filterDiv,
 			'Current Filters',
 			'Only show tracks that meet all of the following conditions.',
-			this.fullData.GetAllFilters());
+			this.fullData.GetAllFilters(),
+			true);
 	}
 
 	private displayFilters(
 		containerSelect: HtmlSelection,
 		title: string,
 		description: string,
-		filterList: dataFilter[]): void
+		filterList: dataFilter[],
+		isFilter: boolean): void
 	{
 		containerSelect.classed('filterDisplayContainer', true)
 		  .append('div')
@@ -300,7 +303,14 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				let f = d.filter as valueFilter;
 				let low = f.bound[0].toPrecision(5);
 				let high = f.bound[1].toPrecision(5);
-				return `Cell instances where <b>${f.key}</b> is in range [${low}, ${high}]`;
+				if (isFilter)
+				{
+					return `Tracks where <b>${f.key}</b> is in range [${low}, ${high}] at least once.`;
+				}
+				else
+				{
+					return `Cell instances where <b>${f.key}</b> is in range [${low}, ${high}]`;
+				}
 			});
 
 
@@ -329,27 +339,31 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				displayString += ' at least once.';
 				return displayString;
 			});
+		
+		if (isFilter)
+		{
+			filterSelection.append('button')
+				.classed('basicIconButton', true)
+				.on('click', d =>
+				{
+					if (d.type === 'curve')
+					{
+						this.fullData.removeCurveBrush(d.filterKey);
+					}
+					else if (d.type === 'track')
+					{
+						this.fullData.curveCollection.removeBrush(d.filterKey);
+					}
+					else if (d.type === 'cell')
+					{
+						this.fullData.removeBrush(d.filterKey);
+					}
+					document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
+					this.onDataFilterClick(true);
+				})
+				.html('<i class="fas fa-minus"></i>');
+		}
 
-		filterSelection.append('button')
-			.classed('basicIconButton', true)
-			.on('click', d =>
-			{
-				if (d.type === 'curve')
-				{
-					this.fullData.removeCurveBrush(d.filterKey);
-				}
-				else if (d.type === 'track')
-				{
-					this.fullData.curveCollection.removeBrush(d.filterKey);
-				}
-				else if (d.type === 'cell')
-				{
-					this.fullData.removeBrush(d.filterKey);
-				}
-				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
-				this.onDataFilterClick(true);
-			})
-			.html('<i class="fas fa-minus"></i>');
 	}
 
 	private triggerSelectionToFilterEvent(): void
