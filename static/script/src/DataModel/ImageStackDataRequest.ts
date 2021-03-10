@@ -267,7 +267,19 @@ export class ImageStackDataRequest
             }
             // Obtain a message type
             let ImageLabelsMessage = root.lookupType("imageLabels.ImageLabels");
-            let buffer = await d3.buffer(labelUrl);
+
+            let buffer;
+            if (this.dataStore)
+            {
+                let store = this.dataStore.transaction('images', 'readonly').objectStore('images');
+                buffer = await store.get(labelUrl);
+            }
+            if (!buffer)
+            {
+                buffer = await d3.buffer(labelUrl);
+                await this.dataStore.put<any>('images', buffer, labelUrl);
+            }
+
             // Decode an Uint8Array (browser) or Buffer (node) to a message
             let message = ImageLabelsMessage.decode(new Uint8Array(buffer)) as any;
 
