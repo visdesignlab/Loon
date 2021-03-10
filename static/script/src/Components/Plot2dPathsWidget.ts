@@ -383,6 +383,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey), d => d[1]));
 			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey), d => d[1]));
+
+			if (this.data.brushApplied)
+			{
+				minY = d3.min([minY, d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey, true), d => d[1]))]);
+				maxY = d3.max([maxY, d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey, true), d => d[1]))]);
+			}
 		}
 		else
 		{
@@ -462,6 +468,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		if (this.inAverageMode)
 		{
 			this.updateAveragePaths();
+			this.drawAxis();
 		}
 		else
 		{
@@ -502,6 +509,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		
 		for (let i = this.facetList.length - 1; i >= 0 ; i--)
 		{
+
 			if (i < 10)
 			{
 				canvasContext.globalAlpha = 0.85;
@@ -512,17 +520,39 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				canvasContext.globalAlpha = 0.4;
 				canvasContext.lineWidth = 1;
 			}
+
 			let facet = this.facetList[i];
 			canvasContext.strokeStyle = i >= 10 ? 'black' : d3.schemeCategory10[i];
 			let dataPoints = facet.data.getAverageCurve(this.yKey);
-			if (dataPoints.length === 0)
+			if (dataPoints.length !== 0)
 			{
-				continue;
+				if (this.data.brushApplied)
+				{
+					canvasContext.save()
+					canvasContext.setLineDash([2, 3]);
+					canvasContext.globalAlpha *= 0.8;
+					canvasContext.lineWidth *= 0.5;
+				}
+				const path = new Path2D(lineAvg(dataPoints));
+				canvasContext.stroke(path);
 			}
-			const path = new Path2D(lineAvg(dataPoints));
-			canvasContext.stroke(path);
+
+			canvasContext.restore();
+
+			if (this.data.brushApplied)
+			{
+				let filteredDataPoints = facet.data.getAverageCurve(this.yKey, true);
+				if (filteredDataPoints.length !== 0)
+				{
+					// canvasContext.setLineDash([]);
+					const path = new Path2D(lineAvg(filteredDataPoints));
+					canvasContext.stroke(path);
+				}
+			}
+
 		}
 	}
+
 
 	private drawAxis(): void
 	{
@@ -617,6 +647,14 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
 	public OnBrushChange(): void
 	{
+		for (let facet of this.facetList)
+		{
+			facet.data._averageFilteredCurveCache.clear();
+		}
+		if (this.inAverageMode)
+		{
+			this.updateScales();
+		}
 		this.updatePaths();
 	}
 
