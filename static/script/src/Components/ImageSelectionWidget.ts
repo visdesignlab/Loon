@@ -476,26 +476,21 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private handleKeyDown(event: KeyboardEvent): void
 	{
         let newIndex: number;
-        const [locId, frameId] = this.hoveredLocFrame;
+        // const [locId, frameId] = this.hoveredLocFrame;
+        const [locId, frameId] = this.selectedLocFrame;
         const location = this.imageMetaData.locationLookup.get(locId);
         let nextFrameId: number;
 		switch (event.keyCode)
 		{
             case 37: // left
-                if (this.hoveredLocId !== locId) { return; }
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
-                this.onHoverLocationFrame(locId, nextFrameId, null, true)
+                this.onClickLocationFrame(locId, nextFrameId);
 				break;
             case 39: // right
-                if (this.hoveredLocId !== locId) { return; }
                 const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
                 nextFrameId = Math.min(frameId + 1, maxFrameId);
-                this.onHoverLocationFrame(locId, nextFrameId, null, true);
-                break;
-            case 13: // enter
-                if (this.hoveredLocId !== locId) { return; }
-                this.switchToHovered();
+                this.onClickLocationFrame(locId, nextFrameId);
                 break;
 		}
 	}
