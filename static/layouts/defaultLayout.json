@@ -25,7 +25,7 @@
 					"inside": [
 						{
 							"direction": "col",
-							"fraction": 35,
+							"fraction": 37,
 							"inside": [
 								{
 									"direction": "row",
@@ -146,7 +146,7 @@
 						},
 						{
 							"direction": "col",
-							"fraction": 65,
+							"fraction": 63,
 							"inside": "ImageSelectionWidget"
 						}
 					]
