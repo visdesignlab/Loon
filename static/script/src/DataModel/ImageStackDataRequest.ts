@@ -25,26 +25,24 @@ export class ImageStackDataRequest
     {
         this._driveId = driveId;
         this._metaDataLoaded = false;
-        let jsonPromise = d3.json(`/data/${driveId}/imageMetaData.json`);
-        const dataStorePromise = openDB('loon-db');
-        Promise.all([jsonPromise, dataStorePromise]).then(result =>
+
+        const metaDataFilename = `/data/${driveId}/imageMetaData.json`;
+        openDB('loon-db').then(async dataStore => 
         {
-            let data: any = result[0];
-            this._tileWidth = data.tileWidth;
-            this._tileHeight = data.tileHeight;
-            this._numberOfColumns = data.numberOfColumns;
-            this._tilesPerFile = data.tilesPerFile;
-            this._metaDataLoaded = true;
-            if (data.scaleFactor)
+            this._dataStore = dataStore;
+            let store = this.dataStore.transaction('images', 'readonly').objectStore('images');
+            let data = await store.get(metaDataFilename);
+            if (data)
             {
-                this._scaleFactor = data.scaleFactor;
+                this.initImageMetaData(data);
+                return;
             }
-            else
+            d3.json(metaDataFilename).then(data =>
             {
-                this._scaleFactor = 1;
-            }
-            this._dataStore = result[1];
-        })
+                this.initImageMetaData(data);
+                this.dataStore.put<any>('images', data, metaDataFilename);
+            });
+        });
 
         this._blobArray= [];
         this._labelArray= [];
@@ -52,6 +50,23 @@ export class ImageStackDataRequest
         this._nextBlobIndex = 0;
         this._nextLabelIndex = 0;
         this._maxLabelCount = 100;
+    }
+
+    private initImageMetaData(data: any): void
+    {
+        this._tileWidth = data.tileWidth;
+        this._tileHeight = data.tileHeight;
+        this._numberOfColumns = data.numberOfColumns;
+        this._tilesPerFile = data.tilesPerFile;
+        this._metaDataLoaded = true;
+        if (data.scaleFactor)
+        {
+            this._scaleFactor = data.scaleFactor;
+        }
+        else
+        {
+            this._scaleFactor = 1;
+        }
     }
     
     
