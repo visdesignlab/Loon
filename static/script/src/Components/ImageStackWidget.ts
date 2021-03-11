@@ -616,8 +616,8 @@ export class ImageStackWidget {
 	public getCellColor(cell: PointND | null): [number, number, number] {
 		let color: [number, number, number] = [0, 0, 0];
 		if (!cell) {
-			// SpringGreen
-			color = [154, 205, 50];
+			// nuted/darkened from SpringGreen
+			color = [119, 140, 77];
 		}
 		else if (cell.inBrush) {
 			// FireBrick
