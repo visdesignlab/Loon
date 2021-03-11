@@ -1,11 +1,11 @@
 import * as d3 from 'd3';
-import {HtmlSelection, SvgSelection, ToolbarElement} from '../devlib/DevLibTypes';
+import {HtmlSelection, SvgSelection, ToolbarElement, ToolbarOptionSelect} from '../devlib/DevLibTypes';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { BaseWidget } from './BaseWidget';
 import { CurveList } from '../DataModel/CurveList';
 import { dataFilter, DatasetSpec, valueFilter } from '../types';
 import { DataEvents } from '../DataModel/DataEvents';
-import { isThisTypeNode } from 'typescript';
+import { IDBPDatabase, openDB } from 'idb';
 
 export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
@@ -33,7 +33,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	public get modalPopupDiv() : HTMLDivElement {
 		return this._modalPopupDiv;
 	}
-	
+
+	private _modalBooleans : boolean[];
+	public get modalBooleans() : boolean[] {
+		return this._modalBooleans;
+	}
+
 	private _yKey : string;
 	public get yKey() : string {
 		return this._yKey;
@@ -48,16 +53,15 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	public get miniCellSelect() : SvgSelection {
 		return this._miniCellSelect;
 	}
+	
+	private _dataStore : IDBPDatabase<unknown>;
+	public get dataStore() : IDBPDatabase<unknown> {
+		return this._dataStore;
+	}
 
 	private initToolbarElements(): void
 	{
 		this._toolbarElements = [
-			{
-				type: 'single',
-				iconKey: 'home',
-				callback: () => location.href = '/overview',
-				tooltip: 'Return to overview screen'
-			},
 			{
 				type: 'optionSelect',
 				iconKeys: ['bars', 'stream', 'clone'],
@@ -94,15 +98,27 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			},
 			{
 				type: 'popupButton',
+				iconKey: 'home',
+				callback: (state: {shown: boolean, index: number}) => this.onHouseClick(state),
+				tooltip: 'Return to overview screen'
+			},
+			{
+				type: 'popupButton',
 				iconKey: 'filter',
-				callback: (state: boolean) => this.onDataFilterClick(state),
+				callback: (state: {shown: boolean, index: number}) => this.onDataFilterClick(state),
 				tooltip: 'View and modify data filters'
 			},
 			{
 				type: 'popupButton',
 				iconKey: 'th',
-				callback: (state: boolean) => this.onConditionFilterClick(state),
+				callback: (state: {shown: boolean, index: number}) => this.onConditionFilterClick(state),
 				tooltip: 'View and modify conditional filters'
+			},
+			{
+				type: 'popupButton',
+				iconKey: 'trash',
+				callback: (state: {shown: boolean, index: number}) => this.onGarbageClick(state),
+				tooltip: 'Delete cached data'
 			}
 		]
 	}
@@ -114,6 +130,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		this.container.appendChild(this.wrapperDiv);
 		this._yKey = 'Mass_norm';
 		this._tempConditionFilterState = new Map<string, Map<string, boolean>>();
+		this._modalBooleans = [];
 
 		this.initToolbarElements();
 		this.drawToolbarElements();
@@ -123,6 +140,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this._yKey = e.detail.yKey;
 		});
+        openDB('loon-db').then(dataStore => this._dataStore = dataStore);
 	}
 
 	private drawToolbarElements(): void
@@ -137,31 +155,13 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			}
 			else if (toolbarElement.type === 'popupButton')
 			{
-				let buttonTrue = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
-				buttonTrue.classList.add('big');
-				this.wrapperDiv.append(buttonTrue);
+				const thisIndex = this.modalBooleans.length;
+				this.modalBooleans.push(false);
 
-				let buttonFalse = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
-				buttonFalse.classList.add('big');
-				this.wrapperDiv.append(buttonFalse);
-				DevlibTSUtil.hide(buttonFalse);
-
-				buttonTrue.onclick = () =>
-				{
-					DevlibTSUtil.hide(buttonTrue);
-					DevlibTSUtil.show(buttonFalse);
-					toolbarElement.callback(true);
-					DevlibTSUtil.show(this.modalPopupDiv);
-				}
-
-				buttonFalse.onclick = () =>
-				{
-					DevlibTSUtil.show(buttonTrue);
-					DevlibTSUtil.hide(buttonFalse);
-					DevlibTSUtil.hide(this.modalPopupDiv);
-					toolbarElement.callback(false);
-				}
-
+				let button = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
+				button.classList.add('big');
+				this.wrapperDiv.append(button);
+				button.onclick = () => this.toggleModalButton(thisIndex, toolbarElement)
 			}
 			else if (toolbarElement.type === 'toggleButton')
 			{
@@ -233,6 +233,41 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		}
 	}
 
+
+	private toggleModalButton(buttonIndex: number, toolbarElement?: ToolbarElement): void
+	{
+
+		if (buttonIndex !== -1 && this.modalBooleans[buttonIndex])
+		{
+			this.modalBooleans[buttonIndex] = false;
+		}
+		else
+		{
+			for (let i = 0; i < this.modalBooleans.length; i++)
+			{
+				this.modalBooleans[i] = false;
+			}
+			if (buttonIndex !== -1)
+			{
+				this.modalBooleans[buttonIndex] = true;
+			}
+		}
+
+		const show = this.modalBooleans[buttonIndex]
+		if (toolbarElement)
+		{
+			toolbarElement.callback({shown: show, index: buttonIndex});
+		}
+		if (show)
+		{
+			DevlibTSUtil.show(this.modalPopupDiv);
+		}
+		else
+		{
+			DevlibTSUtil.hide(this.modalPopupDiv);
+		}
+	}
+
 	private initModalPopup(): void
 	{
 		this._modalPopupDiv = document.createElement("div");
@@ -241,18 +276,26 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		this.container.appendChild(this.modalPopupDiv);
 	}
 
-	private onDataFilterClick(show: boolean): void
+	private getOffsetFromIndex(index: number): number
+	{
+		let button = this.wrapperDiv.querySelectorAll(':scope > .basicIconButton')[index];
+		return button.getBoundingClientRect().top;
+	}
+
+	private onDataFilterClick(state: {shown: boolean, index: number}): void
 	{
 		this.modalPopupDiv.innerHTML = null;
-		if (!show)
+		if (!state.shown)
 		{
 			return;
 		}
 
 		let outer = d3.select(this.modalPopupDiv);
-		
+		outer.classed('narrow', false);
+
 		outer.node().style.flexDirection = 'row';
 		outer.node().style.alignItems = 'flex-start';
+		outer.node().style.top = this.getOffsetFromIndex(state.index) + 'px';
 
 		const selectionDiv = outer.append('div');
 		const convertDiv = outer.append('div');
@@ -262,10 +305,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			selectionDiv,
 			'Current Selection',
 			'The currently highlighted selection contains data that meet all of the following conditions.',
-			this.data.GetAllFilters());
+			this.data.GetAllFilters(),
+			false,
+			state.index);
 
 
-		let buttonElement = DevlibTSUtil.getIconButton('long-arrow-alt-right', () => this.triggerSelectionToFilterEvent(), 'Convert ');
+		let buttonElement = DevlibTSUtil.getIconButton('long-arrow-alt-right', () => this.triggerSelectionToFilterEvent(state.index), 'Convert ');
 
 		convertDiv.attr('style', 'align-self: center;').node().appendChild(buttonElement);
 
@@ -273,14 +318,18 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			filterDiv,
 			'Current Filters',
 			'Only show tracks that meet all of the following conditions.',
-			this.fullData.GetAllFilters());
+			this.fullData.GetAllFilters(),
+			true,
+			state.index);
 	}
 
 	private displayFilters(
 		containerSelect: HtmlSelection,
 		title: string,
 		description: string,
-		filterList: dataFilter[]): void
+		filterList: dataFilter[],
+		isFilter: boolean,
+		index: number): void
 	{
 		containerSelect.classed('filterDisplayContainer', true)
 		  .append('div')
@@ -300,7 +349,14 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				let f = d.filter as valueFilter;
 				let low = f.bound[0].toPrecision(5);
 				let high = f.bound[1].toPrecision(5);
-				return `Cell instances where <b>${f.key}</b> is in range [${low}, ${high}]`;
+				if (isFilter)
+				{
+					return `Tracks where <b>${f.key}</b> is in range [${low}, ${high}] at least once.`;
+				}
+				else
+				{
+					return `Cell instances where <b>${f.key}</b> is in range [${low}, ${high}]`;
+				}
 			});
 
 
@@ -329,39 +385,43 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				displayString += ' at least once.';
 				return displayString;
 			});
+		
+		if (isFilter)
+		{
+			filterSelection.append('button')
+				.classed('basicIconButton', true)
+				.on('click', d =>
+				{
+					if (d.type === 'curve')
+					{
+						this.fullData.removeCurveBrush(d.filterKey);
+					}
+					else if (d.type === 'track')
+					{
+						this.fullData.curveCollection.removeBrush(d.filterKey);
+					}
+					else if (d.type === 'cell')
+					{
+						this.fullData.removeBrush(d.filterKey);
+					}
+					document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
+					this.onDataFilterClick({shown: true, index: index});
+				})
+				.html('<i class="fas fa-minus"></i>');
+		}
 
-		filterSelection.append('button')
-			.classed('basicIconButton', true)
-			.on('click', d =>
-			{
-				if (d.type === 'curve')
-				{
-					this.fullData.removeCurveBrush(d.filterKey);
-				}
-				else if (d.type === 'track')
-				{
-					this.fullData.curveCollection.removeBrush(d.filterKey);
-				}
-				else if (d.type === 'cell')
-				{
-					this.fullData.removeBrush(d.filterKey);
-				}
-				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
-				this.onDataFilterClick(true);
-			})
-			.html('<i class="fas fa-minus"></i>');
 	}
 
-	private triggerSelectionToFilterEvent(): void
+	private triggerSelectionToFilterEvent(index: number): void
 	{
 		document.dispatchEvent(new CustomEvent(DataEvents.selectionToFilter));
-		this.onDataFilterClick(true);
+		this.onDataFilterClick({shown: true, index: index});
 	}
 
-	private onConditionFilterClick(show: boolean): void
+	private onConditionFilterClick(state: {shown: boolean, index: number}): void
 	{
 		this.modalPopupDiv.innerHTML = null;
-		if (!show)
+		if (!state.shown)
 		{
 			return;
 		}
@@ -374,6 +434,9 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 		let outer = d3.select(this.modalPopupDiv);
 		
+		outer.classed('narrow', false);
+
+		outer.node().style.top = this.getOffsetFromIndex(state.index) + 'px';
 		outer.node().style.flexDirection = 'column';
 		outer.node().style.alignItems = 'center';
 
@@ -404,7 +467,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('width', vizWidth + margin.left + margin.right)
 			.attr('height', vizHeight + margin.top + margin.bottom);
 
-		this.addApplyButton(outer);
+		this.addApplyButton(outer, state.index);
 
 		let vizSelect = svgSelect.append('g')
 			.attr('transform', `translate(${margin.left}, ${margin.top})`)
@@ -643,7 +706,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		}
 	}
 
-	private addApplyButton(container: HtmlSelection): void
+	private addApplyButton(container: HtmlSelection, index: number): void
 	{	
 		let buttonSelect = container
 			.append('div')
@@ -652,14 +715,13 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('id', 'conditionFilterApplyButton')
 			.text('Apply Filter')
 			.classed('devlibButton', true)
-			.classed('devlibButton', true)
 			.attr('style', 'padding: 8px')
 			.on('click', () =>
 			{
 				this.copyTempConditionsToModel();
 				DevlibTSUtil.hide(buttonSelect.node());
 				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
-				this.onConditionFilterClick(true);
+				this.onConditionFilterClick({shown: true, index: index });
 			});
 		DevlibTSUtil.hide(buttonSelect.node());
 	}
@@ -716,6 +778,86 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				this.fullData.conditionFilterState.get(key1)?.set(key2, val);
 			}
 		}
+	}
+
+	private onHouseClick(state: {shown: boolean, index: number}): void
+	{
+		this.modalPopupDiv.innerHTML = null;
+		if (!state.shown)
+		{
+			return;
+		}
+		let outer = d3.select(this.modalPopupDiv);
+		outer.classed('narrow', true);
+
+		outer.node().style.flexDirection = 'column';
+		outer.node().style.alignItems = 'center';
+		outer.node().style.top = this.getOffsetFromIndex(state.index) + 'px';
+
+		outer.append('div')
+			.classed('largeText', true)
+			.text('Return to overview page?')
+
+		let buttonDiv = outer.append('div')
+			.attr('style', 'display: flex; flex-direction: row');
+
+		buttonDiv.append('button')
+			.classed('devlibButton', true)
+			.text('Navigate Home')
+			.on('click', () => location.href = '/overview');
+
+		buttonDiv.append('button')
+			.classed('devlibButton', true)
+			.text('Stay Here')
+			.on('click', () => this.toggleModalButton(state.index));
+	}
+
+	private onGarbageClick(state: {shown: boolean, index: number}): void
+	{
+		this.modalPopupDiv.innerHTML = null;
+		if (!state.shown)
+		{
+			return;
+		}
+		let outer = d3.select(this.modalPopupDiv);
+
+		outer.classed('narrow', true);
+
+		outer.node().style.flexDirection = 'column';
+		outer.node().style.alignItems = 'center';
+		
+		outer.node().style.top = this.getOffsetFromIndex(state.index) + 'px';
+
+		outer.append('div')
+			.classed('largeText', true)
+			.text('Delete Cache?')
+		
+		outer.append('div')
+			.classed('mediumText', true)
+			.text('Delete cache if your data has been updated since the last cache time. Otherwise, leave the cache as is to improve loading times.')
+
+		outer.append('button')
+			.classed('devlibButton', true)
+			.text('Delete Cache')
+			.on('click', () => this.clearIDBCache());
+	}
+
+	private async clearIDBCache(): Promise<void>
+	{
+		if (this.dataStore)
+		{
+			const key = this.data.Specification.googleDriveId;
+			this.dataStore.delete('tracks', key);
+			let keys = await this.dataStore.getAllKeys('images');
+			for (let imgKey of keys)
+			{
+				if (imgKey.toString().includes(key))
+				{
+					this.dataStore.delete('images', imgKey)
+				}
+			}
+		}
+		this.toggleModalButton(-1);
 	}
 
 	protected OnResize(): void

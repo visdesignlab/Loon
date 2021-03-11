@@ -1,8 +1,6 @@
 import * as d3 from 'd3';
+import { IDBPDatabase, openDB } from 'idb';
 import { load } from "protobufjs";
-import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
-
-
 
 export interface ImageLabels
 {
@@ -27,28 +25,48 @@ export class ImageStackDataRequest
     {
         this._driveId = driveId;
         this._metaDataLoaded = false;
-        d3.json(`/data/${driveId}/imageMetaData.json`).then((data: any) =>
+
+        const metaDataFilename = `/data/${driveId}/imageMetaData.json`;
+        openDB('loon-db').then(async dataStore => 
         {
-            this._tileWidth = data.tileWidth;
-            this._tileHeight = data.tileHeight;
-            this._numberOfColumns = data.numberOfColumns;
-            this._tilesPerFile = data.tilesPerFile;
-            this._metaDataLoaded = true;
-            if (data.scaleFactor)
+            this._dataStore = dataStore;
+            let store = this.dataStore.transaction('images', 'readonly').objectStore('images');
+            let data = await store.get(metaDataFilename);
+            if (data)
             {
-                this._scaleFactor = data.scaleFactor;
+                this.initImageMetaData(data);
+                return;
             }
-            else
+            d3.json(metaDataFilename).then(data =>
             {
-                this._scaleFactor = 1;
-            }
+                this.initImageMetaData(data);
+                this.dataStore.put<any>('images', data, metaDataFilename);
+            });
         });
+
         this._blobArray= [];
         this._labelArray= [];
         this._maxBlobCount = 100;
         this._nextBlobIndex = 0;
         this._nextLabelIndex = 0;
         this._maxLabelCount = 100;
+    }
+
+    private initImageMetaData(data: any): void
+    {
+        this._tileWidth = data.tileWidth;
+        this._tileHeight = data.tileHeight;
+        this._numberOfColumns = data.numberOfColumns;
+        this._tilesPerFile = data.tilesPerFile;
+        this._metaDataLoaded = true;
+        if (data.scaleFactor)
+        {
+            this._scaleFactor = data.scaleFactor;
+        }
+        else
+        {
+            this._scaleFactor = 1;
+        }
     }
     
     
@@ -119,9 +137,12 @@ export class ImageStackDataRequest
         return this._nextLabelIndex;
     }
 
+	private _dataStore : IDBPDatabase<unknown>;
+	public get dataStore() : IDBPDatabase<unknown> {
+		return this._dataStore;
+	}
 
-; 
-    public getImage(location: number, frameIndex: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): void
+    public async getImage(location: number, frameIndex: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): Promise<void>
     {
         if (!this.metaDataLoaded)
         {
@@ -142,15 +163,35 @@ export class ImageStackDataRequest
             return;
         }
         const imgUrl = `/data/${this.driveId}/img_${location}_${bundleIndex}.jpg`;
+
         const thisIndex = this.nextBlobIndex;
         this.blobArray[thisIndex] = [null, key, null];
         this._nextBlobIndex = (this.nextBlobIndex + 1) % this.maxBlobCount;
+
+        if (this.dataStore)
+        {
+            // try and get from data store
+            let store = this.dataStore.transaction('images', 'readonly').objectStore('images');
+            let blob = await store.get(imgUrl);
+            if (blob)
+            {
+                let url = window.URL.createObjectURL(blob);
+                this.blobArray[thisIndex] = [blob, key, url];
+                callback(top, left, blob, url);
+                return;
+            }
+        }
+
 
         let xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
         xhr.onload = () =>
         {
             let blob = xhr.response;
+            if (this.dataStore)
+			{
+				this.dataStore.put<any>('images', blob, imgUrl);
+			}
             let url = window.URL.createObjectURL(blob);
             this.blobArray[thisIndex] = [blob, key, url];
             callback(top, left, blob, url);
@@ -241,7 +282,19 @@ export class ImageStackDataRequest
             }
             // Obtain a message type
             let ImageLabelsMessage = root.lookupType("imageLabels.ImageLabels");
-            let buffer = await d3.buffer(labelUrl);
+
+            let buffer;
+            if (this.dataStore)
+            {
+                let store = this.dataStore.transaction('images', 'readonly').objectStore('images');
+                buffer = await store.get(labelUrl);
+            }
+            if (!buffer)
+            {
+                buffer = await d3.buffer(labelUrl);
+                await this.dataStore.put<any>('images', buffer, labelUrl);
+            }
+
             // Decode an Uint8Array (browser) or Buffer (node) to a message
             let message = ImageLabelsMessage.decode(new Uint8Array(buffer)) as any;
 

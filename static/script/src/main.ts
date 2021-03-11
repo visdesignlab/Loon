@@ -15,9 +15,10 @@ let app: App<CurveList, DatasetSpec> = new App<CurveList, DatasetSpec>(metaConta
 window.onresize = () => app.OnWindowResize();
 
 
-d3.json('/static/layouts/defaultLayout.json').then((data: any) =>
+d3.json('/static/layouts/defaultLayout.json').then(async (data: any) =>
 {
     app.InitializeLayout(data);
     const datasetId: string = metaContainer.dataset.dataset;
+    await app.InitDataStore();
     app.LoadDataset(datasetId);
 });
