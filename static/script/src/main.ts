@@ -14,11 +14,10 @@ let derivedPointDataFunctions = DerivedPointValueFunctions.GetFunctionList();
 let app: App<CurveList, DatasetSpec> = new App<CurveList, DatasetSpec>(metaContainer, CurveListFactory.CreateCurveListFromCSVObject, derivedTrackDataFunctions, derivedPointDataFunctions);
 window.onresize = () => app.OnWindowResize();
 
-
 d3.json('/static/layouts/defaultLayout.json').then(async (data: any) =>
 {
+    await app.InitDataStore();
     app.InitializeLayout(data);
     const datasetId: string = metaContainer.dataset.dataset;
-    await app.InitDataStore();
     app.LoadDataset(datasetId);
 });
