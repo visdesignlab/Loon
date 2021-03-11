@@ -91,7 +91,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 
 	public async InitDataStore(): Promise<void>
 	{
-		const dataStore = await openDB('loon-db', undefined, {
+		const dataStore = await openDB('loon-db', 2, {
 			upgrade(db, _oldVersion, _newVersion, _transaction)
 			{
 				if (!db.objectStoreNames.contains('tracks'))
