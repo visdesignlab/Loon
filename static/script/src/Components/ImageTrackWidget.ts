@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { HtmlSelection, SvgSelection, Margin, NDim } from '../devlib/DevlibTypes';
+import { HtmlSelection, SvgSelection, Margin, NDim, ButtonProps } from '../devlib/DevlibTypes';
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
@@ -10,10 +10,11 @@ import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStack
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { CurveList } from '../DataModel/CurveList';
 import { HistogramWidget } from './HistogramWidget';
+import { OptionSelect } from './OptionSelect';
 
 export class ImageTrackWidget
 {
-    constructor(container: HTMLElement, parent: ImageStackWidget)
+    constructor(container: HTMLElement, parent: ImageStackWidget, samplingStratOptions: (number | number[])[])
     {
         this._container = container;
         this._parentWidget = parent;
@@ -24,6 +25,7 @@ export class ImageTrackWidget
         this._frameLabelPositions = [];
         this._cellLabelPositions = [];
         this._exemplarYKey = 'Mass_norm';
+        this._samplingStratOptions = samplingStratOptions;
 
         // hardcoded from css
         this._cellTimelineMargin = {
@@ -67,6 +69,26 @@ export class ImageTrackWidget
     public get titleContainer() : HtmlSelection {
         return this._titleContainer;
     }
+
+    private _optionSelectContainer : HtmlSelection;
+    public get optionSelectContainer() : HtmlSelection {
+        return this._optionSelectContainer;
+    }
+    
+    private _samplingStrategySelect : OptionSelect;
+    public get samplingStrategySelect() : OptionSelect {
+        return this._samplingStrategySelect;
+    }
+
+    private _samplingStratOptions : (number[] | number)[];
+    public get samplingStratOptions() : (number[] | number)[] {
+        return this._samplingStratOptions;
+    }
+
+    private _currentSamplingStategy : number[];
+    public get currentSamplingStategy() : number[] {
+        return this._currentSamplingStategy;
+    }    
 
     private _svgContainer : SvgSelection;
     public get svgContainer() : SvgSelection {
@@ -196,9 +218,41 @@ export class ImageTrackWidget
     public init(): void
     {
         const containerSelect = d3.select(this.container);
-        this._titleContainer = containerSelect.append('div')
+        
+        const titleBarDiv = containerSelect.append('div')
             .classed('trackModeTitleContainer', true)
             .classed('mediumText', true);
+
+            
+        this._titleContainer= titleBarDiv.append('span');
+
+        const optionSelectContainer = titleBarDiv.append('span')
+            .attr('id', 'exemplarSamplingStratSelection')
+
+        this._samplingStrategySelect = new OptionSelect('exemplarSamplingStratSelection', 'Sampled at');
+        let buttonPropList: ButtonProps[] = [];
+        for (let option of this.samplingStratOptions)
+        {
+            let optionName: string;
+			if (Array.isArray(option))
+			{
+                optionName = option.join(', ');
+			}
+			else
+			{
+                optionName = `${option} random track`;
+                if (option > 1)
+                {
+                    optionName += 's';
+                }
+			}
+			let buttonProp: ButtonProps = {
+				displayName: optionName,
+				callback: () => console.log(option)
+			}
+			buttonPropList.push(buttonProp);
+        }
+        this.samplingStrategySelect.onDataChange(buttonPropList);
 
         this._svgContainer = containerSelect.append('svg');
         this._cellLabelGroup = this.svgContainer.append('g')
@@ -309,7 +363,7 @@ export class ImageTrackWidget
     {
         if (this.parentWidget.inExemplarMode)
         {
-            this.titleContainer.text('Exemplars of ' + this.parentWidget.exemplarAttribute);
+            this.titleContainer.text('Exemplars of ' + this.parentWidget.exemplarAttribute + ' - ');
         }
         else
         {

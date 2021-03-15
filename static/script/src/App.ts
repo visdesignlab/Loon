@@ -146,7 +146,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 				newComponent = new MetricDistributionWidget(container, initArgs.metricDistributionCollectionLevel);
 				break;
 			case ComponentType.ImageSelectionWidget:
-				newComponent = new ImageSelectionWidget(container);
+				newComponent = new ImageSelectionWidget(container, initArgs.samplingStrat);
 				break;
 			case ComponentType.DetailedDistribution:
 				newComponent = new DetailedDistributionWidget(container, initArgs.metricDistributionCollectionLevel, initArgs.attributeKey);

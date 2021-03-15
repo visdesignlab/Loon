@@ -14,15 +14,15 @@ import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
-    constructor(container: HTMLElement, isClone: boolean = false)
+    constructor(container: HTMLElement, samplingStratOptions: (number | number[])[], isClone: boolean = false)
     {
-        super(container);
+        super(container, true, samplingStratOptions);
         this._isClone = isClone;
     }
 
     protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        return new ImageSelectionWidget(container, true);
+        return new ImageSelectionWidget(container, this.samplingStratOptions, true);
     }
 
 	private _isClone : boolean;
@@ -131,6 +131,17 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._hoveredLocId;
     }
 
+    private _samplingStratOptions : (number[] | number)[];
+    public get samplingStratOptions() : (number[] | number)[] {
+        return this._samplingStratOptions;
+    }
+
+    protected initProps(props?: any[]): void
+    {
+        super.initProps();
+        this._samplingStratOptions = props[0];
+    }
+
 	public init(): void
 	{
         this._frameHeight = 32; // hardcoded based on CSS
@@ -160,7 +171,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._imageStackContainer = this.innerContainer.append('div')
             .classed('imageStackContainer', true)
             .classed('overflow-scroll', true);
-        this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight);
+        this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight, this.samplingStratOptions);
 
         document.addEventListener('frameHoverChange', (e: CustomEvent) => 
         {

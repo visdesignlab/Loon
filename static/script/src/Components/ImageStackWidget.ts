@@ -13,9 +13,14 @@ import { Facet } from '../types';
 
 export class ImageStackWidget {
 
-	constructor(container: HTMLElement, imageTrackContainer: HTMLElement, maxHeight: number) {
+	constructor(
+		container: HTMLElement,
+		imageTrackContainer: HTMLElement,
+		maxHeight: number,
+		samplingStratOptions: (number | number[])[])
+	{
 		this._container = container;
-		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this);
+		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this, samplingStratOptions);
 		this._maxHeight = maxHeight;
 		this.init();
 		this._cellHovered = 0;
