@@ -35,7 +35,20 @@ export class ImageStackWidget {
 		this._exemplarLocations = new Set();
 		this._exemplarFrames = new Map();
 		this._facetList = [];
-		this._numExemplars = 3;
+		this.setNumExemplars();
+	}
+
+	private setNumExemplars(): void
+	{
+		const currentStrat = this.imageTrackWidget.currentSamplingStategy;
+		if (Array.isArray(currentStrat))
+		{
+			this._numExemplars = currentStrat.length;
+		}
+		else
+		{
+			this._numExemplars = currentStrat;
+		}
 	}
 
 	private _container: HTMLElement;
@@ -226,6 +239,12 @@ export class ImageStackWidget {
 
 		this.imageTrackWidget.init();
 
+		document.addEventListener('samplingStrategyChange', (e: CustomEvent) => 
+		{
+			this.setNumExemplars();
+			this.updateTracksCanvas();
+		});
+
 		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => {
 			this._exemplarAttribute = e.detail;
 
@@ -383,7 +402,21 @@ export class ImageStackWidget {
 			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
 			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
 			let numCurves = longTracks.length;
-			const percentages = [0.05, 0.50, 0.95]; // todo make this more general
+			// const percentages = [0.05, 0.50, 0.95]; // todo make this more general
+			const samplingStat = this.imageTrackWidget.currentSamplingStategy;
+			let percentages: number[];
+			if (Array.isArray(samplingStat))
+			{
+				percentages = samplingStat;
+			}
+			else
+			{
+				percentages = [];
+				for (let i = 0; i < samplingStat; i++)
+				{
+					percentages.push(Math.random());
+				}
+			}
 			for (let p of percentages)
 			{
 				let index = Math.round((numCurves - 1) * p);

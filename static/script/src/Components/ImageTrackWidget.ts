@@ -69,11 +69,6 @@ export class ImageTrackWidget
     public get titleContainer() : HtmlSelection {
         return this._titleContainer;
     }
-
-    private _optionSelectContainer : HtmlSelection;
-    public get optionSelectContainer() : HtmlSelection {
-        return this._optionSelectContainer;
-    }
     
     private _samplingStrategySelect : OptionSelect;
     public get samplingStrategySelect() : OptionSelect {
@@ -85,8 +80,8 @@ export class ImageTrackWidget
         return this._samplingStratOptions;
     }
 
-    private _currentSamplingStategy : number[];
-    public get currentSamplingStategy() : number[] {
+    private _currentSamplingStategy : number[] | number;
+    public get currentSamplingStategy() : number[] | number {
         return this._currentSamplingStategy;
     }    
 
@@ -231,6 +226,7 @@ export class ImageTrackWidget
 
         this._samplingStrategySelect = new OptionSelect('exemplarSamplingStratSelection', 'Sampled at');
         let buttonPropList: ButtonProps[] = [];
+        this._currentSamplingStategy = this.samplingStratOptions[0]; // default to first
         for (let option of this.samplingStratOptions)
         {
             let optionName: string;
@@ -248,7 +244,11 @@ export class ImageTrackWidget
 			}
 			let buttonProp: ButtonProps = {
 				displayName: optionName,
-				callback: () => console.log(option)
+				callback: () => 
+                {
+                    this._currentSamplingStategy = option;
+                    document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: option}));
+                }
 			}
 			buttonPropList.push(buttonProp);
         }
