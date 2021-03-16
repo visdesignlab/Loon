@@ -18,6 +18,12 @@
     background: rgb(226, 226, 226, 0.5);
 }
 
+.basicIconButton.compact {
+    width: 24px;
+    height: 24px;
+    font-size: 8pt;
+}
+
 .basicIconButton.big {
     width: 42px;
     height: 42px;
