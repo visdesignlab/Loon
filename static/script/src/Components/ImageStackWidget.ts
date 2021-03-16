@@ -279,10 +279,8 @@ export class ImageStackWidget {
 		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
 
 		this.selectedImageContainer
-			// .on('mouseenter', () => this.brightenCanvas())
 			.on('mouseleave', () => {
 				this.hideSegmentHover();
-				// this.dimCanvas();
 			});
 
 		this.imageTrackWidget.init();

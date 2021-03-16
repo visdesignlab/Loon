@@ -378,7 +378,6 @@ export class ImageTrackWidget
 
     public async draw(tracks: CurveND[]): Promise<void>
     {
-        // todo - consume showOutline/invert in a reasonable way.
         this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         if (!this.parentWidget.imageStackDataRequest)
         {

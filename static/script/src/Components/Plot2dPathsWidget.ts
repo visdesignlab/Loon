@@ -614,7 +614,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('r', 3)
 			.attr('fill', d => d[2] >= 10 ? 'black' : d3.schemeCategory10[d[2]]);
 
-		// todo overlap prevention
 		const radius = 9;
 		const forceNodes: any[] = pixelSpacePoints.map(d => {return {x: d[0], y: d[1] }});
 		this._forceSimulation = d3.forceSimulation(forceNodes)

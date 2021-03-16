@@ -68,11 +68,6 @@
 .groupByElementContainer {
     display: flex;
     align-items: center;
-    /* border-radius: 0 12px 15px 0; */
-    /* border-color: grey; */
-    /* border-style: solid; */
-    /* border-width: 0px 1px 2px 0; */
-    /* box-shadow: #dedcdc -4px 4px 5px 0px; */
 }
 
 .groupByElementContainer:not(:first-of-type) {
@@ -85,9 +80,6 @@
 }
 
 .groupByMainContainer {
-    /* border: solid; */
-    /* border-width: 0px 1px 1px 0px; */
-    /* border-color: #bebebe; */
     background: #f1f1f1;
 }
 
