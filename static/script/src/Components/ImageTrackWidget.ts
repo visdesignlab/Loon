@@ -15,7 +15,7 @@ import { OptionSelect } from './OptionSelect';
 
 export class ImageTrackWidget
 {
-    constructor(container: HTMLElement, parent: ImageStackWidget, samplingStratOptions: (number | number[])[])
+    constructor(container: HTMLElement, parent: ImageStackWidget, samplingStratOptions: {"strat": (number[] | number), "label": string}[])
     {
         this._container = container;
         this._parentWidget = parent;
@@ -77,13 +77,13 @@ export class ImageTrackWidget
         return this._samplingStrategySelect;
     }
 
-    private _samplingStratOptions : (number[] | number)[];
-    public get samplingStratOptions() : (number[] | number)[] {
+    private _samplingStratOptions : {"strat": (number[] | number), "label": string}[];
+    public get samplingStratOptions() : ({"strat": (number[] | number), "label": string}[]) {
         return this._samplingStratOptions;
     }
 
-    private _currentSamplingStategy : number[] | number;
-    public get currentSamplingStategy() : number[] | number {
+    private _currentSamplingStategy : {"strat": (number[] | number), "label": string};
+    public get currentSamplingStategy() : {"strat": (number[] | number), "label": string} {
         return this._currentSamplingStategy;
     }    
 
@@ -237,10 +237,14 @@ export class ImageTrackWidget
         for (let option of this.samplingStratOptions)
         {
             let optionName: string;
-			if (Array.isArray(option))
+            if (option.label)
+            {
+                optionName = option.label;
+            }
+			else if (Array.isArray(option.strat))
 			{
-                let optionCopy: number[] | string[] = option.map(x => x);
-                if (option.length < 8)
+                let optionCopy: number[] | string[] = option.strat.map(x => x);
+                if (option.strat.length < 8)
                 {
                     optionCopy = optionCopy.map(x => 
                         {
@@ -263,8 +267,8 @@ export class ImageTrackWidget
 			}
 			else
 			{
-                optionName = `${option} random track`;
-                if (option > 1)
+                optionName = `${option.strat} random track`;
+                if (option.strat > 1)
                 {
                     optionName += 's';
                 }

@@ -17,7 +17,7 @@ export class ImageStackWidget {
 		container: HTMLElement,
 		imageTrackContainer: HTMLElement,
 		maxHeight: number,
-		samplingStratOptions: (number | number[])[])
+		samplingStratOptions: {"strat": (number[] | number), "label": string}[])
 	{
 		this._container = container;
 		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this, samplingStratOptions);
@@ -40,7 +40,7 @@ export class ImageStackWidget {
 
 	private setNumExemplars(): void
 	{
-		const currentStrat = this.imageTrackWidget.currentSamplingStategy;
+		const currentStrat = this.imageTrackWidget.currentSamplingStategy.strat;
 		if (Array.isArray(currentStrat))
 		{
 			this._numExemplars = currentStrat.length;
@@ -450,7 +450,7 @@ export class ImageStackWidget {
 			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
 			let numCurves = longTracks.length;
 			// const percentages = [0.05, 0.50, 0.95]; // todo make this more general
-			const samplingStat = this.imageTrackWidget.currentSamplingStategy;
+			const samplingStat = this.imageTrackWidget.currentSamplingStategy.strat;
 			let percentages: number[];
 			if (Array.isArray(samplingStat))
 			{
