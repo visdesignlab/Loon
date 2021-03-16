@@ -17,6 +17,10 @@
     margin-right: 20px;
 }
 
+.toggleOptions {
+    margin: 5px;
+}
+
 .cellAxisLabel.currentFrame {
     font-size: 18pt;
     font-weight: 700;
@@ -34,4 +38,8 @@
 .cellAxisLabel.hovered.rotated {
     font-size: 12pt;
     font-weight: 600;
+}
+
+.invert {
+    filter: invert();
 }

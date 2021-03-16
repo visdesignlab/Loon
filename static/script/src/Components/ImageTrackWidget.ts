@@ -374,6 +374,7 @@ export class ImageTrackWidget
 
     public async draw(tracks: CurveND[]): Promise<void>
     {
+        // todo - consume showOutline/invert in a reasonable way.
         this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         if (!this.parentWidget.imageStackDataRequest)
         {
@@ -726,7 +727,12 @@ export class ImageTrackWidget
                         this.canvasContext.closePath();
                         if (imgBitmap.status === 'fulfilled')
                         {
+                            if ((this.parentWidget.invertImageToggle.node() as HTMLInputElement).checked)
+                            {
+                                this.canvasContext.filter = 'invert(1)';
+                            }
                             this.canvasContext.drawImage(imgBitmap.value, offsetX, offsetY);
+                            this.canvasContext.filter = '';
                         }
                     }
                     resolve();
@@ -963,12 +969,10 @@ export class ImageTrackWidget
             {
                 this.parentWidget.showSegmentHover(rowArray, displayedPoint.get('segmentLabel'), firstIndex, true);
             });
-            this.parentWidget.brightenCanvas();
         }
         else
         {
             this.parentWidget.hideSegmentHover(true);
-            this.parentWidget.dimCanvas();
         }
 
         this.updateLabelsOnMouseMove(cellId, frameIndex, cellIdIndex);
@@ -985,7 +989,6 @@ export class ImageTrackWidget
     private onCanvasMouseLeave(): void
     {
         this.parentWidget.hideSegmentHover(true);
-        this.parentWidget.dimCanvas();
         this.updateLabelsOnMouseMove('', -1, -1);
         const locId = this.parentWidget.getCurrentLocationId();
         let event = new CustomEvent('frameHoverChange', { detail:
@@ -1041,6 +1044,11 @@ export class ImageTrackWidget
 
     private async drawOutlines(sourceDestCell?: [Rect, [number, number], PointND][]): Promise<void>
     {
+        if (!(this.parentWidget.showOutlineToggle.node() as HTMLInputElement).checked)
+        {
+            // don't do it!
+            return;
+        }
         if (!sourceDestCell)
         {
             sourceDestCell = this.sourceDestCell

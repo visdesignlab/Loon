@@ -118,7 +118,22 @@ export class ImageStackWidget {
 	public get frameLabel(): HtmlSelection {
 		return this._frameLabel;
 	}
+	
+	private _toggleOptionsContainer : HtmlSelection;
+	public get toggleOptionsContainer() : HtmlSelection {
+		return this._toggleOptionsContainer;
+	}
+	
+	private _showOutlineToggle : HtmlSelection;
+	public get showOutlineToggle() : HtmlSelection {
+		return this._showOutlineToggle;
+	}
 
+	private _invertImageToggle : HtmlSelection;
+	public get invertImageToggle() : HtmlSelection {
+		return this._invertImageToggle;
+	}
+	
 	private _selectedImageContainer: HtmlSelection;
 	public get selectedImageContainer(): HtmlSelection {
 		return this._selectedImageContainer;
@@ -217,6 +232,40 @@ export class ImageStackWidget {
 		locationFrameLabel.node().append('Frame: ');
 		this._frameLabel = locationFrameLabel.append('span')
 			.classed('locationFrameLabelValue', true);
+
+		this._toggleOptionsContainer = this.innerContainer.append('div')
+			.classed('toggleOptions', true)
+			.classed('smallText', true);
+
+		const outlineId = 'imageToggle-outlines';
+		this._showOutlineToggle = this.toggleOptionsContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () => 
+			{
+				let node = document.getElementById(outlineId) as HTMLInputElement;
+				this.updateCanvas();
+			})
+			.attr('id', outlineId);
+		this.toggleOptionsContainer.append('label')
+			.attr('for', outlineId)
+			.text('Show Outlines');
+
+		(this.showOutlineToggle.node() as HTMLInputElement).checked = true;
+		
+		const invertId = 'imageToggle-invert';
+		this._invertImageToggle = this.toggleOptionsContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () =>
+			{
+				let node = document.getElementById(invertId) as HTMLInputElement;
+				this.selectedImageContainer.classed('invert', node.checked);
+				this.selectedImageCanvas.classed('invert', node.checked);
+				this.updateCanvas();
+			})
+			.attr('id', invertId);
+		this.toggleOptionsContainer.append('label')
+			.attr('for', invertId)
+			.text('Invert');
 
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
@@ -344,11 +393,18 @@ export class ImageStackWidget {
 			.attr('width', this.imageStackDataRequest?.tileWidth)
 			.attr('height', this.imageStackDataRequest?.tileHeight);
 
-		this.imageStackDataRequest?.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
-			(data: ImageLabels, firstIndex: number) => {
-				this.createOutlineImage(data, firstIndex);
-				this.drawDefaultCanvas();
-			});
+		if ((this.showOutlineToggle.node() as HTMLInputElement).checked)
+		{
+			this.imageStackDataRequest?.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
+				(data: ImageLabels, firstIndex: number) => {
+					this.createOutlineImage(data, firstIndex);
+					this.drawDefaultCanvas();
+				});
+		}
+		else
+		{
+			this.clearCanvas();
+		}
 
 		let locId = this.imageLocation.locationId;
 		if (!skipImageTrackDraw) {
@@ -458,6 +514,11 @@ export class ImageStackWidget {
 
 	private drawDefaultCanvas(): void {
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
+	}
+
+	private clearCanvas(): void {
+		this.canvasContext.clearRect(0, 0, this.imageStackWidth, this.imageStackHeight);
+		this._defaultCanvasState = this.canvasContext.createImageData(this.imageStackDataRequest.tileWidth, this.imageStackDataRequest.tileHeight);
 	}
 
 	public isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean {
