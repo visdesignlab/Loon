@@ -580,7 +580,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		if (this.inAverageMode)
 		{
-			// todo - add another branch for facet vs not.
 			if (this.inFacetMode)
 			{
 				this.updateFacetPaths();
@@ -683,21 +682,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	private updateFacetPaths(): void
 	{
-		// copy
-		// this.tempConditionFilterState.clear();
-		// for (let [key, value] of this.dataSuperset.conditionFilterState.entries())
-		// {
-		// 	this.tempConditionFilterState.set(key, new Map(value));
-		// }
-
-		// let outer = d3.select(this.modalPopupDiv);
-		
-		// outer.classed('narrow', false);
-
-		// outer.node().style.top = this.getOffsetFromIndex(state.index) + 'px';
-		// outer.node().style.flexDirection = 'column';
-		// outer.node().style.alignItems = 'center';
-
 		const margin = {
 			top: 30,
 			left: 120,
