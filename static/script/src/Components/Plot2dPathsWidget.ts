@@ -52,6 +52,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._xKey = initialOption.xKey;
 		this._yKey = initialOption.yKey;
 		this._inAverageMode = initialOption.averaged;
+		this._inFacetMode = false;
 		this._smoothCurves = false;
 	}
 
@@ -60,9 +61,19 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._svgSelect;
 	}
 
+	private _svgFacetSelect : SvgSelection;
+	public get svgFacetSelect() : SvgSelection {
+		return this._svgFacetSelect;
+	}
+
 	private _mainGroupSelect : SvgSelection;
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
+	}
+	
+	private _mainGroupFacetSelect : SvgSelection;
+	public get mainGroupFacetSelect() : SvgSelection {
+		return this._mainGroupFacetSelect;
 	}
 	
 	private _canvasContainer : SvgSelection;
@@ -178,6 +189,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._inAverageMode;
 	}
 
+	private _inFacetMode : boolean;
+	public get inFacetMode() : boolean {
+		return this._inFacetMode;
+	}
+
 	private _smoothCurves : boolean;
 	public get smoothCurves() : boolean {
 		return this._smoothCurves;
@@ -218,9 +234,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				this.hideQuickPickContainer();
 			})
-		this._svgSelect = containerSelect.append("svg")
+		this._svgSelect = containerSelect.append("svg");
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
+		this._svgFacetSelect = containerSelect.append('svg');
+		this._mainGroupFacetSelect = this.svgFacetSelect.append('g')
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
+		this.swapSvgVisibility();
 
 		this._canvasContainer = this.mainGroupSelect
 			.append('foreignObject')
@@ -504,10 +526,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.range([this.vizHeight, 0]);
 	}
 
+	private swapSvgVisibility(): void
+	{
+		this.svgSelect.classed('noDisp', this.inFacetMode);
+		this.svgFacetSelect.classed('noDisp', !this.inFacetMode);
+	}
+
 	private updatePaths(): void
 	{
 		if (this.inAverageMode)
 		{
+			// todo - add another branch for facet vs not.
 			this.updateAveragePaths();
 			this.drawAxis();
 		}
@@ -599,6 +628,19 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			labelData.unshift([facet.name, lastPoint]);
 		}
 		this.drawLabels(labelData);
+	}
+
+	protected drawFacetContent(): void
+	{
+		if (this.inAverageMode)
+		{
+			this._inFacetMode = !this.inFacetMode;
+			this.swapSvgVisibility();
+		}
+		else
+		{
+			super.drawFacetContent();
+		}
 	}
 
 	private drawLabels(labelData: [string, [number, number] | null][]): void

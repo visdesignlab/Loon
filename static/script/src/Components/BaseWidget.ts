@@ -239,7 +239,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		return () => DevlibTSUtil.hide(this.buttonListContainer);
 	}
 
-	private drawFacetContent(): void
+	protected drawFacetContent(): void
 	{
 		this.largePopup.innerHTML = null;
 

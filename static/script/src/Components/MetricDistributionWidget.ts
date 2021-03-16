@@ -163,7 +163,8 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 				{
 					direction: Direction.column,
 					inside: MetricDistributionSubComponentTypes.Title,
-					minSize: '100%'
+					minSize: '100%',
+					fraction: 0
 				},
 				{
 					direction: Direction.column,
