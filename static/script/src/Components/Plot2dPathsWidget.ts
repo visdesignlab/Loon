@@ -604,7 +604,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private drawLabels(labelData: [string, [number, number] | null][]): void
 	{
 		const indexedPoints: [string, [number, number] | null, number][] = labelData.map((d,i) => [d[0], d[1], i]);
-		const validPoints = indexedPoints.filter(x => x[1] !== null);
+		const validPoints = indexedPoints.filter((x, i) => x[1] !== null && i < 10);
 		const pixelSpacePoints: [number, number, number][] = validPoints.map(d => [this.scaleX(d[1][0]), this.scaleY(d[1][1]), d[2]]);
 		this.averageCurveLabelContainer.selectAll('circle')
 			.data(pixelSpacePoints)
