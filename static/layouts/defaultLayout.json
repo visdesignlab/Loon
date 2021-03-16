@@ -4,8 +4,8 @@
 		{
 			"direction": "col",
 			"fraction": 0,
-			"minSize": 48,
-			"maxSize": 48,
+			"minSize": "48px",
+			"maxSize": "48px",
 			"inside":
 			{
 						
@@ -99,8 +99,8 @@
 								},				{
 									"direction": "row",
 									"fraction": 0,
-									"minSize": 120,
-									"maxSize": 120,
+									"minSize": "120px",
+									"maxSize": "120px",
 									"inside": 
 									{
 										

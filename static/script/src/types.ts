@@ -1,7 +1,7 @@
 export interface Frame<T> {
 	fraction?: number, // if no fraction is specified, it is assumed to be equal weight
-	minSize?: number,
-	maxSize?: number,
+	minSize?: string,
+	maxSize?: string,
 	wrap?: boolean,
 	overflowScroll?: boolean,
 	direction: Direction,

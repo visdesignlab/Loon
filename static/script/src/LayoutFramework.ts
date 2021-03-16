@@ -48,11 +48,11 @@ export class LayoutFramework {
 		let inlineStyle: string = "";
 		if (typeof frame.minSize !== "undefined")
 		{
-			inlineStyle += `min-${dirPostFix}: ${frame.minSize}px; `;
+			inlineStyle += `min-${dirPostFix}: ${frame.minSize}; `;
 		}
 		if (typeof frame.maxSize !== "undefined")
 		{
-			inlineStyle += `max-${dirPostFix}: ${frame.maxSize}px; `;			
+			inlineStyle += `max-${dirPostFix}: ${frame.maxSize}; `;			
 		}
 
 		if (frame.wrap)
