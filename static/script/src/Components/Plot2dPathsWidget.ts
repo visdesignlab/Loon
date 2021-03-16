@@ -73,10 +73,20 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._mainGroupSelect;
 	}
 	
-	// private _mainGroupFacetSelect : SvgSelection;
-	// public get mainGroupFacetSelect() : SvgSelection {
-	// 	return this._mainGroupFacetSelect;
-	// }
+	private _mainGroupFacetSelect : SvgSelection;
+	public get mainGroupFacetSelect() : SvgSelection {
+		return this._mainGroupFacetSelect;
+	}
+
+	private _yAxisFacetSelect : SvgSelection;
+	public get yAxisFacetSelect() : SvgSelection {
+		return this._yAxisFacetSelect;
+	}
+
+	private _xAxisFacetSelect : SvgSelection;
+	public get xAxisFacetSelect() : SvgSelection {
+		return this._xAxisFacetSelect;
+	}
 	
 	private _canvasContainer : SvgSelection;
 	public get canvasContainer() : SvgSelection {
@@ -251,8 +261,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
 		this._svgFacetSelect = containerSelect.append('svg');
-		// this._mainGroupFacetSelect = this.svgFacetSelect.append('g')
-		// 	.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+		this._mainGroupFacetSelect = this.svgFacetSelect.append('g')
+		this._yAxisFacetSelect = this.svgFacetSelect.append('g')
+		this._xAxisFacetSelect = this.svgFacetSelect.append('g')
 
 		this.swapSvgVisibility();
 
@@ -403,6 +414,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public OnDataChange(): void
 	{
 		this.updateScales();
+		this.tempConditionFilterState.clear();
+		this.resetTempConditionFilter();
 		this.updatePaths();
 		this.drawAxis();
         this.showLabel();
@@ -422,6 +435,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			else
 			{
 				this.margin.right = 8;
+				if (this.inFacetMode)
+				{
+					this._inFacetMode = false;
+					this.swapSvgVisibility();
+				}
 			}
 			this.setWidthHeight();
 			this.OnResize();
@@ -544,6 +562,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		this.svgSelect.classed('noDisp', this.inFacetMode);
 		this.svgFacetSelect.classed('noDisp', !this.inFacetMode);
+		if (this.inFacetMode)
+		{
+			this.resetTempConditionFilter();
+		}
 	}
 
 	private updatePaths(): void
@@ -654,11 +676,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private updateFacetPaths(): void
 	{
 		// copy
-		this.tempConditionFilterState.clear();
-		for (let [key, value] of this.dataSuperset.conditionFilterState.entries())
-		{
-			this.tempConditionFilterState.set(key, new Map(value));
-		}
+		// this.tempConditionFilterState.clear();
+		// for (let [key, value] of this.dataSuperset.conditionFilterState.entries())
+		// {
+		// 	this.tempConditionFilterState.set(key, new Map(value));
+		// }
 
 		// let outer = d3.select(this.modalPopupDiv);
 		
@@ -669,10 +691,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		// outer.node().style.alignItems = 'center';
 
 		const margin = {
-			top: 20,
+			top: 30,
 			left: 120,
 			right: 40,
-			bottom: 86
+			bottom: 76
 		}
 
 		const defaultFacets = this.data.defaultFacets;
@@ -687,32 +709,21 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		const miniPadding = Math.round(0.08 * miniSize);
 		miniSize -= 2 * miniPadding;
 
-		// outer.append('div')
-		// 	.classed('largeText', true)
-		// 	.text('Filter by Condition');
-
-
-
 		const vizWidth = wCount * miniSize + (wCount - 1) * miniPadding;
-
 		const vizHeight = lCount * miniSize + (lCount - 1) * miniPadding;
-
-		// const svgSelect = outer.append('svg')
-		// 	.attr('width', vizWidth + margin.left + margin.right)
-		// 	.attr('height', vizHeight + margin.top + margin.bottom);
 
 		this.addApplyButton(d3.select(this.container as HTMLElement));
 
-		let vizSelect = this.svgFacetSelect.append('g')
+		this.mainGroupFacetSelect
 			.attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-		let rowSelect = vizSelect.selectAll('g')
+		let rowSelect = this.mainGroupFacetSelect.selectAll('g.row')
 			.data(defaultAxisTicks.yAxisTicks)
 			.join('g')
 			.classed('row', true)
 			.attr('transform', (_, i) => `translate(0, ${i * (miniSize + miniPadding)})`);
 
-		this._miniCellSelect = rowSelect.selectAll('g')
+		this._miniCellSelect = rowSelect.selectAll('g.miniCell')
 			.data(d => defaultAxisTicks.xAxisTicks.map(label => [d, label]))
 			.join('g')
 			.classed('miniCell', true)
@@ -730,7 +741,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			
 		this.updateConditionFilterSelection()
 		
-		this.miniCellSelect.append('rect')
+		this.miniCellSelect.selectAll('rect')
+			.data(d => [d])
+			.join('rect')
 			.attr('width', miniSize)
 			.attr('height', miniSize)
 			.classed('miniBox', true);
@@ -771,8 +784,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
             .x(d => scaleX(d[0]))
             .y(d => scaleY(d[1]));
 					
-		this.miniCellSelect.append('path')
+		this.miniCellSelect.selectAll('.miniExemplarCurve.allData')
+			.data(d => [d])
+			.join('path')
 			.classed('miniExemplarCurve', true)
+			.classed('allData', true)
 			.attr('d', d => 
 			{
 				let [drugLabel, concLabel] = d;
@@ -796,7 +812,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 		if (this.data.brushApplied)
 		{
-			this.miniCellSelect.append('path')
+			this.miniCellSelect.selectAll('.miniExemplarCurve.selection')
+				.data(d => [d])
+				.join('path')
 				.classed('miniExemplarCurve', true)
 				.classed('selection', true)
 				.attr('d', d => 
@@ -820,8 +838,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 					return lineAvg(avergeGrowthLine);
 				});
 		}
+		else
+		{
+			this.miniCellSelect.selectAll('.miniExemplarCurve.selection').remove();
+		}
 
-		let yAxisSelect = this.svgFacetSelect.append('g')
+		this.yAxisFacetSelect
 			.attr('transform', `translate(${margin.left}, ${margin.top})`);
 		
 		const maxLabelWidth = 70;
@@ -829,7 +851,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 		const mainLabelSize = 20;
 
-		yAxisSelect.selectAll('text')
+		this.yAxisFacetSelect.selectAll('text')
 			.data([defaultAxisTicks.axisLabels[0]])
 		  .join('text')
 			.attr('text-anchor', 'middle')
@@ -838,17 +860,21 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed('mediumText', true)
 			.text(d => d)
 
-		yAxisSelect.selectAll('foreignObject')
+		this.yAxisFacetSelect.selectAll('foreignObject')
 			.data(defaultAxisTicks.yAxisTicks)
 		  .join('foreignObject')
 			.attr('width', maxLabelWidth)
 			.attr('height', miniSize)
 			.attr('transform', (d, i) => `translate(${-maxLabelWidth - labelPadding}, ${i * (miniSize + miniPadding)})`)
-		  .append('xhtml:div')
+		  	.selectAll('div')
+		 	.data(d => [d]) 
+		  .join('xhtml:div')
 			.attr('style', `height: ${miniSize}px;`)
 			.classed('y', true)
 			.classed('axisButtonContainer', true)
-		  .append('button')
+			.selectAll('button')
+			.data(d => [d])
+		  .join('button')
 			.classed('basicIconButton', true)
 			.attr('style', `max-width: ${maxLabelWidth}px; min-width: ${maxLabelWidth}px;`)
 			.attr('title', d => d)
@@ -870,10 +896,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		
 		const maxLabelHeight = 36;
 
-		let xAxisSelect = this.svgFacetSelect.append('g')
+		this.xAxisFacetSelect
 			.attr('transform', `translate(${margin.left}, ${margin.top + vizHeight})`);
 		
-		xAxisSelect.selectAll('text')
+		this.xAxisFacetSelect.selectAll('text')
 			.data([defaultAxisTicks.axisLabels[1]])
 		  .join('text')
 			.attr('text-anchor', 'middle')
@@ -882,16 +908,20 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed('mediumText', true)
 			.text(d => d)
 
-		xAxisSelect.selectAll('foreignObject')
+		this.xAxisFacetSelect.selectAll('foreignObject')
 			.data(defaultAxisTicks.xAxisTicks)
 		  .join('foreignObject')
 			.attr('width', miniSize)
 			.attr('height', maxLabelHeight)
 			.attr('transform', (d, i) => `translate(${i * (miniSize + miniPadding)}, ${labelPadding})`)
-		  .append('xhtml:div')
+			.selectAll('div')
+			.data(d => [d])
+		  .join('xhtml:div')
 			.classed('x', true)
 			.classed('axisButtonContainer', true)
-		  .append('button')
+			.selectAll('button')
+			.data(d => [d])
+		  .join('button')
 		  	.classed('basicIconButton', true)
 			.attr('style', `max-width: ${miniSize}px; min-width: ${miniSize}px; height: ${maxLabelHeight}px`)
 		  	.attr('title', d => d)
@@ -962,6 +992,14 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		// {
 		// 	DevlibTSUtil.hide(applyButton);
 		// }
+	}
+
+	private resetTempConditionFilter(): void
+	{
+		for (let [key, value] of this.dataSuperset.conditionFilterState.entries())
+		{
+			this.tempConditionFilterState.set(key, new Map(value));
+		}
 	}
 
 	private allConditionsTrue(): boolean
