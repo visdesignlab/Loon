@@ -188,6 +188,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._facetList;
 	}
 
+	private _forceSimulation : d3.Simulation<any, undefined> ;
+	public get forceSimulation() : d3.Simulation<any, undefined>  {
+		return this._forceSimulation;
+	}
+
 	protected setMargin(): void
 	{
 		this._margin = {
@@ -587,32 +592,61 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				}
 				lastPoint = filteredDataPoints[filteredDataPoints.length - 1];
 			}
+			if (typeof(lastPoint) === 'undefined')
+			{
+				lastPoint = null;
+			}
 			labelData.unshift([facet.name, lastPoint]);
 		}
 		this.drawLabels(labelData);
 	}
 
-	private drawLabels(labelData: [string, [number, number]][]): void
+	private drawLabels(labelData: [string, [number, number] | null][]): void
 	{
+		const indexedPoints: [string, [number, number] | null, number][] = labelData.map((d,i) => [d[0], d[1], i]);
+		const validPoints = indexedPoints.filter(x => x[1] !== null);
+		const pixelSpacePoints: [number, number, number][] = validPoints.map(d => [this.scaleX(d[1][0]), this.scaleY(d[1][1]), d[2]]);
 		this.averageCurveLabelContainer.selectAll('circle')
-			.data(labelData)
+			.data(pixelSpacePoints)
 			.join('circle')
-			.attr('cx', d => this.scaleX(d[1][0]))
-			.attr('cy', d => this.scaleY(d[1][1]))
+			.attr('cx', d => d[0])
+			.attr('cy', d => d[1])
 			.attr('r', 3)
-			.attr('fill', (d, i) => i >= 10 ? 'black' : d3.schemeCategory10[i]);
+			.attr('fill', d => d[2] >= 10 ? 'black' : d3.schemeCategory10[d[2]]);
+
+		// todo overlap prevention
+		const radius = 9;
+		const forceNodes: any[] = pixelSpacePoints.map(d => {return {x: d[0], y: d[1] }});
+		this._forceSimulation = d3.forceSimulation(forceNodes)
+			.force('repel', d3.forceCollide().radius(radius))
+			.force('attractY', d3.forceY().y(d => 
+				{
+					return pixelSpacePoints[d.index][1];
+				}))
+			.force('contraintX', alpha => 
+			{
+				for (let i = 0; i < forceNodes.length; i++)
+				{
+					 // make x position a hard constraint
+					forceNodes[i].x = pixelSpacePoints[i][0];
+				}
+			})
+			.on('tick', () => 
+			{
+				console.log('tick')
+			});
+		this.forceSimulation.stop();
+		this.forceSimulation.tick(10);
 
 		const horizontalPad = 12;
-
 		this.averageCurveLabelContainer.selectAll('text')
-			.data(labelData)
+			.data(forceNodes)
 			.join('text')
-			.attr('transform', d => `translate(${this.scaleX(d[1][0]) + horizontalPad}, ${this.scaleY(d[1][1])})`)
+			.attr('transform', d => `translate(${d.x + horizontalPad}, ${d.y})`)
 			.attr('alignment-baseline', 'central')
-			.text(d => d[0])
-			.attr('stroke', (d, i) => i >= 10 ? 'black' : d3.schemeCategory10[i])
-
-			// todo overlap prevention
+			.text((d,i) => labelData[i][0])
+			.attr('fill', (d, i) => pixelSpacePoints[i][2] >= 10 ? 'black' : d3.schemeCategory10[pixelSpacePoints[i][2]])
+			.attr('stroke', (d, i) => pixelSpacePoints[i][2] >= 10 ? 'black' : d3.schemeCategory10[pixelSpacePoints[i][2]])
 	}
 
 	private clearLabels(): void
