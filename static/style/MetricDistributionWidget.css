@@ -6,6 +6,13 @@
 	flex-grow: 1;
 }
 
+.titleContainer {
+    background: #f1f1f1;
+    width: 100%;
+    text-align: center;
+    padding: 4px;
+}
+
 .toggleButtonContainer {
     flex-grow: 1;
     display: flex;

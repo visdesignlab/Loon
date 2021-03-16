@@ -35,7 +35,8 @@ export enum MetricDistributionSubComponentTypes {
 	BasisSelect = "BasisSelect",
 	ScatterplotSelect = "ScatterplotSelect",
 	DistributionPlot = "DistributionPlot",
-	Scatterplot = "Scatterplot"
+	Scatterplot = "Scatterplot",
+	Title = "Title"
 }
 
 export enum MetricDistributionCollectionLevel {

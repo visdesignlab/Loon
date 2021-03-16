@@ -22,8 +22,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		metricDistributionCollectionLevel: MetricDistributionCollectionLevel,
 		isClone: boolean = false)
 	{
-		super(container);
-		this._metricDistributionCollectionLevel = metricDistributionCollectionLevel;
+		super(container, false, metricDistributionCollectionLevel);
 		this._isClone = isClone;
 	}
 
@@ -50,6 +49,11 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 	private _subComponentLookup : Map<HTMLElement, MetricDistributionSubComponentTypes>;
 	public get subComponentLookup() : Map<HTMLElement, MetricDistributionSubComponentTypes> {
 		return this._subComponentLookup;
+	}
+
+	private _titleContainerSelection : HtmlSelection;
+	public get titleContainerSelection() : HtmlSelection {
+		return this._titleContainerSelection;
 	}
 
 	private _basisSelectContainerSelection : HtmlSelection;
@@ -132,6 +136,12 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		return this._includeExemplarTrackButton;
 	}
 
+	protected initProps(props?: any[]): void
+	{
+		super.initProps();
+		this._metricDistributionCollectionLevel = props[0];
+	}
+
 	protected init(): void
 	{
 		this._wrapperContainer = document.createElement("div");
@@ -144,6 +154,10 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 			wrap: true,
 			overflowScroll: true,
 			inside: [
+				{
+					direction: Direction.column,
+					inside: MetricDistributionSubComponentTypes.Title
+				},
 				{
 					direction: Direction.column,
 					minSize: 80,
@@ -173,6 +187,20 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		for (let [container, subComponent] of this.subComponentLookup)
 		{
 			switch (subComponent) {
+				case MetricDistributionSubComponentTypes.Title:
+					this._titleContainerSelection = this.initSubComponent(container, "titleContainer");
+					let title: string;
+					if (this.metricDistributionCollectionLevel == MetricDistributionCollectionLevel.Curve)
+					{
+						title = 'Track-Level Attributes';
+					}
+					else
+					{
+						title = 'Cell-Level Attributes';
+					}
+					this.titleContainerSelection.text(title)
+						.classed('mediumText', true);
+					break;
 				case MetricDistributionSubComponentTypes.BasisSelect:
 					this._basisSelectContainerSelection = this.initSubComponent(container, "toggleButtonContainer");
 					break;
