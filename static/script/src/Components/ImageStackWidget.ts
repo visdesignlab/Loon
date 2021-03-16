@@ -222,7 +222,6 @@ export class ImageStackWidget {
 			.classed('noShrink', true);
 
 		this._selectedImageCanvas = this.selectedImageContainer.append('canvas')
-			.style('opacity', 0);
 
 		this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) => {
 			this.onCanvasMouseMove(e)
@@ -231,10 +230,10 @@ export class ImageStackWidget {
 		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
 
 		this.selectedImageContainer
-			.on('mouseenter', () => this.brightenCanvas())
+			// .on('mouseenter', () => this.brightenCanvas())
 			.on('mouseleave', () => {
 				this.hideSegmentHover();
-				this.dimCanvas();
+				// this.dimCanvas();
 			});
 
 		this.imageTrackWidget.init();
@@ -282,14 +281,6 @@ export class ImageStackWidget {
 			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
 
 		});
-	}
-
-	public dimCanvas(): void {
-		this.selectedImageCanvas.style('opacity', 0.6);
-	}
-
-	public brightenCanvas(): void {
-		this.selectedImageCanvas.style('opacity', 1);
 	}
 
 	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest, skipImageTrackDraw = false): void {
