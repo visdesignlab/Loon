@@ -945,12 +945,14 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 	private addApplyButton(container: HtmlSelection): void
 	{	
-		return;
-		// todo
 		let buttonSelect = container
-			.append('div')
-				.attr('style', 'display: flex; flex-direction: column; align-items: flex-end; width: 100%')
-			.append('button')
+			.selectAll('div.applyButtonContainer')
+			.data([42])
+		.join('div')
+			.classed('applyButtonContainer', true)
+			.selectAll('button')
+			.data([42])
+		.join('button')
 			.attr('id', 'conditionFilterApplyButton')
 			.text('Apply Filter')
 			.classed('devlibButton', true)
@@ -958,12 +960,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.on('click', () =>
 			{
 				this.copyTempConditionsToModel();
-				DevlibTSUtil.hide(buttonSelect.node());
+				DevlibTSUtil.hide(document.getElementById('conditionFilterApplyButton'));
 				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
 				// this.onConditionFilterClick({shown: true, index: index });
 				// todo - trigger redraw mayabe, event may get it now though
 			});
-		DevlibTSUtil.hide(buttonSelect.node());
+		DevlibTSUtil.hide(document.getElementById('conditionFilterApplyButton'));
 	}
 
 	private updateConditionFilterSelection(): void
@@ -982,16 +984,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			return letRowFilters.get(d[1]);
 		});
 
-		// todo
-		// let applyButton = document.getElementById('conditionFilterApplyButton');
-		// if (this.tempConditionsDifferent())
-		// {
-		// 	DevlibTSUtil.show(applyButton);
-		// }
-		// else
-		// {
-		// 	DevlibTSUtil.hide(applyButton);
-		// }
+		let applyButton = document.getElementById('conditionFilterApplyButton');
+		if (this.tempConditionsDifferent())
+		{
+			DevlibTSUtil.show(applyButton);
+		}
+		else
+		{
+			DevlibTSUtil.hide(applyButton);
+		}
 	}
 
 	private resetTempConditionFilter(): void
