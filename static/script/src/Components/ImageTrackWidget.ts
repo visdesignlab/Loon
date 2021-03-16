@@ -1366,7 +1366,9 @@ export class ImageTrackWidget
         }
 
         const firstPosition = this.conditionLabelPositions[0][1];
-        const height = firstPosition[1] - firstPosition[0] + 1;
+        let height = firstPosition[1] - firstPosition[0] + 1;
+        height = Math.min(height, 200); // max-height: 200
+
         const scaleY = d3.scaleLinear()
             .domain([yMin, yMax])
             .range([height, 0]);
