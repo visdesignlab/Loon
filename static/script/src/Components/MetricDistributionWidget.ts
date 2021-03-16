@@ -136,10 +136,16 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		return this._includeExemplarTrackButton;
 	}
 
+	private _showingSelectionMatrix : boolean;
+	public get showingSelectionMatrix() : boolean {
+		return this._showingSelectionMatrix;
+	}
+
 	protected initProps(props?: any[]): void
 	{
 		super.initProps();
 		this._metricDistributionCollectionLevel = props[0];
+		this._showingSelectionMatrix = false;
 	}
 
 	protected init(): void
@@ -199,7 +205,10 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 					{
 						title = 'Cell-Level Attributes';
 					}
-					this.titleContainerSelection.text(title)
+					this.titleContainerSelection
+						.append('span')
+						.text(title)
+						.classed('attributeTitle', true)
 						.classed('mediumText', true);
 					break;
 				case MetricDistributionSubComponentTypes.BasisSelect:
@@ -222,8 +231,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 						wrapper.node().parentElement
 					];
 					this.hideElements(collapseExpandList); // collapsed by default
-					this.initCollapseButton(rightWrapper, collapseExpandList);
-					this.initExpandButton(collapseExpandList);
+					this.initExpandCollapseButton(collapseExpandList);
 					break;
 				case MetricDistributionSubComponentTypes.DistributionPlot:
 					this._distributionPlotContainerSelection = this.initSubComponent(container, "distributionPlotContainer");
@@ -252,37 +260,6 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 			.attr("id", className);
 	}
 
-	private initCollapseButton(containerSelect: HtmlSelection, toHide: HTMLElement[]): void
-	{
-		this._collapseButtonSelect = 
-		containerSelect.append('div')
-			.classed('collapseContainer', true)
-		  .append('button')
-			.classed('collapseButton', true)
-			.classed('devlibButton', true)
-			.attr("id", "MetricDistributionWidget-collapseButton")
-			.text('Collapse')
-			.on('click', () =>
-			{
-				this.hideElements(toHide);
-				this.expandButtonSelect.classed('noDisp', false);
-			})
-			.on('mouseenter', () =>
-			{
-				for (let element of toHide)
-				{
-					element.classList.add("hoveredArea");
-				}
-			})
-			.on('mouseleave', () =>
-			{
-				for (let element of toHide)
-				{
-					element.classList.remove("hoveredArea");
-				}
-			});
-	}
-
 	private hideElements(toHide: HTMLElement[]): void
 	{
 		for (let element of toHide)
@@ -291,9 +268,10 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 		}
 	}
 
-	private initExpandButton(toShow: HTMLElement[]): void
+	private initExpandCollapseButton(toShow: HTMLElement[]): void
 	{
-		this._expandButtonSelect = d3.select(this.container).append("button")
+		this._expandButtonSelect = this.titleContainerSelection.append('button')
+			.lower()
 			.classed('expandButton', true)
 			.classed('devlibButton', true)
 			.classed('noDisp', true)
@@ -301,12 +279,22 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 			.attr("title", "Open distribution selection widget.")
 			.on('click', () =>
 			{
-				this.expandButtonSelect.classed('noDisp', true);
-				for (let element of toShow)
+				if (this.showingSelectionMatrix)
 				{
-					element.classList.remove('noDisp');
+					for (let element of toShow)
+					{
+						element.classList.add('noDisp');
+					}
 				}
-			})
+				else
+				{
+					for (let element of toShow)
+					{
+						element.classList.remove('noDisp');
+					}
+				}
+				this._showingSelectionMatrix = !this.showingSelectionMatrix;
+			});
 		let icon = DevlibTSUtil.getFontAwesomeIcon('th');
 		this.expandButtonSelect.node().appendChild(icon);
 	}
