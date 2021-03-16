@@ -1,19 +1,21 @@
 import * as d3 from 'd3';
-import { HtmlSelection, SvgSelection, Margin, NDim } from '../devlib/DevlibTypes';
+import {toOrdinal} from 'number-to-words';
+import { HtmlSelection, SvgSelection, Margin, NDim, ButtonProps } from '../devlib/DevlibTypes';
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
-import { Facet, Rect } from '../types';
+import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { CurveList } from '../DataModel/CurveList';
 import { HistogramWidget } from './HistogramWidget';
+import { OptionSelect } from './OptionSelect';
 
 export class ImageTrackWidget
 {
-    constructor(container: HTMLElement, parent: ImageStackWidget)
+    constructor(container: HTMLElement, parent: ImageStackWidget, samplingStratOptions: {"strat": (number[] | number), "label": string}[])
     {
         this._container = container;
         this._parentWidget = parent;
@@ -24,6 +26,8 @@ export class ImageTrackWidget
         this._frameLabelPositions = [];
         this._cellLabelPositions = [];
         this._exemplarYKey = 'Mass_norm';
+        this._samplingStratOptions = samplingStratOptions;
+		this._smoothCurves = false;
 
         // hardcoded from css
         this._cellTimelineMargin = {
@@ -67,6 +71,21 @@ export class ImageTrackWidget
     public get titleContainer() : HtmlSelection {
         return this._titleContainer;
     }
+    
+    private _samplingStrategySelect : OptionSelect;
+    public get samplingStrategySelect() : OptionSelect {
+        return this._samplingStrategySelect;
+    }
+
+    private _samplingStratOptions : {"strat": (number[] | number), "label": string}[];
+    public get samplingStratOptions() : ({"strat": (number[] | number), "label": string}[]) {
+        return this._samplingStratOptions;
+    }
+
+    private _currentSamplingStategy : {"strat": (number[] | number), "label": string};
+    public get currentSamplingStategy() : {"strat": (number[] | number), "label": string} {
+        return this._currentSamplingStategy;
+    }    
 
     private _svgContainer : SvgSelection;
     public get svgContainer() : SvgSelection {
@@ -191,14 +210,80 @@ export class ImageTrackWidget
     private _exemplarYKey : string;
     public get exemplarYKey() : string {
         return this._exemplarYKey;
-    }    
+    }
+
+    private _smoothCurves : boolean;
+	public get smoothCurves() : boolean {
+		return this._smoothCurves;
+	}
     
     public init(): void
     {
         const containerSelect = d3.select(this.container);
-        this._titleContainer = containerSelect.append('div')
+        
+        const titleBarDiv = containerSelect.append('div')
             .classed('trackModeTitleContainer', true)
             .classed('mediumText', true);
+
+            
+        this._titleContainer= titleBarDiv.append('span');
+
+        const optionSelectContainer = titleBarDiv.append('span')
+            .attr('id', 'exemplarSamplingStratSelection')
+
+        this._samplingStrategySelect = new OptionSelect('exemplarSamplingStratSelection', 'Sampled at');
+        let buttonPropList: ButtonProps[] = [];
+        this._currentSamplingStategy = this.samplingStratOptions[0]; // default to first
+        for (let option of this.samplingStratOptions)
+        {
+            let optionName: string;
+            if (option.label)
+            {
+                optionName = option.label;
+            }
+			else if (Array.isArray(option.strat))
+			{
+                let optionCopy: number[] | string[] = option.strat.map(x => x);
+                if (option.strat.length < 8)
+                {
+                    optionCopy = optionCopy.map(x => 
+                        {
+                            if (x == 0)
+                            {
+                                return 'Min';
+                            }
+                            if (x == 0.5)
+                            {
+                                return 'Median';
+                            }
+                            if (x == 1)
+                            {
+                                return 'Max';
+                            }
+                            return toOrdinal(100 * x) + ' percentile'
+                        });
+                }
+                optionName = optionCopy.join(', ');
+			}
+			else
+			{
+                optionName = `${option.strat} random track`;
+                if (option.strat > 1)
+                {
+                    optionName += 's';
+                }
+			}
+			let buttonProp: ButtonProps = {
+				displayName: optionName,
+				callback: () => 
+                {
+                    this._currentSamplingStategy = option;
+                    document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: option}));
+                }
+			}
+			buttonPropList.push(buttonProp);
+        }
+        this.samplingStrategySelect.onDataChange(buttonPropList);
 
         this._svgContainer = containerSelect.append('svg');
         this._cellLabelGroup = this.svgContainer.append('g')
@@ -283,6 +368,12 @@ export class ImageTrackWidget
 			this._exemplarYKey = e.detail.yKey;
             this.drawExemplarGrowthCurves();
 		});
+
+        document.addEventListener('smoothCurveChange', (e: CustomEvent) => 
+		{
+			this._smoothCurves = e.detail;
+            this.drawExemplarGrowthCurves();
+		});
     }
 
     public async draw(tracks: CurveND[]): Promise<void>
@@ -309,7 +400,7 @@ export class ImageTrackWidget
     {
         if (this.parentWidget.inExemplarMode)
         {
-            this.titleContainer.text('Exemplars of ' + this.parentWidget.exemplarAttribute);
+            this.titleContainer.text('Exemplars of ' + this.parentWidget.exemplarAttribute + ' - ');
         }
         else
         {
@@ -639,7 +730,12 @@ export class ImageTrackWidget
                         this.canvasContext.closePath();
                         if (imgBitmap.status === 'fulfilled')
                         {
+                            if ((this.parentWidget.invertImageToggle.node() as HTMLInputElement).checked)
+                            {
+                                this.canvasContext.filter = 'invert(1)';
+                            }
                             this.canvasContext.drawImage(imgBitmap.value, offsetX, offsetY);
+                            this.canvasContext.filter = '';
                         }
                     }
                     resolve();
@@ -876,12 +972,10 @@ export class ImageTrackWidget
             {
                 this.parentWidget.showSegmentHover(rowArray, displayedPoint.get('segmentLabel'), firstIndex, true);
             });
-            this.parentWidget.brightenCanvas();
         }
         else
         {
             this.parentWidget.hideSegmentHover(true);
-            this.parentWidget.dimCanvas();
         }
 
         this.updateLabelsOnMouseMove(cellId, frameIndex, cellIdIndex);
@@ -898,7 +992,6 @@ export class ImageTrackWidget
     private onCanvasMouseLeave(): void
     {
         this.parentWidget.hideSegmentHover(true);
-        this.parentWidget.dimCanvas();
         this.updateLabelsOnMouseMove('', -1, -1);
         const locId = this.parentWidget.getCurrentLocationId();
         let event = new CustomEvent('frameHoverChange', { detail:
@@ -954,6 +1047,11 @@ export class ImageTrackWidget
 
     private async drawOutlines(sourceDestCell?: [Rect, [number, number], PointND][]): Promise<void>
     {
+        if (!(this.parentWidget.showOutlineToggle.node() as HTMLInputElement).checked)
+        {
+            // don't do it!
+            return;
+        }
         if (!sourceDestCell)
         {
             sourceDestCell = this.sourceDestCell
@@ -1259,20 +1357,21 @@ export class ImageTrackWidget
             .range([0, width]);
         
         const yKey = this.exemplarYKey;
-        // todo - I should refactor this so that min/max can account for the average curve as well.
         let yMin = d3.min(this.trackList, curve => d3.min(curve.pointList, point => point.get(yKey)));
         let yMax = d3.max(this.trackList, curve => d3.max(curve.pointList, point => point.get(yKey)));
 
         for (let facet of this.parentWidget.facetList)
         {
-            let averageGrowthCurve: [number, number][] = facet.data.getAverageCurve(yKey);
+            let averageGrowthCurve: [number, number][] = facet.data.getAverageCurve(yKey, false, this.smoothCurves);
             let [thisMin, thisMax] = d3.extent(averageGrowthCurve, d => d[1]);
             yMin = Math.min(yMin, thisMin);
             yMax = Math.max(yMax, thisMax);
         }
 
         const firstPosition = this.conditionLabelPositions[0][1];
-        const height = firstPosition[1] - firstPosition[0] + 1;
+        let height = firstPosition[1] - firstPosition[0] + 1;
+        height = Math.min(height, 200); // max-height: 200
+
         const scaleY = d3.scaleLinear()
             .domain([yMin, yMax])
             .range([height, 0]);
@@ -1323,17 +1422,24 @@ export class ImageTrackWidget
     {
         const xKey = 'Frame ID';
         const yKey = this.exemplarYKey;
-        let line = d3.line<PointND>()
-            .x(d => scaleX(d.get(xKey)) )
-            .y(d => scaleY(d.get(yKey)) );
+        let line = d3.line<[number, number]>()
+            .x(d => scaleX(d[0]))
+            .y(d => scaleY(d[1]));
 
+        // todo - maybe normalize this to a [number, number][] so filtering is easier.
+        
         let outerList: string[][] = [];
         for (let i = 0; i < this.trackList.length; i += this.parentWidget.numExemplars)
         {
             let pathList: string[] = [];
             for (let path of this.trackList.slice(i, i + this.parentWidget.numExemplars))
             {
-                let pathString = line(path.pointList);
+                let pointList = this.extract2DArray(path.pointList, xKey, yKey);
+                if (this.smoothCurves)
+                {
+                    pointList = CurveList.medianFilter(pointList);
+                }
+                let pathString = line(pointList);
                 pathList.push(pathString);
             }
             outerList.push(pathList);
@@ -1349,12 +1455,17 @@ export class ImageTrackWidget
         let averageGrowthLines: string[] = [];
         for (let facet of this.parentWidget.facetList)
         {
-            let averageGrowthCurve = facet.data.getAverageCurve(yKey);
+            let averageGrowthCurve = facet.data.getAverageCurve(yKey, false, this.smoothCurves);
             let averageGrowthCurveString = lineAvg(averageGrowthCurve);
             averageGrowthLines.push(averageGrowthCurveString);
         }
 
         return [outerList, averageGrowthLines];
+    }
+
+    private extract2DArray(pointList: PointND[], xKey: string, yKey: string): [number, number][]
+    {
+        return pointList.map(point => [point.get(xKey), point.get(yKey)]);
     }
 
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number, rowIndex: number): void

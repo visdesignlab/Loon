@@ -52,6 +52,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._xKey = initialOption.xKey;
 		this._yKey = initialOption.yKey;
 		this._inAverageMode = initialOption.averaged;
+		this._smoothCurves = false;
 	}
 
 	private _svgSelect : SvgSelection;
@@ -73,6 +74,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public get canvasElement() : HTMLCanvasElement {
 		return this._canvasElement;
 	}
+
+	private _averageCurveLabelContainer : SvgSelection;
+	public get averageCurveLabelContainer() : SvgSelection {
+		return this._averageCurveLabelContainer;
+	}	
 
 	private _canBrush : boolean;
 	public get canBrush() : boolean {
@@ -172,16 +178,26 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._inAverageMode;
 	}
 
+	private _smoothCurves : boolean;
+	public get smoothCurves() : boolean {
+		return this._smoothCurves;
+	}
+
 	private _facetList : Facet[];
 	public get facetList() : Facet[] {
 		return this._facetList;
+	}
+
+	private _forceSimulation : d3.Simulation<any, undefined> ;
+	public get forceSimulation() : d3.Simulation<any, undefined>  {
+		return this._forceSimulation;
 	}
 
 	protected setMargin(): void
 	{
 		this._margin = {
 			top: 20,
-			right: 8,
+			right: 120,
 			bottom: 42,
 			left: 64
 		}
@@ -238,6 +254,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.classed("labelColor", true);
 
+		this._averageCurveLabelContainer = this.svgSelect.append('g')
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
 		this.initQuickPickOptions();
 
 		document.addEventListener('groupByChanged', async (e: CustomEvent) =>
@@ -252,6 +271,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			 {
 				 this.OnDataChange();
 			 }
+		});
+
+		document.addEventListener('smoothCurveChange', (e: CustomEvent) => 
+		{
+			this._smoothCurves = e.detail;
+			if (this.inAverageMode)
+			{
+				this.OnDataChange();
+			}
 		});
 
 	}
@@ -348,7 +376,20 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		this._xKey = xKey;
 		this._yKey = yKey;
-		this._inAverageMode = inAverageMode;
+		if (this._inAverageMode !== inAverageMode)
+		{
+			this._inAverageMode = inAverageMode;
+			if (inAverageMode)
+			{
+				this.margin.right = 120;
+			}
+			else
+			{
+				this.margin.right = 8;
+			}
+			this.setWidthHeight();
+			this.OnResize();
+		}
 		if (this.canBrush)
 		{
 			let brushElement = this.brushGroupSelect.node();
@@ -381,13 +422,13 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		let minX : number, maxX : number, minY : number, maxY : number;
 		if (this.inAverageMode)
 		{
-			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey), d => d[1]));
-			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey), d => d[1]));
+			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]));
+			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]));
 
 			if (this.data.brushApplied)
 			{
-				minY = d3.min([minY, d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey, true), d => d[1]))]);
-				maxY = d3.max([maxY, d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey, true), d => d[1]))]);
+				minY = d3.min([minY, d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey, true, this.smoothCurves), d => d[1]))]);
+				maxY = d3.max([maxY, d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey, true, this.smoothCurves), d => d[1]))]);
 			}
 		}
 		else
@@ -495,6 +536,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			const path = new Path2D(line(curve.pointList));
 			canvasContext.stroke(path);
 		}
+		this.clearLabels();
 	}
 
 	private updateAveragePaths(): void
@@ -507,9 +549,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight);
 		canvasContext.lineJoin = 'round';
 		
+		let labelData: [string, [number, number]][] = [];
 		for (let i = this.facetList.length - 1; i >= 0 ; i--)
 		{
-
 			if (i < 10)
 			{
 				canvasContext.globalAlpha = 0.85;
@@ -523,7 +565,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 			let facet = this.facetList[i];
 			canvasContext.strokeStyle = i >= 10 ? 'black' : d3.schemeCategory10[i];
-			let dataPoints = facet.data.getAverageCurve(this.yKey);
+			let dataPoints = facet.data.getAverageCurve(this.yKey, false, this.smoothCurves);
 			if (dataPoints.length !== 0)
 			{
 				if (this.data.brushApplied)
@@ -536,21 +578,79 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				const path = new Path2D(lineAvg(dataPoints));
 				canvasContext.stroke(path);
 			}
-
+			let lastPoint: [number, number] = dataPoints[dataPoints.length - 1];
 			canvasContext.restore();
 
 			if (this.data.brushApplied)
 			{
-				let filteredDataPoints = facet.data.getAverageCurve(this.yKey, true);
+				let filteredDataPoints = facet.data.getAverageCurve(this.yKey, true, this.smoothCurves);
 				if (filteredDataPoints.length !== 0)
 				{
 					// canvasContext.setLineDash([]);
 					const path = new Path2D(lineAvg(filteredDataPoints));
 					canvasContext.stroke(path);
 				}
+				lastPoint = filteredDataPoints[filteredDataPoints.length - 1];
 			}
-
+			if (typeof(lastPoint) === 'undefined')
+			{
+				lastPoint = null;
+			}
+			labelData.unshift([facet.name, lastPoint]);
 		}
+		this.drawLabels(labelData);
+	}
+
+	private drawLabels(labelData: [string, [number, number] | null][]): void
+	{
+		const indexedPoints: [string, [number, number] | null, number][] = labelData.map((d,i) => [d[0], d[1], i]);
+		const validPoints = indexedPoints.filter((x, i) => x[1] !== null && i < 10);
+		const pixelSpacePoints: [number, number, number][] = validPoints.map(d => [this.scaleX(d[1][0]), this.scaleY(d[1][1]), d[2]]);
+		this.averageCurveLabelContainer.selectAll('circle')
+			.data(pixelSpacePoints)
+			.join('circle')
+			.attr('cx', d => d[0])
+			.attr('cy', d => d[1])
+			.attr('r', 3)
+			.attr('fill', d => d[2] >= 10 ? 'black' : d3.schemeCategory10[d[2]]);
+
+		const radius = 9;
+		const forceNodes: any[] = pixelSpacePoints.map(d => {return {x: d[0], y: d[1] }});
+		this._forceSimulation = d3.forceSimulation(forceNodes)
+			.force('repel', d3.forceCollide().radius(radius))
+			.force('attractY', d3.forceY().y(d => 
+				{
+					return pixelSpacePoints[d.index][1];
+				}))
+			.force('contraintX', alpha => 
+			{
+				for (let i = 0; i < forceNodes.length; i++)
+				{
+					 // make x position a hard constraint
+					forceNodes[i].x = pixelSpacePoints[i][0];
+				}
+			})
+			.on('tick', () => 
+			{
+				console.log('tick')
+			});
+		this.forceSimulation.stop();
+		this.forceSimulation.tick(10);
+
+		const horizontalPad = 12;
+		this.averageCurveLabelContainer.selectAll('text')
+			.data(forceNodes)
+			.join('text')
+			.attr('transform', d => `translate(${d.x + horizontalPad}, ${d.y})`)
+			.attr('alignment-baseline', 'central')
+			.text((d,i) => labelData[i][0])
+			.attr('fill', (d, i) => pixelSpacePoints[i][2] >= 10 ? 'black' : d3.schemeCategory10[pixelSpacePoints[i][2]])
+			.attr('stroke', (d, i) => pixelSpacePoints[i][2] >= 10 ? 'black' : d3.schemeCategory10[pixelSpacePoints[i][2]])
+	}
+
+	private clearLabels(): void
+	{
+		this.averageCurveLabelContainer.html(null);
 	}
 
 

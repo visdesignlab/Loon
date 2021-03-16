@@ -7,6 +7,11 @@
     margin: 10px;
 }
 
+.locationFrameLabelContainer {
+    padding-left: 20px;
+    background: #f1f1f1;
+}
+
 .locationFrameLabel {
     font-size: 12pt;
     font-weight: normal;
@@ -15,6 +20,10 @@
 .locationFrameLabelValue {
     font-weight: bold;
     margin-right: 20px;
+}
+
+.toggleOptions {
+    margin: 5px;
 }
 
 .cellAxisLabel.currentFrame {
@@ -34,4 +43,8 @@
 .cellAxisLabel.hovered.rotated {
     font-size: 12pt;
     font-weight: 600;
+}
+
+.invert {
+    filter: invert();
 }

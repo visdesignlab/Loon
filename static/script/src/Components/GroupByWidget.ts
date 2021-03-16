@@ -3,8 +3,6 @@ import { OptionSelect } from "./OptionSelect";
 import { HtmlSelection, ButtonProps } from "../devlib/DevLibTypes";
 import { AppData, Facet } from "../types";
 import { DevlibTSUtil } from "../devlib/DevlibTSUtil";
-import { select } from 'd3';
-import { CurveList } from '../DataModel/CurveList';
 
 export class GroupByWidget
 {
@@ -80,6 +78,7 @@ export class GroupByWidget
 
         this.groupByOuterContainerList.append('div')
             .classed('groupByContainer', true)
+            .classed('smallText', true)
             .attr('id', d => d);
 
         const self = this;
@@ -100,6 +99,7 @@ export class GroupByWidget
                     callback = () => self.removeGroupByLine(i);
                 }
                 let iconButton = DevlibTSUtil.getIconButton(iconKey, callback);
+                iconButton.classList.add('compact');
                 d3.select(this).node().appendChild(iconButton);
             });
 

@@ -1,7 +1,7 @@
 export interface Frame<T> {
 	fraction?: number, // if no fraction is specified, it is assumed to be equal weight
-	minSize?: number,
-	maxSize?: number,
+	minSize?: string,
+	maxSize?: string,
 	wrap?: boolean,
 	overflowScroll?: boolean,
 	direction: Direction,
@@ -35,7 +35,8 @@ export enum MetricDistributionSubComponentTypes {
 	BasisSelect = "BasisSelect",
 	ScatterplotSelect = "ScatterplotSelect",
 	DistributionPlot = "DistributionPlot",
-	Scatterplot = "Scatterplot"
+	Scatterplot = "Scatterplot",
+	Title = "Title"
 }
 
 export enum MetricDistributionCollectionLevel {

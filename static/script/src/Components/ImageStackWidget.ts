@@ -13,9 +13,14 @@ import { Facet } from '../types';
 
 export class ImageStackWidget {
 
-	constructor(container: HTMLElement, imageTrackContainer: HTMLElement, maxHeight: number) {
+	constructor(
+		container: HTMLElement,
+		imageTrackContainer: HTMLElement,
+		maxHeight: number,
+		samplingStratOptions: {"strat": (number[] | number), "label": string}[])
+	{
 		this._container = container;
-		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this);
+		this._imageTrackWidget = new ImageTrackWidget(imageTrackContainer, this, samplingStratOptions);
 		this._maxHeight = maxHeight;
 		this.init();
 		this._cellHovered = 0;
@@ -30,7 +35,20 @@ export class ImageStackWidget {
 		this._exemplarLocations = new Set();
 		this._exemplarFrames = new Map();
 		this._facetList = [];
-		this._numExemplars = 3;
+		this.setNumExemplars();
+	}
+
+	private setNumExemplars(): void
+	{
+		const currentStrat = this.imageTrackWidget.currentSamplingStategy.strat;
+		if (Array.isArray(currentStrat))
+		{
+			this._numExemplars = currentStrat.length;
+		}
+		else
+		{
+			this._numExemplars = currentStrat;
+		}
 	}
 
 	private _container: HTMLElement;
@@ -100,7 +118,22 @@ export class ImageStackWidget {
 	public get frameLabel(): HtmlSelection {
 		return this._frameLabel;
 	}
+	
+	private _toggleOptionsContainer : HtmlSelection;
+	public get toggleOptionsContainer() : HtmlSelection {
+		return this._toggleOptionsContainer;
+	}
+	
+	private _showOutlineToggle : HtmlSelection;
+	public get showOutlineToggle() : HtmlSelection {
+		return this._showOutlineToggle;
+	}
 
+	private _invertImageToggle : HtmlSelection;
+	public get invertImageToggle() : HtmlSelection {
+		return this._invertImageToggle;
+	}
+	
 	private _selectedImageContainer: HtmlSelection;
 	public get selectedImageContainer(): HtmlSelection {
 		return this._selectedImageContainer;
@@ -200,11 +233,44 @@ export class ImageStackWidget {
 		this._frameLabel = locationFrameLabel.append('span')
 			.classed('locationFrameLabelValue', true);
 
+		this._toggleOptionsContainer = this.innerContainer.append('div')
+			.classed('toggleOptions', true)
+			.classed('smallText', true);
+
+		const outlineId = 'imageToggle-outlines';
+		this._showOutlineToggle = this.toggleOptionsContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () => 
+			{
+				let node = document.getElementById(outlineId) as HTMLInputElement;
+				this.updateCanvas();
+			})
+			.attr('id', outlineId);
+		this.toggleOptionsContainer.append('label')
+			.attr('for', outlineId)
+			.text('Show Outlines');
+
+		(this.showOutlineToggle.node() as HTMLInputElement).checked = true;
+		
+		const invertId = 'imageToggle-invert';
+		this._invertImageToggle = this.toggleOptionsContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () =>
+			{
+				let node = document.getElementById(invertId) as HTMLInputElement;
+				this.selectedImageContainer.classed('invert', node.checked);
+				this.selectedImageCanvas.classed('invert', node.checked);
+				this.updateCanvas();
+			})
+			.attr('id', invertId);
+		this.toggleOptionsContainer.append('label')
+			.attr('for', invertId)
+			.text('Invert');
+
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
 
 		this._selectedImageCanvas = this.selectedImageContainer.append('canvas')
-			.style('opacity', 0);
 
 		this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) => {
 			this.onCanvasMouseMove(e)
@@ -213,13 +279,17 @@ export class ImageStackWidget {
 		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
 
 		this.selectedImageContainer
-			.on('mouseenter', () => this.brightenCanvas())
 			.on('mouseleave', () => {
 				this.hideSegmentHover();
-				this.dimCanvas();
 			});
 
 		this.imageTrackWidget.init();
+
+		document.addEventListener('samplingStrategyChange', (e: CustomEvent) => 
+		{
+			this.setNumExemplars();
+			this.updateTracksCanvas();
+		});
 
 		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => {
 			this._exemplarAttribute = e.detail;
@@ -258,14 +328,6 @@ export class ImageStackWidget {
 			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
 
 		});
-	}
-
-	public dimCanvas(): void {
-		this.selectedImageCanvas.style('opacity', 0.6);
-	}
-
-	public brightenCanvas(): void {
-		this.selectedImageCanvas.style('opacity', 1);
 	}
 
 	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest, skipImageTrackDraw = false): void {
@@ -329,11 +391,18 @@ export class ImageStackWidget {
 			.attr('width', this.imageStackDataRequest?.tileWidth)
 			.attr('height', this.imageStackDataRequest?.tileHeight);
 
-		this.imageStackDataRequest?.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
-			(data: ImageLabels, firstIndex: number) => {
-				this.createOutlineImage(data, firstIndex);
-				this.drawDefaultCanvas();
-			});
+		if ((this.showOutlineToggle.node() as HTMLInputElement).checked)
+		{
+			this.imageStackDataRequest?.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
+				(data: ImageLabels, firstIndex: number) => {
+					this.createOutlineImage(data, firstIndex);
+					this.drawDefaultCanvas();
+				});
+		}
+		else
+		{
+			this.clearCanvas();
+		}
 
 		let locId = this.imageLocation.locationId;
 		if (!skipImageTrackDraw) {
@@ -378,7 +447,21 @@ export class ImageStackWidget {
 			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
 			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
 			let numCurves = longTracks.length;
-			const percentages = [0.05, 0.50, 0.95]; // todo make this more general
+			// const percentages = [0.05, 0.50, 0.95]; // todo make this more general
+			const samplingStat = this.imageTrackWidget.currentSamplingStategy.strat;
+			let percentages: number[];
+			if (Array.isArray(samplingStat))
+			{
+				percentages = samplingStat;
+			}
+			else
+			{
+				percentages = [];
+				for (let i = 0; i < samplingStat; i++)
+				{
+					percentages.push(Math.random());
+				}
+			}
 			for (let p of percentages)
 			{
 				let index = Math.round((numCurves - 1) * p);
@@ -429,6 +512,11 @@ export class ImageStackWidget {
 
 	private drawDefaultCanvas(): void {
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
+	}
+
+	private clearCanvas(): void {
+		this.canvasContext.clearRect(0, 0, this.imageStackWidth, this.imageStackHeight);
+		this._defaultCanvasState = this.canvasContext.createImageData(this.imageStackDataRequest.tileWidth, this.imageStackDataRequest.tileHeight);
 	}
 
 	public isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean {

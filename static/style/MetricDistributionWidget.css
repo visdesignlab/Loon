@@ -1,9 +1,17 @@
 .wrapperContainer {
-	/*display: flex;*/
-	/*background: bisque;*/
-	/*border: solid black 1px;*/
-	/*flex-direction: row;*/
 	flex-grow: 1;
+}
+
+.titleContainer {
+    background: #f1f1f1;
+    padding: 4px;
+    display: flex;
+}
+
+.attributeTitle {
+    text-align: center;
+    flex-grow: 1;
+    padding-top: 3px;
 }
 
 .toggleButtonContainer {
@@ -32,6 +40,8 @@
 
 .xAxisMatrixContainer {
     flex-grow: 1;
+    /* Based on button width */
+    min-height: 80px; 
 }
 
 .axisButton {
@@ -108,12 +118,7 @@
     flex-direction: column;
 }
 
-.collapseButton {
-    padding: 10px 20px;
-}
-
 .expandButton {
-    position: absolute;
     padding: 2px 3px
 }
 
