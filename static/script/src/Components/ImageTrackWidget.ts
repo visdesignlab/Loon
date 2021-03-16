@@ -26,6 +26,7 @@ export class ImageTrackWidget
         this._cellLabelPositions = [];
         this._exemplarYKey = 'Mass_norm';
         this._samplingStratOptions = samplingStratOptions;
+		this._smoothCurves = false;
 
         // hardcoded from css
         this._cellTimelineMargin = {
@@ -208,7 +209,12 @@ export class ImageTrackWidget
     private _exemplarYKey : string;
     public get exemplarYKey() : string {
         return this._exemplarYKey;
-    }    
+    }
+
+    private _smoothCurves : boolean;
+	public get smoothCurves() : boolean {
+		return this._smoothCurves;
+	}
     
     public init(): void
     {
@@ -335,6 +341,12 @@ export class ImageTrackWidget
         document.addEventListener('averageCurveKeyChange', (e: CustomEvent) => 
 		{
 			this._exemplarYKey = e.detail.yKey;
+            this.drawExemplarGrowthCurves();
+		});
+
+        document.addEventListener('smoothCurveChange', (e: CustomEvent) => 
+		{
+			this._smoothCurves = e.detail;
             this.drawExemplarGrowthCurves();
 		});
     }
@@ -1313,13 +1325,12 @@ export class ImageTrackWidget
             .range([0, width]);
         
         const yKey = this.exemplarYKey;
-        // todo - I should refactor this so that min/max can account for the average curve as well.
         let yMin = d3.min(this.trackList, curve => d3.min(curve.pointList, point => point.get(yKey)));
         let yMax = d3.max(this.trackList, curve => d3.max(curve.pointList, point => point.get(yKey)));
 
         for (let facet of this.parentWidget.facetList)
         {
-            let averageGrowthCurve: [number, number][] = facet.data.getAverageCurve(yKey);
+            let averageGrowthCurve: [number, number][] = facet.data.getAverageCurve(yKey, false, this.smoothCurves);
             let [thisMin, thisMax] = d3.extent(averageGrowthCurve, d => d[1]);
             yMin = Math.min(yMin, thisMin);
             yMax = Math.max(yMax, thisMax);
@@ -1377,17 +1388,24 @@ export class ImageTrackWidget
     {
         const xKey = 'Frame ID';
         const yKey = this.exemplarYKey;
-        let line = d3.line<PointND>()
-            .x(d => scaleX(d.get(xKey)) )
-            .y(d => scaleY(d.get(yKey)) );
+        let line = d3.line<[number, number]>()
+            .x(d => scaleX(d[0]))
+            .y(d => scaleY(d[1]));
 
+        // todo - maybe normalize this to a [number, number][] so filtering is easier.
+        
         let outerList: string[][] = [];
         for (let i = 0; i < this.trackList.length; i += this.parentWidget.numExemplars)
         {
             let pathList: string[] = [];
             for (let path of this.trackList.slice(i, i + this.parentWidget.numExemplars))
             {
-                let pathString = line(path.pointList);
+                let pointList = this.extract2DArray(path.pointList, xKey, yKey);
+                if (this.smoothCurves)
+                {
+                    pointList = CurveList.medianFilter(pointList);
+                }
+                let pathString = line(pointList);
                 pathList.push(pathString);
             }
             outerList.push(pathList);
@@ -1403,12 +1421,17 @@ export class ImageTrackWidget
         let averageGrowthLines: string[] = [];
         for (let facet of this.parentWidget.facetList)
         {
-            let averageGrowthCurve = facet.data.getAverageCurve(yKey);
+            let averageGrowthCurve = facet.data.getAverageCurve(yKey, false, this.smoothCurves);
             let averageGrowthCurveString = lineAvg(averageGrowthCurve);
             averageGrowthLines.push(averageGrowthCurveString);
         }
 
         return [outerList, averageGrowthLines];
+    }
+
+    private extract2DArray(pointList: PointND[], xKey: string, yKey: string): [number, number][]
+    {
+        return pointList.map(point => [point.get(xKey), point.get(yKey)]);
     }
 
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number, rowIndex: number): void

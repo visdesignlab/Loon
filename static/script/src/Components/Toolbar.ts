@@ -58,6 +58,11 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	public get dataStore() : IDBPDatabase<unknown> {
 		return this._dataStore;
 	}
+	
+	private _smoothCurves : boolean;
+	public get smoothCurves() : boolean {
+		return this._smoothCurves;
+	}
 
 	private initToolbarElements(): void
 	{
@@ -119,6 +124,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				iconKey: 'trash',
 				callback: (state: {shown: boolean, index: number}) => this.onGarbageClick(state),
 				tooltip: 'Delete cached data'
+			},
+			{
+				type: 'toggleButton',
+				iconKeys: ['bacon', 'chart-line'],
+				callback: (state: boolean) => this.onBaconClick(state),
+				tooltips: ['', ''] // todo - fill this in if tooltips actually get consumed ever.
 			}
 		]
 	}
@@ -131,6 +142,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		this._yKey = 'Mass_norm';
 		this._tempConditionFilterState = new Map<string, Map<string, boolean>>();
 		this._modalBooleans = [];
+		this._smoothCurves = false;
 
 		this.initToolbarElements();
 		this.drawToolbarElements();
@@ -140,6 +152,11 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this._yKey = e.detail.yKey;
 		});
+		document.addEventListener('smoothCurveChange', (e: CustomEvent) => 
+		{
+			this._smoothCurves = e.detail;
+		});
+
         openDB('loon-db').then(dataStore => this._dataStore = dataStore);
 	}
 
@@ -512,15 +529,15 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			for (let data of map.values())
 			{
-				let dataPoints = data.getAverageCurve(this.yKey, true);
-				let thisMin = d3.min(data.getAverageCurve(this.yKey), d => d[1]);
+				let dataPoints = data.getAverageCurve(this.yKey, true, this.smoothCurves);
+				let thisMin = d3.min(data.getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]);
 				if (this.data.brushApplied && dataPoints.length > 0)
 				{
 					thisMin = Math.min(thisMin, d3.min(dataPoints, d => d[1]));
 				}
 				minMass = Math.min(thisMin, minMass);
 
-				let thisMax = d3.max(data.getAverageCurve(this.yKey), d => d[1]);
+				let thisMax = d3.max(data.getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]);
 				if (this.data.brushApplied && dataPoints.length > 0)
 				{
 					thisMax = Math.max(thisMax, d3.max(dataPoints, d => d[1]));
@@ -552,7 +569,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 					return '';
 				}
 				let data: CurveList = row.get(concLabel)
-				let avergeGrowthLine = data.getAverageCurve(this.yKey);
+				let avergeGrowthLine = data.getAverageCurve(this.yKey, false, this.smoothCurves);
 				if (avergeGrowthLine.length === 0)
 				{
 					return '';
@@ -578,7 +595,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 						return '';
 					}
 					let data: CurveList = row.get(concLabel)
-					let avergeGrowthLine = data.getAverageCurve(this.yKey, true);
+					let avergeGrowthLine = data.getAverageCurve(this.yKey, true, this.smoothCurves);
 					if (avergeGrowthLine.length === 0)
 					{
 						return '';
@@ -858,6 +875,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			}
 		}
 		this.toggleModalButton(-1);
+	}
+	
+	private onBaconClick(state: boolean): void
+	{
+		const smoothCurveEvent = new CustomEvent('smoothCurveChange', {detail: state});
+		document.dispatchEvent(smoothCurveEvent);
 	}
 
 	protected OnResize(): void

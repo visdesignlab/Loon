@@ -6,6 +6,8 @@ import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
 import { DatasetSpec, Facet, AppData, LocationMapList, dataFilter, valueFilter, FacetOption } from '../types';
 import { CurveListFactory } from './CurveListFactory';
+import { filter } from 'gulp-typescript';
+import d3 = require('d3');
 
 export class CurveList extends PointCollection implements AppData<DatasetSpec>
 {
@@ -103,8 +105,13 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 
 	private _averageFilteredCurveCache: Map<string, [number, number][]>;
 	private _averageCurveCache: Map<string, [number, number][]>;
-	public getAverageCurve(avgKey: string, filteredOnly: boolean = false): [number, number][]
+	public getAverageCurve(avgKey: string, filteredOnly: boolean = false,  smoothed: boolean = false): [number, number][]
 	{
+		let cacheKey = avgKey;
+		if (smoothed)
+		{
+			cacheKey = cacheKey + '-smoothed-out-real-nice-now';
+		}
 		let cache: Map<string, [number, number][]>
 		if (filteredOnly)
 		{
@@ -114,9 +121,9 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		{
 			cache = this._averageCurveCache;
 		}
-		if (cache.has(avgKey))
+		if (cache.has(cacheKey))
 		{
-			return cache.get(avgKey)
+			return cache.get(cacheKey)
 		}
 		
 		let sumCountMap: Map<number, [number, number]> = new Map<number, [number, number]>();
@@ -133,13 +140,32 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			sumCountMap.set(frame, [sum + mass, count + 1] );
 		}
 		let frameList = Array.from(sumCountMap.keys()).sort((a,b) => a-b);
-		const avgCurve: [number, number][] = frameList.map(frame => 
+		let avgCurve: [number, number][] = frameList.map(frame => 
 			{
 				let [sum, count] = sumCountMap.get(frame);
 				return [frame, sum / count];
 			});
-		cache.set(avgKey, avgCurve);
+		if (smoothed)
+		{
+			avgCurve = CurveList.medianFilter(avgCurve);
+		}
+		cache.set(cacheKey, avgCurve);
 		return avgCurve;
+	}
+
+	public static medianFilter(points: [number, number][], window: number = 1): [number, number][]
+	{
+		const smoothedPoints: [number, number][] = points.map((value, index) =>
+		{
+			const [x, y] = value;
+
+			const start = Math.max(0, index - window);
+			const end = Math.min(points.length, index + window + 1);
+			const slice = points.slice(start, end);
+			let newY = d3.median(slice, d => d[1]);
+			return [x, newY];
+		});
+		return smoothedPoints;
 	}
 
 	private _defaultFacetAxisTicks: {

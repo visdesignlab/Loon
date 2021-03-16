@@ -52,6 +52,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._xKey = initialOption.xKey;
 		this._yKey = initialOption.yKey;
 		this._inAverageMode = initialOption.averaged;
+		this._smoothCurves = false;
 	}
 
 	private _svgSelect : SvgSelection;
@@ -172,6 +173,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._inAverageMode;
 	}
 
+	private _smoothCurves : boolean;
+	public get smoothCurves() : boolean {
+		return this._smoothCurves;
+	}
+
 	private _facetList : Facet[];
 	public get facetList() : Facet[] {
 		return this._facetList;
@@ -252,6 +258,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			 {
 				 this.OnDataChange();
 			 }
+		});
+
+		document.addEventListener('smoothCurveChange', (e: CustomEvent) => 
+		{
+			this._smoothCurves = e.detail;
+			if (this.inAverageMode)
+			{
+				this.OnDataChange();
+			}
 		});
 
 	}
@@ -381,13 +396,13 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		let minX : number, maxX : number, minY : number, maxY : number;
 		if (this.inAverageMode)
 		{
-			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey), d => d[1]));
-			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey), d => d[1]));
+			minY = d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]));
+			maxY = d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]));
 
 			if (this.data.brushApplied)
 			{
-				minY = d3.min([minY, d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey, true), d => d[1]))]);
-				maxY = d3.max([maxY, d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey, true), d => d[1]))]);
+				minY = d3.min([minY, d3.min(this.facetList, facet => d3.min((facet.data as CurveList).getAverageCurve(this.yKey, true, this.smoothCurves), d => d[1]))]);
+				maxY = d3.max([maxY, d3.max(this.facetList, facet => d3.max((facet.data as CurveList).getAverageCurve(this.yKey, true, this.smoothCurves), d => d[1]))]);
 			}
 		}
 		else
@@ -523,7 +538,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 			let facet = this.facetList[i];
 			canvasContext.strokeStyle = i >= 10 ? 'black' : d3.schemeCategory10[i];
-			let dataPoints = facet.data.getAverageCurve(this.yKey);
+			let dataPoints = facet.data.getAverageCurve(this.yKey, false, this.smoothCurves);
 			if (dataPoints.length !== 0)
 			{
 				if (this.data.brushApplied)
@@ -541,7 +556,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 			if (this.data.brushApplied)
 			{
-				let filteredDataPoints = facet.data.getAverageCurve(this.yKey, true);
+				let filteredDataPoints = facet.data.getAverageCurve(this.yKey, true, this.smoothCurves);
 				if (filteredDataPoints.length !== 0)
 				{
 					// canvasContext.setLineDash([]);
