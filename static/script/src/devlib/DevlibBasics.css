@@ -99,6 +99,7 @@
 
 .optionSelectSelect {
     background: white;
+    max-width: 300px;
 }
 
 .valueHeader {

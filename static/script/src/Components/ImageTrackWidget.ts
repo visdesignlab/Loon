@@ -1,9 +1,10 @@
 import * as d3 from 'd3';
+import {toOrdinal} from 'number-to-words';
 import { HtmlSelection, SvgSelection, Margin, NDim, ButtonProps } from '../devlib/DevlibTypes';
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
-import { Facet, Rect } from '../types';
+import { Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
@@ -238,7 +239,27 @@ export class ImageTrackWidget
             let optionName: string;
 			if (Array.isArray(option))
 			{
-                optionName = option.join(', ');
+                let optionCopy: number[] | string[] = option.map(x => x);
+                if (option.length < 8)
+                {
+                    optionCopy = optionCopy.map(x => 
+                        {
+                            if (x == 0)
+                            {
+                                return 'Min';
+                            }
+                            if (x == 0.5)
+                            {
+                                return 'Median';
+                            }
+                            if (x == 1)
+                            {
+                                return 'Max';
+                            }
+                            return toOrdinal(100 * x) + ' percentile'
+                        });
+                }
+                optionName = optionCopy.join(', ');
 			}
 			else
 			{
