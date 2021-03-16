@@ -73,10 +73,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._mainGroupSelect;
 	}
 	
-	private _mainGroupFacetSelect : SvgSelection;
-	public get mainGroupFacetSelect() : SvgSelection {
-		return this._mainGroupFacetSelect;
-	}
+	// private _mainGroupFacetSelect : SvgSelection;
+	// public get mainGroupFacetSelect() : SvgSelection {
+	// 	return this._mainGroupFacetSelect;
+	// }
 	
 	private _canvasContainer : SvgSelection;
 	public get canvasContainer() : SvgSelection {
@@ -251,8 +251,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
 		this._svgFacetSelect = containerSelect.append('svg');
-		this._mainGroupFacetSelect = this.svgFacetSelect.append('g')
-			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+		// this._mainGroupFacetSelect = this.svgFacetSelect.append('g')
+		// 	.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
 		this.swapSvgVisibility();
 
@@ -675,21 +675,26 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			bottom: 86
 		}
 
-		
-		const miniSize = 64;
-		const miniPadding = 8;
+		const defaultFacets = this.data.defaultFacets;
+		const defaultAxisTicks = this.fullData.defaultFacetAxisTicks;
+		const wCount = defaultAxisTicks.xAxisTicks.length;
+		const lCount = defaultAxisTicks.yAxisTicks.length;
+
+		let miniWidth = (this.width - margin.left - margin.right) / wCount
+		let miniHeight = (this.height - margin.top - margin.bottom) / lCount;
+
+		let miniSize = Math.min(miniWidth, miniHeight);
+		const miniPadding = Math.round(0.08 * miniSize);
+		miniSize -= 2 * miniPadding;
 
 		// outer.append('div')
 		// 	.classed('largeText', true)
 		// 	.text('Filter by Condition');
 
-		const defaultFacets = this.data.defaultFacets;
-		const defaultAxisTicks = this.fullData.defaultFacetAxisTicks;
 
-		const wCount = defaultAxisTicks.xAxisTicks.length;
+
 		const vizWidth = wCount * miniSize + (wCount - 1) * miniPadding;
 
-		const lCount = defaultAxisTicks.yAxisTicks.length;
 		const vizHeight = lCount * miniSize + (lCount - 1) * miniPadding;
 
 		// const svgSelect = outer.append('svg')

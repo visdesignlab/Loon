@@ -29,7 +29,7 @@
 							"inside": [
 								{
 									"direction": "row",
-									"fraction": 2,
+									"fraction": 4,
 									"inside": 
 									{
 										"type": "Plot2dPathsWidget",
@@ -114,7 +114,7 @@
 								},
 								{
 									"direction": "row",
-									"fraction": 2,
+									"fraction": 3,
 									"inside": [
 										{
 											"direction": "col",
