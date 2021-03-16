@@ -192,7 +192,7 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
         this._svgSelect = containerSelect.append("svg")
             .attr("width", this.width)
             .attr("height", this.height)
-            .attr('style', 'z-index: 10;');
+            .attr('style', 'z-index: 0;');
 
         this._boxplotStatsPopupSelect = containerSelect.append('div')
             .classed('boxplotStatsPopup', true);
