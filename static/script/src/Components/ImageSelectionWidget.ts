@@ -16,7 +16,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
     constructor(container: HTMLElement, samplingStratOptions: (number | number[])[], isClone: boolean = false)
     {
-        super(container, true, samplingStratOptions);
+        super(container, false, samplingStratOptions);
         this._isClone = isClone;
     }
 
