@@ -75,6 +75,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._canvasElement;
 	}
 
+	private _averageCurveLabelContainer : SvgSelection;
+	public get averageCurveLabelContainer() : SvgSelection {
+		return this._averageCurveLabelContainer;
+	}	
+
 	private _canBrush : boolean;
 	public get canBrush() : boolean {
 		return this._canBrush;
@@ -187,7 +192,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		this._margin = {
 			top: 20,
-			right: 8,
+			right: 120,
 			bottom: 42,
 			left: 64
 		}
@@ -243,6 +248,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._yAxisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.classed("labelColor", true);
+
+		this._averageCurveLabelContainer = this.svgSelect.append('g')
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
 		this.initQuickPickOptions();
 
@@ -363,7 +371,20 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		this._xKey = xKey;
 		this._yKey = yKey;
-		this._inAverageMode = inAverageMode;
+		if (this._inAverageMode !== inAverageMode)
+		{
+			this._inAverageMode = inAverageMode;
+			if (inAverageMode)
+			{
+				this.margin.right = 120;
+			}
+			else
+			{
+				this.margin.right = 8;
+			}
+			this.setWidthHeight();
+			this.OnResize();
+		}
 		if (this.canBrush)
 		{
 			let brushElement = this.brushGroupSelect.node();
@@ -510,6 +531,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			const path = new Path2D(line(curve.pointList));
 			canvasContext.stroke(path);
 		}
+		this.clearLabels();
 	}
 
 	private updateAveragePaths(): void
@@ -522,9 +544,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight);
 		canvasContext.lineJoin = 'round';
 		
+		let labelData: [string, [number, number]][] = [];
 		for (let i = this.facetList.length - 1; i >= 0 ; i--)
 		{
-
 			if (i < 10)
 			{
 				canvasContext.globalAlpha = 0.85;
@@ -551,7 +573,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				const path = new Path2D(lineAvg(dataPoints));
 				canvasContext.stroke(path);
 			}
-
+			let lastPoint: [number, number] = dataPoints[dataPoints.length - 1];
 			canvasContext.restore();
 
 			if (this.data.brushApplied)
@@ -563,9 +585,39 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 					const path = new Path2D(lineAvg(filteredDataPoints));
 					canvasContext.stroke(path);
 				}
+				lastPoint = filteredDataPoints[filteredDataPoints.length - 1];
 			}
-
+			labelData.unshift([facet.name, lastPoint]);
 		}
+		this.drawLabels(labelData);
+	}
+
+	private drawLabels(labelData: [string, [number, number]][]): void
+	{
+		this.averageCurveLabelContainer.selectAll('circle')
+			.data(labelData)
+			.join('circle')
+			.attr('cx', d => this.scaleX(d[1][0]))
+			.attr('cy', d => this.scaleY(d[1][1]))
+			.attr('r', 3)
+			.attr('fill', (d, i) => i >= 10 ? 'black' : d3.schemeCategory10[i]);
+
+		const horizontalPad = 12;
+
+		this.averageCurveLabelContainer.selectAll('text')
+			.data(labelData)
+			.join('text')
+			.attr('transform', d => `translate(${this.scaleX(d[1][0]) + horizontalPad}, ${this.scaleY(d[1][1])})`)
+			.attr('alignment-baseline', 'central')
+			.text(d => d[0])
+			.attr('stroke', (d, i) => i >= 10 ? 'black' : d3.schemeCategory10[i])
+
+			// todo overlap prevention
+	}
+
+	private clearLabels(): void
+	{
+		this.averageCurveLabelContainer.html(null);
 	}
 
 
