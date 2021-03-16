@@ -7,6 +7,11 @@
     margin: 10px;
 }
 
+.locationFrameLabelContainer {
+    padding-left: 20px;
+    background: #f1f1f1;
+}
+
 .locationFrameLabel {
     font-size: 12pt;
     font-weight: normal;

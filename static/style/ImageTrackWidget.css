@@ -34,7 +34,9 @@
 .trackModeTitleContainer {
     text-align: center;
     height: 20px;
-    padding-top: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    background: #f1f1f1;
 }
 
 .pinLine {
