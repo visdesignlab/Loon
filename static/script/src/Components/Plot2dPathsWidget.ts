@@ -566,6 +566,14 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this.resetTempConditionFilter();
 		}
+		else
+		{
+			let applyButton = document.getElementById('conditionFilterApplyButton');
+			if (applyButton)
+			{
+				DevlibTSUtil.hide(applyButton);
+			}
+		}
 	}
 
 	private updatePaths(): void
@@ -693,8 +701,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		const margin = {
 			top: 30,
 			left: 120,
-			right: 40,
-			bottom: 76
+			right: 20,
+			bottom: 48
 		}
 
 		const defaultFacets = this.data.defaultFacets;
@@ -962,8 +970,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				this.copyTempConditionsToModel();
 				DevlibTSUtil.hide(document.getElementById('conditionFilterApplyButton'));
 				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
-				// this.onConditionFilterClick({shown: true, index: index });
-				// todo - trigger redraw mayabe, event may get it now though
 			});
 		DevlibTSUtil.hide(document.getElementById('conditionFilterApplyButton'));
 	}
@@ -1064,9 +1070,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this._inFacetMode = !this.inFacetMode;
 			this.swapSvgVisibility();
-			// todo
 			this.updatePaths();
-
 		}
 		else
 		{
