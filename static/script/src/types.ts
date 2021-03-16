@@ -59,7 +59,7 @@ export interface FacetOption {
 
 }
 export interface Facet {
-	name: string,
+	name: string[],
 	data: any
 }
 

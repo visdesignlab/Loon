@@ -675,7 +675,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				lastPoint = null;
 			}
-			labelData.unshift([facet.name, lastPoint]);
+			labelData.unshift([facet.name.join(' '), lastPoint]);
 		}
 		this.drawLabels(labelData);
 	}

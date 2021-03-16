@@ -270,7 +270,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		}
 		for (let facet of facetList)
 		{
-			this.drawSingleFacetedData(facet.name, facet.data, width, height);
+			this.drawSingleFacetedData(facet.name.join(' '), facet.data, width, height);
 		}
 	}
 
