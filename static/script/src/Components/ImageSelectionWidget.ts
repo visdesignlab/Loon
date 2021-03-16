@@ -14,7 +14,7 @@ import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
-    constructor(container: HTMLElement, samplingStratOptions: (number | number[])[], isClone: boolean = false)
+    constructor(container: HTMLElement, samplingStratOptions: {"strat": (number[] | number), "label": string}[], isClone: boolean = false)
     {
         super(container, false, samplingStratOptions);
         this._isClone = isClone;
@@ -131,8 +131,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._hoveredLocId;
     }
 
-    private _samplingStratOptions : (number[] | number)[];
-    public get samplingStratOptions() : (number[] | number)[] {
+    private _samplingStratOptions : {"strat": (number[] | number), "label": string}[];
+    public get samplingStratOptions() : {"strat": (number[] | number), "label": string}[] {
         return this._samplingStratOptions;
     }
 
