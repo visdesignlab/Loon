@@ -552,7 +552,7 @@ export class ImageTrackWidget
 
     private getConditionNames(): string[]
     {
-        return this.parentWidget.facetList.map(facet => facet.name);
+        return this.parentWidget.facetList.map(facet => facet.name.join(' '));
     }
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>

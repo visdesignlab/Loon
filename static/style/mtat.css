@@ -69,44 +69,6 @@ button, option, select {
     padding-bottom: 6px;
 }
 
-.miniCell {
-    opacity: 0.3;
-}
-
-.miniCell.inFilter {
-    opacity: 1.0;
-}
-
-.miniBox {
-    stroke: #afafaf;
-    stroke-width: 1;
-    fill: white;
-}
-
-.miniExemplarCurve {
-    stroke: #252525;
-    stroke-width: 2px;
-    fill: none;
-    stroke-linejoin: bevel;
-}
-
-.miniExemplarCurve.selection {
-    stroke: firebrick;
-    stroke-opacity: 0.6;
-}
-
-.y.axisButtonContainer {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-.y.axisButtonContainer button {
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-
 .optionSelectGrouperDiv {
     display: flex;
     flex-direction: column;

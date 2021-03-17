@@ -1,3 +1,54 @@
 .quickPickContainer {
 	position: absolute;
 }
+
+.applyButtonContainer {
+	position: absolute;
+    right: 0;
+    bottom: 0;
+	 margin: 6px;
+}
+
+.miniCell {
+    opacity: 0.3;
+}
+
+.miniCell.inFilter {
+    opacity: 1.0;
+}
+
+.miniBox {
+    stroke: #afafaf;
+    stroke-width: 1;
+    fill: white;
+}
+
+.miniExemplarCurve {
+    fill: none;
+    stroke-linejoin: bevel;
+    stroke-width: 1px;
+    opacity: 1.0;
+}
+
+.inFilter .miniExemplarCurve {
+    opacity: 0.6
+}
+
+.miniExemplarCurve.active {
+    stroke-width: 2px;
+}
+
+.inFilter .miniExemplarCurve.active {
+    opacity: 1;
+}
+
+.y.axisButtonContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.y.axisButtonContainer button {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}

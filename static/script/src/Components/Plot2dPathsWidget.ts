@@ -7,6 +7,7 @@ import { valueFilter } from '../types';
 import { OptionSelect } from './OptionSelect';
 import { DatasetSpec, Facet } from '../types';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
+import { DataEvents } from '../DataModel/DataEvents';
 
 interface quickPickOption {
 	xKey: string,
@@ -28,6 +29,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
 		this._facetList = [];
+		this._colorLookup = new Map<string, string>();
 		this._isClone = isClone;
 	}
 	
@@ -52,6 +54,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._xKey = initialOption.xKey;
 		this._yKey = initialOption.yKey;
 		this._inAverageMode = initialOption.averaged;
+		this._inFacetMode = false;
+		this._tempConditionFilterState = new Map<string, Map<string, boolean>>();
 		this._smoothCurves = false;
 	}
 
@@ -60,9 +64,29 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._svgSelect;
 	}
 
+	private _svgFacetSelect : SvgSelection;
+	public get svgFacetSelect() : SvgSelection {
+		return this._svgFacetSelect;
+	}
+
 	private _mainGroupSelect : SvgSelection;
 	public get mainGroupSelect() : SvgSelection {
 		return this._mainGroupSelect;
+	}
+	
+	private _mainGroupFacetSelect : SvgSelection;
+	public get mainGroupFacetSelect() : SvgSelection {
+		return this._mainGroupFacetSelect;
+	}
+
+	private _yAxisFacetSelect : SvgSelection;
+	public get yAxisFacetSelect() : SvgSelection {
+		return this._yAxisFacetSelect;
+	}
+
+	private _xAxisFacetSelect : SvgSelection;
+	public get xAxisFacetSelect() : SvgSelection {
+		return this._xAxisFacetSelect;
 	}
 	
 	private _canvasContainer : SvgSelection;
@@ -178,6 +202,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._inAverageMode;
 	}
 
+	private _inFacetMode : boolean;
+	public get inFacetMode() : boolean {
+		return this._inFacetMode;
+	}
+
 	private _smoothCurves : boolean;
 	public get smoothCurves() : boolean {
 		return this._smoothCurves;
@@ -188,9 +217,24 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._facetList;
 	}
 
+	private _colorLookup : Map<string, string>;
+	public get colorLookup() : Map<string, string> {
+		return this._colorLookup;
+	}	
+
 	private _forceSimulation : d3.Simulation<any, undefined> ;
 	public get forceSimulation() : d3.Simulation<any, undefined>  {
 		return this._forceSimulation;
+	}
+
+	private _tempConditionFilterState : Map<string, Map<string, boolean>>;
+	public get tempConditionFilterState() : Map<string, Map<string, boolean>> {
+		return this._tempConditionFilterState;
+	}
+
+	private _miniCellSelect : SvgSelection;
+	public get miniCellSelect() : SvgSelection {
+		return this._miniCellSelect;
 	}
 
 	protected setMargin(): void
@@ -218,9 +262,16 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				this.hideQuickPickContainer();
 			})
-		this._svgSelect = containerSelect.append("svg")
+		this._svgSelect = containerSelect.append("svg");
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+
+		this._svgFacetSelect = containerSelect.append('svg');
+		this._mainGroupFacetSelect = this.svgFacetSelect.append('g')
+		this._yAxisFacetSelect = this.svgFacetSelect.append('g')
+		this._xAxisFacetSelect = this.svgFacetSelect.append('g')
+
+		this.swapSvgVisibility();
 
 		this._canvasContainer = this.mainGroupSelect
 			.append('foreignObject')
@@ -242,9 +293,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			this.initBrush();
 		}
 
-		// this.svgSelect.attr("style", 'width: 100%; height: 100%;');
 		this.svgSelect.attr('width', this.width);
 		this.svgSelect.attr('height', this.height);
+
+		this.svgFacetSelect.attr('width', this.width);
+		this.svgFacetSelect.attr('height', this.height);
 
 		this._xAxisGroupSelect = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight})`)
@@ -267,6 +320,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				return;
 			}
 			 this._facetList = e.detail.flatFacetList;
+			 this.resetColorLookup();
 			 if (this.inAverageMode)
 			 {
 				 this.OnDataChange();
@@ -367,6 +421,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public OnDataChange(): void
 	{
 		this.updateScales();
+		this.tempConditionFilterState.clear();
+		this.resetTempConditionFilter();
 		this.updatePaths();
 		this.drawAxis();
         this.showLabel();
@@ -386,6 +442,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			else
 			{
 				this.margin.right = 8;
+				if (this.inFacetMode)
+				{
+					this._inFacetMode = false;
+					this.swapSvgVisibility();
+				}
 			}
 			this.setWidthHeight();
 			this.OnResize();
@@ -504,12 +565,37 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.range([this.vizHeight, 0]);
 	}
 
+	private swapSvgVisibility(): void
+	{
+		this.svgSelect.classed('noDisp', this.inFacetMode);
+		this.svgFacetSelect.classed('noDisp', !this.inFacetMode);
+		if (this.inFacetMode)
+		{
+			this.resetTempConditionFilter();
+		}
+		else
+		{
+			let applyButton = document.getElementById('conditionFilterApplyButton');
+			if (applyButton)
+			{
+				DevlibTSUtil.hide(applyButton);
+			}
+		}
+	}
+
 	private updatePaths(): void
 	{
 		if (this.inAverageMode)
 		{
-			this.updateAveragePaths();
-			this.drawAxis();
+			if (this.inFacetMode)
+			{
+				this.updateFacetPaths();
+			}
+			else
+			{
+				this.updateAveragePaths();
+				this.drawAxis();
+			}
 		}
 		else
 		{
@@ -586,7 +672,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				let filteredDataPoints = facet.data.getAverageCurve(this.yKey, true, this.smoothCurves);
 				if (filteredDataPoints.length !== 0)
 				{
-					// canvasContext.setLineDash([]);
 					const path = new Path2D(lineAvg(filteredDataPoints));
 					canvasContext.stroke(path);
 				}
@@ -596,9 +681,445 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				lastPoint = null;
 			}
-			labelData.unshift([facet.name, lastPoint]);
+			labelData.unshift([facet.name.join(' '), lastPoint]);
 		}
 		this.drawLabels(labelData);
+	}
+
+	private resetColorLookup(): void
+	{
+		this.colorLookup.clear();
+		for (let i = 0; i < this.facetList.length; i++)
+		{
+			let color = i >= 10 ? 'black' : d3.schemeCategory10[i];
+			let keyList = this.facetList[i].name;
+			this.colorLookup.set(keyList.join('___'), color);
+			this.colorLookup.set([...keyList].reverse().join('___'), color);
+		}
+	}
+
+	private updateFacetPaths(): void
+	{
+		const margin = {
+			top: 30,
+			left: 120,
+			right: 20,
+			bottom: 48
+		}
+
+		const defaultFacets = this.data.defaultFacets;
+		const defaultFacetsFull = this.fullData.defaultFacets;
+		const defaultAxisTicks = this.fullData.defaultFacetAxisTicks;
+		const wCount = defaultAxisTicks.xAxisTicks.length;
+		const lCount = defaultAxisTicks.yAxisTicks.length;
+
+		let miniWidth = (this.width - margin.left - margin.right) / wCount
+		let miniHeight = (this.height - margin.top - margin.bottom) / lCount;
+
+		let miniSize = Math.min(miniWidth, miniHeight);
+		const miniPadding = Math.round(0.08 * miniSize);
+		miniSize -= 2 * miniPadding;
+
+		const vizWidth = wCount * miniSize + (wCount - 1) * miniPadding;
+		const vizHeight = lCount * miniSize + (lCount - 1) * miniPadding;
+
+		this.addApplyButton(d3.select(this.container as HTMLElement));
+
+		this.mainGroupFacetSelect
+			.attr('transform', `translate(${margin.left}, ${margin.top})`)
+
+		let rowSelect = this.mainGroupFacetSelect.selectAll('g.row')
+			.data(defaultAxisTicks.yAxisTicks)
+			.join('g')
+			.classed('row', true)
+			.attr('transform', (_, i) => `translate(0, ${i * (miniSize + miniPadding)})`);
+
+		this._miniCellSelect = rowSelect.selectAll('g.miniCell')
+			.data(d => defaultAxisTicks.xAxisTicks.map(label => [d, label]))
+			.join('g')
+			.classed('miniCell', true)
+			.on('click', (d) =>
+			{
+				if (this.allConditionsTrue())
+				{
+					this.setAllConditionsFalse();
+				}
+				let oldVal = this.tempConditionFilterState.get(d[0])?.get(d[1]);
+				this.tempConditionFilterState.get(d[0])?.set(d[1], !oldVal);
+				this.updateConditionFilterSelection();
+			})
+			.attr('transform', (_, i) => `translate(${i * (miniSize + miniPadding)}, 0)`) as SvgSelection;
+			
+		this.updateConditionFilterSelection()
+		
+		this.miniCellSelect.selectAll('rect')
+			.data(d => [d])
+			.join('rect')
+			.attr('width', miniSize)
+			.attr('height', miniSize)
+			.classed('miniBox', true);
+		
+		let frameExtent = this.data.getMinMax('Frame ID');
+		const scaleX = d3.scaleLinear()
+			.domain(frameExtent)
+			.range([0, miniSize]);
+
+		let [minMass, maxMass] = this.getExtentOfGrowthCurves(defaultFacets);
+		let [minMassFull, maxMassFull] = this.getExtentOfGrowthCurves(defaultFacetsFull, true);
+		minMass = Math.min(minMass, minMassFull);
+		maxMass = Math.max(maxMass, maxMassFull);
+
+		const scaleY = d3.scaleLinear()
+			.domain([minMass, maxMass])
+			.range([miniSize, 0]);
+
+        let lineAvg = d3.line<[number, number]>()
+            .x(d => scaleX(d[0]))
+            .y(d => scaleY(d[1]));
+					
+		this.miniCellSelect.selectAll('.miniExemplarCurve.allData')
+			.data(d => [d])
+			.join('path')
+			.classed('miniExemplarCurve', true)
+			.classed('allData', true)
+			.classed('active', !this.data.brushApplied)
+			.attr('stroke', d => this.getColor(d))
+			.attr('d', d => 
+			{
+				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false);
+				if (pathString)
+				{
+					return pathString
+				}
+				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, true); // false should be true, but I need to do other bookeeping
+			});
+
+		if (this.data.brushApplied)
+		{
+			this.miniCellSelect.selectAll('.miniExemplarCurve.selection')
+				.data(d => [d])
+				.join('path')
+				.classed('miniExemplarCurve', true)
+				.classed('selection', true)
+				.classed('active', true)
+				.attr('stroke', d => this.getColor(d))
+				.attr('d', d => 
+				{
+					return this.getGrowthLine(d, defaultFacets, lineAvg, true);
+				});
+		}
+		else
+		{
+			this.miniCellSelect.selectAll('.miniExemplarCurve.selection').remove();
+		}
+
+		this.yAxisFacetSelect
+			.attr('transform', `translate(${margin.left}, ${margin.top})`);
+		
+		const maxLabelWidth = 70;
+		const labelPadding = 8;
+
+		const mainLabelSize = 20;
+
+		this.yAxisFacetSelect.selectAll('text')
+			.data([defaultAxisTicks.axisLabels[0]])
+		  .join('text')
+			.attr('text-anchor', 'middle')
+			.attr('dominant-baseline', 'hanging')
+			.attr('transform', `translate(${-maxLabelWidth - labelPadding - mainLabelSize}, ${vizHeight/2}) rotate(-90)`)
+			.classed('mediumText', true)
+			.text(d => d)
+
+		this.yAxisFacetSelect.selectAll('foreignObject')
+			.data(defaultAxisTicks.yAxisTicks)
+		  .join('foreignObject')
+			.attr('width', maxLabelWidth)
+			.attr('height', miniSize)
+			.attr('transform', (d, i) => `translate(${-maxLabelWidth - labelPadding}, ${i * (miniSize + miniPadding)})`)
+		  	.selectAll('div')
+		 	.data(d => [d]) 
+		  .join('xhtml:div')
+			.attr('style', `height: ${miniSize}px;`)
+			.classed('y', true)
+			.classed('axisButtonContainer', true)
+			.selectAll('button')
+			.data(d => [d])
+		  .join('button')
+			.classed('basicIconButton', true)
+			.attr('style', `max-width: ${maxLabelWidth}px; min-width: ${maxLabelWidth}px;`)
+			.attr('title', d => d)
+			.on('click', (d) => 
+			{
+				if (this.allConditionsTrue())
+				{
+					this.setAllConditionsFalse();
+				}
+				let rowMap = this.tempConditionFilterState.get(d);
+				let newValue: boolean = !Array(...rowMap.values()).every(x => x)
+				for (let key of rowMap.keys())
+				{
+					rowMap.set(key, newValue);
+				}
+				this.updateConditionFilterSelection();
+			})
+			.text(d => d);
+		
+		const maxLabelHeight = 36;
+
+		this.xAxisFacetSelect
+			.attr('transform', `translate(${margin.left}, ${margin.top + vizHeight})`);
+		
+		this.xAxisFacetSelect.selectAll('text')
+			.data([defaultAxisTicks.axisLabels[1]])
+		  .join('text')
+			.attr('text-anchor', 'middle')
+			.attr('dominant-baseline', 'hanging')
+			.attr('transform', `translate(${vizWidth / 2}, ${maxLabelHeight + 2 * labelPadding})`)
+			.classed('mediumText', true)
+			.text(d => d)
+
+		this.xAxisFacetSelect.selectAll('foreignObject')
+			.data(defaultAxisTicks.xAxisTicks)
+		  .join('foreignObject')
+			.attr('width', miniSize)
+			.attr('height', maxLabelHeight)
+			.attr('transform', (d, i) => `translate(${i * (miniSize + miniPadding)}, ${labelPadding})`)
+			.selectAll('div')
+			.data(d => [d])
+		  .join('xhtml:div')
+			.classed('x', true)
+			.classed('axisButtonContainer', true)
+			.selectAll('button')
+			.data(d => [d])
+		  .join('button')
+		  	.classed('basicIconButton', true)
+			.attr('style', `max-width: ${miniSize}px; min-width: ${miniSize}px; height: ${maxLabelHeight}px`)
+		  	.attr('title', d => d)
+			.on('click', (d) => 
+			{
+				if (this.allConditionsTrue())
+				{
+					this.setAllConditionsFalse();
+				}
+				const rowList: Map<string, boolean>[] = Array(...this.tempConditionFilterState.values())
+				const colValues: boolean[] = rowList.map(m => m.get(d))
+				const newValue: boolean = !colValues.every(x => x)
+				for (let map of rowList)
+				{
+					map.set(d, newValue);
+				}
+				this.updateConditionFilterSelection();
+			})
+			.text(d => d);
+	}
+
+	private getGrowthLine(
+		label: [string, string],
+		facets: Map<string, Map<string, CurveList>>,
+		lineFunc: d3.Line<[number, number]>,
+		selection: boolean): string
+	{
+		let [drugLabel, concLabel] = label;
+		if (!facets.has(drugLabel))
+		{
+			return ''; // empty when no data
+		}
+		let row = facets.get(drugLabel);
+		if (!row.has(concLabel))
+		{
+			return '';
+		}
+		let data: CurveList = row.get(concLabel)
+		let avergeGrowthLine = data.getAverageCurve(this.yKey, selection, this.smoothCurves);
+		if (avergeGrowthLine.length === 0)
+		{
+			return '';
+		}
+		return lineFunc(avergeGrowthLine);
+	}
+
+	private getExtentOfGrowthCurves(facets: Map<string, Map<string, CurveList>>, filteredOnly: boolean = false): [number, number]
+	{
+		let minMass = Infinity;
+		let maxMass = -Infinity;
+		for (let map of facets.values())
+		{
+			for (let data of map.values())
+			{
+				let thisMin: number
+				let thisMax: number;
+				if (filteredOnly)
+				{
+					thisMin = Infinity;
+					thisMax = -Infinity;
+				}
+				else
+				{
+					const allDataPoints = data.getAverageCurve(this.yKey, false, this.smoothCurves);
+					thisMin = d3.min(allDataPoints, d => d[1]);
+					thisMax = d3.max(allDataPoints, d => d[1]);
+				}
+
+				let dataPoints = data.getAverageCurve(this.yKey, true, this.smoothCurves);
+				const shouldCheckFiltered = (filteredOnly || this.data.brushApplied) && dataPoints.length > 0;
+				if (shouldCheckFiltered)
+				{
+					thisMin = Math.min(thisMin, d3.min(dataPoints, d => d[1]));
+				}
+				minMass = Math.min(thisMin, minMass);
+
+				if (shouldCheckFiltered)
+				{
+					thisMax = Math.max(thisMax, d3.max(dataPoints, d => d[1]));
+				}
+				maxMass = Math.max(thisMax, maxMass);
+			}
+		}
+		return [minMass, maxMass];
+	}
+
+	private addApplyButton(container: HtmlSelection): void
+	{	
+		let buttonSelect = container
+			.selectAll('div.applyButtonContainer')
+			.data([42])
+		.join('div')
+			.classed('applyButtonContainer', true)
+			.selectAll('button')
+			.data([42])
+		.join('button')
+			.attr('id', 'conditionFilterApplyButton')
+			.text('Apply Filter')
+			.classed('devlibButton', true)
+			.attr('style', 'padding: 8px')
+			.on('click', () =>
+			{
+				this.copyTempConditionsToModel();
+				DevlibTSUtil.hide(document.getElementById('conditionFilterApplyButton'));
+				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
+			});
+		DevlibTSUtil.hide(document.getElementById('conditionFilterApplyButton'));
+	}
+
+	private getColor(labels: [string, string]): string
+	{
+		let [drugLabel, concLabel] = labels;
+		let keyOptions = [drugLabel, concLabel]
+		keyOptions.push(`${drugLabel}___${concLabel}`)
+		keyOptions.push(`${drugLabel}___${drugLabel}`)
+		keyOptions.push(`${concLabel}___${concLabel}`)
+		for (let key of keyOptions)
+		{
+			if (this.colorLookup.has(key))
+			{
+				return this.colorLookup.get(key);
+			}
+		}
+		return 'grey';
+	}
+
+	private updateConditionFilterSelection(): void
+	{
+		this.miniCellSelect.classed('inFilter', d => 
+		{
+			if (!this.tempConditionFilterState.has(d[0]))
+			{
+				return false;
+			}
+			let letRowFilters = this.tempConditionFilterState.get(d[0])
+			if (this.tempConditionFilterState.has(d[1]))
+			{
+				return false;
+			}
+			return letRowFilters.get(d[1]);
+		});
+
+		let applyButton = document.getElementById('conditionFilterApplyButton');
+		if (this.tempConditionsDifferent())
+		{
+			DevlibTSUtil.show(applyButton);
+		}
+		else
+		{
+			DevlibTSUtil.hide(applyButton);
+		}
+	}
+
+	private resetTempConditionFilter(): void
+	{
+		for (let [key, value] of this.dataSuperset.conditionFilterState.entries())
+		{
+			this.tempConditionFilterState.set(key, new Map(value));
+		}
+	}
+
+	private allConditionsTrue(): boolean
+	{
+		for (let map of this.tempConditionFilterState.values())
+		{
+			for (let val of map.values())
+			{
+				if (!val)
+				{
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	private setAllConditionsFalse(): void
+	{
+		for (let map of this.tempConditionFilterState.values())
+		{
+			for (let key of map.keys())
+			{
+				map.set(key, false);
+			}
+		}
+	}
+
+	private tempConditionsDifferent(): boolean
+	{
+		for (let key1 of this.tempConditionFilterState.keys())
+		{
+			let innerKeyVals = this.tempConditionFilterState.get(key1).entries();
+			for (let [key2, val] of innerKeyVals)
+			{
+				if (val !== this.fullData.conditionFilterState.get(key1)?.get(key2))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private copyTempConditionsToModel(): void
+	{
+		for (let key1 of this.tempConditionFilterState.keys())
+		{
+			let innerKeyVals = this.tempConditionFilterState.get(key1).entries();
+			for (let [key2, val] of innerKeyVals)
+			{
+				this.fullData.conditionFilterState.get(key1)?.set(key2, val);
+			}
+		}
+	}
+
+
+	protected drawFacetContent(): void
+	{
+		if (this.inAverageMode)
+		{
+			this._inFacetMode = !this.inFacetMode;
+			this.swapSvgVisibility();
+			this.updatePaths();
+		}
+		else
+		{
+			super.drawFacetContent();
+		}
 	}
 
 	private drawLabels(labelData: [string, [number, number] | null][]): void
@@ -683,6 +1204,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		{
 			this.svgSelect.attr('width', this.width);
 			this.svgSelect.attr('height', this.height);
+
+			this.svgFacetSelect.attr('width', this.width);
+			this.svgFacetSelect.attr('height', this.height);
+
 			this.canvasContainer
 				.attr('width', this.vizWidth)
 				.attr('height', this.vizHeight);

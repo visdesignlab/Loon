@@ -222,9 +222,9 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			let thisDict = new Map<string, CurveList>();
 			for (let subFacet of subFacets)
 			{
-				thisDict.set(subFacet.name, subFacet.data);
+				thisDict.set(subFacet.name[0], subFacet.data);
 			}
-			nestedFacetMap.set(categoryName, thisDict);
+			nestedFacetMap.set(categoryName[0], thisDict);
 		}
 
 		this._defaultFacets = nestedFacetMap;

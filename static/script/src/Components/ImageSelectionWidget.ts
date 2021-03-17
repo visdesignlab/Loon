@@ -269,7 +269,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
         if (remainingSubFacetIndices.length === 0)
         {
-            this.drawTerminalFacet(container, facet.name, facet.data, verticalPosition, 0, categoryIndex);
+            this.drawTerminalFacet(container, facet.name.join(' '), facet.data, verticalPosition, 0, categoryIndex);
             return 1;
         }
 
@@ -291,7 +291,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         let grouperDiv
         if (facet)
         {
-            grouperDiv  = this.drawGrouperFacet(container, facet.name, verticalPosition, remainingSubFacetIndices.length);
+            grouperDiv  = this.drawGrouperFacet(container, facet.name.join(' '), verticalPosition, remainingSubFacetIndices.length);
         }
         let childPosition = verticalPosition;
         let thisCount = 0;

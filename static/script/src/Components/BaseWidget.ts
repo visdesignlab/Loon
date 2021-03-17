@@ -239,7 +239,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		return () => DevlibTSUtil.hide(this.buttonListContainer);
 	}
 
-	private drawFacetContent(): void
+	protected drawFacetContent(): void
 	{
 		this.largePopup.innerHTML = null;
 
@@ -270,7 +270,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		}
 		for (let facet of facetList)
 		{
-			this.drawSingleFacetedData(facet.name, facet.data, width, height);
+			this.drawSingleFacetedData(facet.name.join(' '), facet.data, width, height);
 		}
 	}
 

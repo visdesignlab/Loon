@@ -229,7 +229,7 @@ export class GroupByWidget
 
     public getFlatFacetList(): Facet[]
     {
-        let flatFacetList: Facet[] = [{name: '', data: this.data}];
+        let flatFacetList: Facet[] = [{name: [], data: this.data}];
         for (let index of this.currentSelectionIndexList)
         {
             let nextList = [];
@@ -240,8 +240,10 @@ export class GroupByWidget
                 let subFacets: Facet[] = currentOption.GetFacets();
                 subFacets = subFacets.map(facet =>
                 {
+                    let newName = nameSoFar.map(x => x);
+                    newName.push(...facet.name)
                     return {
-                        name: nameSoFar ? nameSoFar + ' ' + facet.name : facet.name,
+                        name: newName,
                         data: facet.data
                     }
                 });

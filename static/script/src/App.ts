@@ -251,6 +251,12 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	{
 		this.data.ApplyNewFilter();
 		let filteredData = this.data.CreateFilteredCurveList() as DataType;
+		
+		// remove inBrush attributes set on tracks based on conditions filters
+		// this is needed to get the appropriate filtered data in the condition
+		// curve matrix widget.
+		this.data.OnBrushChange();
+
 		this.SetData(filteredData, this.data);
 	}
 
