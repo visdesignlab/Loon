@@ -449,6 +449,55 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 				d3.select(this).classed("hovered", false);
 			});
 
+		// add triangle quick selects
+		const triangleButtonSvg = this.yAxisMatrixSelect.selectAll('svg')
+			.data([42])
+			.join('svg')
+			.attr('width', buttonWidth)
+			.attr('height', buttonWidth)
+			.classed('triangleQuickSelect', true)
+			.raise();
+
+
+		const trianglePad = 4;
+		const triangleScale = d3.scaleLinear()
+			.domain([0, 1])
+			.range([trianglePad, buttonWidth - trianglePad])
+
+		const gap = 0.05;
+		const upperTrianglePoints: [number, number][] = [[gap, 0], [1, 0], [1, 1 - gap], [gap, 0]];
+		const lowerTrianglePoints: [number, number][] = [[0, gap], [1 - gap, 1], [0, 1], [0, gap]];
+
+		const line = d3.line<[number, number]>()
+			.x(d => triangleScale(d[0]))
+			.y(d => triangleScale(d[1]));
+
+		triangleButtonSvg.selectAll('path')
+			.data([upperTrianglePoints, lowerTrianglePoints])
+			.join('path')
+			.attr('d', d => line(d))
+			.classed('triangleButton', true)
+			.on('mouseenter', function(d) 
+			{
+				d3.select(this).classed('hover', true);
+			})
+			.on('mouseleave', function(d) 
+			{
+				d3.select(this).classed('hover', false);
+			})
+			.on('click', (d, i) => 
+			{
+				if (i == 0)
+				{
+					this.toggleUpperTriangle();
+					this.afterMultipleMatrixChanges();
+				}
+				else
+				{
+					this.toggleLowerTriangle();
+					this.afterMultipleMatrixChanges();
+				}
+			});
 
 		const halfWidth = buttonWidth / 2; 
 		const rotate = -90;
@@ -521,6 +570,99 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 			{
 				d3.select(this).classed("hovered", false);
 			});
+	}
+
+	private toggleUpperTriangle(): void
+	{
+		let allTrue = true;
+		for (let i = 0; i < this.scatterplotSelectionBooleans.length; i++)
+		{
+			if (!this.basisSelectionBooleans[i])
+			{
+				continue;
+			}
+			let row: boolWithIndex[] = this.scatterplotSelectionBooleans[i];
+			for (let j = i + 1; j < row.length; j++)
+			{
+				if (!this.basisSelectionBooleans[j])
+				{
+					continue;
+				}
+				if (!row[j].value)
+				{
+					allTrue = false;
+					break;
+				}
+			}
+			if (!allTrue)
+			{
+				break;
+			}
+		}
+
+		const newValue = !allTrue;
+		for (let i = 0; i < this.scatterplotSelectionBooleans.length; i++)
+		{
+			if (!this.basisSelectionBooleans[i])
+			{
+				continue;
+			}
+			let row: boolWithIndex[] = this.scatterplotSelectionBooleans[i];
+			for (let j = i + 1; j < row.length; j++)
+			{
+				if (this.basisSelectionBooleans[j])
+				{
+					row[j].value = newValue;
+				}
+			}
+		}
+	}
+
+	private toggleLowerTriangle(): void
+	{
+
+		let allTrue = true;
+		for (let i = 0; i < this.scatterplotSelectionBooleans.length; i++)
+		{
+			if (!this.basisSelectionBooleans[i])
+			{
+				continue;
+			}
+			let row: boolWithIndex[] = this.scatterplotSelectionBooleans[i];
+			for (let j = 0; j < i; j++)
+			{
+				if (!this.basisSelectionBooleans[j])
+				{
+					continue;
+				}
+				if (!row[j].value)
+				{
+					allTrue = false;
+					break;
+				}
+			}
+			if (!allTrue)
+			{
+				break;
+			}
+		}
+
+		const newValue = !allTrue;
+		for (let i = 0; i < this.scatterplotSelectionBooleans.length; i++)
+		{
+			if (!this.basisSelectionBooleans[i])
+			{
+				continue;
+			}
+			let row: boolWithIndex[] = this.scatterplotSelectionBooleans[i];
+			for (let j = 0; j < i; j++)
+			{
+				if (this.basisSelectionBooleans[j])
+				{
+					row[j].value = newValue;
+				}
+			}
+		}
 	}
 
 	private getCurrentOptions(): string[]
