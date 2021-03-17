@@ -800,7 +800,7 @@ export class ImageTrackWidget
         let backgroundColor: string;
         if (isStarred)
         {
-            backgroundColor = 'rgb(140,140,140)';
+            backgroundColor = 'rgb(180,180,180)';
         }
         else
         {
