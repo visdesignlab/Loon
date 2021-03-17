@@ -532,11 +532,11 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.drawFrameRange(svgContainer, cellId);
     }
 
-    private switchToHovered(): void
-    {
-        const [locId, frameId] = this.hoveredLocFrame;
-        this.onClickLocationFrame(locId, frameId);
-    }
+    // private switchToHovered(): void
+    // {
+    //     const [locId, frameId] = this.hoveredLocFrame;
+    //     this.onClickLocationFrame(locId, frameId);
+    // }
 
     private drawFrameRange(svgContainer: SvgSelection, cellId: string | null): void
     {

@@ -413,6 +413,8 @@ export class ImageStackWidget {
 		{
 			this.clearCanvas();
 		}
+		this.drawPinnedCellMarkers();
+
 
 		let locId = this.imageLocation.locationId;
 		if (!skipImageTrackDraw) {
@@ -520,16 +522,38 @@ export class ImageStackWidget {
 		this._defaultCanvasState = myImageData;
 	}
 
-	private drawDefaultCanvas(): void {
+	private drawDefaultCanvas(): void
+	{
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
 	}
 
-	private clearCanvas(): void {
+	private drawPinnedCellMarkers(): void
+	{
+
+		for (let track of this.manuallyPinnedTracks)
+		{
+			for (let point of track.pointList)
+			{
+				if (point.get('Location ID') !== this.getCurrentLocationId())
+				{
+					break;
+				}
+				if (point.get('Frame ID') === this.getCurrentFrameId())
+				{
+					this.drawCellCenter(point, 3);
+				}
+			}
+		}
+	}
+
+	private clearCanvas(): void
+	{
 		this.canvasContext.clearRect(0, 0, this.imageStackWidth, this.imageStackHeight);
 		this._defaultCanvasState = this.canvasContext.createImageData(this.imageStackDataRequest.tileWidth, this.imageStackDataRequest.tileHeight);
 	}
 
-	public isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean {
+	public isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean
+	{
 		let neighborIndices: [number, number][] = [];
 		// 4-neighbor
 		neighborIndices.push([rowIdx - 1, colIdx]);
@@ -564,7 +588,8 @@ export class ImageStackWidget {
 		return false;
 	}
 
-	private onCanvasMouseMove(e: MouseEvent): void {
+	private onCanvasMouseMove(e: MouseEvent): void
+	{
 		if (!this.imageStackDataRequest || !this.defaultCanvasState) {
 			return;
 		}
@@ -574,11 +599,13 @@ export class ImageStackWidget {
 				const colIdx = e.offsetX;
 				const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
 				if (label === this.cellHovered) {
+					// this.drawPinnedCellMarkers();
 					return;
 				}
 				this._cellHovered = label;
 				if (label === 0) {
 					this.drawDefaultCanvas();
+					this.drawPinnedCellMarkers();
 					this.tooltip.Hide();
 					const customEvent = new CustomEvent('frameHoverChange', {
 						detail:
@@ -626,11 +653,12 @@ export class ImageStackWidget {
 		{
 			this.manuallyPinnedTracks.unshift(track);
 		}
-		this.updateTracksCanvas();
+		this.updateCanvas();
 	}
 
 	public hideSegmentHover(hideTooltipImmediately: boolean = false): void {
 		this.drawDefaultCanvas();
+		this.drawPinnedCellMarkers();
 		let delayOverride: number;
 		if (hideTooltipImmediately) {
 			delayOverride = 0;
@@ -690,14 +718,8 @@ export class ImageStackWidget {
 		}
 
 		this.canvasContext.putImageData(myImageData, 0, 0);
-		if (cell) {
-			this.canvasContext.beginPath();
-			this.canvasContext.arc(cellX, cellY, 5, 0, 2 * Math.PI);
-			this.canvasContext.strokeStyle = 'black';
-			this.canvasContext.stroke();
-			this.canvasContext.fillStyle = '#FF00FF';
-			this.canvasContext.fill();
-		}
+		this.drawPinnedCellMarkers();
+		this.drawCellCenter(cell, 5);
 
 		let tooltipContent: string = this.getTooltipContent(segmentId, cell, index);
 		let delayOverride: number;
@@ -705,6 +727,21 @@ export class ImageStackWidget {
 			delayOverride = 0;
 		}
 		this.tooltip.Show(tooltipContent, pageX, pageY, delayOverride);
+	}
+
+	private drawCellCenter(cell: PointND, radius: number): void
+	{
+		if (cell)
+		{
+			let cellX = (cell.get('X') + cell.get('xShift')) / this.imageStackDataRequest.scaleFactor;
+			let cellY = (cell.get('Y') + cell.get('yShift')) / this.imageStackDataRequest.scaleFactor;
+			this.canvasContext.beginPath();
+			this.canvasContext.arc(cellX, cellY, radius, 0, 2 * Math.PI);
+			this.canvasContext.strokeStyle = 'black';
+			this.canvasContext.stroke();
+			this.canvasContext.fillStyle = '#FF00FF';
+			this.canvasContext.fill();
+		}
 	}
 
 	public getLabelIndexFromBigImgPixelXY(frameIndex: number, x: number, y: number): [number, number] {
