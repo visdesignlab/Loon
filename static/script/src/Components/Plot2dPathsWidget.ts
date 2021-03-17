@@ -708,6 +708,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		}
 
 		const defaultFacets = this.data.defaultFacets;
+		const defaultFacetsFull = this.fullData.defaultFacets;
 		const defaultAxisTicks = this.fullData.defaultFacetAxisTicks;
 		const wCount = defaultAxisTicks.xAxisTicks.length;
 		const lCount = defaultAxisTicks.yAxisTicks.length;
@@ -803,23 +804,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('stroke', d => this.getColor(d))
 			.attr('d', d => 
 			{
-				let [drugLabel, concLabel] = d;
-				if (!defaultFacets.has(drugLabel))
+				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false);
+				if (pathString)
 				{
-					return ''; // empty when no data
+					return pathString
 				}
-				let row = defaultFacets.get(drugLabel);
-				if (!row.has(concLabel))
-				{
-					return '';
-				}
-				let data: CurveList = row.get(concLabel)
-				let avergeGrowthLine = data.getAverageCurve(this.yKey, false, this.smoothCurves);
-				if (avergeGrowthLine.length === 0)
-				{
-					return '';
-				}
-				return lineAvg(avergeGrowthLine);
+				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, false); // false should be true, but I need to do other bookeeping
 			});
 
 		if (this.data.brushApplied)
@@ -833,23 +823,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				.attr('stroke', d => this.getColor(d))
 				.attr('d', d => 
 				{
-					let [drugLabel, concLabel] = d;
-					if (!defaultFacets.has(drugLabel))
-					{
-						return ''; // empty when no data
-					}
-					let row = defaultFacets.get(drugLabel);
-					if (!row.has(concLabel))
-					{
-						return '';
-					}
-					let data: CurveList = row.get(concLabel)
-					let avergeGrowthLine = data.getAverageCurve(this.yKey, true, this.smoothCurves);
-					if (avergeGrowthLine.length === 0)
-					{
-						return '';
-					}
-					return lineAvg(avergeGrowthLine);
+					return this.getGrowthLine(d, defaultFacets, lineAvg, true);
 				});
 		}
 		else
@@ -955,6 +929,31 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				this.updateConditionFilterSelection();
 			})
 			.text(d => d);
+	}
+
+	private getGrowthLine(
+		label: [string, string],
+		facets: Map<string, Map<string, CurveList>>,
+		lineFunc: d3.Line<[number, number]>,
+		selection: boolean): string
+	{
+		let [drugLabel, concLabel] = label;
+		if (!facets.has(drugLabel))
+		{
+			return ''; // empty when no data
+		}
+		let row = facets.get(drugLabel);
+		if (!row.has(concLabel))
+		{
+			return '';
+		}
+		let data: CurveList = row.get(concLabel)
+		let avergeGrowthLine = data.getAverageCurve(this.yKey, selection, this.smoothCurves);
+		if (avergeGrowthLine.length === 0)
+		{
+			return '';
+		}
+		return lineFunc(avergeGrowthLine);
 	}
 
 	private addApplyButton(container: HtmlSelection): void
