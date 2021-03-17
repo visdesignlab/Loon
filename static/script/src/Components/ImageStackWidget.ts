@@ -35,6 +35,7 @@ export class ImageStackWidget {
 		this._exemplarLocations = new Set();
 		this._exemplarFrames = new Map();
 		this._facetList = [];
+		this._manuallyPinnedTracks = [];
 		this.setNumExemplars();
 	}
 
@@ -214,6 +215,11 @@ export class ImageStackWidget {
 		return this._numExemplars;
 	}
 
+	private _manuallyPinnedTracks : CurveND[];
+	public get manuallyPinnedTracks() : CurveND[] {
+		return this._manuallyPinnedTracks;
+	}	
+
 	public init(): void {
 		const containerSelect = d3.select(this.container);
 		this._innerContainer = containerSelect.append('div')
@@ -274,6 +280,10 @@ export class ImageStackWidget {
 
 		this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) => {
 			this.onCanvasMouseMove(e)
+		});
+
+		this.selectedImageCanvas.node().addEventListener('click', (e: MouseEvent) => {
+			this.onCanvasClick(e)
 		});
 
 		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
@@ -583,6 +593,35 @@ export class ImageStackWidget {
 				else {
 					this.showSegmentHover(rowArray, label, firstIndex, false, e);
 				}
+			});
+	}
+
+	private onCanvasClick(e: MouseEvent): void
+	{
+		if (!this.imageStackDataRequest || !this.defaultCanvasState) {
+			return;
+		}
+		this.imageStackDataRequest.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
+			(rowArray: ImageLabels, firstIndex: number) => {
+				const rowIdx = e.offsetY + firstIndex;
+				const colIdx = e.offsetX;
+				const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
+				let [cell, _index] = this.getCell(label);
+				if (cell)
+				{
+					const track = cell.parent;
+					if (this.manuallyPinnedTracks.includes(track))
+					{
+						const index = this.manuallyPinnedTracks.indexOf(track);
+						this.manuallyPinnedTracks.splice(index, 1);
+					}
+					else
+					{
+						this.manuallyPinnedTracks.unshift(track);
+					}
+				}
+				console.log(this.manuallyPinnedTracks);
+				// todo - actually do something with the pinned tracks
 			});
 	}
 

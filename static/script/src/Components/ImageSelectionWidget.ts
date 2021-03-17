@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
-import {HtmlSelection, SvgSelection, ButtonProps} from '../devlib/DevLibTypes';
-import {BaseWidget} from './BaseWidget';
-import {ImageStackWidget} from './ImageStackWidget';
-import {ImageMetaData} from '../DataModel/ImageMetaData';
+import { HtmlSelection, SvgSelection } from '../devlib/DevLibTypes';
+import { BaseWidget } from './BaseWidget';
+import { ImageStackWidget } from './ImageStackWidget';
+import { ImageMetaData } from '../DataModel/ImageMetaData';
 import { CurveList } from '../DataModel/CurveList';
 import { DatasetSpec, Facet } from '../types';
 import { ImageFrame } from '../DataModel/ImageFrame';
