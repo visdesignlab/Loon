@@ -672,7 +672,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				let filteredDataPoints = facet.data.getAverageCurve(this.yKey, true, this.smoothCurves);
 				if (filteredDataPoints.length !== 0)
 				{
-					// canvasContext.setLineDash([]);
 					const path = new Path2D(lineAvg(filteredDataPoints));
 					canvasContext.stroke(path);
 				}
