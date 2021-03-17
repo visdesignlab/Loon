@@ -764,28 +764,32 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.domain(frameExtent)
 			.range([0, miniSize]);
 		
-		let minMass = Infinity;
-		let maxMass = -Infinity;
-		for (let map of defaultFacets.values())
-		{
-			for (let data of map.values())
-			{
-				let dataPoints = data.getAverageCurve(this.yKey, true, this.smoothCurves);
-				let thisMin = d3.min(data.getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]);
-				if (this.data.brushApplied && dataPoints.length > 0)
-				{
-					thisMin = Math.min(thisMin, d3.min(dataPoints, d => d[1]));
-				}
-				minMass = Math.min(thisMin, minMass);
+		// let minMass = Infinity;
+		// let maxMass = -Infinity;
+		// for (let map of defaultFacets.values())
+		// {
+		// 	for (let data of map.values())
+		// 	{
+		// 		let dataPoints = data.getAverageCurve(this.yKey, true, this.smoothCurves);
+		// 		let thisMin = d3.min(data.getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]);
+		// 		if (this.data.brushApplied && dataPoints.length > 0)
+		// 		{
+		// 			thisMin = Math.min(thisMin, d3.min(dataPoints, d => d[1]));
+		// 		}
+		// 		minMass = Math.min(thisMin, minMass);
 
-				let thisMax = d3.max(data.getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]);
-				if (this.data.brushApplied && dataPoints.length > 0)
-				{
-					thisMax = Math.max(thisMax, d3.max(dataPoints, d => d[1]));
-				}
-				maxMass = Math.max(thisMax, maxMass);
-			}
-		}
+		// 		let thisMax = d3.max(data.getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]);
+		// 		if (this.data.brushApplied && dataPoints.length > 0)
+		// 		{
+		// 			thisMax = Math.max(thisMax, d3.max(dataPoints, d => d[1]));
+		// 		}
+		// 		maxMass = Math.max(thisMax, maxMass);
+		// 	}
+		// }
+		let [minMass, maxMass] = this.getExtentOfGrowthCurves(defaultFacets);
+		let [minMassFull, maxMassFull] = this.getExtentOfGrowthCurves(defaultFacetsFull, true);
+		minMass = Math.min(minMass, minMassFull);
+		maxMass = Math.max(maxMass, maxMassFull);
 
 		const scaleY = d3.scaleLinear()
 			.domain([minMass, maxMass])
@@ -809,7 +813,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				{
 					return pathString
 				}
-				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, false); // false should be true, but I need to do other bookeeping
+				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, true); // false should be true, but I need to do other bookeeping
 			});
 
 		if (this.data.brushApplied)
@@ -954,6 +958,46 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			return '';
 		}
 		return lineFunc(avergeGrowthLine);
+	}
+
+	private getExtentOfGrowthCurves(facets: Map<string, Map<string, CurveList>>, filteredOnly: boolean = false): [number, number]
+	{
+		let minMass = Infinity;
+		let maxMass = -Infinity;
+		for (let map of facets.values())
+		{
+			for (let data of map.values())
+			{
+				let thisMin: number
+				let thisMax: number;
+				if (filteredOnly)
+				{
+					thisMin = Infinity;
+					thisMax = -Infinity;
+				}
+				else
+				{
+					const allDataPoints = data.getAverageCurve(this.yKey, false, this.smoothCurves);
+					thisMin = d3.min(allDataPoints, d => d[1]);
+					thisMax = d3.max(allDataPoints, d => d[1]);
+				}
+
+				let dataPoints = data.getAverageCurve(this.yKey, true, this.smoothCurves);
+				const shouldCheckFiltered = (filteredOnly || this.data.brushApplied) && dataPoints.length > 0;
+				if (shouldCheckFiltered)
+				{
+					thisMin = Math.min(thisMin, d3.min(dataPoints, d => d[1]));
+				}
+				minMass = Math.min(thisMin, minMass);
+
+				if (shouldCheckFiltered)
+				{
+					thisMax = Math.max(thisMax, d3.max(dataPoints, d => d[1]));
+				}
+				maxMass = Math.max(thisMax, maxMass);
+			}
+		}
+		return [minMass, maxMass];
 	}
 
 	private addApplyButton(container: HtmlSelection): void
