@@ -29,6 +29,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._squareAspectRatio = squareAspectRatio;
 		this.addLabel();
 		this._facetList = [];
+		this._colorLookup = new Map<string, string>();
 		this._isClone = isClone;
 	}
 	
@@ -216,6 +217,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._facetList;
 	}
 
+	private _colorLookup : Map<string, string>;
+	public get colorLookup() : Map<string, string> {
+		return this._colorLookup;
+	}	
+
 	private _forceSimulation : d3.Simulation<any, undefined> ;
 	public get forceSimulation() : d3.Simulation<any, undefined>  {
 		return this._forceSimulation;
@@ -314,6 +320,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				return;
 			}
 			 this._facetList = e.detail.flatFacetList;
+			 this.resetColorLookup();
 			 if (this.inAverageMode)
 			 {
 				 this.OnDataChange();
@@ -680,6 +687,18 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this.drawLabels(labelData);
 	}
 
+	private resetColorLookup(): void
+	{
+		this.colorLookup.clear();
+		for (let i = 0; i < this.facetList.length; i++)
+		{
+			let color = i >= 10 ? 'black' : d3.schemeCategory10[i];
+			let keyList = this.facetList[i].name;
+			this.colorLookup.set(keyList.join('___'), color);
+			this.colorLookup.set([...keyList].reverse().join('___'), color);
+		}
+	}
+
 	private updateFacetPaths(): void
 	{
 		const margin = {
@@ -781,6 +800,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.join('path')
 			.classed('miniExemplarCurve', true)
 			.classed('allData', true)
+			.classed('active', !this.data.brushApplied)
+			.attr('stroke', d => this.getColor(d))
 			.attr('d', d => 
 			{
 				let [drugLabel, concLabel] = d;
@@ -809,6 +830,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				.join('path')
 				.classed('miniExemplarCurve', true)
 				.classed('selection', true)
+				.classed('active', true)
+				.attr('stroke', d => this.getColor(d))
 				.attr('d', d => 
 				{
 					let [drugLabel, concLabel] = d;
@@ -956,6 +979,23 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				document.dispatchEvent(new CustomEvent(DataEvents.applyNewFilter));
 			});
 		DevlibTSUtil.hide(document.getElementById('conditionFilterApplyButton'));
+	}
+
+	private getColor(labels: [string, string]): string
+	{
+		let [drugLabel, concLabel] = labels;
+		let keyOptions = [drugLabel, concLabel]
+		keyOptions.push(`${drugLabel}___${concLabel}`)
+		keyOptions.push(`${drugLabel}___${drugLabel}`)
+		keyOptions.push(`${concLabel}___${concLabel}`)
+		for (let key of keyOptions)
+		{
+			if (this.colorLookup.has(key))
+			{
+				return this.colorLookup.get(key);
+			}
+		}
+		return 'grey';
 	}
 
 	private updateConditionFilterSelection(): void

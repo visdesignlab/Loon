@@ -24,15 +24,16 @@
 }
 
 .miniExemplarCurve {
-    stroke: #252525;
-    stroke-width: 2px;
     fill: none;
     stroke-linejoin: bevel;
+    stroke-width: 1px;
+    opacity: 0.6;
 }
 
-.miniExemplarCurve.selection {
-    stroke: firebrick;
-    stroke-opacity: 0.6;
+.miniExemplarCurve.active {
+    stroke-dasharray: none;
+    stroke-width: 2px;
+    opacity: 1;
 }
 
 .y.axisButtonContainer {
