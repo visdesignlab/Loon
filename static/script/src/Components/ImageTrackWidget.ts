@@ -482,9 +482,6 @@ export class ImageTrackWidget
             .attr('height', totalHeight);
 
         let verticalOffset: number = this.verticalPad;
-        // verticalOffset += heightOfManuallyPinned;
-        // const heightOfPinnedPadding = this.verticalPad * (this.manuallyPinnedTracks.length + 1);
-        // verticalOffset += heightOfPinnedPadding;
         this._cellLabelPositions = [];
 
         let drawTrackPromises = [];
@@ -492,7 +489,6 @@ export class ImageTrackWidget
         const pinOffset = this.manuallyPinnedTracks.length;
         for (let i = 0; i < combinedTracks.length; i++)
         {
-            // const idx = i + pinOffset;
             let track = combinedTracks[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
@@ -1550,6 +1546,17 @@ export class ImageTrackWidget
         }
         else if (typeof(rowIndex) !== 'undefined')
         {
+            if (rowIndex <this.manuallyPinnedTracks.length)
+            {
+                let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
+                svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
+                if (!foundMatch)
+                {
+                    this.hoverNodeWithText(svgSelection.nodes(), '');
+                    return
+                }
+            }
+            rowIndex -= this.manuallyPinnedTracks.length;
             this.exemplarCurvesGroup.selectAll('.exemplarCurve')
                 .data(this.trackList)
                 .classed('selected', (d, i) => i == rowIndex)
