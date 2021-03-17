@@ -763,29 +763,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		const scaleX = d3.scaleLinear()
 			.domain(frameExtent)
 			.range([0, miniSize]);
-		
-		// let minMass = Infinity;
-		// let maxMass = -Infinity;
-		// for (let map of defaultFacets.values())
-		// {
-		// 	for (let data of map.values())
-		// 	{
-		// 		let dataPoints = data.getAverageCurve(this.yKey, true, this.smoothCurves);
-		// 		let thisMin = d3.min(data.getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]);
-		// 		if (this.data.brushApplied && dataPoints.length > 0)
-		// 		{
-		// 			thisMin = Math.min(thisMin, d3.min(dataPoints, d => d[1]));
-		// 		}
-		// 		minMass = Math.min(thisMin, minMass);
 
-		// 		let thisMax = d3.max(data.getAverageCurve(this.yKey, false, this.smoothCurves), d => d[1]);
-		// 		if (this.data.brushApplied && dataPoints.length > 0)
-		// 		{
-		// 			thisMax = Math.max(thisMax, d3.max(dataPoints, d => d[1]));
-		// 		}
-		// 		maxMass = Math.max(thisMax, maxMass);
-		// 	}
-		// }
 		let [minMass, maxMass] = this.getExtentOfGrowthCurves(defaultFacets);
 		let [minMassFull, maxMassFull] = this.getExtentOfGrowthCurves(defaultFacetsFull, true);
 		minMass = Math.min(minMass, minMassFull);
