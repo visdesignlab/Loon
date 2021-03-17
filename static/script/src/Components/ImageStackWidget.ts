@@ -210,6 +210,11 @@ export class ImageStackWidget {
 		return this._facetList;
 	}
 
+	private _colorLookup : Map<string, string>;
+	public get colorLookup() : Map<string, string> {
+		return this._colorLookup;
+	}
+
 	private _numExemplars: number;
 	public get numExemplars(): number {
 		return this._numExemplars;
@@ -332,8 +337,8 @@ export class ImageStackWidget {
 			}
 
 			DevlibTSUtil.launchSpinner();
-			// await DevlibTSUtil.makeAsync(() => this._groupByIndexList = e.detail.groupIndex);
 			await DevlibTSUtil.makeAsync(() => this._facetList = e.detail.flatFacetList);
+			this._colorLookup = e.detail.colorLookup;
 			this.updateTracksCanvas();
 			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
 

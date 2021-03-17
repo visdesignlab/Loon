@@ -320,7 +320,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				return;
 			}
 			 this._facetList = e.detail.flatFacetList;
-			 this.resetColorLookup();
+			 this._colorLookup = e.detail.colorLookup;
 			 if (this.inAverageMode)
 			 {
 				 this.OnDataChange();
@@ -684,18 +684,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			labelData.unshift([facet.name.join(' '), lastPoint]);
 		}
 		this.drawLabels(labelData);
-	}
-
-	private resetColorLookup(): void
-	{
-		this.colorLookup.clear();
-		for (let i = 0; i < this.facetList.length; i++)
-		{
-			let color = i >= 10 ? 'black' : d3.schemeCategory10[i];
-			let keyList = this.facetList[i].name;
-			this.colorLookup.set(keyList.join('___'), color);
-			this.colorLookup.set([...keyList].reverse().join('___'), color);
-		}
 	}
 
 	private updateFacetPaths(): void

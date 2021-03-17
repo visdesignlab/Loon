@@ -219,10 +219,13 @@ export class GroupByWidget
 
     private onGroupSelection(): void
     {
+        const facetList = this.getFlatFacetList();
+        const colorLookup = this.getColorLookup(facetList);
         const customEvent: CustomEvent = new CustomEvent('groupByChanged', { detail:
         {
             groupIndex: this.currentSelectionIndexList,
-            flatFacetList: this.getFlatFacetList()
+            flatFacetList: facetList,
+            colorLookup: colorLookup
         }});
         document.dispatchEvent(customEvent);
     }
@@ -254,5 +257,18 @@ export class GroupByWidget
 
         return flatFacetList;
     }
+
+    private getColorLookup(facetList): Map<string, string>
+	{
+        const colorLookup = new Map<string, string>();
+		for (let i = 0; i < facetList.length; i++)
+		{
+			let color = i >= 10 ? 'black' : d3.schemeCategory10[i];
+			let keyList = facetList[i].name;
+			colorLookup.set(keyList.join('___'), color);
+			colorLookup.set([...keyList].reverse().join('___'), color);
+		}
+        return colorLookup;
+	}
 
 }
