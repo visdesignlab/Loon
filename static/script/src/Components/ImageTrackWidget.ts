@@ -34,7 +34,7 @@ export class ImageTrackWidget
             top: 36,
             right: 4,
             bottom: 4,
-            left: 84
+            left: 124
         }
         this._latestScroll = [0,0];
         this._scrollChangeTicking = false;
@@ -1112,7 +1112,7 @@ export class ImageTrackWidget
         // cell labels
         if (!this.parentWidget.inExemplarMode)
         {
-            this.drawCellLabels();
+            // this.drawCellLabels();
             DevlibTSUtil.hide(this.scentedWidgetGroup.node());
             DevlibTSUtil.hide(this.exemplarPinGroup.node());
         }
@@ -1130,6 +1130,8 @@ export class ImageTrackWidget
                 this.drawScentedWidgets(xAnchor);
             }
         }
+        this.drawCellLabels(); // todo make this function conditional to always show pinned with star and only show others depending on if it's in exemplar mode.
+
 
         // frame labels
         let pad = 6;
@@ -1163,23 +1165,73 @@ export class ImageTrackWidget
     private drawCellLabels(): void
     {
         const pad = 10;
+        const starButtonSize = 32;
+        const starExtraOffset = 2;
         const xAnchor = this.cellTimelineMargin.left - pad;
-        let labelsInView = this.cellLabelPositions.filter((labelPos: [string, number]) =>
+        let labelsWithIndex = this.cellLabelPositions.map((x, i) => [i, x]);
+        let labelsInView = labelsWithIndex.filter((labelPos: [number, [string, number]], index: number) =>
         {
-            const pos: number = labelPos[1] - this.latestScroll[1];
+            if (index >= this.manuallyPinnedTracks.length && this.parentWidget.inExemplarMode)
+            {
+                return false;
+            }
+            const pos: number = labelPos[1][1] - this.latestScroll[1];
             return 0 <= pos && pos <= this.innerContainerH;
         });
         this.cellLabelGroup.selectAll('text')
             .data(labelsInView)
             .join('text')
-            .text(d => d[0])
-            .attr('x', xAnchor)
-            .attr('y', d => d[1] - this.latestScroll[1])
+            .text(d => d[1][0])
+            .attr('x', d => 
+            {
+                if (d[0] < this.manuallyPinnedTracks.length)
+                {
+                    return xAnchor - starButtonSize;
+                }
+                return xAnchor
+            })
+            .attr('y', d => d[1][1] - this.latestScroll[1])
             .attr('transform', '')
             .attr('fill', 'black')
             .classed('cellAxisLabel', true)
             .classed('left', true)
             .classed('rotated', false);
+        
+        let manuallyPinnedInView = labelsWithIndex.filter((labelPos: [number, [string, number]], index: number) =>
+        {
+            if (index < this.manuallyPinnedTracks.length)
+            {
+                const pos: number = labelPos[1][1] - this.latestScroll[1];
+                return 0 <= pos && pos <= this.innerContainerH;
+            }
+            return false;
+        });
+
+        this.cellLabelGroup.selectAll('foreignObject')
+            .data(manuallyPinnedInView)
+        .join('foreignObject')
+            .attr('transform', d => 
+            {
+                const xOffset = xAnchor - starButtonSize;
+                const yOffset = d[1][1] - this.latestScroll[1] - (starButtonSize / 2) - starExtraOffset;
+                return `translate(${xOffset}, ${yOffset})`
+            })
+			.attr('width', starButtonSize)
+			.attr('height', starButtonSize)
+            .selectAll('div')
+            .data(d => [d])
+        .join('xhtml:div')
+            .selectAll('button')
+            .data(d => [d])
+        .join('button')
+            .html('<i class="fas fa-star"></i>')
+            .classed('basicIconButton', true)
+            .on('click', d => 
+            {
+        		const track = this.parentWidget.data.curveLookup.get(d[1][0]);
+                this.parentWidget.togglePin(track);
+            });
+
 
         this.cellLabelGroup.selectAll('line').remove();
     }

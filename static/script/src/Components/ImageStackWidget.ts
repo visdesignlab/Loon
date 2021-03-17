@@ -610,19 +610,23 @@ export class ImageStackWidget {
 				if (cell)
 				{
 					const track = cell.parent;
-					if (this.manuallyPinnedTracks.includes(track))
-					{
-						const index = this.manuallyPinnedTracks.indexOf(track);
-						this.manuallyPinnedTracks.splice(index, 1);
-					}
-					else
-					{
-						this.manuallyPinnedTracks.unshift(track);
-					}
+					this.togglePin(track);
 				}
-				console.log(this.manuallyPinnedTracks);
-				this.updateTracksCanvas();
 			});
+	}
+
+	public togglePin(track: CurveND): void
+	{
+		if (this.manuallyPinnedTracks.includes(track))
+		{
+			const index = this.manuallyPinnedTracks.indexOf(track);
+			this.manuallyPinnedTracks.splice(index, 1);
+		}
+		else
+		{
+			this.manuallyPinnedTracks.unshift(track);
+		}
+		this.updateTracksCanvas();
 	}
 
 	public hideSegmentHover(hideTooltipImmediately: boolean = false): void {
