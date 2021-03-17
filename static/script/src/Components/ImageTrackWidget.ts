@@ -502,7 +502,7 @@ export class ImageTrackWidget
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
-            if (this.parentWidget.inExemplarMode)
+            if (this.parentWidget.inExemplarMode && i >= this.manuallyPinnedTracks.length)
             {
                 let groupStartIdx = i - (i % numExemplars);
                 let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
