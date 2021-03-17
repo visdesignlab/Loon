@@ -1232,6 +1232,7 @@ export class ImageTrackWidget
         if (!this.parentWidget.inExemplarMode)
         {
             this.cellLabelGroup.selectAll('line').remove();
+            this.cellLabelGroup.selectAll('text.conditionLabel').remove();
         }
     }
 
