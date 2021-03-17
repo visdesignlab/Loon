@@ -1174,9 +1174,10 @@ export class ImageTrackWidget
             const pos: number = labelPos[1][1] - this.latestScroll[1];
             return 0 <= pos && pos <= this.innerContainerH;
         });
-        this.cellLabelGroup.selectAll('text')
+        this.cellLabelGroup.selectAll('text.trackLabel')
             .data(labelsInView)
             .join('text')
+            .classed('trackLabel', true)
             .text(d => d[1][0])
             .attr('x', d => 
             {
@@ -1228,8 +1229,10 @@ export class ImageTrackWidget
                 this.parentWidget.togglePin(track);
             });
 
-
-        this.cellLabelGroup.selectAll('line').remove();
+        if (!this.parentWidget.inExemplarMode)
+        {
+            this.cellLabelGroup.selectAll('line').remove();
+        }
     }
 
     private drawConditionLabels(): number
@@ -1237,9 +1240,10 @@ export class ImageTrackWidget
         const pad = 16;
         const xAnchor = this.cellTimelineMargin.left - pad;
         const xAnchorLine = xAnchor - 4;
-        this.cellLabelGroup.selectAll('text')
+        this.cellLabelGroup.selectAll('text.conditionLabel')
             .data(this.conditionLabelPositions)
             .join('text')
+            .classed('conditionLabel', true)
             .text(d => d[0])
             .attr('x', xAnchor)
             .attr('y', d => (d[1][0] + d[1][1]) / 2 - this.latestScroll[1])
