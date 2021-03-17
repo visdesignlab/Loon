@@ -574,51 +574,15 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 
 	private toggleUpperTriangle(): void
 	{
-		let allTrue = true;
-		for (let i = 0; i < this.scatterplotSelectionBooleans.length; i++)
-		{
-			if (!this.basisSelectionBooleans[i])
-			{
-				continue;
-			}
-			let row: boolWithIndex[] = this.scatterplotSelectionBooleans[i];
-			for (let j = i + 1; j < row.length; j++)
-			{
-				if (!this.basisSelectionBooleans[j])
-				{
-					continue;
-				}
-				if (!row[j].value)
-				{
-					allTrue = false;
-					break;
-				}
-			}
-			if (!allTrue)
-			{
-				break;
-			}
-		}
-
-		const newValue = !allTrue;
-		for (let i = 0; i < this.scatterplotSelectionBooleans.length; i++)
-		{
-			if (!this.basisSelectionBooleans[i])
-			{
-				continue;
-			}
-			let row: boolWithIndex[] = this.scatterplotSelectionBooleans[i];
-			for (let j = i + 1; j < row.length; j++)
-			{
-				if (this.basisSelectionBooleans[j])
-				{
-					row[j].value = newValue;
-				}
-			}
-		}
+		this.toggleTriangle(true);
 	}
 
 	private toggleLowerTriangle(): void
+	{
+		this.toggleTriangle(false);
+	}
+
+	private toggleTriangle(upper: boolean): void
 	{
 
 		let allTrue = true;
@@ -629,7 +593,19 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 				continue;
 			}
 			let row: boolWithIndex[] = this.scatterplotSelectionBooleans[i];
-			for (let j = 0; j < i; j++)
+			let low: number;
+			let high: number;
+			if (upper)
+			{
+				low = i + 1;
+				high = row.length;
+			}
+			else
+			{
+				low = 0;
+				high = i;
+			}
+			for (let j = low; j < high; j++)
 			{
 				if (!this.basisSelectionBooleans[j])
 				{
@@ -655,7 +631,19 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 				continue;
 			}
 			let row: boolWithIndex[] = this.scatterplotSelectionBooleans[i];
-			for (let j = 0; j < i; j++)
+			let low: number;
+			let high: number;
+			if (upper)
+			{
+				low = i + 1;
+				high = row.length;
+			}
+			else
+			{
+				low = 0;
+				high = i;
+			}
+			for (let j = low; j < high; j++)
 			{
 				if (this.basisSelectionBooleans[j])
 				{
