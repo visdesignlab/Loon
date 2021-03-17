@@ -599,7 +599,6 @@ export class ImageStackWidget {
 				const colIdx = e.offsetX;
 				const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
 				if (label === this.cellHovered) {
-					// this.drawPinnedCellMarkers();
 					return;
 				}
 				this._cellHovered = label;
