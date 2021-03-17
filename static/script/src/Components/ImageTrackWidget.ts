@@ -489,16 +489,17 @@ export class ImageTrackWidget
         const pinOffset = this.manuallyPinnedTracks.length;
         for (let i = 0; i < combinedTracks.length; i++)
         {
+            const isStarred = i < this.manuallyPinnedTracks.length
             let track = combinedTracks[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
             verticalOffsetList.push(verticalOffset);
             const categoryIndex = Math.floor((i - pinOffset) / numExemplars);
-            let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex);
+            let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex, isStarred);
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
-            if (this.parentWidget.inExemplarMode && i >= this.manuallyPinnedTracks.length)
+            if (this.parentWidget.inExemplarMode && !isStarred)
             {
                 let groupStartIdx = i - (i % numExemplars);
                 let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
@@ -607,10 +608,11 @@ export class ImageTrackWidget
         maxWidth: number, maxHeight: number,
         minFrame: number,
         verticalOffset: number,
-        categoryIndex: number): Promise<void>
+        categoryIndex: number,
+        isStarred: boolean): Promise<void>
     {
         // draw track background
-        this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset, categoryIndex);
+        this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset, categoryIndex, isStarred);
 
         let asyncFunctionList = [];
         let blobRequests = [];
@@ -761,7 +763,8 @@ export class ImageTrackWidget
         maxWidth: number, maxHeight: number,
         minFrame: number,
         verticalOffset: number,
-        categoryIndex: number): void
+        categoryIndex: number,
+        isStarred: boolean): void
     {
         // draw track background
         let offsetIndex: number;
@@ -794,8 +797,17 @@ export class ImageTrackWidget
             minDestY - marginY,
             maxDestX - minDestX + 1 + 2 * marginX,
             maxHeight + 2 * marginY);
-        this.canvasContext.strokeStyle = 'rgb(240,240,240)';
-        this.canvasContext.fillStyle = 'rgb(240,240,240)';
+        let backgroundColor: string;
+        if (isStarred)
+        {
+            backgroundColor = 'rgb(140,140,140)';
+        }
+        else
+        {
+            backgroundColor = 'rgb(240,240,240)';
+        }
+        this.canvasContext.strokeStyle = backgroundColor;
+        this.canvasContext.fillStyle = backgroundColor;
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();
