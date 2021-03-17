@@ -27,12 +27,18 @@
     fill: none;
     stroke-linejoin: bevel;
     stroke-width: 1px;
-    opacity: 0.6;
+    opacity: 1.0;
+}
+
+.inFilter .miniExemplarCurve {
+    opacity: 0.6
 }
 
 .miniExemplarCurve.active {
-    stroke-dasharray: none;
     stroke-width: 2px;
+}
+
+.inFilter .miniExemplarCurve.active {
     opacity: 1;
 }
 
