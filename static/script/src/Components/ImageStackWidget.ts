@@ -446,7 +446,7 @@ export class ImageStackWidget {
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
 		}
-		this.imageTrackWidget.draw(curveList);
+		this.imageTrackWidget.draw(curveList, this.manuallyPinnedTracks);
 	}
 
 	private getExemplarCurves(): CurveND[] {
@@ -621,7 +621,7 @@ export class ImageStackWidget {
 					}
 				}
 				console.log(this.manuallyPinnedTracks);
-				// todo - actually do something with the pinned tracks
+				this.updateTracksCanvas();
 			});
 	}
 

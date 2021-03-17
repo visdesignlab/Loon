@@ -136,6 +136,11 @@ export class ImageTrackWidget
     public get trackList() : CurveND[] {
         return this._trackList;
     }
+        
+    private _manuallyPinnedTracks : CurveND[];
+    public get manuallyPinnedTracks() : CurveND[] {
+        return this._manuallyPinnedTracks;
+    }
     
     private _verticalPad : number;
     public get verticalPad() : number {
@@ -376,7 +381,7 @@ export class ImageTrackWidget
 		});
     }
 
-    public async draw(tracks: CurveND[]): Promise<void>
+    public async draw(tracks: CurveND[], manuallyPinnedTracks: CurveND[]): Promise<void>
     {
         this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         if (!this.parentWidget.imageStackDataRequest)
@@ -389,6 +394,7 @@ export class ImageTrackWidget
         }
         DevlibTSUtil.launchSpinner();
         this._trackList = tracks;
+        this._manuallyPinnedTracks = manuallyPinnedTracks;
         this.updateTitle();
         await this.drawTrackList();
         this.drawLabels();
@@ -415,8 +421,9 @@ export class ImageTrackWidget
 
     private async drawTrackList(): Promise<void>
     {
+        const combinedTracks = [...this.manuallyPinnedTracks, ...this.trackList];
         this._sourceDestCell = [];
-        let listOfBoundingBoxLists = await this.getBoundingBoxLists(this.trackList);
+        let listOfBoundingBoxLists = await this.getBoundingBoxLists(combinedTracks);
         let maxHeightList: number[] = [];
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
             (rectList: Rect[]) =>
@@ -430,13 +437,13 @@ export class ImageTrackWidget
             maxHeightList.push(thisHeight); 
         }
 
-        let minFrameId = d3.min(this.trackList, 
+        let minFrameId = d3.min(combinedTracks, 
             (track: CurveND) =>
             {
                 return d3.min(track.pointList, point => point.get('Frame ID'));
             });
 
-        let maxFrameId = d3.max(this.trackList, 
+        let maxFrameId = d3.max(combinedTracks, 
             (track: CurveND) =>
             {
                 return d3.max(track.pointList, point => point.get('Frame ID'));
@@ -455,13 +462,15 @@ export class ImageTrackWidget
         const numExemplars = this.parentWidget.numExemplars;
 
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
-        let totalHeight = this.verticalPad * (this.trackList.length + 1);
+        let totalHeight = this.verticalPad * (combinedTracks.length + 1);
         const betweenGroupPad = 16;
+        const heightOfManuallyPinned = d3.sum(maxHeightList.slice(0, this.manuallyPinnedTracks.length));
         if (this.parentWidget.inExemplarMode)
         {
             const numGroups = (this.trackList.length / numExemplars);
             totalHeight += maxGroupContentHeight * numGroups;
             totalHeight += betweenGroupPad * numGroups;
+            totalHeight += heightOfManuallyPinned;
         }
         else
         {
@@ -473,17 +482,22 @@ export class ImageTrackWidget
             .attr('height', totalHeight);
 
         let verticalOffset: number = this.verticalPad;
+        // verticalOffset += heightOfManuallyPinned;
+        // const heightOfPinnedPadding = this.verticalPad * (this.manuallyPinnedTracks.length + 1);
+        // verticalOffset += heightOfPinnedPadding;
         this._cellLabelPositions = [];
 
         let drawTrackPromises = [];
         let verticalOffsetList = [];
-        for (let i = 0; i < this.trackList.length; i++)
+        const pinOffset = this.manuallyPinnedTracks.length;
+        for (let i = 0; i < combinedTracks.length; i++)
         {
-            let track = this.trackList[i];
+            // const idx = i + pinOffset;
+            let track = combinedTracks[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
             verticalOffsetList.push(verticalOffset);
-            const categoryIndex = Math.floor(i / numExemplars)
+            const categoryIndex = Math.floor((i - pinOffset) / numExemplars);
             let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex);
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
@@ -510,10 +524,11 @@ export class ImageTrackWidget
             const conditionNames = this.getConditionNames();
             for (let i = 0; i < this.trackList.length; i += numExemplars)
             {
+                const idx = i + pinOffset;
                 const groupIndex = i / numExemplars;
                 let name = conditionNames[groupIndex];
-                const top = verticalOffsetList[i];
-                const indexBot = i + numExemplars - 1;
+                const top = verticalOffsetList[idx];
+                const indexBot = idx + numExemplars - 1;
                 const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot];
                 this.conditionLabelPositions.push([name, [top, bot]]);
             }
