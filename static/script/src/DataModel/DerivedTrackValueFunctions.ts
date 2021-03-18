@@ -4,10 +4,12 @@ export class DerivedTrackValueFunctions
 {
     public static GetFunctionList(): [string[], TrackDerivationFunction][]
     {
-        let functionList = [];
+        let functionList: [string[], TrackDerivationFunction][] = [];
         functionList.push([['Track Length'], this.trackLength]);
-        functionList.push([['Avg Mass'], this.averageMass]);
-        functionList.push([['Avg shape factor'], this.averageShapeFactor]);
+        for (let toAverage of ['Mass (pg)', 'shape factor', 'Mass_norm', 'Mean Intensity', 'Area'])
+        {
+            functionList.push([['Avg. ' + toAverage], (pointList: StringToNumberObj[]) => this.averageAttribute(pointList, toAverage)]);
+        }
         functionList.push([['Growth Rate', 'Intercept', 'Initial Mass', 'Exponential Growth Constant', 'r_squared'], this.growthRateStats]);
         return functionList;
     }
@@ -19,25 +21,40 @@ export class DerivedTrackValueFunctions
         return [lastTime - firstTime];
     }
 
-    private static averageMass(pointList: StringToNumberObj[]): [number]
+    private static averageAttribute(pointList: StringToNumberObj[], attributeKey: string): [number] | null
     {
-        let totalMass = 0;
+        const firstPoint = pointList[0];
+        if (!Object.keys(firstPoint).includes(attributeKey))
+        {
+            return null;
+        }
+        let total = 0;
         for (let point of pointList)
         {
-            totalMass += point['Mass (pg)'];
+            total += point[attributeKey];
         }
-        return [totalMass / pointList.length];
+        return [total / pointList.length];
     }
 
-    private static averageShapeFactor(pointList: StringToNumberObj[]): [number]
-    {
-        let totalShapeFactor = 0;
-        for (let point of pointList)
-        {
-            totalShapeFactor += point['shape factor'];
-        }
-        return [totalShapeFactor / pointList.length];
-    }
+    // private static averageMass(pointList: StringToNumberObj[]): [number]
+    // {
+    //     let totalMass = 0;
+    //     for (let point of pointList)
+    //     {
+    //         totalMass += point['Mass (pg)'];
+    //     }
+    //     return [totalMass / pointList.length];
+    // }
+
+    // private static averageShapeFactor(pointList: StringToNumberObj[]): [number]
+    // {
+    //     let totalShapeFactor = 0;
+    //     for (let point of pointList)
+    //     {
+    //         totalShapeFactor += point['shape factor'];
+    //     }
+    //     return [totalShapeFactor / pointList.length];
+    // }
 
     private static growthRateStats(pointList: StringToNumberObj[]): [number, number, number, number, number]
     {

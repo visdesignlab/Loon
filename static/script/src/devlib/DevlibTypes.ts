@@ -4,7 +4,7 @@ export interface StringToStringObj {
 
 export interface TrackDerivationFunction
 {
-    (pointList: StringToNumberObj[]): number[];
+    (pointList: StringToNumberObj[]): number[] | null;
 }
 
 export interface PointDerivationFunction

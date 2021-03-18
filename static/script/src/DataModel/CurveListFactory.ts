@@ -124,23 +124,9 @@ export class CurveListFactory {
 					}
 					points.push(point);
 				}
-				// const sortFunction = DevlibMath.sortOnProperty<StringToNumberObj>(obj => obj[tKey]);
-				// points.sort(sortFunction);
-
 				values.points = points;
-				CurveListFactory.calculateDerivedTrackValues(values, derivedTrackDataFunctions);
 				CurveListFactory.calculateDerivedPointValues(values, derivedPointDataFunctions);
-				// todo add point derived functions - also should pull this out into a function
-				// for (let [attrNameList, func] of derivedTrackDataFunctions)
-				// {
-				// 	let valueList = func(points);
-				// 	for (let i = 0; i < attrNameList.length; i++)
-				// 	{
-				// 		let attrName = attrNameList[i];
-				// 		let val = valueList[i];
-				// 		values[attrName] = val;
-				// 	}
-				// }
+				CurveListFactory.calculateDerivedTrackValues(values, derivedTrackDataFunctions);
 				return values;
 			})
 			.entries(csvObject);
@@ -178,6 +164,10 @@ export class CurveListFactory {
 		for (let [attrNameList, func] of derivedTrackDataFunctions)
 		{
 			let valueList = func(points);
+			if (valueList === null)
+			{
+				continue;
+			}
 			for (let i = 0; i < attrNameList.length; i++)
 			{
 				let attrName = attrNameList[i];
@@ -193,6 +183,10 @@ export class CurveListFactory {
 		for (let [attrNameList, func] of derivedPointDataFunctions)
 		{
 			let valueListOfLists = func(points);
+			if (valueListOfLists === null)
+			{
+				continue;
+			}
 			for (let i = 0; i < attrNameList.length; i++)
 			{
 				let attrName = attrNameList[i];

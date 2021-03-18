@@ -351,7 +351,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 	{
 		this._basisSelectionBooleans = [];
 		// Todo - it would be nice if this was configurable.
-		const defaultIncluded = new Set(['Mass (pg)', 'Time (h)', 'Mass_norm', 'Track Length', 'Avg Mass', 'Growth Rate', 'Exponential Growth Constant']);
+		const defaultIncluded = new Set(['Mass (pg)', 'Time (h)', 'Mass_norm', 'Track Length', 'Avg. Mass (pg)', 'Growth Rate', 'Exponential Growth Constant']);
 
 		const maxDefaultMatrixSize = 15
 		this._scatterplotSelectionBooleans = [];
