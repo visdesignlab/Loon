@@ -489,19 +489,20 @@ export class ImageTrackWidget
         const pinOffset = this.manuallyPinnedTracks.length;
         for (let i = 0; i < combinedTracks.length; i++)
         {
-            const isStarred = i < this.manuallyPinnedTracks.length
+            const isStarred = i < pinOffset;
+            const sampledIdx = i - pinOffset;
             let track = combinedTracks[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
             verticalOffsetList.push(verticalOffset);
-            const categoryIndex = Math.floor((i - pinOffset) / numExemplars);
+            const categoryIndex = Math.floor(sampledIdx / numExemplars);
             let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex, isStarred);
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
             if (this.parentWidget.inExemplarMode && !isStarred)
             {
-                let groupStartIdx = i - (i % numExemplars);
+                let groupStartIdx = (sampledIdx - (sampledIdx % numExemplars)) + pinOffset; // I have regrets combining these lists.
                 let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
                 if (i % numExemplars < numExemplars)
                 {
@@ -554,7 +555,7 @@ export class ImageTrackWidget
             return 0;
         }
         let maxGroupHeight = 0;
-        for (let i = 0; i < maxHeightList.length; i += this.parentWidget.numExemplars)
+        for (let i = this.manuallyPinnedTracks.length; i < maxHeightList.length; i += this.parentWidget.numExemplars)
         {
             let groupContentHeight = d3.sum(maxHeightList.slice(i, i + this.parentWidget.numExemplars));
             maxGroupHeight = Math.max(maxGroupHeight, groupContentHeight);
