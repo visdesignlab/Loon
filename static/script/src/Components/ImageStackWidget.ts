@@ -361,7 +361,8 @@ export class ImageStackWidget {
 		document.dispatchEvent(new CustomEvent('exemplarAttributeChange', { detail: this.inExemplarMode ? this.exemplarAttribute : null }));
 	}
 
-	public SetImageProperties(skipImageTrackDraw: boolean, blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void {
+	public SetImageProperties(skipImageTrackDraw: boolean, blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void
+	{
 		// default values for when loading, or if image isn't found
 		if (!imageWidth) { imageWidth = 256; }
 		if (!imageHeight) { imageHeight = 256; }
@@ -386,25 +387,30 @@ export class ImageStackWidget {
 		this.updateLocationFrameLabel();
 	}
 
-	private drawSelectedImage(skipImageTrackDraw = false): void {
+	private drawSelectedImage(skipImageTrackDraw = false): void
+	{
 		this.setImageInlineStyle(this.selectedImgIndex);
 		this.updateCanvas(skipImageTrackDraw);
 	}
 
-	private updateLocationFrameLabel(): void {
+	private updateLocationFrameLabel(): void
+	{
 		this.locationLabel.text(this.getCurrentLocationId());
 		this.frameLabel.text(this.getCurrentFrameId());
 	}
 
-	public getCurrentLocationId(): number {
+	public getCurrentLocationId(): number
+	{
 		return this.imageLocation.locationId;
 	}
 
-	public getCurrentFrameId(): number {
+	public getCurrentFrameId(): number
+	{
 		return this.selectedImgIndex + 1;
 	}
 
-	private updateCanvas(skipImageTrackDraw = false): void {
+	private updateCanvas(skipImageTrackDraw = false): void
+	{
 		if (!this.imageStackDataRequest) {
 			return;
 		}
@@ -433,36 +439,42 @@ export class ImageStackWidget {
 		}
 	}
 
-	private updateTracksCanvas(): void {
-		let curveList: CurveND[];
+	private updateTracksCanvas(): void
+	{
+		let autoCurveList: CurveND[];
 		if (this.inExemplarMode) {
-			curveList = this.getExemplarCurves();
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
-			for (let curve of curveList) {
-				const firstPoint = curve.pointList[0];
-				const locId = firstPoint.get('Location ID')
-				this.exemplarLocations.add(locId);
-				if (!this.exemplarFrames.has(locId)) {
-					this.exemplarFrames.set(locId, new Set());
-				}
-				let frameSet = this.exemplarFrames.get(locId);
-				for (let i = 0; i < this.condensedModeCount; i++) {
-					const point: PointND = this.imageTrackWidget.getPointInCondensedMode(curve, i);
-					const frame: number = point.get('Frame ID');
-					frameSet.add(frame);
+			autoCurveList = this.getExemplarCurves();
+			for (let curveList of [autoCurveList, this.manuallyPinnedTracks])
+			{
+				for (let curve of curveList)
+				{
+					const firstPoint = curve.pointList[0];
+					const locId = firstPoint.get('Location ID')
+					this.exemplarLocations.add(locId);
+					if (!this.exemplarFrames.has(locId)) {
+						this.exemplarFrames.set(locId, new Set());
+					}
+					let frameSet = this.exemplarFrames.get(locId);
+					for (let i = 0; i < this.condensedModeCount; i++) {
+						const point: PointND = this.imageTrackWidget.getPointInCondensedMode(curve, i);
+						const frame: number = point.get('Frame ID');
+						frameSet.add(frame);
+					}
 				}
 			}
 		}
 		else {
-			curveList = this.getCurvesBasedOnPointsAtCurrentFrame();
+			autoCurveList = this.getCurvesBasedOnPointsAtCurrentFrame();
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
 		}
-		this.imageTrackWidget.draw(curveList, this.manuallyPinnedTracks);
+		this.imageTrackWidget.draw(autoCurveList, this.manuallyPinnedTracks);
 	}
 
-	private getExemplarCurves(): CurveND[] {
+	private getExemplarCurves(): CurveND[]
+	{
 		let curveList: CurveND[] = [];
 		const trackLengthKey = 'Track Length';
 		for (let facet of this.facetList) {
@@ -664,6 +676,8 @@ export class ImageStackWidget {
 			this.manuallyPinnedTracks.unshift(track);
 		}
 		this.updateCanvas();
+		const manualPinToggleEvent = new CustomEvent('manualPinToggle', {detail: this.manuallyPinnedTracks});
+		document.dispatchEvent(manualPinToggleEvent);
 	}
 
 	public hideSegmentHover(hideTooltipImmediately: boolean = false): void {
@@ -764,34 +778,45 @@ export class ImageStackWidget {
 		return [rowIdx, colIdx];
 	}
 
-	public getTileIndexFromBigImgPixelXY(x: number, y: number): number {
+	public getTileIndexFromBigImgPixelXY(x: number, y: number): number
+	{
 		let colIndex = Math.floor(x / this.imageStackDataRequest?.tileWidth);
 		let rowIndex = Math.floor(y / this.imageStackDataRequest?.tileHeight);
 		return rowIndex * this.imageStackDataRequest?.numberOfColumns + colIndex;
 	}
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string {
-		let labelValuePairs: [string, string | null][] = [
-			['Location', this.getCurrentLocationId().toString()],
-			['Frame', this.getCurrentFrameId().toString()],
-			['Segment', label.toString()]
-		];
+		let labelValuePairs: [string, string | null][] = []
 		let cellId = cell?.parent?.id;
-		if (cellId) {
-			labelValuePairs.push(['Cell', cellId]);
+		if (cellId)
+		{
+			for (let key of ['Mass (pg)', 'X', 'Y', 'Area'])
+			{
+				let value = cell.get(key);
+				if (typeof value !== 'undefined')
+				{
+					labelValuePairs.push([key, value.toPrecision(6)]);
+				}
+			}
+			labelValuePairs.push(['Mean Phase Shift', 'need equation']);
 			labelValuePairs.push(['Row', index.toString()]);
+			labelValuePairs.push(['Segment', label.toString()]);
 		}
-		else {
+		else
+		{
+			labelValuePairs.push(['Segment', label.toString()]);
 			labelValuePairs.push(['No cell linked', null])
 		}
 		return RichTooltip.createLabelValueListContent(labelValuePairs);
 	}
 
-	public getCell(label: number, dataSource: CurveList): [PointND, number] | [null, null] {
+	public getCell(label: number, dataSource: CurveList): [PointND, number] | [null, null]
+	{
 		return dataSource.GetCellFromLabel(this.getCurrentLocationId(), this.getCurrentFrameId(), label);
 	}
 
-	public getCellColor(cell: PointND | null): [number, number, number] {
+	public getCellColor(cell: PointND | null): [number, number, number]
+	{
 		let color: [number, number, number] = [0, 0, 0];
 		if (!cell) {
 			// nuted/darkened from SpringGreen

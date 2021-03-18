@@ -194,6 +194,11 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             this.draw();
         });
 
+        document.addEventListener('manualPinToggle', (e: CustomEvent) => 
+		{
+            this.updateAllExtractedDots();
+		});
+
         this.OnResize();
 	}
 
@@ -587,6 +592,17 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     private removeHoverBar(svgContainer: SvgSelection): void
     {
         svgContainer.selectAll('.hoverBar').remove();
+    }
+
+    private updateAllExtractedDots(): void
+    {
+        if (!this.imageStackWidget.inCondensedMode)
+        {
+            return;
+        }
+        // todo this should be more targeted.
+        this.draw();
+        // this.drawExtractedDots(d3.select(svgElement), locId, this.imageStackWidget.exemplarFrames.get(locId));
     }
 
     private drawExtractedDots(svgContainer: SvgSelection, locationId: number, frameSet: Set<number>): void

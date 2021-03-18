@@ -292,12 +292,12 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private initKDEHIstogramToggle(): void
 	{
-		this._useHistogramButton = this.AddButton('chart-bar', () =>
+		this._useHistogramButton = this.AddButton('chart-bar', 'Change to histograms', () =>
 		{
 			HistogramWidget.useKdeInsteadOfHistogram = false;
 		});
 		
-		this._useKDEButton = this.AddButton('chart-area', () =>
+		this._useKDEButton = this.AddButton('chart-area', 'Change to kernel density plots', () =>
 		{
 			HistogramWidget.useKdeInsteadOfHistogram = true;
 		});
@@ -328,12 +328,12 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private initAbsoluteRelativeToggle(): void
 	{
-		this._useAbsoluteButton = this.AddButton('hashtag', () =>
+		this._useAbsoluteButton = this.AddButton('hashtag', 'Change to absolute comparison of selections.', () =>
 		{
 			HistogramWidget.useAbsoluteScaling = true;
 		});
 		
-		this._useRelativeButton = this.AddButton('percent', () =>
+		this._useRelativeButton = this.AddButton('percent', 'Change to relative comparison of selections.', () =>
 		{
 			HistogramWidget.useAbsoluteScaling = false;
 		});
@@ -375,7 +375,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
 
 	private initExemplarTrackButton(): void
 	{
-		this.AddButton('rocket', async () =>
+		this.AddButton('rocket', 'Sample new exemplars from this attribute.', async () =>
 		{
 			let event = new CustomEvent('launchExemplarCurve', {detail: this.valueKey});
 			DevlibTSUtil.launchSpinner();
