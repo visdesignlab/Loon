@@ -575,7 +575,8 @@ export class ImageTrackWidget
             let thisList: Rect[] = [];
             if (this.parentWidget.inCondensedMode)
             {
-                for (let i = 0; i < this.parentWidget.condensedModeCount; i++)
+                const end = Math.min(track.length, this.parentWidget.condensedModeCount);
+                for (let i = 0; i < end; i++)
                 {
                     let point: PointND = this.getPointInCondensedMode(track, i);
                     const boundingBox = await this.getCellBoundingBox(point);
@@ -597,7 +598,12 @@ export class ImageTrackWidget
 
     public getPointInCondensedMode(track: CurveND, index: number): PointND
     {
-        let percent = index / (this.parentWidget.condensedModeCount - 1);
+        if (track.pointList.length === 1)
+        {
+            return track.pointList[0];
+        }
+        const maxCount = Math.min(this.parentWidget.condensedModeCount, track.pointList.length);
+        let percent = index / (maxCount - 1);
         let trackIndex = Math.min(Math.round(percent * track.pointList.length), track.pointList.length-1);
         return track.pointList[trackIndex];
     }
