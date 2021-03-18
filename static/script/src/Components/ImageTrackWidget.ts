@@ -341,7 +341,7 @@ export class ImageTrackWidget
                 let frameIndex: number;
                 if (this.parentWidget.inCondensedMode)
                 {
-                    let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+                    let curve: CurveND = this.parentWidget.fullData.curveLookup.get(cellId);
                     let pointIndex = curve.pointList.findIndex(point => point.get('Frame ID') === frameId);
                     let percent = pointIndex / (curve.pointList.length - 1);
                     frameIndex = percent * (this.parentWidget.condensedModeCount - 1);
@@ -828,7 +828,7 @@ export class ImageTrackWidget
         {
             return;
         }
-        let maxTimeRange = this.parentWidget.data.getMinMax('Frame ID');
+        let maxTimeRange = this.parentWidget.fullData.getMinMax('Frame ID');
         let scaleX = d3.scaleLinear()
             .domain(maxTimeRange)
             .range(extentX)
@@ -866,7 +866,7 @@ export class ImageTrackWidget
 
 	private getColor(locationId: number): string
 	{
-        const labelList = this.parentWidget.data.inverseLocationMap.get(locationId);
+        const labelList = this.parentWidget.fullData.inverseLocationMap.get(locationId);
         const delim = '___';
 		let [l1, l2] = labelList.slice(0,2);
 		labelList.push(l1 + delim + l2)
@@ -951,7 +951,7 @@ export class ImageTrackWidget
         let xPos = e.offsetX;
         let yPos = e.offsetY;
         const [cellId, cellIdIndex] = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
-        let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+        let curve: CurveND = this.parentWidget.fullData.curveLookup.get(cellId);
 
         let frameId: number
         const [frameLabel, frameLabelIndex]  = ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
@@ -985,7 +985,7 @@ export class ImageTrackWidget
         let xPos = e.offsetX;
         let yPos = e.offsetY;
         const [cellId, cellIdIndex] = ImageTrackWidget.getClosestLabel(this.cellLabelPositions, yPos);
-        let curve: CurveND = this.parentWidget.data.curveLookup.get(cellId);
+        let curve: CurveND = this.parentWidget.fullData.curveLookup.get(cellId);
 
         let frameId: number
         const [frameLabel, frameLabelIndex]  = ImageTrackWidget.getClosestLabel(this.frameLabelPositions, xPos);
@@ -1121,7 +1121,9 @@ export class ImageTrackWidget
                     {
                         if (this.parentWidget.isBorder(label, rowIdx, colIdx, labelArray))
                         {
-                            let [r, g, b] = this.parentWidget.getCellColor(point);
+                            // should use data, not full data to get the right color.
+                            const [cell, _index] = this.parentWidget.data.GetCellFromLabel(point.get('Location ID'), point.get('Frame ID'), labelToMatch);
+                            let [r, g, b] = this.parentWidget.getCellColor(cell);
                             outlineTileData.data[rIdx] = r;
                             outlineTileData.data[rIdx + 1] = g;
                             outlineTileData.data[rIdx + 2] = b;
@@ -1275,7 +1277,7 @@ export class ImageTrackWidget
             .classed('basicIconButton', true)
             .on('click', d => 
             {
-        		const track = this.parentWidget.data.curveLookup.get(d[1][0]);
+        		const track = this.parentWidget.fullData.curveLookup.get(d[1][0]);
                 this.parentWidget.togglePin(track);
             });
 
@@ -1469,7 +1471,7 @@ export class ImageTrackWidget
         width = Math.max(width, this.exemplarMinWidth); // min-width: 80
         width = Math.min(width, 200); // max-width: 200
 
-        const frameExtent = this.parentWidget.data.getMinMax('Frame ID');
+        const frameExtent = this.parentWidget.fullData.getMinMax('Frame ID');
         const scaleX = d3.scaleLinear()
             .domain(frameExtent)
             .range([0, width]);
@@ -1565,7 +1567,7 @@ export class ImageTrackWidget
 
         // average growth calculation
 
-		let [minFrame, maxFrame] = this.parentWidget.data.getMinMax('Frame ID');
+		let [minFrame, maxFrame] = this.parentWidget.fullData.getMinMax('Frame ID');
         let lineAvg = d3.line<[number, number]>()
             .x(d => scaleX(d[0]))
             .y(d => scaleY(d[1]));

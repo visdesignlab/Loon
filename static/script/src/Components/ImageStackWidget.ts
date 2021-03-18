@@ -155,6 +155,11 @@ export class ImageStackWidget {
 		return this._data;
 	}
 
+	private _fullData: CurveList;
+	public get fullData(): CurveList {
+		return this._fullData;
+	}
+
 	private _imageStackDataRequest: ImageStackDataRequest;
 	public get imageStackDataRequest(): ImageStackDataRequest {
 		return this._imageStackDataRequest;
@@ -345,8 +350,9 @@ export class ImageStackWidget {
 		});
 	}
 
-	public SetData(data: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest, skipImageTrackDraw = false): void {
+	public SetData(data: CurveList, fullData: CurveList, imageLocation: ImageLocation, imageStackDataRequest: ImageStackDataRequest, skipImageTrackDraw = false): void {
 		this._data = data;
+		this._fullData = fullData;
 		this._imageStackDataRequest = imageStackDataRequest;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
@@ -513,7 +519,7 @@ export class ImageStackWidget {
 
 						let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
 						flatIdx *= 4;
-						let [cell, _index] = this.getCell(labelRun.label)
+						let [cell, _index] = this.getCell(labelRun.label, this.data);
 						let [r, g, b] = this.getCellColor(cell);
 						myImageData.data[flatIdx] = r;
 						myImageData.data[flatIdx + 1] = g;
@@ -637,7 +643,7 @@ export class ImageStackWidget {
 				const rowIdx = e.offsetY + firstIndex;
 				const colIdx = e.offsetX;
 				const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
-				let [cell, _index] = this.getCell(label);
+				let [cell, _index] = this.getCell(label, this.fullData);
 				if (cell)
 				{
 					const track = cell.parent;
@@ -672,7 +678,7 @@ export class ImageStackWidget {
 
 	public showSegmentHover(rowArray: ImageLabels, segmentId: number, firstIndex: number, showTooltipImmediately: boolean = false, event?: MouseEvent): void {
 		this._cellHovered = segmentId;
-		let [cell, index] = this.getCell(segmentId);
+		let [cell, index] = this.getCell(segmentId, this.fullData);
 
 		let cellX = 0;
 		let cellY = 0;
@@ -709,7 +715,7 @@ export class ImageStackWidget {
 					for (let colIdx = labelRun.start; colIdx < labelRun.start + labelRun.length; colIdx++) {
 						let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
 						flatIdx *= 4;
-						let [cell, _index] = this.getCell(labelRun.label)
+						let [cell, _index] = this.getCell(labelRun.label, this.data);
 						let [r, g, b] = this.getCellColor(cell);
 						myImageData.data[flatIdx] = r;
 						myImageData.data[flatIdx + 1] = g;
@@ -781,8 +787,8 @@ export class ImageStackWidget {
 		return RichTooltip.createLabelValueListContent(labelValuePairs);
 	}
 
-	private getCell(label: number): [PointND, number] | [null, null] {
-		return this.data.GetCellFromLabel(this.getCurrentLocationId(), this.getCurrentFrameId(), label);
+	public getCell(label: number, dataSource: CurveList): [PointND, number] | [null, null] {
+		return dataSource.GetCellFromLabel(this.getCurrentLocationId(), this.getCurrentFrameId(), label);
 	}
 
 	public getCellColor(cell: PointND | null): [number, number, number] {

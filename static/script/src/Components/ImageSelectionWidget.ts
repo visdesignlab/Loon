@@ -218,7 +218,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         });
 
         let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        this.imageStackWidget.SetData(this.data, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
+        this.imageStackWidget.SetData(this.data, this.fullData, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
     }
 
 	protected OnResize(): void
@@ -531,12 +531,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.drawHoverDots(svgContainer, locationId, frameId);
         this.drawFrameRange(svgContainer, cellId);
     }
-
-    // private switchToHovered(): void
-    // {
-    //     const [locId, frameId] = this.hoveredLocFrame;
-    //     this.onClickLocationFrame(locId, frameId);
-    // }
 
     private drawFrameRange(svgContainer: SvgSelection, cellId: string | null): void
     {
