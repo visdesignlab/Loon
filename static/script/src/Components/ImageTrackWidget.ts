@@ -634,7 +634,6 @@ export class ImageTrackWidget
             }
             const frameId = point.get('Frame ID');
 
-            // const offsetIndex = frameId - minFrame;
             const frameIndex = frameId - 1;
 
             let blobRequest = this.parentWidget.imageStackDataRequest.getImagePromise(point.get('Location ID'), frameIndex);
@@ -643,8 +642,6 @@ export class ImageTrackWidget
         }
 
         let results = await Promise.all(blobRequests);
-            // .then((results: [number, number, Blob, string][]) =>
-            // {
         let sourceDestCell = [];
                 let workerData = [];
                 let webWorker = new Worker('/static/script/dist/ImageWorker.js');
@@ -708,7 +705,16 @@ export class ImageTrackWidget
                     for (let i = 0; i < bitMapList.length; i++)
                     {
                         const imgBitmap = bitMapList[i];
-                        const frameId = trackData.pointList[i].get('Frame ID');
+                        let point: PointND;
+                        if (this.parentWidget.inCondensedMode)
+                        {
+                            point = this.getPointInCondensedMode(trackData, i);
+                        }
+                        else
+                        {
+                            point = trackData.pointList[i];
+                        }
+                        const frameId = point.get('Frame ID');
                         const currentFrame: boolean = frameId === this.parentWidget.getCurrentFrameId();
                         let offsetIndex: number = frameId - minFrame;
                         if (this.parentWidget.inCondensedMode)
