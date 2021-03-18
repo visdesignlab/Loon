@@ -175,3 +175,16 @@
     width: 300px;
     position: relative;
 }
+
+.triangleQuickSelect {
+    margin-top: 6px;
+}
+
+.triangleButton {
+    fill: white;
+    stroke: black;
+}
+
+.triangleButton:hover {
+    fill: lightsteelblue;
+}

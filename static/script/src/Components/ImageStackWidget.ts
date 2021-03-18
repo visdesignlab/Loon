@@ -35,6 +35,7 @@ export class ImageStackWidget {
 		this._exemplarLocations = new Set();
 		this._exemplarFrames = new Map();
 		this._facetList = [];
+		this._manuallyPinnedTracks = [];
 		this.setNumExemplars();
 	}
 
@@ -209,10 +210,20 @@ export class ImageStackWidget {
 		return this._facetList;
 	}
 
+	private _colorLookup : Map<string, string>;
+	public get colorLookup() : Map<string, string> {
+		return this._colorLookup;
+	}
+
 	private _numExemplars: number;
 	public get numExemplars(): number {
 		return this._numExemplars;
 	}
+
+	private _manuallyPinnedTracks : CurveND[];
+	public get manuallyPinnedTracks() : CurveND[] {
+		return this._manuallyPinnedTracks;
+	}	
 
 	public init(): void {
 		const containerSelect = d3.select(this.container);
@@ -276,6 +287,10 @@ export class ImageStackWidget {
 			this.onCanvasMouseMove(e)
 		});
 
+		this.selectedImageCanvas.node().addEventListener('click', (e: MouseEvent) => {
+			this.onCanvasClick(e)
+		});
+
 		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
 
 		this.selectedImageContainer
@@ -322,8 +337,8 @@ export class ImageStackWidget {
 			}
 
 			DevlibTSUtil.launchSpinner();
-			// await DevlibTSUtil.makeAsync(() => this._groupByIndexList = e.detail.groupIndex);
 			await DevlibTSUtil.makeAsync(() => this._facetList = e.detail.flatFacetList);
+			this._colorLookup = e.detail.colorLookup;
 			this.updateTracksCanvas();
 			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
 
@@ -403,6 +418,8 @@ export class ImageStackWidget {
 		{
 			this.clearCanvas();
 		}
+		this.drawPinnedCellMarkers();
+
 
 		let locId = this.imageLocation.locationId;
 		if (!skipImageTrackDraw) {
@@ -436,7 +453,7 @@ export class ImageStackWidget {
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
 		}
-		this.imageTrackWidget.draw(curveList);
+		this.imageTrackWidget.draw(curveList, this.manuallyPinnedTracks);
 	}
 
 	private getExemplarCurves(): CurveND[] {
@@ -510,16 +527,38 @@ export class ImageStackWidget {
 		this._defaultCanvasState = myImageData;
 	}
 
-	private drawDefaultCanvas(): void {
+	private drawDefaultCanvas(): void
+	{
 		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
 	}
 
-	private clearCanvas(): void {
+	private drawPinnedCellMarkers(): void
+	{
+
+		for (let track of this.manuallyPinnedTracks)
+		{
+			for (let point of track.pointList)
+			{
+				if (point.get('Location ID') !== this.getCurrentLocationId())
+				{
+					break;
+				}
+				if (point.get('Frame ID') === this.getCurrentFrameId())
+				{
+					this.drawCellCenter(point, 3);
+				}
+			}
+		}
+	}
+
+	private clearCanvas(): void
+	{
 		this.canvasContext.clearRect(0, 0, this.imageStackWidth, this.imageStackHeight);
 		this._defaultCanvasState = this.canvasContext.createImageData(this.imageStackDataRequest.tileWidth, this.imageStackDataRequest.tileHeight);
 	}
 
-	public isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean {
+	public isBorder(label: number, rowIdx: number, colIdx: number, rowArray: ImageLabels): boolean
+	{
 		let neighborIndices: [number, number][] = [];
 		// 4-neighbor
 		neighborIndices.push([rowIdx - 1, colIdx]);
@@ -554,7 +593,8 @@ export class ImageStackWidget {
 		return false;
 	}
 
-	private onCanvasMouseMove(e: MouseEvent): void {
+	private onCanvasMouseMove(e: MouseEvent): void
+	{
 		if (!this.imageStackDataRequest || !this.defaultCanvasState) {
 			return;
 		}
@@ -569,6 +609,7 @@ export class ImageStackWidget {
 				this._cellHovered = label;
 				if (label === 0) {
 					this.drawDefaultCanvas();
+					this.drawPinnedCellMarkers();
 					this.tooltip.Hide();
 					const customEvent = new CustomEvent('frameHoverChange', {
 						detail:
@@ -586,8 +627,42 @@ export class ImageStackWidget {
 			});
 	}
 
+	private onCanvasClick(e: MouseEvent): void
+	{
+		if (!this.imageStackDataRequest || !this.defaultCanvasState) {
+			return;
+		}
+		this.imageStackDataRequest.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
+			(rowArray: ImageLabels, firstIndex: number) => {
+				const rowIdx = e.offsetY + firstIndex;
+				const colIdx = e.offsetX;
+				const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
+				let [cell, _index] = this.getCell(label);
+				if (cell)
+				{
+					const track = cell.parent;
+					this.togglePin(track);
+				}
+			});
+	}
+
+	public togglePin(track: CurveND): void
+	{
+		if (this.manuallyPinnedTracks.includes(track))
+		{
+			const index = this.manuallyPinnedTracks.indexOf(track);
+			this.manuallyPinnedTracks.splice(index, 1);
+		}
+		else
+		{
+			this.manuallyPinnedTracks.unshift(track);
+		}
+		this.updateCanvas();
+	}
+
 	public hideSegmentHover(hideTooltipImmediately: boolean = false): void {
 		this.drawDefaultCanvas();
+		this.drawPinnedCellMarkers();
 		let delayOverride: number;
 		if (hideTooltipImmediately) {
 			delayOverride = 0;
@@ -647,14 +722,8 @@ export class ImageStackWidget {
 		}
 
 		this.canvasContext.putImageData(myImageData, 0, 0);
-		if (cell) {
-			this.canvasContext.beginPath();
-			this.canvasContext.arc(cellX, cellY, 5, 0, 2 * Math.PI);
-			this.canvasContext.strokeStyle = 'black';
-			this.canvasContext.stroke();
-			this.canvasContext.fillStyle = '#FF00FF';
-			this.canvasContext.fill();
-		}
+		this.drawPinnedCellMarkers();
+		this.drawCellCenter(cell, 5);
 
 		let tooltipContent: string = this.getTooltipContent(segmentId, cell, index);
 		let delayOverride: number;
@@ -662,6 +731,21 @@ export class ImageStackWidget {
 			delayOverride = 0;
 		}
 		this.tooltip.Show(tooltipContent, pageX, pageY, delayOverride);
+	}
+
+	private drawCellCenter(cell: PointND, radius: number): void
+	{
+		if (cell)
+		{
+			let cellX = (cell.get('X') + cell.get('xShift')) / this.imageStackDataRequest.scaleFactor;
+			let cellY = (cell.get('Y') + cell.get('yShift')) / this.imageStackDataRequest.scaleFactor;
+			this.canvasContext.beginPath();
+			this.canvasContext.arc(cellX, cellY, radius, 0, 2 * Math.PI);
+			this.canvasContext.strokeStyle = 'black';
+			this.canvasContext.stroke();
+			this.canvasContext.fillStyle = '#FF00FF';
+			this.canvasContext.fill();
+		}
 	}
 
 	public getLabelIndexFromBigImgPixelXY(frameIndex: number, x: number, y: number): [number, number] {

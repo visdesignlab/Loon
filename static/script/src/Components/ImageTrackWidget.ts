@@ -34,7 +34,7 @@ export class ImageTrackWidget
             top: 36,
             right: 4,
             bottom: 4,
-            left: 84
+            left: 124
         }
         this._latestScroll = [0,0];
         this._scrollChangeTicking = false;
@@ -135,6 +135,11 @@ export class ImageTrackWidget
     private _trackList : CurveND[];
     public get trackList() : CurveND[] {
         return this._trackList;
+    }
+        
+    private _manuallyPinnedTracks : CurveND[];
+    public get manuallyPinnedTracks() : CurveND[] {
+        return this._manuallyPinnedTracks;
     }
     
     private _verticalPad : number;
@@ -376,7 +381,7 @@ export class ImageTrackWidget
 		});
     }
 
-    public async draw(tracks: CurveND[]): Promise<void>
+    public async draw(tracks: CurveND[], manuallyPinnedTracks: CurveND[]): Promise<void>
     {
         this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         if (!this.parentWidget.imageStackDataRequest)
@@ -389,6 +394,7 @@ export class ImageTrackWidget
         }
         DevlibTSUtil.launchSpinner();
         this._trackList = tracks;
+        this._manuallyPinnedTracks = manuallyPinnedTracks;
         this.updateTitle();
         await this.drawTrackList();
         this.drawLabels();
@@ -415,8 +421,9 @@ export class ImageTrackWidget
 
     private async drawTrackList(): Promise<void>
     {
+        const combinedTracks = [...this.manuallyPinnedTracks, ...this.trackList];
         this._sourceDestCell = [];
-        let listOfBoundingBoxLists = await this.getBoundingBoxLists(this.trackList);
+        let listOfBoundingBoxLists = await this.getBoundingBoxLists(combinedTracks);
         let maxHeightList: number[] = [];
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
             (rectList: Rect[]) =>
@@ -430,13 +437,13 @@ export class ImageTrackWidget
             maxHeightList.push(thisHeight); 
         }
 
-        let minFrameId = d3.min(this.trackList, 
+        let minFrameId = d3.min(combinedTracks, 
             (track: CurveND) =>
             {
                 return d3.min(track.pointList, point => point.get('Frame ID'));
             });
 
-        let maxFrameId = d3.max(this.trackList, 
+        let maxFrameId = d3.max(combinedTracks, 
             (track: CurveND) =>
             {
                 return d3.max(track.pointList, point => point.get('Frame ID'));
@@ -455,13 +462,15 @@ export class ImageTrackWidget
         const numExemplars = this.parentWidget.numExemplars;
 
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
-        let totalHeight = this.verticalPad * (this.trackList.length + 1);
+        let totalHeight = this.verticalPad * (combinedTracks.length + 1);
         const betweenGroupPad = 16;
+        const heightOfManuallyPinned = d3.sum(maxHeightList.slice(0, this.manuallyPinnedTracks.length));
         if (this.parentWidget.inExemplarMode)
         {
             const numGroups = (this.trackList.length / numExemplars);
             totalHeight += maxGroupContentHeight * numGroups;
             totalHeight += betweenGroupPad * numGroups;
+            totalHeight += heightOfManuallyPinned;
         }
         else
         {
@@ -477,18 +486,20 @@ export class ImageTrackWidget
 
         let drawTrackPromises = [];
         let verticalOffsetList = [];
-        for (let i = 0; i < this.trackList.length; i++)
+        const pinOffset = this.manuallyPinnedTracks.length;
+        for (let i = 0; i < combinedTracks.length; i++)
         {
-            let track = this.trackList[i];
+            const isStarred = i < this.manuallyPinnedTracks.length
+            let track = combinedTracks[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
             verticalOffsetList.push(verticalOffset);
-            const categoryIndex = Math.floor(i / numExemplars)
-            let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex);
+            const categoryIndex = Math.floor((i - pinOffset) / numExemplars);
+            let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex, isStarred);
             drawTrackPromises.push(done);
             this.cellLabelPositions.push([track.id, verticalOffset + trackHeight / 2]);
             verticalOffset += trackHeight + this.verticalPad;
-            if (this.parentWidget.inExemplarMode)
+            if (this.parentWidget.inExemplarMode && !isStarred)
             {
                 let groupStartIdx = i - (i % numExemplars);
                 let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
@@ -510,10 +521,11 @@ export class ImageTrackWidget
             const conditionNames = this.getConditionNames();
             for (let i = 0; i < this.trackList.length; i += numExemplars)
             {
+                const idx = i + pinOffset;
                 const groupIndex = i / numExemplars;
                 let name = conditionNames[groupIndex];
-                const top = verticalOffsetList[i];
-                const indexBot = i + numExemplars - 1;
+                const top = verticalOffsetList[idx];
+                const indexBot = idx + numExemplars - 1;
                 const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot];
                 this.conditionLabelPositions.push([name, [top, bot]]);
             }
@@ -596,10 +608,11 @@ export class ImageTrackWidget
         maxWidth: number, maxHeight: number,
         minFrame: number,
         verticalOffset: number,
-        categoryIndex: number): Promise<void>
+        categoryIndex: number,
+        isStarred: boolean): Promise<void>
     {
         // draw track background
-        this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset, categoryIndex);
+        this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset, categoryIndex, isStarred);
 
         let asyncFunctionList = [];
         let blobRequests = [];
@@ -750,7 +763,8 @@ export class ImageTrackWidget
         maxWidth: number, maxHeight: number,
         minFrame: number,
         verticalOffset: number,
-        categoryIndex: number): void
+        categoryIndex: number,
+        isStarred: boolean): void
     {
         // draw track background
         let offsetIndex: number;
@@ -783,8 +797,17 @@ export class ImageTrackWidget
             minDestY - marginY,
             maxDestX - minDestX + 1 + 2 * marginX,
             maxHeight + 2 * marginY);
-        this.canvasContext.strokeStyle = 'rgb(240,240,240)';
-        this.canvasContext.fillStyle = 'rgb(240,240,240)';
+        let backgroundColor: string;
+        if (isStarred)
+        {
+            backgroundColor = 'rgb(180,180,180)';
+        }
+        else
+        {
+            backgroundColor = 'rgb(240,240,240)';
+        }
+        this.canvasContext.strokeStyle = backgroundColor;
+        this.canvasContext.fillStyle = backgroundColor;
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();
@@ -832,12 +855,32 @@ export class ImageTrackWidget
             timeRangePx[1] - timeRangePx[0] + 1,
             height);
 
-        this.canvasContext.strokeStyle = categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
-        this.canvasContext.fillStyle = categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
+        const locationId = trackData.pointList[0].get('Location ID');
+        const color = this.getColor(locationId);
+        this.canvasContext.strokeStyle = color; //categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
+        this.canvasContext.fillStyle = color; //categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();
     }
+
+	private getColor(locationId: number): string
+	{
+        const labelList = this.parentWidget.data.inverseLocationMap.get(locationId);
+        const delim = '___';
+		let [l1, l2] = labelList.slice(0,2);
+		labelList.push(l1 + delim + l2)
+		labelList.push(l1 + delim + l1)
+		labelList.push(l2 + delim + l2)
+		for (let key of labelList)
+		{
+			if (this.parentWidget.colorLookup.has(key))
+			{
+				return this.parentWidget.colorLookup.get(key);
+			}
+		}
+		return 'grey';
+	}
 
     private static rectWidth(rect: Rect): number
     {
@@ -1097,7 +1140,7 @@ export class ImageTrackWidget
         // cell labels
         if (!this.parentWidget.inExemplarMode)
         {
-            this.drawCellLabels();
+            // this.drawCellLabels();
             DevlibTSUtil.hide(this.scentedWidgetGroup.node());
             DevlibTSUtil.hide(this.exemplarPinGroup.node());
         }
@@ -1115,6 +1158,8 @@ export class ImageTrackWidget
                 this.drawScentedWidgets(xAnchor);
             }
         }
+        this.drawCellLabels(); // todo make this function conditional to always show pinned with star and only show others depending on if it's in exemplar mode.
+
 
         // frame labels
         let pad = 6;
@@ -1148,25 +1193,97 @@ export class ImageTrackWidget
     private drawCellLabels(): void
     {
         const pad = 10;
+        const starButtonSize = 32;
+        const starExtraOffset = 2;
         const xAnchor = this.cellTimelineMargin.left - pad;
-        let labelsInView = this.cellLabelPositions.filter((labelPos: [string, number]) =>
+        let labelsWithIndex: [number, [string, number]][] = this.cellLabelPositions.map((x, i) => [i, x]);
+        let labelsInView = labelsWithIndex.filter((labelPos: [number, [string, number]], index: number) =>
         {
-            const pos: number = labelPos[1] - this.latestScroll[1];
+            if (index >= this.manuallyPinnedTracks.length && this.parentWidget.inExemplarMode)
+            {
+                return false;
+            }
+            const pos: number = labelPos[1][1] - this.latestScroll[1];
             return 0 <= pos && pos <= this.innerContainerH;
         });
-        this.cellLabelGroup.selectAll('text')
+        this.cellLabelGroup.selectAll('text.trackLabel')
             .data(labelsInView)
             .join('text')
-            .text(d => d[0])
-            .attr('x', xAnchor)
-            .attr('y', d => d[1] - this.latestScroll[1])
+            .classed('trackLabel', true)
+            .text(d => d[1][0])
+            .attr('x', d => 
+            {
+                if (d[0] < this.manuallyPinnedTracks.length)
+                {
+                    return xAnchor - starButtonSize;
+                }
+                return xAnchor
+            })
+            .attr('y', d => d[1][1] - this.latestScroll[1])
             .attr('transform', '')
-            .attr('fill', 'black')
+            .attr('fill', d => 
+            {
+                if (d[0] < this.manuallyPinnedTracks.length)
+                {
+                    const track = this.manuallyPinnedTracks[d[0]];
+                    const locId = track.pointList[0].get('Location ID');
+                    return this.getColor(locId);
+                }
+                return 'black';
+            })
             .classed('cellAxisLabel', true)
             .classed('left', true)
             .classed('rotated', false);
+        
+        let manuallyPinnedInView = labelsWithIndex.filter((labelPos: [number, [string, number]], index: number) =>
+        {
+            if (index < this.manuallyPinnedTracks.length)
+            {
+                const pos: number = labelPos[1][1] - this.latestScroll[1];
+                return 0 <= pos && pos <= this.innerContainerH;
+            }
+            return false;
+        });
 
-        this.cellLabelGroup.selectAll('line').remove();
+        this.cellLabelGroup.selectAll('foreignObject')
+            .data(manuallyPinnedInView)
+        .join('foreignObject')
+            .attr('transform', d => 
+            {
+                const xOffset = xAnchor - starButtonSize;
+                const yOffset = d[1][1] - this.latestScroll[1] - (starButtonSize / 2) - starExtraOffset;
+                return `translate(${xOffset}, ${yOffset})`
+            })
+			.attr('width', starButtonSize)
+			.attr('height', starButtonSize)
+            .selectAll('div')
+            .data(d => [d])
+        .join('xhtml:div')
+            .selectAll('button')
+            .data(d => [d])
+        .join('button')
+            .attr('style', d =>
+            {
+                if (d[0] < this.manuallyPinnedTracks.length)
+                {
+                    const track = this.manuallyPinnedTracks[d[0]];
+                    const locId = track.pointList[0].get('Location ID');
+                    return `color: ${this.getColor(locId)};`;
+                }
+            })
+            .html('<i class="fas fa-star"></i>')
+            .classed('basicIconButton', true)
+            .on('click', d => 
+            {
+        		const track = this.parentWidget.data.curveLookup.get(d[1][0]);
+                this.parentWidget.togglePin(track);
+            });
+
+        if (!this.parentWidget.inExemplarMode)
+        {
+            this.cellLabelGroup.selectAll('line').remove();
+            this.cellLabelGroup.selectAll('text.conditionLabel').remove();
+        }
     }
 
     private drawConditionLabels(): number
@@ -1174,9 +1291,10 @@ export class ImageTrackWidget
         const pad = 16;
         const xAnchor = this.cellTimelineMargin.left - pad;
         const xAnchorLine = xAnchor - 4;
-        this.cellLabelGroup.selectAll('text')
+        this.cellLabelGroup.selectAll('text.conditionLabel')
             .data(this.conditionLabelPositions)
             .join('text')
+            .classed('conditionLabel', true)
             .text(d => d[0])
             .attr('x', xAnchor)
             .attr('y', d => (d[1][0] + d[1][1]) / 2 - this.latestScroll[1])
@@ -1483,6 +1601,17 @@ export class ImageTrackWidget
         }
         else if (typeof(rowIndex) !== 'undefined')
         {
+            if (rowIndex <this.manuallyPinnedTracks.length)
+            {
+                let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
+                svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
+                if (!foundMatch)
+                {
+                    this.hoverNodeWithText(svgSelection.nodes(), '');
+                    return
+                }
+            }
+            rowIndex -= this.manuallyPinnedTracks.length;
             this.exemplarCurvesGroup.selectAll('.exemplarCurve')
                 .data(this.trackList)
                 .classed('selected', (d, i) => i == rowIndex)

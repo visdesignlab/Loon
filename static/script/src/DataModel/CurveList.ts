@@ -6,7 +6,6 @@ import { CurveListIterator } from './CurveListIterator';
 import { CurveCollection } from './CurveCollection';
 import { DatasetSpec, Facet, AppData, LocationMapList, dataFilter, valueFilter, FacetOption } from '../types';
 import { CurveListFactory } from './CurveListFactory';
-import { filter } from 'gulp-typescript';
 import d3 = require('d3');
 
 export class CurveList extends PointCollection implements AppData<DatasetSpec>
@@ -30,6 +29,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			}
 		}
 		this._minMaxMap = new Map<string, [number, number]>();
+		this._inverseLocationMap = new Map<number, string[]>();
 		this._averageFilteredCurveCache = new Map<string, [number, number][]>();
 		this._averageCurveCache = new Map<string, [number, number][]>();
 		this._locationFrameSegmentLookup = new Map<number, Map<number, Map<number, [PointND, number]>>>();
@@ -101,6 +101,16 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			this.updateMinMaxMap()
 		}
 		return this._minMaxMap;
+	}
+
+	
+	private _inverseLocationMap : Map<number, string[]>;
+	public get inverseLocationMap() : Map<number, string[]> {
+		if (this._inverseLocationMap.size === 0)
+		{
+			this.generateInverseLocationMap();
+		}
+		return this._inverseLocationMap;
 	}
 
 	private _averageFilteredCurveCache: Map<string, [number, number][]>;
@@ -564,6 +574,29 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 					let [c1, c2] = currentVal;
 					let newVal: [number, number] = [Math.min(c1, pointVal), Math.max(c2, pointVal)];
 					this._minMaxMap.set(key, newVal);
+				}
+			}
+		}
+	}
+
+	private generateInverseLocationMap(): void
+	{	
+		for (let categoryName of Object.keys(this.Specification.locationMaps))
+		{
+			const conditionBreakdown = this.Specification.locationMaps[categoryName];
+			for (let conditionName of Object.keys(conditionBreakdown))
+			{
+				const numberRangeList = conditionBreakdown[conditionName];
+				for (let [low, high] of numberRangeList)
+				{
+					for (let i = low; i <= high; i++)
+					{
+						if (!this._inverseLocationMap.has(i))
+						{
+							this._inverseLocationMap.set(i, []);
+						}
+						this._inverseLocationMap.get(i).push(conditionName);
+					}
 				}
 			}
 		}
