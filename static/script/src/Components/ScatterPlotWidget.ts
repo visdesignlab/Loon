@@ -99,9 +99,9 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 		return this._scaleY;
 	}
 
-	private _axisPadding :  number;
-	public get axisPadding() :  number {
-		return this._axisPadding;
+	private _yAxisPadding :  number;
+	public get yAxisPadding() :  number {
+		return this._yAxisPadding;
 	}
 
 	private _brush : d3.BrushBehavior<any>;
@@ -115,7 +115,7 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 			top: 8,
 			right: 8,
 			bottom: 56,
-			left: 56
+			left: 80
 		}
 	}
 
@@ -150,27 +150,27 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 			this.brushGroupSelect.call(this.brush);
 		}
 			
-		this._axisPadding = 0;
+		this._yAxisPadding = 20;
 			
 		this._xAxisGroupSelect = this.svgSelect.append('g')
-			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight + this.axisPadding})`)
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top + this.vizHeight})`)
 			.classed("labelColor", true);
 			
 		this._yAxisGroupSelect = this.svgSelect.append('g')
-			.attr('transform', `translate(${this.margin.left - this.axisPadding}, ${this.margin.top})`)
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.classed("labelColor", true);
 	}
 
 	private setLabel(): void
 	{
-		const bufferForAxis = 32 + this.axisPadding;
+		const bufferForAxis = 32;
 		this._xLabelTextSelect = this.svgSelect.append('text')
 			.attr('transform', `translate(${this.margin.left + this.vizWidth / 2}, ${this.margin.top + this.vizHeight + bufferForAxis})`)
 			.classed('axisLabel', true)
 			.classed('labelColor', true)
 			.text(this.xKey);
 
-		let transX = this.margin.left - bufferForAxis;
+		let transX = this.margin.left - bufferForAxis - this.yAxisPadding;
 		let transY = this.margin.top + this.vizHeight / 2;
 		let transformText: string;
 		if (this.yKey.length === 1)
