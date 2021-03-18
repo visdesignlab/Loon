@@ -855,12 +855,32 @@ export class ImageTrackWidget
             timeRangePx[1] - timeRangePx[0] + 1,
             height);
 
-        this.canvasContext.strokeStyle = categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
-        this.canvasContext.fillStyle = categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
+        const locationId = trackData.pointList[0].get('Location ID');
+        const color = this.getColor(locationId);
+        this.canvasContext.strokeStyle = color; //categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
+        this.canvasContext.fillStyle = color; //categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();
     }
+
+	private getColor(locationId: number): string
+	{
+        const labelList = this.parentWidget.data.inverseLocationMap.get(locationId);
+        const delim = '___';
+		let [l1, l2] = labelList.slice(0,2);
+		labelList.push(l1 + delim + l2)
+		labelList.push(l1 + delim + l1)
+		labelList.push(l2 + delim + l2)
+		for (let key of labelList)
+		{
+			if (this.parentWidget.colorLookup.has(key))
+			{
+				return this.parentWidget.colorLookup.get(key);
+			}
+		}
+		return 'grey';
+	}
 
     private static rectWidth(rect: Rect): number
     {
