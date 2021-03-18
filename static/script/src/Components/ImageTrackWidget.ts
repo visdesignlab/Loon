@@ -676,7 +676,24 @@ export class ImageTrackWidget
                     let offsetIndex: number;
                     if (this.parentWidget.inCondensedMode)
                     {
-                        offsetIndex = j;
+                        if (results.length === this.parentWidget.condensedModeCount)
+                        {
+                            offsetIndex = j;
+                        }
+                        else
+                        {
+                            let fraction: number;
+                            if (results.length === 1)
+                            {
+                                fraction = 0.5;
+                            }
+                            else
+                            {
+                                fraction = j / (results.length - 1);
+                            }
+                            offsetIndex = fraction * (this.parentWidget.condensedModeCount - 1);
+                            // index here is a float - gotcha!
+                        }
                     }
                     else
                     {
@@ -726,7 +743,25 @@ export class ImageTrackWidget
                         let offsetIndex: number = frameId - minFrame;
                         if (this.parentWidget.inCondensedMode)
                         {
-                            offsetIndex = i;
+                            // offsetIndex = i;
+                            if (bitMapList.length === this.parentWidget.condensedModeCount)
+                            {
+                                offsetIndex = i;
+                            }
+                            else
+                            {
+                                let fraction: number;
+                                if (bitMapList.length === 1)
+                                {
+                                    fraction = 0.5;
+                                }
+                                else
+                                {
+                                    fraction = i / (bitMapList.length - 1);
+                                }
+                                offsetIndex = fraction * (this.parentWidget.condensedModeCount - 1);
+                                // index here is a float - gotcha!
+                            }
                         }
                         else
                         {
