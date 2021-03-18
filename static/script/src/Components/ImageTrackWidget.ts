@@ -1196,7 +1196,7 @@ export class ImageTrackWidget
         const starButtonSize = 32;
         const starExtraOffset = 2;
         const xAnchor = this.cellTimelineMargin.left - pad;
-        let labelsWithIndex = this.cellLabelPositions.map((x, i) => [i, x]);
+        let labelsWithIndex: [number, [string, number]][] = this.cellLabelPositions.map((x, i) => [i, x]);
         let labelsInView = labelsWithIndex.filter((labelPos: [number, [string, number]], index: number) =>
         {
             if (index >= this.manuallyPinnedTracks.length && this.parentWidget.inExemplarMode)
@@ -1221,7 +1221,16 @@ export class ImageTrackWidget
             })
             .attr('y', d => d[1][1] - this.latestScroll[1])
             .attr('transform', '')
-            .attr('fill', 'black')
+            .attr('fill', d => 
+            {
+                if (d[0] < this.manuallyPinnedTracks.length)
+                {
+                    const track = this.manuallyPinnedTracks[d[0]];
+                    const locId = track.pointList[0].get('Location ID');
+                    return this.getColor(locId);
+                }
+                return 'black';
+            })
             .classed('cellAxisLabel', true)
             .classed('left', true)
             .classed('rotated', false);
@@ -1253,6 +1262,15 @@ export class ImageTrackWidget
             .selectAll('button')
             .data(d => [d])
         .join('button')
+            .attr('style', d =>
+            {
+                if (d[0] < this.manuallyPinnedTracks.length)
+                {
+                    const track = this.manuallyPinnedTracks[d[0]];
+                    const locId = track.pointList[0].get('Location ID');
+                    return `color: ${this.getColor(locId)};`;
+                }
+            })
             .html('<i class="fas fa-star"></i>')
             .classed('basicIconButton', true)
             .on('click', d => 
