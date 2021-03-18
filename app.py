@@ -274,6 +274,8 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     colHeaders = getColTracksHeader(folderId, data_allframes)
     if colHeaders is None:
         colHeaderString = 'X,Y,Mass (pg),Time (h),id,Mean Value,Shape Factor,Location ID,Frame ID,xShift,yShift,segmentLabel'
+        areaIndex = -1
+        massIndex = 2
         timeIndex = 3
         idIndex = 4
     else:
@@ -287,6 +289,11 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
             # nd array of srtrings, just get the only string in the nested arrays
             colHeaders = [x[0] for x in colHeaders]
 
+        try:
+            areaIndex = colHeaders.index('Area')
+        except:
+            areaIndex = -1
+        massIndex = colHeaders.index('Mass (pg)')
         timeIndex = colHeaders.index('Time (h)')
         idIndex = colHeaders.index('id')
         colHeaderString = ','.join(colHeaders)
@@ -301,6 +308,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     xShiftIncluded = colHeaders is not None and 'xShift' in colHeaders
     yShiftIncluded = colHeaders is not None and 'yShift' in colHeaders
     segLabelIncluded = colHeaders is not None and 'segmentLabel' in colHeaders
+    meanIntensityIncluded = colHeaders is not None and 'Mean Intensity' in colHeaders
     allIncluded = locIncluded and frameIncluded and xShiftIncluded and yShiftIncluded and segLabelIncluded
 
     if not allIncluded:
@@ -308,6 +316,10 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
         if timeArray is None:
             raise Exception('Cannot find timeArray')
 
+    if not meanIntensityIncluded and areaIndex >= 0:
+        pixelSize = getPixelSize(folderId, data_allframes)
+        if colHeaders is not None:
+            colHeaderString += ',' + 'Mean Intensity'
     if not locIncluded:
         locationArray = getLocationArray(folderId, data_allframes)
         if colHeaders is not None:
@@ -367,6 +379,13 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     for index, row in enumerate(massOverTime):
         dataRow = [x for x in row]
         if not allIncluded:
+            if not meanIntensityIncluded and areaIndex >= 0:
+                miConstant = 5555 + (5/9) # Cite: Eddie's email.
+                mass = dataRow[massIndex]
+                area = dataRow[areaIndex]
+                meanIntensity = mass / (area * (pixelSize**2) * miConstant)
+                dataRow.append(meanIntensity)
+
             time = row[timeIndex]
             if not (locIncluded and frameIncluded and xShiftIncluded and yShiftIncluded):
                 locationId, frameId, xShift, yShift = timeToIndex[time]
@@ -553,6 +572,9 @@ def getMassOverTimeArray(folderId: str, matlabDict = None):
     
 def getTimeIndexArray(folderId: str, matlabDict = None):
     return getMatlabObjectFromKey(folderId, 't_stored',  matlabDict)
+    
+def getPixelSize(folderId: str, matlabDict = None):
+    return getMatlabObjectFromKey(folderId, 'pxlsize',  matlabDict)
     
 def getLocationArray(folderId: str, matlabDict = None):
     return getMatlabObjectFromKey(folderId, 'Loc_stored',  matlabDict)
