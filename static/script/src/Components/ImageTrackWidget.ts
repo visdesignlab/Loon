@@ -1321,6 +1321,7 @@ export class ImageTrackWidget
                     return `color: ${this.getColor(locId)};`;
                 }
             })
+            .attr('title', 'Click to remove this favorite.')
             .html('<i class="fas fa-star"></i>')
             .classed('basicIconButton', true)
             .on('click', d => 

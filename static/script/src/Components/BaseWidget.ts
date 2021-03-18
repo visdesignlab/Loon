@@ -207,15 +207,16 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 
 	private addFacetButton(): void
 	{
-		this._facetButton = this.AddButton('layer-group', () =>
+		this._facetButton = this.AddButton('layer-group', 'Facet chart by conditions', () =>
 		{
 			this.drawFacetContent();
 		});
 	}
 
-	public AddButton(iconKey: string, callback: (ev: MouseEvent) => void): HTMLButtonElement
+	public AddButton(iconKey: string, tooltip: string, callback: (ev: MouseEvent) => void): HTMLButtonElement
 	{
 		let button = DevlibTSUtil.getIconButton(iconKey, callback);
+		button.title = tooltip;
 		button.style.pointerEvents = 'all';
 		this.buttonList.unshift(button);
 		return button;

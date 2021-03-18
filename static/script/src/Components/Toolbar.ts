@@ -84,7 +84,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 					DevlibTSUtil.launchSpinner();
 					await DevlibTSUtil.makeAsync(() => document.dispatchEvent(modeChangeEvent));
 				},
-				tooltips: ['Condensed Mode', 'Expanded Mode', 'Frame Mode']
+				tooltips: ['Switch to Condensed Mode', 'Switch to Expanded Mode', 'Switch to Frame Mode']
 			},
 			{
 				type: 'popupButton',
@@ -108,7 +108,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				type: 'toggleButton',
 				iconKeys: ['bacon', 'chart-line'],
 				callback: (state: boolean) => this.onBaconClick(state),
-				tooltips: ['', ''] // todo - fill this in if tooltips actually get consumed ever.
+				tooltips: ['Click to smooth line charts with median filter.', 'Click to show raw data in line charts.'] // todo - fill this in if tooltips actually get consumed ever.
 			}
 		]
 	}
@@ -139,6 +139,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			if (toolbarElement.type === 'single')
 			{
 				let button = DevlibTSUtil.getIconButton(toolbarElement.iconKey, toolbarElement.callback);
+				button.title = toolbarElement.tooltip;
 				button.classList.add('big');
 				this.wrapperDiv.append(button);
 			}
@@ -148,6 +149,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				this.modalBooleans.push(false);
 
 				let button = DevlibTSUtil.getIconButton(toolbarElement.iconKey, null);
+				button.title = toolbarElement.tooltip;
 				button.classList.add('big');
 				this.wrapperDiv.append(button);
 				button.onclick = () => this.toggleModalButton(thisIndex, toolbarElement)
@@ -155,10 +157,12 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			else if (toolbarElement.type === 'toggleButton')
 			{
 				let buttonTrue = DevlibTSUtil.getIconButton(toolbarElement.iconKeys[0], null);
+				buttonTrue.title = toolbarElement.tooltips[0];
 				buttonTrue.classList.add('big');
 				this.wrapperDiv.append(buttonTrue);
 
 				let buttonFalse = DevlibTSUtil.getIconButton(toolbarElement.iconKeys[1], null);
+				buttonFalse.title = toolbarElement.tooltips[1];
 				buttonFalse.classList.add('big');
 				this.wrapperDiv.append(buttonFalse);
 				DevlibTSUtil.hide(buttonFalse);
@@ -187,6 +191,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 				{
 					let iconKey = toolbarElement.iconKeys[i];
 					let button = DevlibTSUtil.getIconButton(iconKey, null);
+					button.title = toolbarElement.tooltips[i]
 					button.classList.add('big');
 					if (i === toolbarElement.defaultIndex)
 					{
