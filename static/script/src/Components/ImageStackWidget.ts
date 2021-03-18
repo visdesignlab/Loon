@@ -778,34 +778,45 @@ export class ImageStackWidget {
 		return [rowIdx, colIdx];
 	}
 
-	public getTileIndexFromBigImgPixelXY(x: number, y: number): number {
+	public getTileIndexFromBigImgPixelXY(x: number, y: number): number
+	{
 		let colIndex = Math.floor(x / this.imageStackDataRequest?.tileWidth);
 		let rowIndex = Math.floor(y / this.imageStackDataRequest?.tileHeight);
 		return rowIndex * this.imageStackDataRequest?.numberOfColumns + colIndex;
 	}
 
 	private getTooltipContent(label: number, cell: PointND | null, index: number | null): string {
-		let labelValuePairs: [string, string | null][] = [
-			['Location', this.getCurrentLocationId().toString()],
-			['Frame', this.getCurrentFrameId().toString()],
-			['Segment', label.toString()]
-		];
+		let labelValuePairs: [string, string | null][] = []
 		let cellId = cell?.parent?.id;
-		if (cellId) {
-			labelValuePairs.push(['Cell', cellId]);
+		if (cellId)
+		{
+			for (let key of ['Mass (pg)', 'X', 'Y', 'Area'])
+			{
+				let value = cell.get(key);
+				if (typeof value !== 'undefined')
+				{
+					labelValuePairs.push([key, value.toPrecision(6)]);
+				}
+			}
+			labelValuePairs.push(['Mean Phase Shift', 'need equation']);
 			labelValuePairs.push(['Row', index.toString()]);
+			labelValuePairs.push(['Segment', label.toString()]);
 		}
-		else {
+		else
+		{
+			labelValuePairs.push(['Segment', label.toString()]);
 			labelValuePairs.push(['No cell linked', null])
 		}
 		return RichTooltip.createLabelValueListContent(labelValuePairs);
 	}
 
-	public getCell(label: number, dataSource: CurveList): [PointND, number] | [null, null] {
+	public getCell(label: number, dataSource: CurveList): [PointND, number] | [null, null]
+	{
 		return dataSource.GetCellFromLabel(this.getCurrentLocationId(), this.getCurrentFrameId(), label);
 	}
 
-	public getCellColor(cell: PointND | null): [number, number, number] {
+	public getCellColor(cell: PointND | null): [number, number, number]
+	{
 		let color: [number, number, number] = [0, 0, 0];
 		if (!cell) {
 			// nuted/darkened from SpringGreen
