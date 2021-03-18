@@ -790,7 +790,7 @@ export class ImageStackWidget {
 		let cellId = cell?.parent?.id;
 		if (cellId)
 		{
-			for (let key of ['Mass (pg)', 'X', 'Y', 'Area'])
+			for (let key of ['X', 'Y', 'Mass (pg)','Area', 'Mean Intensity'])
 			{
 				let value = cell.get(key);
 				if (typeof value !== 'undefined')
@@ -798,7 +798,6 @@ export class ImageStackWidget {
 					labelValuePairs.push([key, value.toPrecision(6)]);
 				}
 			}
-			labelValuePairs.push(['Mean Phase Shift', 'need equation']);
 			labelValuePairs.push(['Row', index.toString()]);
 			labelValuePairs.push(['Segment', label.toString()]);
 		}

@@ -317,7 +317,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
             raise Exception('Cannot find timeArray')
 
     if not meanIntensityIncluded and areaIndex >= 0:
-        pixelSize = getPixelSize(folderId, data_allframes)
+        pixelSize = getPixelSize(folderId, data_allframes)[0][0]
         if colHeaders is not None:
             colHeaderString += ',' + 'Mean Intensity'
     if not locIncluded:

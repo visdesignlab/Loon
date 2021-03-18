@@ -470,22 +470,41 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 		outer.append('button')
 			.classed('devlibButton', true)
-			.text('Delete Cache')
-			.on('click', () => this.clearIDBCache());
+			.text('Delete Entire Cache')
+			.on('click', () => this.clearIDBCache('all'));
+
+		const buttonGrouper = outer.append('div')
+			.attr('style', 'display: flex; flex-direction: row');
+
+		buttonGrouper.append('button')
+			.classed('devlibButton', true)
+			.text('Delete Cached Tracks')
+			.on('click', () => this.clearIDBCache('tracks'));
+
+		buttonGrouper.append('button')
+			.classed('devlibButton', true)
+			.text('Delete Cached Images')
+			.on('click', () => this.clearIDBCache('images'));
 	}
 
-	private async clearIDBCache(): Promise<void>
+	private async clearIDBCache(database: 'tracks' | 'images' | 'all'): Promise<void>
 	{
 		if (this.dataStore)
 		{
 			const key = this.data.Specification.googleDriveId;
-			this.dataStore.delete('tracks', key);
-			let keys = await this.dataStore.getAllKeys('images');
-			for (let imgKey of keys)
+			if (database === 'tracks' || database === 'all')
 			{
-				if (imgKey.toString().includes(key))
+				this.dataStore.delete('tracks', key);
+			}
+			if (database === 'images' || database === 'all')
+			{
+				let keys = await this.dataStore.getAllKeys('images');
+				for (let imgKey of keys)
 				{
-					this.dataStore.delete('images', imgKey)
+					if (imgKey.toString().includes(key))
+					{
+						this.dataStore.delete('images', imgKey)
+					}
 				}
 			}
 		}
