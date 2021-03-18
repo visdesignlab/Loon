@@ -48,11 +48,6 @@
 													"squareAspectRatio": false
 												},{
 													"xKey": "Frame ID",
-													"yKey": "Location ID",
-													"averaged": true,
-													"squareAspectRatio": false
-												},{
-													"xKey": "Frame ID",
 													"yKey": "shape factor",
 													"averaged": true,
 													"squareAspectRatio": false
@@ -63,15 +58,10 @@
 													"squareAspectRatio": false
 												},{
 													"xKey": "Frame ID",
-													"yKey": "X",
+													"yKey": "Mean Intensity",
 													"averaged": true,
 													"squareAspectRatio": false
 												},{
-													"xKey": "Frame ID",
-													"yKey": "Y",
-													"averaged": true,
-													"squareAspectRatio": false
-												}, {
 													"xKey": "Time_norm",
 													"yKey": "Mass_norm",
 													"averaged": false,
