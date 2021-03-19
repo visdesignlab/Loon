@@ -1008,6 +1008,12 @@ export class ImageTrackWidget
         let frameIndex = +frameLabel - 1;
         if (this.parentWidget.inCondensedMode)
         {
+            if (curve.pointList.length < this.parentWidget.condensedModeCount)
+            {
+                const percent = xPos / Number(this.selectedImageCanvas.attr('width'));
+                frameIndex = Math.floor(percent * curve.pointList.length);
+                frameIndex = Math.min(frameIndex, curve.pointList.length - 1);
+            }
             let point = this.getPointInCondensedMode(curve, frameIndex);
             frameId = point.get('Frame ID');
         }
@@ -1043,6 +1049,12 @@ export class ImageTrackWidget
 
         if (this.parentWidget.inCondensedMode)
         {
+            if (curve.pointList.length < this.parentWidget.condensedModeCount)
+            {
+                const percent = xPos / Number(this.selectedImageCanvas.attr('width'));
+                frameIndex = Math.floor(percent * curve.pointList.length);
+                frameIndex = Math.min(frameIndex, curve.pointList.length - 1);
+            }
             let point = this.getPointInCondensedMode(curve, frameIndex);
             frameId = point.get('Frame ID');
         }
