@@ -343,11 +343,13 @@ export class ImageTrackWidget
                 {
                     let curve: CurveND = this.parentWidget.fullData.curveLookup.get(cellId);
                     let pointIndex = curve.pointList.findIndex(point => point.get('Frame ID') === frameId);
-                    let percent = pointIndex / (curve.pointList.length - 1);
+                    const L = curve.pointList.length - 1;
+                    let percent = pointIndex / L;
                     frameIndex = percent * (this.parentWidget.condensedModeCount - 1);
                     let frameIndexRounded = Math.round(frameIndex);
-                    const epsilon = (1 / (curve.pointList.length + 1)) * (this.parentWidget.condensedModeCount - 1);
-                    if (Math.abs(frameIndex - frameIndexRounded) < epsilon)
+                    let realPercent = frameIndexRounded / (this.parentWidget.condensedModeCount - 1)
+                    const epsilon = 1 / L;
+                    if (Math.abs(percent - realPercent) < epsilon)
                     {
                         frameIndex = frameIndexRounded;
                     }
@@ -605,7 +607,7 @@ export class ImageTrackWidget
         }
         const maxCount = Math.min(this.parentWidget.condensedModeCount, track.pointList.length);
         let percent = index / (maxCount - 1);
-        let trackIndex = Math.min(Math.round(percent * track.pointList.length), track.pointList.length-1);
+        let trackIndex = Math.min(Math.floor(percent * track.pointList.length), track.pointList.length-1);
         return track.pointList[trackIndex];
     }
 
