@@ -36,6 +36,7 @@ export class ImageStackWidget {
 		this._exemplarFrames = new Map();
 		this._facetList = [];
 		this._manuallyPinnedTracks = [];
+		this._mousePos = null;
 		this.setNumExemplars();
 	}
 
@@ -228,7 +229,12 @@ export class ImageStackWidget {
 	private _manuallyPinnedTracks : CurveND[];
 	public get manuallyPinnedTracks() : CurveND[] {
 		return this._manuallyPinnedTracks;
-	}	
+	}
+
+	private _mousePos : {offset: [number, number], page: [number, number]} | null;
+	public get mousePos() : {offset: [number, number], page: [number, number]} | null {
+		return this._mousePos;
+	}
 
 	public init(): void {
 		const containerSelect = d3.select(this.container);
@@ -300,6 +306,7 @@ export class ImageStackWidget {
 
 		this.selectedImageContainer
 			.on('mouseleave', () => {
+				this._mousePos = null;
 				this.hideSegmentHover();
 			});
 
@@ -385,6 +392,7 @@ export class ImageStackWidget {
 		this.updateBackgroundPosition(this.selectedImgIndex);
 		this.updateCanvas(this.inExemplarMode);
 		this.updateLocationFrameLabel();
+		this.updateBasedOnMousePosition(true);
 	}
 
 	private drawSelectedImage(skipImageTrackDraw = false): void
@@ -616,21 +624,24 @@ export class ImageStackWidget {
 		if (!this.imageStackDataRequest || !this.defaultCanvasState) {
 			return;
 		}
-		this.updateBasedOnMousePosition({offset: [e.offsetX, e.offsetY], page: [e.pageX, e.pageY]});
+		this._mousePos = {offset: [e.offsetX, e.offsetY], page: [e.pageX, e.pageY]};
+		this.updateBasedOnMousePosition();
 	}
 
-	private updateBasedOnMousePosition(mousePos: {offset: [number, number], page: [number, number]} | null, ): void
+	private updateBasedOnMousePosition(forceDraw: boolean = false): void
 	{
-		if (mousePos === null)
+		if (this.mousePos === null)
 		{
+			this.hideSegmentHover();
 			return;
 		}
 		this.imageStackDataRequest.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
 		(rowArray: ImageLabels, firstIndex: number) => {
-			const rowIdx = mousePos[1] + firstIndex;
-			const colIdx = mousePos[0];
+			const rowIdx = this.mousePos.offset[1] + firstIndex;
+			const colIdx = this.mousePos.offset[0];
 			const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
-			if (label === this.cellHovered) {
+			if (label === this.cellHovered && !forceDraw)
+			{
 				return;
 			}
 			this._cellHovered = label;
@@ -649,7 +660,7 @@ export class ImageStackWidget {
 				document.dispatchEvent(customEvent);
 			}
 			else {
-				this.showSegmentHover(rowArray, label, firstIndex, false, mousePos.page);
+				this.showSegmentHover(rowArray, label, firstIndex, forceDraw);
 			}
 		});
 	}
@@ -699,7 +710,7 @@ export class ImageStackWidget {
 		this.tooltip.Hide(delayOverride);
 	}
 
-	public showSegmentHover(rowArray: ImageLabels, segmentId: number, firstIndex: number, showTooltipImmediately: boolean = false, pagePos: [number, number] | null): void {
+	public showSegmentHover(rowArray: ImageLabels, segmentId: number, firstIndex: number, showTooltipImmediately: boolean = false): void {
 		this._cellHovered = segmentId;
 		let [cell, index] = this.getCell(segmentId, this.fullData);
 
@@ -724,9 +735,9 @@ export class ImageStackWidget {
 			});
 			document.dispatchEvent(customEvent);
 		}
-		else if (pagePos) {
-			pageX = pagePos[0];
-			pageY = pagePos[1];
+		else if (this.mousePos) {
+			pageX = this.mousePos.page[0];
+			pageY = this.mousePos.page[1];
 		}
 
 		let myImageData = this.canvasContext.createImageData(this.imageStackDataRequest?.tileWidth, this.imageStackDataRequest?.tileHeight);

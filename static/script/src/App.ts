@@ -73,7 +73,6 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		return this._dataFromCSVObject;
 	}
 
-	
 	private _trackDerivationFunctions : KeyedTrackDerivationFunction[];
 	public get trackDerivationFunctions() : KeyedTrackDerivationFunction[] {
 		return this._trackDerivationFunctions;
