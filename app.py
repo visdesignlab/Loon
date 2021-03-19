@@ -381,6 +381,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
         if not allIncluded:
             if not meanIntensityIncluded and areaIndex >= 0:
                 miConstant = 5555 + (5/9) # Cite: Eddie's email.
+                # 1000 * 1/(10000)**3/100/0.0018*1e12
                 mass = dataRow[massIndex]
                 area = dataRow[areaIndex]
                 meanIntensity = mass / (area * (pixelSize**2) * miConstant)
