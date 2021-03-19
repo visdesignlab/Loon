@@ -815,7 +815,7 @@ export class ImageStackWidget {
 				let value = cell.get(key);
 				if (typeof value !== 'undefined')
 				{
-					labelValuePairs.push([key, value.toPrecision(6)]);
+					labelValuePairs.push([key, value.toFixed(1)]);
 				}
 			}
 			labelValuePairs.push(['Row', index.toString()]);
