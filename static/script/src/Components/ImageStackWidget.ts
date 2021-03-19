@@ -616,10 +616,10 @@ export class ImageStackWidget {
 		if (!this.imageStackDataRequest || !this.defaultCanvasState) {
 			return;
 		}
-		this.updateBasedOnMousePosition([e.offsetX, e.offsetY]);
+		this.updateBasedOnMousePosition({offset: [e.offsetX, e.offsetY], page: [e.pageX, e.pageY]});
 	}
 
-	private updateBasedOnMousePosition(mousePos: [number, number] | null): void
+	private updateBasedOnMousePosition(mousePos: {offset: [number, number], page: [number, number]} | null, ): void
 	{
 		if (mousePos === null)
 		{
@@ -649,7 +649,7 @@ export class ImageStackWidget {
 				document.dispatchEvent(customEvent);
 			}
 			else {
-				this.showSegmentHover(rowArray, label, firstIndex, false, e);
+				this.showSegmentHover(rowArray, label, firstIndex, false, mousePos.page);
 			}
 		});
 	}
@@ -699,7 +699,7 @@ export class ImageStackWidget {
 		this.tooltip.Hide(delayOverride);
 	}
 
-	public showSegmentHover(rowArray: ImageLabels, segmentId: number, firstIndex: number, showTooltipImmediately: boolean = false, event?: MouseEvent): void {
+	public showSegmentHover(rowArray: ImageLabels, segmentId: number, firstIndex: number, showTooltipImmediately: boolean = false, pagePos: [number, number] | null): void {
 		this._cellHovered = segmentId;
 		let [cell, index] = this.getCell(segmentId, this.fullData);
 
@@ -724,9 +724,9 @@ export class ImageStackWidget {
 			});
 			document.dispatchEvent(customEvent);
 		}
-		else if (event) {
-			pageX = event.pageX;
-			pageY = event.pageY;
+		else if (pagePos) {
+			pageX = pagePos[0];
+			pageY = pagePos[1];
 		}
 
 		let myImageData = this.canvasContext.createImageData(this.imageStackDataRequest?.tileWidth, this.imageStackDataRequest?.tileHeight);
