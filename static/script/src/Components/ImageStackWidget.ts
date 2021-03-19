@@ -616,33 +616,42 @@ export class ImageStackWidget {
 		if (!this.imageStackDataRequest || !this.defaultCanvasState) {
 			return;
 		}
+		this.updateBasedOnMousePosition([e.offsetX, e.offsetY]);
+	}
+
+	private updateBasedOnMousePosition(mousePos: [number, number] | null): void
+	{
+		if (mousePos === null)
+		{
+			return;
+		}
 		this.imageStackDataRequest.getLabel(this.getCurrentLocationId(), this.selectedImgIndex,
-			(rowArray: ImageLabels, firstIndex: number) => {
-				const rowIdx = e.offsetY + firstIndex;
-				const colIdx = e.offsetX;
-				const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
-				if (label === this.cellHovered) {
-					return;
-				}
-				this._cellHovered = label;
-				if (label === 0) {
-					this.drawDefaultCanvas();
-					this.drawPinnedCellMarkers();
-					this.tooltip.Hide();
-					const customEvent = new CustomEvent('frameHoverChange', {
-						detail:
-						{
-							locationId: this.getCurrentLocationId(),
-							frameId: this.getCurrentFrameId(),
-							cellId: null
-						}
-					});
-					document.dispatchEvent(customEvent);
-				}
-				else {
-					this.showSegmentHover(rowArray, label, firstIndex, false, e);
-				}
-			});
+		(rowArray: ImageLabels, firstIndex: number) => {
+			const rowIdx = mousePos[1] + firstIndex;
+			const colIdx = mousePos[0];
+			const label = ImageStackDataRequest.getLabelValue(rowIdx, colIdx, rowArray);
+			if (label === this.cellHovered) {
+				return;
+			}
+			this._cellHovered = label;
+			if (label === 0) {
+				this.drawDefaultCanvas();
+				this.drawPinnedCellMarkers();
+				this.tooltip.Hide();
+				const customEvent = new CustomEvent('frameHoverChange', {
+					detail:
+					{
+						locationId: this.getCurrentLocationId(),
+						frameId: this.getCurrentFrameId(),
+						cellId: null
+					}
+				});
+				document.dispatchEvent(customEvent);
+			}
+			else {
+				this.showSegmentHover(rowArray, label, firstIndex, false, e);
+			}
+		});
 	}
 
 	private onCanvasClick(e: MouseEvent): void
