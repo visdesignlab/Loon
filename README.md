@@ -1,6 +1,6 @@
 # Loon – a Visualization Tool for Quantitative Phase Microscopy Data
 
-# Download/Install
+## Download/Install
 `git clone https://github.com/visdesignlab/cell-growth.git`
 
 `cd cell-growth`
@@ -25,37 +25,37 @@
 - `static/cache/datasetList/derived/combined.json` - an aggregation of available datasets.
 - `static/cache/datasetList/*.json` - one json metadata file for each available dataset
 
-## Install JS dependencies
+### Install JS dependencies
 
 `npm install`
 
-## Install Python dependencies (e.g. using using virtualenv)
+### Install Python dependencies (e.g. using using virtualenv)
 
-### Create [virtual environment](https://docs.python.org/3/tutorial/venv.html):
+#### Create [virtual environment](https://docs.python.org/3/tutorial/venv.html):
 
 `python3 -m venv .venv`
 
-### Activate virual environment:
+#### Activate virual environment:
 
 Windows: `.venv\Scripts\activate.bat`
 
 Mac: `source .venv/bin/activate`
 
-### Install dependencies:
+#### Install dependencies:
 
 `python3 -m pip install -r requirements.txt`
 
-### Troubleshooting
+#### Troubleshooting
 - See docs: [https://www.typescriptlang.org/docs/handbook/gulp.html](https://www.typescriptlang.org/docs/handbook/gulp.html)
 
-# Build JS 
+## Build JS 
 
 `gulp`
 
-# Run server
+## Run server
 
 `python3 app.py`
 
-# Deploy with gunicorn
+## Deploy with gunicorn
 
 `gunicorn --bind 127.0.0.1:5000 --timeout 120 wsgi:app`
