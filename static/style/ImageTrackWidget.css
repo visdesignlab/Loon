@@ -57,9 +57,18 @@
     r: 3;
 }
 
+.pinHead.manual {
+    fill: goldenrod;
+    r: 5;
+}
+
 .pinHead.selected {
     r: 5;
     opacity: 1;
+}
+
+.pinHead.selected.manual {
+    r: 7;
 }
 
 .exemplarCurve {

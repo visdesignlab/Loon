@@ -1499,6 +1499,7 @@ export class ImageTrackWidget
         let exemplarValue = trackData.data.get(this.parentWidget.exemplarAttribute);
         let yPos = this.histogramScaleYList[categoryIndex](exemplarValue);
         let [xPosPin, xPosHead] = this.histogramScaleX.range();
+        const manual: boolean = trackData.type === 'manual'
         this.exemplarPinGroup.append('line')
             .attr('x1', xPosHead)
             .attr('x2', xPosPin)
@@ -1506,11 +1507,13 @@ export class ImageTrackWidget
             .attr('y2', yPos)
             .classed('pinLine', true);
 
+        const radius = manual ? 5 : 3
         this.exemplarPinGroup.append('circle')
-            .attr('cx', xPosHead)
+            .attr('cx', xPosHead - radius)
             .attr('cy', yPos)
+            .attr('r', radius)
             .classed('pinHead', true)
-            .classed('manual', trackData.type === 'manual');
+            .classed('manual', manual)
     }
 
 
