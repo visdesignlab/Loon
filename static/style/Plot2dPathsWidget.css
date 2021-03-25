@@ -18,9 +18,15 @@
 }
 
 .miniBox {
-    stroke: #afafaf;
-    stroke-width: 1;
+    stroke: black;
+    stroke-width: 0;
+    /* fill is needed for mouse events. But we don't actually want it to show. */
     fill: white;
+    fill-opacity: 0;
+}
+
+.miniBox.hovered {
+    stroke-width: .5;
 }
 
 .miniExemplarArea {

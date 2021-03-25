@@ -8,6 +8,7 @@ import { OptionSelect } from './OptionSelect';
 import { DatasetSpec, Facet } from '../types';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { DataEvents } from '../DataModel/DataEvents';
+import { isThisTypeNode } from 'typescript';
 
 interface quickPickOption {
 	xKey: string,
@@ -740,17 +741,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			
 		this.updateConditionFilterSelection()
 		
-		this.miniCellSelect.selectAll('rect')
-			.data(d => [d])
-			.join('rect')
-			.attr('width', miniSize)
-			.attr('height', miniSize)
-			.classed('miniBox', true);
-		
 		let frameExtent = this.data.getMinMax('Frame ID');
+		const framePad = 1;
 		const scaleX = d3.scaleLinear()
 			.domain(frameExtent)
-			.range([0, miniSize]);
+			.range([framePad, miniSize - framePad]);
 
 		let [minMass, maxMass] = this.getExtentOfGrowthCurves(defaultFacets);
 		let [minMassFull, maxMassFull] = this.getExtentOfGrowthCurves(defaultFacetsFull, true);
@@ -759,7 +754,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 		const scaleY = d3.scaleLinear()
 			.domain([minMass, maxMass])
-			.range([miniSize, 0]);
+			.range([miniSize - framePad, framePad]);
 
         let lineAvg = d3.line<[number, number]>()
             .x(d => scaleX(d[0]))
@@ -816,6 +811,21 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			this.miniCellSelect.selectAll('.miniExemplarCurve.selection').remove();
 		}
 
+		this.miniCellSelect.selectAll('rect')
+			.data(d => [d])
+			.join('rect')
+			.attr('width', miniSize)
+			.attr('height', miniSize)
+			.classed('miniBox', true)
+			.on('mouseenter', function(d)
+			{	
+				d3.select(this).classed('hovered', true);
+			})
+			.on('mouseleave', function(d) 
+			{
+				d3.select(this).classed('hovered', false);
+			});
+
 		this.yAxisFacetSelect
 			.attr('transform', `translate(${margin.left}, ${margin.top})`);
 		
@@ -865,6 +875,18 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				}
 				this.updateConditionFilterSelection();
 			})
+			.on('mouseenter', (label, i) => 
+			{
+				this.miniCellSelect
+					.selectAll('rect')
+					.data(d => [d])
+					.classed('hovered', d =>
+					{
+						let [l1, _l2] = d;
+						return l1 === label;
+					});
+			})
+			.on('mouseleave', () => this.miniCellSelect.selectAll('rect').classed('hovered', false))
 			.text(d => d);
 		
 		const maxLabelHeight = 36;
@@ -913,6 +935,18 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				}
 				this.updateConditionFilterSelection();
 			})
+			.on('mouseenter', (label, i) => 
+			{
+				this.miniCellSelect
+					.selectAll('rect')
+					.data(d => [d])
+					.classed('hovered', d =>
+					{
+						let [_l1, l2] = d;
+						return l2 === label;
+					});
+			})
+			.on('mouseleave', () => this.miniCellSelect.selectAll('rect').classed('hovered', false))
 			.text(d => d);
 	}
 
