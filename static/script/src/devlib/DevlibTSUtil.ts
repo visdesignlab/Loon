@@ -29,6 +29,10 @@ export class DevlibTSUtil {
 		let icon = DevlibTSUtil.getFontAwesomeIcon(iconKey);
 		if (text)
 		{
+			if (!text.endsWith(' '))
+			{
+				text += ' ';
+			}
 			btn.append(text);
 			btn.classList.add('withText');
 		}

@@ -8,7 +8,6 @@ import { OptionSelect } from './OptionSelect';
 import { DatasetSpec, Facet } from '../types';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { DataEvents } from '../DataModel/DataEvents';
-import { isThisTypeNode } from 'typescript';
 
 interface quickPickOption {
 	xKey: string,
@@ -32,6 +31,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._facetList = [];
 		this._colorLookup = new Map<string, string>();
 		this._isClone = isClone;
+		if (this.inAverageMode)
+		{
+			DevlibTSUtil.hide(this.facetButton);
+		}
 	}
 	
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
@@ -238,6 +241,16 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._miniCellSelect;
 	}
 
+	private _selectConditionButton : HTMLButtonElement;
+	public get selectConditionButton() : HTMLButtonElement {
+		return this._selectConditionButton;
+	}
+
+	private _compareConditionButton : HTMLButtonElement;
+	public get compareConditionButton() : HTMLButtonElement {
+		return this._compareConditionButton;
+	}	
+
 	protected setMargin(): void
 	{
 		this._margin = {
@@ -337,6 +350,23 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			}
 		});
 
+		this._selectConditionButton = this.AddButton('layer-group', 'Filter data on experimental conditions', () =>
+		{
+			DevlibTSUtil.hide(this.selectConditionButton);
+			DevlibTSUtil.show(this.compareConditionButton);
+			this.drawFacetContent()
+		},
+		'Select Conditions');
+
+		this._compareConditionButton = this.AddButton('layer-group', 'Show conditions together to compare them', () =>
+		{
+			DevlibTSUtil.show(this.selectConditionButton);
+			DevlibTSUtil.hide(this.compareConditionButton);
+			this.drawFacetContent()
+		},
+		'Compare Conditions');
+
+		DevlibTSUtil.hide(this.compareConditionButton);
 	}
 
 	private initQuickPickOptions(): void
@@ -439,6 +469,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			if (inAverageMode)
 			{
 				this.margin.right = 120;
+				DevlibTSUtil.hide(this.facetButton);
+				if (this.inFacetMode)
+				{
+					DevlibTSUtil.show(this.compareConditionButton);
+				}
+				else
+				{
+					DevlibTSUtil.show(this.selectConditionButton);
+				}
 			}
 			else
 			{
@@ -448,6 +487,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 					this._inFacetMode = false;
 					this.swapSvgVisibility();
 				}
+
+				DevlibTSUtil.show(this.facetButton);
+				DevlibTSUtil.hide(this.selectConditionButton);
+				DevlibTSUtil.hide(this.compareConditionButton);
 			}
 			this.setWidthHeight();
 			this.OnResize();

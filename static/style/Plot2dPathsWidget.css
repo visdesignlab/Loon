@@ -1,5 +1,6 @@
 .quickPickContainer {
 	position: absolute;
+    margin: 4px;
 }
 
 .applyButtonContainer {
