@@ -9,7 +9,7 @@ import { ImageTrackWidget } from './ImageTrackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
-import { Facet } from '../types';
+import { conditionExemplar, Facet } from '../types';
 
 export class ImageStackWidget {
 
@@ -51,6 +51,7 @@ export class ImageStackWidget {
 		{
 			this._numExemplars = currentStrat;
 		}
+		this._numExemplars += this.imageTrackWidget.manualSampleValues.length;
 	}
 
 	private _container: HTMLElement;
@@ -449,12 +450,13 @@ export class ImageStackWidget {
 
 	private updateTracksCanvas(): void
 	{
-		let autoCurveList: CurveND[];
+		let autoCurveList: conditionExemplar<CurveND>[];
 		if (this.inExemplarMode) {
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
 			autoCurveList = this.getExemplarCurves();
-			for (let curveList of [autoCurveList, this.manuallyPinnedTracks])
+			let justData = autoCurveList.map(d => d.data);
+			for (let curveList of [justData, this.manuallyPinnedTracks])
 			{
 				for (let curve of curveList)
 				{
@@ -481,15 +483,16 @@ export class ImageStackWidget {
 		this.imageTrackWidget.draw(autoCurveList, this.manuallyPinnedTracks);
 	}
 
-	private getExemplarCurves(): CurveND[]
+	private getExemplarCurves(): conditionExemplar<CurveND>[]
 	{
-		let curveList: CurveND[] = [];
+		let curveList: conditionExemplar<CurveND>[] = [];
 		const trackLengthKey = 'Track Length';
 		for (let facet of this.facetList) {
 			let facetData: CurveList = facet.data;
 			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
-			let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
-			let numCurves = longTracks.length;
+			// let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
+			let tracks = facetData.curveList;
+			let numCurves = tracks.length;
 			// const percentages = [0.05, 0.50, 0.95]; // todo make this more general
 			const samplingStat = this.imageTrackWidget.currentSamplingStategy.strat;
 			let percentages: number[];
@@ -505,22 +508,46 @@ export class ImageStackWidget {
 					percentages.push(Math.random());
 				}
 			}
+			const conditionList: conditionExemplar<CurveND>[] = []
 			for (let p of percentages)
 			{
 				let index = Math.round((numCurves - 1) * p);
-				let exemplarCurve = quickSelect(longTracks, index, (curve: CurveND) => curve.get(this.exemplarAttribute));
-				curveList.push(exemplarCurve);
+				let exemplarCurve: CurveND = quickSelect(tracks, index, (curve: CurveND) => curve.get(this.exemplarAttribute));
+				conditionList.push({data: exemplarCurve, type: 'auto'});
 			}
+			for (let val of this.imageTrackWidget.manualSampleValues)
+			{
+				let closestCurve = this.getClosestCurve(tracks, val, this.exemplarAttribute);
+				conditionList.push({data: closestCurve, type: 'manual'});	
+			}
+			conditionList.sort((a, b) => a.data.get(this.exemplarAttribute) - b.data.get(this.exemplarAttribute));
+			curveList.push(...conditionList);
 		}
 
 		return curveList
 	}
 
-	private getCurvesBasedOnPointsAtCurrentFrame(): CurveND[] {
-		let curveList: CurveND[] = [];
+	private getClosestCurve(curveList: CurveND[], value: number, attribute: string): CurveND
+	{
+		let closestCurve: CurveND = null;
+		let smallestDifference = Infinity;
+		for (let curve of curveList)
+		{
+			let diff = Math.abs(curve.get(attribute) - value);
+			if (diff < smallestDifference)
+			{
+				smallestDifference = diff;
+				closestCurve = curve;
+			}
+		}
+		return closestCurve;
+	}
+
+	private getCurvesBasedOnPointsAtCurrentFrame(): conditionExemplar<CurveND>[] {
+		let curveList: conditionExemplar<CurveND>[] = [];
 		const pointsAtFrame = this.data.GetCellsAtFrame(this.getCurrentLocationId(), this.getCurrentFrameId())
 		for (let point of pointsAtFrame) {
-			curveList.push(point.parent);
+			curveList.push({data: point.parent, type: 'auto'});
 		}
 		return curveList
 	}

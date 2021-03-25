@@ -4,7 +4,7 @@ import { HtmlSelection, SvgSelection, Margin, NDim, ButtonProps } from '../devli
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
-import { Rect } from '../types';
+import { conditionExemplar, Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
@@ -85,7 +85,12 @@ export class ImageTrackWidget
     private _currentSamplingStategy : {"strat": (number[] | number), "label": string};
     public get currentSamplingStategy() : {"strat": (number[] | number), "label": string} {
         return this._currentSamplingStategy;
-    }    
+    }
+
+    private _manualSampleValues : number[];
+    public get manualSampleValues() : number[] {
+        return this._manualSampleValues;
+    }
 
     private _svgContainer : SvgSelection;
     public get svgContainer() : SvgSelection {
@@ -132,8 +137,8 @@ export class ImageTrackWidget
 		return this._canvasContext;
     }
     
-    private _trackList : CurveND[];
-    public get trackList() : CurveND[] {
+    private _trackList : conditionExemplar<CurveND>[];
+    public get trackList() : conditionExemplar<CurveND>[] {
         return this._trackList;
     }
         
@@ -239,6 +244,7 @@ export class ImageTrackWidget
         this._samplingStrategySelect = new OptionSelect('exemplarSamplingStratSelection', 'Sampled at');
         let buttonPropList: ButtonProps[] = [];
         this._currentSamplingStategy = this.samplingStratOptions[0]; // default to first
+        this._manualSampleValues = [ 350 ]; // todo clear
         for (let option of this.samplingStratOptions)
         {
             let optionName: string;
@@ -383,7 +389,7 @@ export class ImageTrackWidget
 		});
     }
 
-    public async draw(tracks: CurveND[], manuallyPinnedTracks: CurveND[]): Promise<void>
+    public async draw(tracks: conditionExemplar<CurveND>[], manuallyPinnedTracks: CurveND[]): Promise<void>
     {
         this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         if (!this.parentWidget.imageStackDataRequest)
@@ -423,7 +429,8 @@ export class ImageTrackWidget
 
     private async drawTrackList(): Promise<void>
     {
-        const combinedTracks = [...this.manuallyPinnedTracks, ...this.trackList];
+        const justData = this.trackList.map(d => d.data);
+        const combinedTracks = [...this.manuallyPinnedTracks, ...justData];
         this._sourceDestCell = [];
         let listOfBoundingBoxLists = await this.getBoundingBoxLists(combinedTracks);
         let maxHeightList: number[] = [];
@@ -1477,7 +1484,7 @@ export class ImageTrackWidget
         this.exemplarPinGroup.html(null);
     }
 
-    private drawAllPins(curveList: CurveND[]): void
+    private drawAllPins(curveList: conditionExemplar<CurveND>[]): void
     {
         this.clearPins();
         for (let i = 0; i < curveList.length; i++)
@@ -1487,9 +1494,9 @@ export class ImageTrackWidget
         }
     }
 
-    private drawPin(trackData: CurveND, categoryIndex: number): void
+    private drawPin(trackData: conditionExemplar<CurveND>, categoryIndex: number): void
     {
-        let exemplarValue = trackData.get(this.parentWidget.exemplarAttribute);
+        let exemplarValue = trackData.data.get(this.parentWidget.exemplarAttribute);
         let yPos = this.histogramScaleYList[categoryIndex](exemplarValue);
         let [xPosPin, xPosHead] = this.histogramScaleX.range();
         this.exemplarPinGroup.append('line')
@@ -1502,7 +1509,8 @@ export class ImageTrackWidget
         this.exemplarPinGroup.append('circle')
             .attr('cx', xPosHead)
             .attr('cy', yPos)
-            .classed('pinHead', true);
+            .classed('pinHead', true)
+            .classed('manual', trackData.type === 'manual');
     }
 
 
@@ -1540,8 +1548,8 @@ export class ImageTrackWidget
             .range([0, width]);
         
         const yKey = this.exemplarYKey;
-        let yMin = d3.min(this.trackList, curve => d3.min(curve.pointList, point => point.get(yKey)));
-        let yMax = d3.max(this.trackList, curve => d3.max(curve.pointList, point => point.get(yKey)));
+        let yMin = d3.min(this.trackList, curve => d3.min(curve.data.pointList, point => point.get(yKey)));
+        let yMax = d3.max(this.trackList, curve => d3.max(curve.data.pointList, point => point.get(yKey)));
 
         for (let facet of this.parentWidget.facetList)
         {
@@ -1617,7 +1625,7 @@ export class ImageTrackWidget
             let pathList: string[] = [];
             for (let path of this.trackList.slice(i, i + this.parentWidget.numExemplars))
             {
-                let pointList = this.extract2DArray(path.pointList, xKey, yKey);
+                let pointList = this.extract2DArray(path.data.pointList, xKey, yKey);
                 if (this.smoothCurves)
                 {
                     pointList = CurveList.medianFilter(pointList);
