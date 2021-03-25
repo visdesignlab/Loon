@@ -23,6 +23,10 @@
     fill: white;
 }
 
+.miniExemplarArea {
+    fill: rgb(236, 236, 236);
+}
+
 .miniExemplarCurve {
     fill: none;
     stroke-linejoin: bevel;

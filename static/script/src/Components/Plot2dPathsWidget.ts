@@ -765,6 +765,21 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
             .x(d => scaleX(d[0]))
             .y(d => scaleY(d[1]));
 					
+
+		this.miniCellSelect.selectAll('.miniExemplarArea')
+			.data(d => [d])
+			.join('path')
+			.classed('miniExemplarArea', true)
+			.attr('d', d => 
+			{
+				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false, true, minMass);
+				if (pathString)
+				{
+					return pathString
+				}
+				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, true, true, minMass);
+			});
+
 		this.miniCellSelect.selectAll('.miniExemplarCurve.allData')
 			.data(d => [d])
 			.join('path')
@@ -774,12 +789,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('stroke', d => this.getColor(d))
 			.attr('d', d => 
 			{
-				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false);
+				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false, false);
 				if (pathString)
 				{
 					return pathString
 				}
-				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, true); // false should be true, but I need to do other bookeeping
+				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, true, false);
 			});
 
 		if (this.data.brushApplied)
@@ -793,7 +808,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				.attr('stroke', d => this.getColor(d))
 				.attr('d', d => 
 				{
-					return this.getGrowthLine(d, defaultFacets, lineAvg, true);
+					return this.getGrowthLine(d, defaultFacets, lineAvg, true, false);
 				});
 		}
 		else
@@ -905,7 +920,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		label: [string, string],
 		facets: Map<string, Map<string, CurveList>>,
 		lineFunc: d3.Line<[number, number]>,
-		selection: boolean): string
+		selection: boolean,
+		makeAreaPath: boolean,
+		minYValue?: number): string
 	{
 		let [drugLabel, concLabel] = label;
 		if (!facets.has(drugLabel))
@@ -918,10 +935,20 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			return '';
 		}
 		let data: CurveList = row.get(concLabel)
-		let avergeGrowthLine = data.getAverageCurve(this.yKey, selection, this.smoothCurves);
+		let avergeGrowthLine = [...data.getAverageCurve(this.yKey, selection, this.smoothCurves)];
 		if (avergeGrowthLine.length === 0)
 		{
 			return '';
+		}
+		if (makeAreaPath)
+		{
+			let first = avergeGrowthLine[0];
+			avergeGrowthLine.unshift([first[0], minYValue]);
+			
+			let last = avergeGrowthLine[avergeGrowthLine.length - 1];
+			avergeGrowthLine.push([last[0], minYValue]);
+			// avergeGrowthLine.push([first[0], minYValue]);
+
 		}
 		return lineFunc(avergeGrowthLine);
 	}
