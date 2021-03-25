@@ -1,4 +1,4 @@
-# cell-growth
+# Loon – a Visualization Tool for Quantitative Phase Microscopy Data
 
 # Download/Install
 `git clone https://github.com/visdesignlab/cell-growth.git`
