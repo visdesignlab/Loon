@@ -27,7 +27,7 @@ export class ImageTrackWidget
         this._cellLabelPositions = [];
         this._exemplarYKey = 'Mass_norm';
         this._samplingStratOptions = samplingStratOptions;
-		this._smoothCurves = false;
+		this._smoothCurves = true;
 
         // hardcoded from css
         this._cellTimelineMargin = {

@@ -106,9 +106,9 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			},
 			{
 				type: 'toggleButton',
-				iconKeys: ['bacon', 'chart-line'],
+				iconKeys: ['chart-line', 'bacon'],
 				callback: (state: boolean) => this.onBaconClick(state),
-				tooltips: ['Click to smooth line charts with median filter.', 'Click to show raw data in line charts.'] // todo - fill this in if tooltips actually get consumed ever.
+				tooltips: ['Click to show raw data in line charts.', 'Click to smooth line charts with median filter.']
 			}
 		]
 	}
@@ -527,7 +527,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
 	private onBaconClick(state: boolean): void
 	{
-		const smoothCurveEvent = new CustomEvent('smoothCurveChange', {detail: state});
+		const smoothCurveEvent = new CustomEvent('smoothCurveChange', {detail: !state});
 		document.dispatchEvent(smoothCurveEvent);
 	}
 

@@ -56,7 +56,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._inAverageMode = initialOption.averaged;
 		this._inFacetMode = false;
 		this._tempConditionFilterState = new Map<string, Map<string, boolean>>();
-		this._smoothCurves = false;
+		this._smoothCurves = true;
 	}
 
 	private _svgSelect : SvgSelection;
