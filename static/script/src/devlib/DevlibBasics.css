@@ -8,8 +8,12 @@
 }
 
 .basicIconButton.withText {
+    min-height: 24px;
     width: auto;
     height: auto;
+}
+.basicIconButton.withText.big {
+    min-height: 42px;
 }
 
 .basicIconButton.selected {
@@ -77,6 +81,10 @@
     user-select: none;
     cursor: pointer;
     margin: 2px;
+}
+
+.devlibButton.big {
+    padding: 8px;
 }
 
 .devlibButton:hover {

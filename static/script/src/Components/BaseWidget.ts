@@ -213,9 +213,9 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		});
 	}
 
-	public AddButton(iconKey: string, tooltip: string, callback: (ev: MouseEvent) => void): HTMLButtonElement
+	public AddButton(iconKey: string, tooltip: string, callback: (ev: MouseEvent) => void, title?: string): HTMLButtonElement
 	{
-		let button = DevlibTSUtil.getIconButton(iconKey, callback);
+		let button = DevlibTSUtil.getIconButton(iconKey, callback, title);
 		button.title = tooltip;
 		button.style.pointerEvents = 'all';
 		this.buttonList.unshift(button);

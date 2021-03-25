@@ -47,7 +47,8 @@ button, option, select {
     padding: 20px;
     border-radius: 4px;
     box-shadow: hsl(0deg 0% 53%) 2px 2px 4px 0px;
-    flex-direction: row;
+    flex-direction: column;
+    align-items: center;
 }
 
 .toolbarPopup.narrow {

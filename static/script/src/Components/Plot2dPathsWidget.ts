@@ -31,6 +31,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._facetList = [];
 		this._colorLookup = new Map<string, string>();
 		this._isClone = isClone;
+		if (this.inAverageMode)
+		{
+			DevlibTSUtil.hide(this.facetButton);
+		}
 	}
 	
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
@@ -56,7 +60,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._inAverageMode = initialOption.averaged;
 		this._inFacetMode = false;
 		this._tempConditionFilterState = new Map<string, Map<string, boolean>>();
-		this._smoothCurves = false;
+		this._smoothCurves = true;
 	}
 
 	private _svgSelect : SvgSelection;
@@ -237,6 +241,16 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		return this._miniCellSelect;
 	}
 
+	private _selectConditionButton : HTMLButtonElement;
+	public get selectConditionButton() : HTMLButtonElement {
+		return this._selectConditionButton;
+	}
+
+	private _compareConditionButton : HTMLButtonElement;
+	public get compareConditionButton() : HTMLButtonElement {
+		return this._compareConditionButton;
+	}	
+
 	protected setMargin(): void
 	{
 		this._margin = {
@@ -336,6 +350,23 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			}
 		});
 
+		this._selectConditionButton = this.AddButton('layer-group', 'Filter data on experimental conditions', () =>
+		{
+			DevlibTSUtil.hide(this.selectConditionButton);
+			DevlibTSUtil.show(this.compareConditionButton);
+			this.drawFacetContent()
+		},
+		'Select Conditions');
+
+		this._compareConditionButton = this.AddButton('layer-group', 'Show conditions together to compare them', () =>
+		{
+			DevlibTSUtil.show(this.selectConditionButton);
+			DevlibTSUtil.hide(this.compareConditionButton);
+			this.drawFacetContent()
+		},
+		'Compare Conditions');
+
+		DevlibTSUtil.hide(this.compareConditionButton);
 	}
 
 	private initQuickPickOptions(): void
@@ -438,6 +469,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			if (inAverageMode)
 			{
 				this.margin.right = 120;
+				DevlibTSUtil.hide(this.facetButton);
+				if (this.inFacetMode)
+				{
+					DevlibTSUtil.show(this.compareConditionButton);
+				}
+				else
+				{
+					DevlibTSUtil.show(this.selectConditionButton);
+				}
 			}
 			else
 			{
@@ -447,6 +487,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 					this._inFacetMode = false;
 					this.swapSvgVisibility();
 				}
+
+				DevlibTSUtil.show(this.facetButton);
+				DevlibTSUtil.hide(this.selectConditionButton);
+				DevlibTSUtil.hide(this.compareConditionButton);
 			}
 			this.setWidthHeight();
 			this.OnResize();
@@ -740,17 +784,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			
 		this.updateConditionFilterSelection()
 		
-		this.miniCellSelect.selectAll('rect')
-			.data(d => [d])
-			.join('rect')
-			.attr('width', miniSize)
-			.attr('height', miniSize)
-			.classed('miniBox', true);
-		
 		let frameExtent = this.data.getMinMax('Frame ID');
+		const framePad = 1;
 		const scaleX = d3.scaleLinear()
 			.domain(frameExtent)
-			.range([0, miniSize]);
+			.range([framePad, miniSize - framePad]);
 
 		let [minMass, maxMass] = this.getExtentOfGrowthCurves(defaultFacets);
 		let [minMassFull, maxMassFull] = this.getExtentOfGrowthCurves(defaultFacetsFull, true);
@@ -759,12 +797,27 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 		const scaleY = d3.scaleLinear()
 			.domain([minMass, maxMass])
-			.range([miniSize, 0]);
+			.range([miniSize - framePad, framePad]);
 
         let lineAvg = d3.line<[number, number]>()
             .x(d => scaleX(d[0]))
             .y(d => scaleY(d[1]));
 					
+
+		this.miniCellSelect.selectAll('.miniExemplarArea')
+			.data(d => [d])
+			.join('path')
+			.classed('miniExemplarArea', true)
+			.attr('d', d => 
+			{
+				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false, true, minMass);
+				if (pathString)
+				{
+					return pathString
+				}
+				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, true, true, minMass);
+			});
+
 		this.miniCellSelect.selectAll('.miniExemplarCurve.allData')
 			.data(d => [d])
 			.join('path')
@@ -774,12 +827,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('stroke', d => this.getColor(d))
 			.attr('d', d => 
 			{
-				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false);
+				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false, false);
 				if (pathString)
 				{
 					return pathString
 				}
-				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, true); // false should be true, but I need to do other bookeeping
+				return this.getGrowthLine(d, defaultFacetsFull, lineAvg, true, false);
 			});
 
 		if (this.data.brushApplied)
@@ -793,13 +846,28 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				.attr('stroke', d => this.getColor(d))
 				.attr('d', d => 
 				{
-					return this.getGrowthLine(d, defaultFacets, lineAvg, true);
+					return this.getGrowthLine(d, defaultFacets, lineAvg, true, false);
 				});
 		}
 		else
 		{
 			this.miniCellSelect.selectAll('.miniExemplarCurve.selection').remove();
 		}
+
+		this.miniCellSelect.selectAll('rect')
+			.data(d => [d])
+			.join('rect')
+			.attr('width', miniSize)
+			.attr('height', miniSize)
+			.classed('miniBox', true)
+			.on('mouseenter', function(d)
+			{	
+				d3.select(this).classed('hovered', true);
+			})
+			.on('mouseleave', function(d) 
+			{
+				d3.select(this).classed('hovered', false);
+			});
 
 		this.yAxisFacetSelect
 			.attr('transform', `translate(${margin.left}, ${margin.top})`);
@@ -850,6 +918,18 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				}
 				this.updateConditionFilterSelection();
 			})
+			.on('mouseenter', (label, i) => 
+			{
+				this.miniCellSelect
+					.selectAll('rect')
+					.data(d => [d])
+					.classed('hovered', d =>
+					{
+						let [l1, _l2] = d;
+						return l1 === label;
+					});
+			})
+			.on('mouseleave', () => this.miniCellSelect.selectAll('rect').classed('hovered', false))
 			.text(d => d);
 		
 		const maxLabelHeight = 36;
@@ -898,6 +978,18 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				}
 				this.updateConditionFilterSelection();
 			})
+			.on('mouseenter', (label, i) => 
+			{
+				this.miniCellSelect
+					.selectAll('rect')
+					.data(d => [d])
+					.classed('hovered', d =>
+					{
+						let [_l1, l2] = d;
+						return l2 === label;
+					});
+			})
+			.on('mouseleave', () => this.miniCellSelect.selectAll('rect').classed('hovered', false))
 			.text(d => d);
 	}
 
@@ -905,7 +997,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		label: [string, string],
 		facets: Map<string, Map<string, CurveList>>,
 		lineFunc: d3.Line<[number, number]>,
-		selection: boolean): string
+		selection: boolean,
+		makeAreaPath: boolean,
+		minYValue?: number): string
 	{
 		let [drugLabel, concLabel] = label;
 		if (!facets.has(drugLabel))
@@ -918,10 +1012,20 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			return '';
 		}
 		let data: CurveList = row.get(concLabel)
-		let avergeGrowthLine = data.getAverageCurve(this.yKey, selection, this.smoothCurves);
+		let avergeGrowthLine = [...data.getAverageCurve(this.yKey, selection, this.smoothCurves)];
 		if (avergeGrowthLine.length === 0)
 		{
 			return '';
+		}
+		if (makeAreaPath)
+		{
+			let first = avergeGrowthLine[0];
+			avergeGrowthLine.unshift([first[0], minYValue]);
+			
+			let last = avergeGrowthLine[avergeGrowthLine.length - 1];
+			avergeGrowthLine.push([last[0], minYValue]);
+			// avergeGrowthLine.push([first[0], minYValue]);
+
 		}
 		return lineFunc(avergeGrowthLine);
 	}
@@ -979,7 +1083,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('id', 'conditionFilterApplyButton')
 			.text('Apply Filter')
 			.classed('devlibButton', true)
-			.attr('style', 'padding: 8px')
+			.classed('big', true)
 			.on('click', () =>
 			{
 				this.copyTempConditionsToModel();

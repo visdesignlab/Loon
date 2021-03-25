@@ -106,9 +106,9 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 			},
 			{
 				type: 'toggleButton',
-				iconKeys: ['bacon', 'chart-line'],
+				iconKeys: ['chart-line', 'bacon'],
 				callback: (state: boolean) => this.onBaconClick(state),
-				tooltips: ['Click to smooth line charts with median filter.', 'Click to show raw data in line charts.'] // todo - fill this in if tooltips actually get consumed ever.
+				tooltips: ['Click to show raw data in line charts.', 'Click to smooth line charts with median filter.']
 			}
 		]
 	}
@@ -287,13 +287,27 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		let outer = d3.select(this.modalPopupDiv);
 		outer.classed('narrow', false);
 
-		outer.node().style.flexDirection = 'row';
-		outer.node().style.alignItems = 'flex-start';
+		// outer.node().style.flexDirection = 'column';
+		// outer.node().style.alignItems = 'flex-start';
 		outer.node().style.top = this.getOffsetFromIndex(state.index) + 'px';
 
-		const selectionDiv = outer.append('div');
-		const convertDiv = outer.append('div');
-		const filterDiv = outer.append('div');
+		let contentDiv = outer.append('div')
+			.attr('style', 'display: flex; width: 100%');
+
+		const selectionDiv = contentDiv.append('div');
+		const convertDiv = contentDiv.append('div');
+		const filterDiv = contentDiv.append('div');
+
+		outer.append('div')
+			.attr('style', 'display: flex; width: 100%; flex-direction: column; align-items: flex-end;')
+			.append('button')
+			.classed('devlibButton', true)
+			.classed('big', true)
+			.on('click', () =>
+			{
+				this.toggleModalButton(state.index);
+			})
+			.text('Close');
 			
 		this.displayFilters(
 			selectionDiv,
@@ -422,8 +436,8 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 		let outer = d3.select(this.modalPopupDiv);
 		outer.classed('narrow', true);
 
-		outer.node().style.flexDirection = 'column';
-		outer.node().style.alignItems = 'center';
+		// outer.node().style.flexDirection = 'column';
+		// outer.node().style.alignItems = 'center';
 		outer.node().style.top = this.getOffsetFromIndex(state.index) + 'px';
 
 		outer.append('div')
@@ -455,8 +469,8 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 
 		outer.classed('narrow', true);
 
-		outer.node().style.flexDirection = 'column';
-		outer.node().style.alignItems = 'center';
+		// outer.node().style.flexDirection = 'column';
+		// outer.node().style.alignItems = 'center';
 		
 		outer.node().style.top = this.getOffsetFromIndex(state.index) + 'px';
 
@@ -513,7 +527,7 @@ export class Toolbar extends BaseWidget<CurveList, DatasetSpec> {
 	
 	private onBaconClick(state: boolean): void
 	{
-		const smoothCurveEvent = new CustomEvent('smoothCurveChange', {detail: state});
+		const smoothCurveEvent = new CustomEvent('smoothCurveChange', {detail: !state});
 		document.dispatchEvent(smoothCurveEvent);
 	}
 
