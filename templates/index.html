@@ -1,33 +1,215 @@
 <!doctype html>
+<head>
 <title>Loon</title>
 {% if deploy%}
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 {% endif %}
 <link href="https://fonts.googleapis.com/css?family=Montserrat&amp;display=swap" rel="stylesheet">
+<script src="https://kit.fontawesome.com/de8d467ef5.js"></script>
 
 <style>
+
+* {
+  margin: 0px;
+  padding: 0px;
+}
 
 body {
   text-align: center;
   font-family: 'Montserrat', sans-serif;
   font-size: 16pt;
+  margin: 10px 20px 20px 20px;
 }
 
-h1 {
+li {
+  list-style-type: none;
+}
+
+p {
+  margin-top: 10px;
+}
+
+.menu {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+}
+
+.title-icon h1 {
   font-size: 48pt;
+  margin: 20px 40px 40px 40px;
+}
+
+.title-icon {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.flex {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+}
+
+.flex.right {
+  align-items: flex-end;
+}
+
+.flex.left {
+  align-items: flex-start;
+}
+
+
+.button-link {
+    background: white;
+    border: solid black 0px;
+    border-radius: 3px;
+    font-size: 14pt;
+    user-select: none;
+    cursor: pointer;
+    margin: 2px;
+    padding: 6px 10px;
+    color: #666666;
+}
+
+.button-link.big {
+  font-size: 18pt;
+  border: solid #666666 1px;
+  padding: 12px 18px;
+  color: black;
+}
+
+.button-link:hover {
+    background: #e0e7f0;
+}
+
+.important-people {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.lab-grouper {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  /* border: solid black 1px; */
+  padding: 4px;
+  margin: 10px;
+  min-width: 300px;
+  max-width: calc(50% - 30px);
+}
+
+.icon-link {
+  display: flex;
+  align-self: center;
+  width: 100%;
+  align-items: center;
+  flex-direction: column;
+}
+
+.icon-image {
+   max-height: 60px;
+}
+
+.access-links {
+  display: flex;
+  flex-direction: column;
+}
+
+.big-link {
+  /* border: solid black 1px; */
+  padding: 20px;
+  margin: 10px;
+}
+
+.warning {
+  font-weight: 800;
+  font-size: 18pt;
 }
 
 </style>
+</head>
+
+<body>
+
+<div class='menu'>
+  <button class="button-link" onclick="window.location.href = '/overview' "><i class="fas fa-user"></i> Log in</button>
+</div>
+
+<div class='title-icon'>
+  <div class='flex right'>
+    <h1>Loon</h1>
+  </div>
+
+  <div class='flex left'>
+    <!-- https://thenounproject.com/term/loon/20786/ -->
+    <svg height='100px'  fill="#000000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" viewBox="0 0 100.812 37.051" enable-background="new 0 0 100.812 37.051" xml:space="preserve"><path d="M99.706,34.713c-0.55,0.018-0.822,0.072-1.062,0.12c-0.382,0.076-0.712,0.141-2.228,0.024  c-1.532-0.118-2.259-0.022-2.962,0.07c-0.442,0.059-0.86,0.114-1.473,0.114c-1.272,0-2.407-0.135-3.782-0.458  c-1.056-0.501-2.599-1.412-3.694-2.826c-4.898-6.326-12.806-5.489-17.859-5.924c-1.353-0.117-2.663-0.402-4.04-0.764  c-0.077-0.02-0.154-0.041-0.232-0.062c-0.131-0.035-0.262-0.07-0.394-0.106c-3.62-0.99-7.809-2.398-14.5-2.64  c-8.121-0.292-13.153,1.38-14.559,1.924l-0.19,0.211l0.024-0.145c-0.159,0.064-0.24,0.101-0.24,0.101  C38.11,5.448,23.173,0.396,17.946,1.441C17.69,1.492,14.2,4.762,11.674,4.664C2.5,4.31,0,5.274,0,5.274  c2.265,2.353,10.802,3.398,10.802,3.398s2.701,1.917,6.273,4.094c3.572,2.178,3.833,3.049,3.746,6.447  c1.394-0.174,4.269-0.087,7.23,0.523c0,0,4.008,1.22,4.095,2.519c0.087,1.299-0.522,2.36-1.655,3.057  c-1.027,0.632-8.785-3.472-10.215-4.239c-0.587,1.14-1.575,2.295-2.582,3.366c0.89,0.45,1.494,1.031,1.494,1.031  c2.512,1.081,7.837,3.219,9.52,2.701c0,0-5.029,1.429-3.255,4.663c0,0-8.855-0.045-11.207-2.224c0,0,0.039-0.72,0.276-1.514  c0,0-0.462,0.027-0.492,0.028c-0.55,0.027-3.316,0.567-3.891,1.73c-0.125,0.253-0.207,0.653,0.117,1.123  c0.504,0.733,2.252,1.474,5.197,2.203c2.582,0.639,5.264,1.068,6.775,1.241c3.289,0.376,9.252,0.854,9.312,0.859  c0.007,0,0.015,0.001,0.022,0.001c0.147,0,0.271-0.113,0.283-0.262c0.013-0.156-0.104-0.293-0.261-0.306  c-0.06-0.005-6.013-0.483-9.292-0.857c-1.613-0.185-4.312-0.636-6.704-1.228c-3.678-0.911-4.627-1.627-4.865-1.974  c-0.179-0.26-0.135-0.43-0.076-0.549c0.384-0.776,2.555-1.335,3.321-1.408c-0.205,0.794-0.292,1.101-0.292,1.101  c1.044,1.532,3.372,2.006,18.232,3.203c0.021,0.001,0.042,0.003,0.063,0.005c0.161,0.013,0.325,0.026,0.489,0.04  c0.083,0.006,0.166,0.013,0.25,0.02c0.158,0.013,0.319,0.025,0.48,0.039c0.081,0.006,0.162,0.013,0.243,0.019  c0.066,0.005,0.13,0.01,0.196,0.016l0,0c3.379,0.268,7.347,0.571,12.02,0.929c5.622,0.43,10.778,0.682,15.425,0.813l0,0  c0.048,0.001,0.095,0.003,0.143,0.004c0.075,0.002,0.148,0.004,0.222,0.006c0.228,0.006,0.454,0.012,0.679,0.018  c0.031,0.001,0.062,0.002,0.092,0.003c0,0,0,0,0,0c13.942,0.34,23.084-0.419,26.087-0.723c1.316,0.294,2.436,0.421,3.682,0.421  c0.65,0,1.106-0.06,1.547-0.119c0.674-0.089,1.372-0.181,2.845-0.067c1.592,0.123,1.958,0.05,2.381-0.034  c0.23-0.045,0.467-0.092,0.971-0.109c0.157-0.005,0.28-0.137,0.274-0.293C99.995,34.831,99.859,34.705,99.706,34.713z M17.045,7.137  c-0.558,0-1.009-0.452-1.009-1.009c0-0.558,0.452-1.009,1.009-1.009c0.557,0,1.009,0.452,1.009,1.009  C18.054,6.685,17.602,7.137,17.045,7.137z"></path></svg>
+  </div>
+
+</div>
+
+<h2>Exemplar-Based Visualization of Large-Scale Quantitative Phase Microscopy Data</h2>
+
+<div class='important-links'>
+  <button class='button-link'>Publication <i class="far fa-file-pdf"></i></button>
+  <button class='button-link'>Code <i class="fas fa-code"></i></button>
+  <button class='button-link'>Video <i class="fab fa-youtube"></i></button>
+</div>
+
+<p>Loon is a visualization analysis tool for quantitative phase microscopy data. Due to the high-throughput of automated imaging systems, Loon selects exemplar data points to display for the user. Also, it supports multiple visualization windows that are linked together through selection and filtering.</p>
 
 
-<h1>Loon</h1>
-<p>
-  <a href="/detailedView/Example_MCF7">Example Dataset</a>
-</p>
-<p>
-  <a href="/overview">Log In</a> for full accesss.
-</p>
+<div class='important-people'>
+
+  <div class='lab-grouper'>
+    <a class='icon-link' href='https://vdl.sci.utah.edu/'>
+      <img class='icon-image' src='/static/assets/vdl-logo.svg' style='max-height: 90px;'>
+    </a>
+
+    <ul>
+      <li><a href='https://www.devinlange.com/'>Devin Lange</a></li>
+      <li><a href='https://vdl.sci.utah.edu/team/lex/'>Alex Lex</a></li>
+    </ul>
+
+  </div>
+
+  <div class='lab-grouper'>
+      <a class='icon-link' href='http://www.zanglelab.com/' style='margin: 3%;'>
+        <img class='icon-image' src='/static/assets/zangle-logo.png'>
+    </a>
 
 
-<!-- https://thenounproject.com/term/loon/20786/ -->
-<svg height='400px' width='400px'  fill="#000000" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" viewBox="0 0 100.812 37.051" enable-background="new 0 0 100.812 37.051" xml:space="preserve"><path d="M99.706,34.713c-0.55,0.018-0.822,0.072-1.062,0.12c-0.382,0.076-0.712,0.141-2.228,0.024  c-1.532-0.118-2.259-0.022-2.962,0.07c-0.442,0.059-0.86,0.114-1.473,0.114c-1.272,0-2.407-0.135-3.782-0.458  c-1.056-0.501-2.599-1.412-3.694-2.826c-4.898-6.326-12.806-5.489-17.859-5.924c-1.353-0.117-2.663-0.402-4.04-0.764  c-0.077-0.02-0.154-0.041-0.232-0.062c-0.131-0.035-0.262-0.07-0.394-0.106c-3.62-0.99-7.809-2.398-14.5-2.64  c-8.121-0.292-13.153,1.38-14.559,1.924l-0.19,0.211l0.024-0.145c-0.159,0.064-0.24,0.101-0.24,0.101  C38.11,5.448,23.173,0.396,17.946,1.441C17.69,1.492,14.2,4.762,11.674,4.664C2.5,4.31,0,5.274,0,5.274  c2.265,2.353,10.802,3.398,10.802,3.398s2.701,1.917,6.273,4.094c3.572,2.178,3.833,3.049,3.746,6.447  c1.394-0.174,4.269-0.087,7.23,0.523c0,0,4.008,1.22,4.095,2.519c0.087,1.299-0.522,2.36-1.655,3.057  c-1.027,0.632-8.785-3.472-10.215-4.239c-0.587,1.14-1.575,2.295-2.582,3.366c0.89,0.45,1.494,1.031,1.494,1.031  c2.512,1.081,7.837,3.219,9.52,2.701c0,0-5.029,1.429-3.255,4.663c0,0-8.855-0.045-11.207-2.224c0,0,0.039-0.72,0.276-1.514  c0,0-0.462,0.027-0.492,0.028c-0.55,0.027-3.316,0.567-3.891,1.73c-0.125,0.253-0.207,0.653,0.117,1.123  c0.504,0.733,2.252,1.474,5.197,2.203c2.582,0.639,5.264,1.068,6.775,1.241c3.289,0.376,9.252,0.854,9.312,0.859  c0.007,0,0.015,0.001,0.022,0.001c0.147,0,0.271-0.113,0.283-0.262c0.013-0.156-0.104-0.293-0.261-0.306  c-0.06-0.005-6.013-0.483-9.292-0.857c-1.613-0.185-4.312-0.636-6.704-1.228c-3.678-0.911-4.627-1.627-4.865-1.974  c-0.179-0.26-0.135-0.43-0.076-0.549c0.384-0.776,2.555-1.335,3.321-1.408c-0.205,0.794-0.292,1.101-0.292,1.101  c1.044,1.532,3.372,2.006,18.232,3.203c0.021,0.001,0.042,0.003,0.063,0.005c0.161,0.013,0.325,0.026,0.489,0.04  c0.083,0.006,0.166,0.013,0.25,0.02c0.158,0.013,0.319,0.025,0.48,0.039c0.081,0.006,0.162,0.013,0.243,0.019  c0.066,0.005,0.13,0.01,0.196,0.016l0,0c3.379,0.268,7.347,0.571,12.02,0.929c5.622,0.43,10.778,0.682,15.425,0.813l0,0  c0.048,0.001,0.095,0.003,0.143,0.004c0.075,0.002,0.148,0.004,0.222,0.006c0.228,0.006,0.454,0.012,0.679,0.018  c0.031,0.001,0.062,0.002,0.092,0.003c0,0,0,0,0,0c13.942,0.34,23.084-0.419,26.087-0.723c1.316,0.294,2.436,0.421,3.682,0.421  c0.65,0,1.106-0.06,1.547-0.119c0.674-0.089,1.372-0.181,2.845-0.067c1.592,0.123,1.958,0.05,2.381-0.034  c0.23-0.045,0.467-0.092,0.971-0.109c0.157-0.005,0.28-0.137,0.274-0.293C99.995,34.831,99.859,34.705,99.706,34.713z M17.045,7.137  c-0.558,0-1.009-0.452-1.009-1.009c0-0.558,0.452-1.009,1.009-1.009c0.557,0,1.009,0.452,1.009,1.009  C18.054,6.685,17.602,7.137,17.045,7.137z"></path></svg>
+    <ul>
+      <li><a>Eddie Polanco</a></li>
+      <li><a href='https://www.che.utah.edu/department/people/thomas_zangle'>Thomas Zangle</a></li>
+    </ul>
+
+    
+    
+  </div>
+
+  <div class='lab-grouper'>
+    <a class='icon-link' href='https://healthcare.utah.edu/huntsmancancerinstitute/'  style='margin: 4%;'>
+      <img class='icon-image' src='/static/assets/huntsman-logo.svg'>
+    </a>
+
+    <ul>
+      <li><a href='https://medicine.utah.edu/faculty/mddetail.php?facultyID=u6024132'>Robert Judson-Torres</a></li>
+    </ul>
+
+  </div>
+
+</div>
+
+
+<div class='big-link'>
+  <button class="big button-link" onclick="window.location.href = '/detailedView/Example_MCF7' ">Load Example Dataset <i class="fas fa-external-link-alt"></i></button>
+  <p>
+    <span class='warning'>Warning:</span> Loading the first time can take several minutes and will transfers several hundred megabytes of data to your computer. You can remove this from storage by selecting the garbage can icon within the app. 
+  </p>
+</div>
+
+
+</body>
