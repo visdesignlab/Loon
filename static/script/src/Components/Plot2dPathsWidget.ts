@@ -979,7 +979,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('id', 'conditionFilterApplyButton')
 			.text('Apply Filter')
 			.classed('devlibButton', true)
-			.attr('style', 'padding: 8px')
+			.classed('big', true)
 			.on('click', () =>
 			{
 				this.copyTempConditionsToModel();

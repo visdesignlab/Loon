@@ -79,6 +79,10 @@
     margin: 2px;
 }
 
+.devlibButton.big {
+    padding: 8px;
+}
+
 .devlibButton:hover {
     background: hsl(232, 100%, 78%);
 }
