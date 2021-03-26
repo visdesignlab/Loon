@@ -393,6 +393,7 @@ export class ImageStackWidget {
 		{
 			this.setNumExemplars();
 			this.updateTracksCanvas();
+			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
 		});
 
 		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => {
