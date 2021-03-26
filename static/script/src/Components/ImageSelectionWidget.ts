@@ -707,6 +707,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.onClickLocation(locationId);
         this.imageStackWidget.changeSelectedImage(frameId - 1); // matlab
         this.updateSelectedDots(locationId, frameId);
+        this.imageStackWidget.imageTrackWidget.updateCurrentFrameIndicator(frameId);
     }
     
     private updateSelectedDots(locationId: number, frameId: number): void
