@@ -1945,6 +1945,7 @@ export class ImageTrackWidget
 
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number, rowIndex: number): void
     {
+
         let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
         if (!this.parentWidget.inExemplarMode)
         {
@@ -1956,53 +1957,54 @@ export class ImageTrackWidget
                 return
             }
         }
-        else if (typeof(rowIndex) !== 'undefined')
+        else
         {
-            if (rowIndex <this.manuallyPinnedTracks.length)
+            this.exemplarCurvesGroup.selectAll('.exemplarCurve').classed('selected', false)
+            this.exemplarPinGroup.selectAll('*').classed('selected', false);
+            this.manualExemplarPinGroup.selectAll('*').classed('selected', false);
+            if (typeof(rowIndex) !== 'undefined')
             {
-                let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
-                svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
-                if (!foundMatch)
+                if (rowIndex <this.manuallyPinnedTracks.length)
                 {
-                    this.hoverNodeWithText(svgSelection.nodes(), '');
-                    return
+                    let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
+                    svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
+                    if (!foundMatch)
+                    {
+                        this.hoverNodeWithText(svgSelection.nodes(), '');
+                        return
+                    }
                 }
-            }
-            rowIndex -= this.manuallyPinnedTracks.length;
-            this.exemplarCurvesGroup.selectAll('.exemplarCurve')
-                .data(this.trackList)
-                .classed('selected', (d, i) => i == rowIndex)
-
-            this.exemplarPinGroup.selectAll('*')
-                // .data(this.trackList)
-                .classed('selected', function(d, i) 
+                rowIndex -= this.manuallyPinnedTracks.length;
+                this.exemplarCurvesGroup.selectAll('.exemplarCurve')
+                    .data(this.trackList)
+                    .classed('selected', (d, i) => i == rowIndex)
+    
+                this.exemplarPinGroup.selectAll('*')
+                    .classed('selected', function(d, i) 
+                    {
+                        return d3.select(this).classed(cellId);
+                    });
+    
+                this.manualExemplarPinGroup.selectAll('*')
+                    .classed('selected', function(d, i) 
+                    {
+                        return d3.select(this).classed(cellId);
+                    });
+    
+    
+                let searchText: string;
+                if (rowIndex < 0)
                 {
-                    return d3.select(this).classed(cellId);
-                });
-
-            this.manualExemplarPinGroup.selectAll('*')
-                // .data(this.trackList)
-                .classed('selected', function(d, i) 
+                    searchText = ''
+                }
+                else
                 {
-                    return d3.select(this).classed(cellId);
-                });
-
-            // this.exemplarPinGroup.selectAll('circle')
-            //     .data(this.trackList)
-            //     .classed('selected', (d, i) => i === rowIndex);
-
-            let searchText: string;
-            if (rowIndex < 0)
-            {
-                searchText = ''
-            }
-            else
-            {
-                let categoryIndex = Math.floor(rowIndex / this.parentWidget.numExemplars);
-                searchText = this.conditionLabelPositions[categoryIndex][0];
-            }
-
-            this.hoverNodeWithText(svgSelection.nodes(), searchText);
+                    let categoryIndex = Math.floor(rowIndex / this.parentWidget.numExemplars);
+                    searchText = this.conditionLabelPositions[categoryIndex][0];
+                }
+    
+                this.hoverNodeWithText(svgSelection.nodes(), searchText);
+            }            
         }
 
         svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
