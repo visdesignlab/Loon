@@ -112,6 +112,11 @@ export class ImageTrackWidget
         return this._exemplarPinGroup;
     }
 
+    private _manualExemplarPinGroup : SvgSelection;
+    public get manualExemplarPinGroup() : SvgSelection {
+        return this._manualExemplarPinGroup;
+    }
+
     private _frameLabelGroup : SvgSelection;
     public get frameLabelGroup() : SvgSelection {
         return this._frameLabelGroup;
@@ -304,6 +309,9 @@ export class ImageTrackWidget
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
         this._exemplarPinGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
+            
+        this._manualExemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
             
         const offsetToExemplarCurves = this.cellTimelineMargin.left;
@@ -1214,11 +1222,13 @@ export class ImageTrackWidget
             // this.drawCellLabels();
             DevlibTSUtil.hide(this.scentedWidgetGroup.node());
             DevlibTSUtil.hide(this.exemplarPinGroup.node());
+            DevlibTSUtil.hide(this.manualExemplarPinGroup.node());
         }
         else
         {
             DevlibTSUtil.show(this.scentedWidgetGroup.node());
             DevlibTSUtil.show(this.exemplarPinGroup.node());
+            DevlibTSUtil.show(this.manualExemplarPinGroup.node());
             let xAnchor = this.drawConditionLabels();
             if (onScroll)
             {
@@ -1395,6 +1405,9 @@ export class ImageTrackWidget
 
         this.exemplarPinGroup
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
+        
+        this.manualExemplarPinGroup
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
 
         this.updateExemplarCurvesOffset();
     }
@@ -1482,6 +1495,7 @@ export class ImageTrackWidget
     private clearPins(): void
     {
         this.exemplarPinGroup.html(null);
+        this.manualExemplarPinGroup.html(null);
     }
 
     private drawAllPins(curveList: conditionExemplar<CurveND>[]): void
@@ -1500,20 +1514,40 @@ export class ImageTrackWidget
         let yPos = this.histogramScaleYList[categoryIndex](exemplarValue);
         let [xPosPin, xPosHead] = this.histogramScaleX.range();
         const manual: boolean = trackData.type === 'manual'
-        this.exemplarPinGroup.append('line')
-            .attr('x1', xPosHead)
-            .attr('x2', xPosPin)
-            .attr('y1', yPos)
-            .attr('y2', yPos)
-            .classed('pinLine', true);
+        if (manual)
+        {
+            this.manualExemplarPinGroup.append('line')
+                .attr('x1', xPosHead)
+                .attr('x2', xPosPin)
+                .attr('y1', yPos)
+                .attr('y2', yPos)
+                .classed('pinLine', true);
 
-        const radius = manual ? 5 : 3
-        this.exemplarPinGroup.append('circle')
-            .attr('cx', xPosHead - radius)
-            .attr('cy', yPos)
-            .attr('r', radius)
-            .classed('pinHead', true)
-            .classed('manual', manual)
+            const myPushPinDesign = "M17.2,0.3c-2,0.4-2.7,1-3,1.5c-0.7,1.1,0,2.6-0.8,3c-0.1,0-0.1,0-0.2,0c-1,0-1.4,0-4,0c-2.9,0-4,0-5,0c-0.7,0-0.8-1-1-1.5C2.9,2.6,3,2.3,2.7,2C1.8,1.4,0.3,1.8,0.3,1.8s0-0.8,0,6.5c0,7.2,0,6.5,0,6.5s1.5,0.4,2.4-0.2C3,14.3,2.9,14,3.3,13.3c0.2-0.6,0.3-1.5,1-1.5c1,0,2.1,0,5,0c2.6,0,3,0,4,0s0.1,1.8,1,3c0.7,0.9,2.1,1.3,3,1.5c0-2.7,0-5.3,0-8S17.2,3,17.2,0.3z";
+            const iconWidth = 17;
+            const iconHeight = 16;            
+            this.manualExemplarPinGroup.append('path')
+                .classed('pinHead', true)
+                .attr('transform', `translate(${xPosHead - iconWidth}, ${yPos - iconHeight / 2})`)
+                .attr('d', myPushPinDesign);
+        }
+        else
+        {
+            this.exemplarPinGroup.append('line')
+                .attr('x1', xPosHead)
+                .attr('x2', xPosPin)
+                .attr('y1', yPos)
+                .attr('y2', yPos)
+                .classed('pinLine', true);
+
+            const radius = 3
+            this.exemplarPinGroup.append('circle')
+                .attr('cx', xPosHead - radius)
+                .attr('cy', yPos)
+                .attr('r', radius)
+                .classed('pinHead', true)
+        }
+
     }
 
 
