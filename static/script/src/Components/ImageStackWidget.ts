@@ -321,7 +321,8 @@ export class ImageStackWidget {
 
 		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => {
 			this._exemplarAttribute = e.detail;
-
+			this.imageTrackWidget.manualSampleValues = [];
+			this.setNumExemplars();
 			let buttonChangeEvent = new CustomEvent('changeModeSelect', { detail: 0 });
 			document.dispatchEvent(buttonChangeEvent);
 

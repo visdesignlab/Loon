@@ -92,6 +92,10 @@ export class ImageTrackWidget
         return this._manualSampleValues;
     }
 
+    public set manualSampleValues(v: number[]) {
+        this._manualSampleValues = v;
+    }
+
     private _svgContainer : SvgSelection;
     public get svgContainer() : SvgSelection {
         return this._svgContainer;
@@ -285,11 +289,6 @@ export class ImageTrackWidget
     private _anchorPinValue : number;
     public get anchorPinValue() : number {
         return this._anchorPinValue;
-    }
-
-    private _inDragZone : boolean;
-    public get inDragZone() : boolean {
-        return this._inDragZone;
     }
 
     private _pinMoved : boolean;
@@ -1523,8 +1522,6 @@ export class ImageTrackWidget
                 self.manualSampleValues.push(value);
                 document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: self.currentSamplingStategy}));
             })
-            // .on('mouseleave', () => {this._inDragZone = false; console.log('R: LEAVE')})
-            // .on('mouseenter', () => {this._inDragZone = true; console.log('R: ENTER')});
     }
 
     private drawScentedWidgets(axisAnchor: number): void
@@ -1722,7 +1719,6 @@ export class ImageTrackWidget
         this._initialPinValue = initialValue;
         this._anchorPinValue = anchorValue;
         this._dragGroupIndex = groupIndex;
-        this._inDragZone = true;
         this._pinMoved = false;
 
         const unpinOffset = 12;
@@ -1749,18 +1745,6 @@ export class ImageTrackWidget
         d3.select(this.draggingPinElement).classed('grabbed', false);
         this.addPinRectGroup.selectAll('rect').classed('grabbed', false);
         this.needleSelection.classed('grabbed', false);
-
-
-
-        // if (!this.inDragZone)
-        // {
-        //     //reset pin aka snap back
-        //     d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
-        //     // this.needleSelection.attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
-        //     this.needleSelection.attr('transform', '');
-        //     this.textSelection.attr('transform', '').text(Math.round(this.initialPinValue));
-        //     return;
-        // }
         
         const index = this.manualSampleValues.indexOf(this.anchorPinValue);
 
@@ -1780,23 +1764,28 @@ export class ImageTrackWidget
     
     private onDrag(moveX: number, moveY: number): void
     {
-        if (this.draggingPin)
+        if (!this.draggingPin)
         {
-            this._pinMoved = true;
-            this.totalDragOffset[1] += moveY;
-            // let yOffset = this.initialDragCoords[1] + this.totalDragOffset[1];
-            // const groupOffset = this.histogramScaleYList[this.dragGroupIndex].range()[0];
-            // const firstOffset = this.histogramScaleYList[0].range()[0];
-            const valueOffsetPixels = this.normalizedHistogramScaleY(this.anchorPinValue);
-            const extent: [number, number] = this.normalizedHistogramScaleY.range().map(y => y - valueOffsetPixels) as [number, number];
-            let yOffset = DevlibMath.clamp(this.totalDragOffset[1], extent);
-            // console.log(this.totalDragOffset[1], extent, yOffset);
-            d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0]}, ${this.initialDragCoords[1] + yOffset})`);
-            this.needleSelection.attr('transform', `translate(0, ${yOffset})`);
-            this.textSelection
-                .attr('transform', `translate(0, ${yOffset})`)
-                .text(this.formatPinLabel(this.getCurrentDraggedValue()));
+            return;
         }
+
+        this.totalDragOffset[1] += moveY;
+        const removePixelRoom = 2;            
+        this._pinMoved = Math.abs(this.totalDragOffset[1]) > removePixelRoom;
+        const valueOffsetPixels = this.normalizedHistogramScaleY(this.anchorPinValue);
+        const extent: [number, number] = this.normalizedHistogramScaleY.range().map(y => y - valueOffsetPixels) as [number, number];
+        let yOffset = DevlibMath.clamp(this.totalDragOffset[1], extent);
+        
+        const unpinOffset = this.pinMoved ? 4 : 12;
+        d3.select(this.draggingPinElement)
+            .attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0] - unpinOffset}, ${this.initialDragCoords[1] + yOffset})`);
+        
+        this.needleSelection
+            .attr('transform', `translate(${-unpinOffset}, ${yOffset})`);
+        
+        this.textSelection
+            .attr('transform', `translate(0, ${yOffset})`)
+            .text(this.pinMoved ? this.formatPinLabel(this.getCurrentDraggedValue()) : 'X');
     }
 
     private getCurrentDraggedValue(): number
