@@ -13,6 +13,7 @@ import { CurveList } from '../DataModel/CurveList';
 import { HistogramWidget } from './HistogramWidget';
 import { OptionSelect } from './OptionSelect';
 import { PointCollection } from '../DataModel/PointCollection';
+import { createNoSubstitutionTemplateLiteral } from 'typescript';
 
 export class ImageTrackWidget
 {
@@ -281,6 +282,11 @@ export class ImageTrackWidget
     private _anchorPinValue : number;
     public get anchorPinValue() : number {
         return this._anchorPinValue;
+    }
+
+    private _inDragZone : boolean;
+    public get inDragZone() : boolean {
+        return this._inDragZone;
     }
     
     public init(): void
@@ -1496,13 +1502,16 @@ export class ImageTrackWidget
             .attr('stroke-width', '0px')
             .attr('fill', 'tomato')
             .attr('opacity', 0.5)
+            .attr('style', 'cursor: crosshair;')
             .on('click', function(d) 
             {
                 const [_xPos, yPos] = d3.mouse(this as any);
                 const value = self.normalizedHistogramScaleY.invert(yPos);
                 self.manualSampleValues.push(value);
                 document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: self.currentSamplingStategy}));
-            });
+            })
+            .on('mouseleave', () => {this._inDragZone = false; console.log('R: LEAVE')})
+            .on('mouseenter', () => {this._inDragZone = true; console.log('R: ENTER')});
     }
 
     private drawScentedWidgets(axisAnchor: number): void
@@ -1633,6 +1642,16 @@ export class ImageTrackWidget
                 .on('mousedown', function(d)
                 {
                     self.onDragStart(this, transX, transY, needleElement, exemplarValue, trackData.anchorVal);
+                })
+                .on('mouseenter', () =>
+                {
+                    console.log('P ENTER');
+                    this._inDragZone = true;
+                })
+                .on('mouseleave', () =>
+                {
+                    console.log('P LEAVE');
+                    this._inDragZone = false;
                 });
         }
         else
@@ -1663,8 +1682,13 @@ export class ImageTrackWidget
         this._totalDragOffset = [0, 0];
         this._initialPinValue = initialValue;
         this._anchorPinValue = anchorValue;
-        console.log('START', coords)
-        d3.select(pinElement).attr('transform', `translate(${transX}, ${transY})`);
+        this._inDragZone = true;
+        d3.select(pinElement)
+            .attr('transform', `translate(${transX}, ${transY})`)
+            .classed('grabbed', true);
+        this.addPinRectGroup.selectAll('rect').classed('grabbed', true);
+        this.needleSelection.classed('grabbed', true);
+        // document.body.style.cursor = 'grabbing';
     }
 
     private onDragEnd(): void
@@ -1673,8 +1697,19 @@ export class ImageTrackWidget
         {
             return;
         }
-        // const coords = d3.mouse(pinElement);
         this._draggingPin = false;
+
+        d3.select(this.draggingPinElement).classed('grabbed', false);
+        this.addPinRectGroup.selectAll('rect').classed('grabbed', false);
+        this.needleSelection.classed('grabbed', false);
+
+        if (!this.inDragZone)
+        {
+            //reset pin do nothing.
+            d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
+            this.needleSelection.attr('transform', '');
+            return;
+        }
 
         const pixelDifference = this.totalDragOffset[1];
         const valueDifference = this.normalizedHistogramScaleY.invert(pixelDifference);
@@ -1686,10 +1721,6 @@ export class ImageTrackWidget
             this.manualSampleValues[index] = newValue;
             document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: this.currentSamplingStategy}));
         }
-        
-        // if out of bounds by some definition....
-        // d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
-        // this.needleSelection.attr('transform', '');
     }
     
     private onDrag(moveX: number, moveY: number): void
