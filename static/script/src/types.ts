@@ -116,3 +116,9 @@ export interface curveFilter {
 	filterKey: string,
 	filter: [valueFilter, valueFilter],
 }
+
+export interface conditionExemplar<dataType> {
+	data: dataType,
+	type: 'auto' | 'manual',
+	anchorVal?: number
+}

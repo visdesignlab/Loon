@@ -4,7 +4,7 @@ import { HtmlSelection, SvgSelection, Margin, NDim, ButtonProps } from '../devli
 import { ImageStackWidget } from './ImageStackWidget';
 import { CurveND } from '../DataModel/CurveND';
 import { PointND } from '../DataModel/PointND';
-import { Rect } from '../types';
+import { conditionExemplar, Rect } from '../types';
 import { DevlibMath } from '../devlib/DevlibMath';
 import { DevlibAlgo } from '../devlib/DevlibAlgo';
 import { ImageLabels, ImageStackDataRequest, Row } from '../DataModel/ImageStackDataRequest';
@@ -28,7 +28,7 @@ export class ImageTrackWidget
         this._exemplarYKey = 'Mass_norm';
         this._samplingStratOptions = samplingStratOptions;
 		this._smoothCurves = true;
-
+        this._draggingPin = false;
         // hardcoded from css
         this._cellTimelineMargin = {
             top: 36,
@@ -85,7 +85,16 @@ export class ImageTrackWidget
     private _currentSamplingStategy : {"strat": (number[] | number), "label": string};
     public get currentSamplingStategy() : {"strat": (number[] | number), "label": string} {
         return this._currentSamplingStategy;
-    }    
+    }
+
+    private _manualSampleValues : number[];
+    public get manualSampleValues() : number[] {
+        return this._manualSampleValues;
+    }
+
+    public set manualSampleValues(v: number[]) {
+        this._manualSampleValues = v;
+    }
 
     private _svgContainer : SvgSelection;
     public get svgContainer() : SvgSelection {
@@ -97,6 +106,11 @@ export class ImageTrackWidget
         return this._cellLabelGroup;
     }
 
+    private _labelLinePad : number;
+    public get labelLinePad() : number {
+        return this._labelLinePad;
+    }    
+
     private _scentedWidgetGroup : SvgSelection;
     public get scentedWidgetGroup() : SvgSelection {
         return this._scentedWidgetGroup;
@@ -105,6 +119,16 @@ export class ImageTrackWidget
     private _exemplarPinGroup : SvgSelection;
     public get exemplarPinGroup() : SvgSelection {
         return this._exemplarPinGroup;
+    }
+    
+    private _addPinRectGroup : SvgSelection;
+    public get addPinRectGroup() : SvgSelection {
+        return this._addPinRectGroup;
+    }
+
+    private _manualExemplarPinGroup : SvgSelection;
+    public get manualExemplarPinGroup() : SvgSelection {
+        return this._manualExemplarPinGroup;
     }
 
     private _frameLabelGroup : SvgSelection;
@@ -132,8 +156,8 @@ export class ImageTrackWidget
 		return this._canvasContext;
     }
     
-    private _trackList : CurveND[];
-    public get trackList() : CurveND[] {
+    private _trackList : conditionExemplar<CurveND>[];
+    public get trackList() : conditionExemplar<CurveND>[] {
         return this._trackList;
     }
         
@@ -180,7 +204,12 @@ export class ImageTrackWidget
     private _histogramScaleYList : d3.ScaleLinear<number, number>[];
     public get histogramScaleYList() : d3.ScaleLinear<number, number>[] {
         return this._histogramScaleYList;
-    }    
+    }
+
+    private _normalizedHistogramScaleY : d3.ScaleLinear<number, number>;
+    public get normalizedHistogramScaleY() : d3.ScaleLinear<number, number> {
+        return this._normalizedHistogramScaleY;
+    }
     
     private _cellTimelineMargin : Margin;
     public get cellTimelineMargin() : Margin {
@@ -221,7 +250,57 @@ export class ImageTrackWidget
 	public get smoothCurves() : boolean {
 		return this._smoothCurves;
 	}
+
+    private _draggingPin : boolean;
+    public get draggingPin() : boolean {
+        return this._draggingPin;
+    }
+
+    private _draggingPinElement : SVGPathElement;
+    public get draggingPinElement() : SVGPathElement {
+        return this._draggingPinElement;
+    }
+
+    private _needleSelection : d3.Selection<SVGLineElement, any, Element, any>;
+    public get needleSelection() : d3.Selection<SVGLineElement, any, Element, any> {
+        return this._needleSelection;
+    }
+
+    private _textSelection : d3.Selection<SVGTextElement, any, Element, any>;
+    public get textSelection() : d3.Selection<SVGTextElement, any, Element, any> {
+        return this._textSelection;
+    }
+
+    private _initialDragCoords : [number, number];
+    public get initialDragCoords() : [number, number] {
+        return this._initialDragCoords;
+    }
+
+    private _totalDragOffset : [number, number];
+    public get totalDragOffset() : [number, number] {
+        return this._totalDragOffset;
+    }
+
+    private _initialPinValue : number;
+    public get initialPinValue() : number {
+        return this._initialPinValue;
+    }
+
+    private _anchorPinValue : number;
+    public get anchorPinValue() : number {
+        return this._anchorPinValue;
+    }
+
+    private _pinMoved : boolean;
+    public get pinMoved() : boolean {
+        return this._pinMoved;
+    }
     
+    private _dragGroupIndex : number;
+    public get dragGroupIndex() : number {
+        return this._dragGroupIndex;
+    }
+        
     public init(): void
     {
         const containerSelect = d3.select(this.container);
@@ -239,6 +318,7 @@ export class ImageTrackWidget
         this._samplingStrategySelect = new OptionSelect('exemplarSamplingStratSelection', 'Sampled at');
         let buttonPropList: ButtonProps[] = [];
         this._currentSamplingStategy = this.samplingStratOptions[0]; // default to first
+        this._manualSampleValues = []; // todo remove
         for (let option of this.samplingStratOptions)
         {
             let optionName: string;
@@ -294,10 +374,18 @@ export class ImageTrackWidget
         this._cellLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
+        this._labelLinePad = 16;
+
         this._scentedWidgetGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
         this._exemplarPinGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
+            
+        this._addPinRectGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
+
+        this._manualExemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
             
         const offsetToExemplarCurves = this.cellTimelineMargin.left;
@@ -381,9 +469,18 @@ export class ImageTrackWidget
 			this._smoothCurves = e.detail;
             this.drawExemplarGrowthCurves();
 		});
+        const self = this;
+        document.addEventListener('mousemove', function(e)
+        {
+            self.onDrag(e.movementX, e.movementY);
+        });
+        document.addEventListener('mouseup', function(e)
+        {
+            self.onDragEnd();
+        });
     }
 
-    public async draw(tracks: CurveND[], manuallyPinnedTracks: CurveND[]): Promise<void>
+    public async draw(tracks: conditionExemplar<CurveND>[], manuallyPinnedTracks: CurveND[]): Promise<void>
     {
         this.canvasContext.clearRect(0, 0, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         if (!this.parentWidget.imageStackDataRequest)
@@ -423,7 +520,8 @@ export class ImageTrackWidget
 
     private async drawTrackList(): Promise<void>
     {
-        const combinedTracks = [...this.manuallyPinnedTracks, ...this.trackList];
+        const justData = this.trackList.map(d => d.data);
+        const combinedTracks = [...this.manuallyPinnedTracks, ...justData];
         this._sourceDestCell = [];
         let listOfBoundingBoxLists = await this.getBoundingBoxLists(combinedTracks);
         let maxHeightList: number[] = [];
@@ -1207,11 +1305,15 @@ export class ImageTrackWidget
             // this.drawCellLabels();
             DevlibTSUtil.hide(this.scentedWidgetGroup.node());
             DevlibTSUtil.hide(this.exemplarPinGroup.node());
+            DevlibTSUtil.hide(this.manualExemplarPinGroup.node());
+            DevlibTSUtil.hide(this.addPinRectGroup.node());
         }
         else
         {
             DevlibTSUtil.show(this.scentedWidgetGroup.node());
             DevlibTSUtil.show(this.exemplarPinGroup.node());
+            DevlibTSUtil.show(this.manualExemplarPinGroup.node());
+            DevlibTSUtil.show(this.addPinRectGroup.node());
             let xAnchor = this.drawConditionLabels();
             if (onScroll)
             {
@@ -1220,6 +1322,7 @@ export class ImageTrackWidget
             else
             {
                 this.drawScentedWidgets(xAnchor);
+                this.drawAddPinRects(xAnchor);
             }
         }
         this.drawCellLabels(); // todo make this function conditional to always show pinned with star and only show others depending on if it's in exemplar mode.
@@ -1353,8 +1456,7 @@ export class ImageTrackWidget
 
     private drawConditionLabels(): number
     {
-        const pad = 16;
-        const xAnchor = this.cellTimelineMargin.left - pad;
+        const xAnchor = this.cellTimelineMargin.left - this.labelLinePad;
         const xAnchorLine = xAnchor - 4;
         this.cellLabelGroup.selectAll('text.conditionLabel')
             .data(this.conditionLabelPositions)
@@ -1388,13 +1490,42 @@ export class ImageTrackWidget
 
         this.exemplarPinGroup
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
+        
+        this.manualExemplarPinGroup
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
+            
+        this.addPinRectGroup
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`); 
 
         this.updateExemplarCurvesOffset();
     }
 
+    private drawAddPinRects(axisAnchor: number): void
+    {
+        const self = this;
+        this.addPinRectGroup.selectAll('rect')
+            .data(this.conditionLabelPositions)
+            .join('rect')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('transform', d => `translate(0, ${d[1][0]})`)
+            .attr('width', this.cellTimelineMargin.left - this.labelLinePad)
+            .attr('height', d => d[1][1] - d[1][0])
+            .attr('stroke-width', '0px')
+            .attr('fill', 'tomato')
+            .attr('opacity', 0.0)
+            .attr('style', 'cursor: crosshair;')
+            .on('click', function(d) 
+            {
+                const [_xPos, yPos] = d3.mouse(this as any);
+                const value = self.normalizedHistogramScaleY.invert(yPos);
+                self.manualSampleValues.push(value);
+                document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: self.currentSamplingStategy}));
+            })
+    }
+
     private drawScentedWidgets(axisAnchor: number): void
     {
-
         let binArray: d3.Bin<NDim, number>[][] = [];
         const numBins = 48;
         this._histogramScaleYList = [];
@@ -1423,6 +1554,11 @@ export class ImageTrackWidget
 
             this.histogramScaleYList.push(scaleY);
         }
+        const firstExtent = this.conditionLabelPositions[0][1];
+        this._normalizedHistogramScaleY = d3.scaleLinear()
+            .domain([minBinBoundary, maxBinBoundary])
+            .range([0, firstExtent[1] - firstExtent[0]]);
+
         const padding = 4;
 		let biggestBinPercentage = d3.max(binArray, bin => d3.max(bin, d => d.length) / d3.sum(bin, d => d.length));
         const maxWidth = 52;
@@ -1475,9 +1611,10 @@ export class ImageTrackWidget
     private clearPins(): void
     {
         this.exemplarPinGroup.html(null);
+        this.manualExemplarPinGroup.html(null);
     }
 
-    private drawAllPins(curveList: CurveND[]): void
+    private drawAllPins(curveList: conditionExemplar<CurveND>[]): void
     {
         this.clearPins();
         for (let i = 0; i < curveList.length; i++)
@@ -1487,22 +1624,177 @@ export class ImageTrackWidget
         }
     }
 
-    private drawPin(trackData: CurveND, categoryIndex: number): void
+    private drawPin(trackData: conditionExemplar<CurveND>, categoryIndex: number): void
     {
-        let exemplarValue = trackData.get(this.parentWidget.exemplarAttribute);
+        let exemplarValue = trackData.data.get(this.parentWidget.exemplarAttribute);
         let yPos = this.histogramScaleYList[categoryIndex](exemplarValue);
         let [xPosPin, xPosHead] = this.histogramScaleX.range();
-        this.exemplarPinGroup.append('line')
-            .attr('x1', xPosHead)
-            .attr('x2', xPosPin)
-            .attr('y1', yPos)
-            .attr('y2', yPos)
-            .classed('pinLine', true);
+        const manual: boolean = trackData.type === 'manual'
+        if (manual)
+        {
+            const needleElement = this.manualExemplarPinGroup.append('line')
+                .attr('x1', xPosHead)
+                .attr('x2', xPosPin)
+                .attr('y1', yPos)
+                .attr('y2', yPos)
+                .classed('pinLine', true)
+                .classed(trackData.data.id, true);
 
-        this.exemplarPinGroup.append('circle')
-            .attr('cx', xPosHead)
-            .attr('cy', yPos)
-            .classed('pinHead', true);
+            const myPushPinDesign = "M17.2,0.3c-2,0.4-2.7,1-3,1.5c-0.7,1.1,0,2.6-0.8,3c-0.1,0-0.1,0-0.2,0c-1,0-1.4,0-4,0c-2.9,0-4,0-5,0c-0.7,0-0.8-1-1-1.5C2.9,2.6,3,2.3,2.7,2C1.8,1.4,0.3,1.8,0.3,1.8s0-0.8,0,6.5c0,7.2,0,6.5,0,6.5s1.5,0.4,2.4-0.2C3,14.3,2.9,14,3.3,13.3c0.2-0.6,0.3-1.5,1-1.5c1,0,2.1,0,5,0c2.6,0,3,0,4,0s0.1,1.8,1,3c0.7,0.9,2.1,1.3,3,1.5c0-2.7,0-5.3,0-8S17.2,3,17.2,0.3z";
+            const iconWidth = 17;
+            const iconHeight = 16;
+            const self = this;
+            const transX = xPosHead - iconWidth;
+            const transY = yPos - iconHeight / 2;
+            this.manualExemplarPinGroup.append('path')
+                .classed('pinHead', true)
+                .attr('transform', `translate(${transX}, ${transY})`)
+                .attr('d', myPushPinDesign)
+                .on('mousedown', function(d)
+                {
+                    self.onDragStart(this, transX, transY, needleElement, textSelect, exemplarValue, trackData.anchorVal, categoryIndex);
+                })
+                .classed(trackData.data.id, true);
+            
+            const textPad = 4;
+            const textSelect = this.exemplarPinGroup.append('text') // put in semantically incorrect group to avoid mouseover problems and because I'm tired.
+                .attr('x', textPad)
+                .attr('y', yPos)
+                .attr('alignment-baseline', 'middle')
+                .classed('pinLabel', true)
+                .classed('tinyText', true)
+                .classed('noSelect', true)
+                .text(this.formatPinLabel(exemplarValue))
+                .classed(trackData.data.id, true);
+        }
+        else
+        {
+            this.exemplarPinGroup.append('line')
+                .attr('x1', xPosHead)
+                .attr('x2', xPosPin)
+                .attr('y1', yPos)
+                .attr('y2', yPos)
+                .classed('pinLine', true)
+                .classed(trackData.data.id, true);
+
+            const radius = 3
+            this.exemplarPinGroup.append('circle')
+                .attr('cx', xPosHead - radius)
+                .attr('cy', yPos)
+                .attr('r', radius)
+                .classed('pinHead', true)
+                .classed(trackData.data.id, true);
+        }
+    }
+
+    private formatPinLabel(value: number): string
+    {
+        let absVal = Math.abs(value);
+        if (absVal > 99.5) 
+        {
+            return Math.round(value).toString();
+        }
+        if (absVal > 9.5)
+        {
+            return value.toFixed(1);
+        }
+        return value.toFixed(2);
+    }
+
+    private onDragStart(
+        pinElement: SVGPathElement,
+        transX: number, transY: number,
+        needleSelect: d3.Selection<SVGLineElement, any, Element, any>,
+        textSelect: d3.Selection<SVGTextElement, any, Element, any>,
+        initialValue: number, anchorValue: number,
+        groupIndex: number): void
+    {
+        const coords = d3.mouse(pinElement);
+        this._draggingPin = true;
+        this._draggingPinElement = pinElement;
+        this._initialDragCoords = [transX, transY];
+        this._needleSelection = needleSelect;
+        this._textSelection = textSelect;
+        this._totalDragOffset = [0, 0];
+        this._initialPinValue = initialValue;
+        this._anchorPinValue = anchorValue;
+        this._dragGroupIndex = groupIndex;
+        this._pinMoved = false;
+
+        const unpinOffset = 12;
+        d3.select(pinElement)
+            .attr('transform', `translate(${transX - unpinOffset}, ${transY})`)
+            .classed('grabbed', true);
+
+        needleSelect.attr('transform', `translate(${-unpinOffset}, 0)`);
+        textSelect.text('X');
+
+        this.addPinRectGroup.selectAll('rect').classed('grabbed', true);
+        this.needleSelection.classed('grabbed', true);
+        // document.body.style.cursor = 'grabbing';
+    }
+
+    private onDragEnd(): void
+    {
+        if (!this.draggingPin)
+        {
+            return;
+        }
+        this._draggingPin = false;
+
+        d3.select(this.draggingPinElement).classed('grabbed', false);
+        this.addPinRectGroup.selectAll('rect').classed('grabbed', false);
+        this.needleSelection.classed('grabbed', false);
+        
+        const index = this.manualSampleValues.indexOf(this.anchorPinValue);
+
+        if (index !== -1)
+        {
+            if (!this.pinMoved)
+            {
+                this.manualSampleValues.splice(index, 1);
+            }
+            else
+            {
+                this.manualSampleValues[index] = this.getCurrentDraggedValue();
+            }
+            document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: this.currentSamplingStategy}));
+        }
+    }
+    
+    private onDrag(moveX: number, moveY: number): void
+    {
+        if (!this.draggingPin)
+        {
+            return;
+        }
+
+        this.totalDragOffset[1] += moveY;
+        const removePixelRoom = 2;            
+        this._pinMoved = Math.abs(this.totalDragOffset[1]) > removePixelRoom;
+        const valueOffsetPixels = this.normalizedHistogramScaleY(this.anchorPinValue);
+        const extent: [number, number] = this.normalizedHistogramScaleY.range().map(y => y - valueOffsetPixels) as [number, number];
+        let yOffset = DevlibMath.clamp(this.totalDragOffset[1], extent);
+        
+        const unpinOffset = this.pinMoved ? 4 : 12;
+        d3.select(this.draggingPinElement)
+            .attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0] - unpinOffset}, ${this.initialDragCoords[1] + yOffset})`);
+        
+        this.needleSelection
+            .attr('transform', `translate(${-unpinOffset}, ${yOffset})`);
+        
+        this.textSelection
+            .attr('transform', `translate(0, ${yOffset})`)
+            .text(this.pinMoved ? this.formatPinLabel(this.getCurrentDraggedValue()) : 'X');
+    }
+
+    private getCurrentDraggedValue(): number
+    {
+        const pixelDifference = this.totalDragOffset[1];
+        const valueDifference = this.normalizedHistogramScaleY.invert(pixelDifference) - this.normalizedHistogramScaleY.invert(0);
+        let currentValue = this.initialPinValue + valueDifference;
+        currentValue = DevlibMath.clamp(currentValue, this.normalizedHistogramScaleY.domain() as [number, number]);
+        return currentValue;
     }
 
 
@@ -1540,8 +1832,8 @@ export class ImageTrackWidget
             .range([0, width]);
         
         const yKey = this.exemplarYKey;
-        let yMin = d3.min(this.trackList, curve => d3.min(curve.pointList, point => point.get(yKey)));
-        let yMax = d3.max(this.trackList, curve => d3.max(curve.pointList, point => point.get(yKey)));
+        let yMin = d3.min(this.trackList, curve => d3.min(curve.data.pointList, point => point.get(yKey)));
+        let yMax = d3.max(this.trackList, curve => d3.max(curve.data.pointList, point => point.get(yKey)));
 
         for (let facet of this.parentWidget.facetList)
         {
@@ -1617,7 +1909,7 @@ export class ImageTrackWidget
             let pathList: string[] = [];
             for (let path of this.trackList.slice(i, i + this.parentWidget.numExemplars))
             {
-                let pointList = this.extract2DArray(path.pointList, xKey, yKey);
+                let pointList = this.extract2DArray(path.data.pointList, xKey, yKey);
                 if (this.smoothCurves)
                 {
                     pointList = CurveList.medianFilter(pointList);
@@ -1653,6 +1945,7 @@ export class ImageTrackWidget
 
     private updateLabelsOnMouseMove(cellId: string, frameIndex: number, rowIndex: number): void
     {
+
         let svgSelection = this.cellLabelGroup.selectAll('text') as SvgSelection;
         if (!this.parentWidget.inExemplarMode)
         {
@@ -1664,43 +1957,54 @@ export class ImageTrackWidget
                 return
             }
         }
-        else if (typeof(rowIndex) !== 'undefined')
+        else
         {
-            if (rowIndex <this.manuallyPinnedTracks.length)
+            this.exemplarCurvesGroup.selectAll('.exemplarCurve').classed('selected', false)
+            this.exemplarPinGroup.selectAll('*').classed('selected', false);
+            this.manualExemplarPinGroup.selectAll('*').classed('selected', false);
+            if (typeof(rowIndex) !== 'undefined')
             {
-                let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
-                svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
-                if (!foundMatch)
+                if (rowIndex <this.manuallyPinnedTracks.length)
                 {
-                    this.hoverNodeWithText(svgSelection.nodes(), '');
-                    return
+                    let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
+                    svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
+                    if (!foundMatch)
+                    {
+                        this.hoverNodeWithText(svgSelection.nodes(), '');
+                        return
+                    }
                 }
-            }
-            rowIndex -= this.manuallyPinnedTracks.length;
-            this.exemplarCurvesGroup.selectAll('.exemplarCurve')
-                .data(this.trackList)
-                .classed('selected', (d, i) => i == rowIndex)
-
-            this.exemplarPinGroup.selectAll('line')
-                .data(this.trackList)
-                .classed('selected', (d, i) => i === rowIndex);
-
-            this.exemplarPinGroup.selectAll('circle')
-                .data(this.trackList)
-                .classed('selected', (d, i) => i === rowIndex);
-
-            let searchText: string;
-            if (rowIndex < 0)
-            {
-                searchText = ''
-            }
-            else
-            {
-                let categoryIndex = Math.floor(rowIndex / this.parentWidget.numExemplars);
-                searchText = this.conditionLabelPositions[categoryIndex][0];
-            }
-
-            this.hoverNodeWithText(svgSelection.nodes(), searchText);
+                rowIndex -= this.manuallyPinnedTracks.length;
+                this.exemplarCurvesGroup.selectAll('.exemplarCurve')
+                    .data(this.trackList)
+                    .classed('selected', (d, i) => i == rowIndex)
+    
+                this.exemplarPinGroup.selectAll('*')
+                    .classed('selected', function(d, i) 
+                    {
+                        return d3.select(this).classed(cellId);
+                    });
+    
+                this.manualExemplarPinGroup.selectAll('*')
+                    .classed('selected', function(d, i) 
+                    {
+                        return d3.select(this).classed(cellId);
+                    });
+    
+    
+                let searchText: string;
+                if (rowIndex < 0)
+                {
+                    searchText = ''
+                }
+                else
+                {
+                    let categoryIndex = Math.floor(rowIndex / this.parentWidget.numExemplars);
+                    searchText = this.conditionLabelPositions[categoryIndex][0];
+                }
+    
+                this.hoverNodeWithText(svgSelection.nodes(), searchText);
+            }            
         }
 
         svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
