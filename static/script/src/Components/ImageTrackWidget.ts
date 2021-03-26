@@ -12,9 +12,6 @@ import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { CurveList } from '../DataModel/CurveList';
 import { HistogramWidget } from './HistogramWidget';
 import { OptionSelect } from './OptionSelect';
-import { PointCollection } from '../DataModel/PointCollection';
-import { createNoSubstitutionTemplateLiteral } from 'typescript';
-import { curveBasis } from 'd3';
 
 export class ImageTrackWidget
 {
@@ -1643,7 +1640,8 @@ export class ImageTrackWidget
                 .attr('x2', xPosPin)
                 .attr('y1', yPos)
                 .attr('y2', yPos)
-                .classed('pinLine', true);
+                .classed('pinLine', true)
+                .classed(trackData.data.id, true);
 
             const myPushPinDesign = "M17.2,0.3c-2,0.4-2.7,1-3,1.5c-0.7,1.1,0,2.6-0.8,3c-0.1,0-0.1,0-0.2,0c-1,0-1.4,0-4,0c-2.9,0-4,0-5,0c-0.7,0-0.8-1-1-1.5C2.9,2.6,3,2.3,2.7,2C1.8,1.4,0.3,1.8,0.3,1.8s0-0.8,0,6.5c0,7.2,0,6.5,0,6.5s1.5,0.4,2.4-0.2C3,14.3,2.9,14,3.3,13.3c0.2-0.6,0.3-1.5,1-1.5c1,0,2.1,0,5,0c2.6,0,3,0,4,0s0.1,1.8,1,3c0.7,0.9,2.1,1.3,3,1.5c0-2.7,0-5.3,0-8S17.2,3,17.2,0.3z";
             const iconWidth = 17;
@@ -1659,6 +1657,7 @@ export class ImageTrackWidget
                 {
                     self.onDragStart(this, transX, transY, needleElement, textSelect, exemplarValue, trackData.anchorVal, categoryIndex);
                 })
+                .classed(trackData.data.id, true);
                 // .on('mouseenter', () =>
                 // {
                 //     console.log('P ENTER');
@@ -1675,9 +1674,11 @@ export class ImageTrackWidget
                 .attr('x', textPad)
                 .attr('y', yPos)
                 .attr('alignment-baseline', 'middle')
+                .classed('pinLabel', true)
                 .classed('tinyText', true)
                 .classed('noSelect', true)
-                .text(Math.round(exemplarValue));
+                .text(Math.round(exemplarValue))
+                .classed(trackData.data.id, true);
         }
         else
         {
@@ -1686,7 +1687,8 @@ export class ImageTrackWidget
                 .attr('x2', xPosPin)
                 .attr('y1', yPos)
                 .attr('y2', yPos)
-                .classed('pinLine', true);
+                .classed('pinLine', true)
+                .classed(trackData.data.id, true);
 
             const radius = 3
             this.exemplarPinGroup.append('circle')
@@ -1694,6 +1696,7 @@ export class ImageTrackWidget
                 .attr('cy', yPos)
                 .attr('r', radius)
                 .classed('pinHead', true)
+                .classed(trackData.data.id, true);
         }
     }
 
@@ -1977,13 +1980,23 @@ export class ImageTrackWidget
                 .data(this.trackList)
                 .classed('selected', (d, i) => i == rowIndex)
 
-            this.exemplarPinGroup.selectAll('line')
-                .data(this.trackList)
-                .classed('selected', (d, i) => i === rowIndex);
+            this.exemplarPinGroup.selectAll('*')
+                // .data(this.trackList)
+                .classed('selected', function(d, i) 
+                {
+                    return d3.select(this).classed(cellId);
+                });
 
-            this.exemplarPinGroup.selectAll('circle')
-                .data(this.trackList)
-                .classed('selected', (d, i) => i === rowIndex);
+            this.manualExemplarPinGroup.selectAll('*')
+                // .data(this.trackList)
+                .classed('selected', function(d, i) 
+                {
+                    return d3.select(this).classed(cellId);
+                });
+
+            // this.exemplarPinGroup.selectAll('circle')
+            //     .data(this.trackList)
+            //     .classed('selected', (d, i) => i === rowIndex);
 
             let searchText: string;
             if (rowIndex < 0)

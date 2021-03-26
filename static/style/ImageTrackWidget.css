@@ -49,6 +49,9 @@
     opacity: 1;
     stroke-width: 2;
 }
+.pinLabel.selected {
+    text-decoration: underline;
+}
 
 .pinHead {
     fill: grey;
