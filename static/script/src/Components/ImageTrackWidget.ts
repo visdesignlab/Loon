@@ -1490,7 +1490,7 @@ export class ImageTrackWidget
             .join('rect')
             .attr('x', 0)
             .attr('y', 0)
-            .attr('transform', d => `translate(0, ${Math.max(0, d[1][0] - this.latestScroll[1])})`)
+            .attr('transform', d => `translate(0, ${d[1][0]})`)
             .attr('width', this.cellTimelineMargin.left - this.labelLinePad)
             .attr('height', d => d[1][1] - d[1][0])
             .attr('stroke-width', '0px')
