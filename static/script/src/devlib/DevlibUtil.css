@@ -2,6 +2,10 @@
 	display: none !important;
 }
 
+.noSelect {
+    user-select: none;
+}
+
 .noShrink {
     flex-shrink: 0;
 }

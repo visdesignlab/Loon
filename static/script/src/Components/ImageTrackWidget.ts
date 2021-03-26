@@ -262,7 +262,12 @@ export class ImageTrackWidget
     private _needleSelection : d3.Selection<SVGLineElement, any, Element, any>;
     public get needleSelection() : d3.Selection<SVGLineElement, any, Element, any> {
         return this._needleSelection;
-    }    
+    }
+
+    private _textSelection : d3.Selection<SVGTextElement, any, Element, any>;
+    public get textSelection() : d3.Selection<SVGTextElement, any, Element, any> {
+        return this._textSelection;
+    }
 
     private _initialDragCoords : [number, number];
     public get initialDragCoords() : [number, number] {
@@ -1641,7 +1646,7 @@ export class ImageTrackWidget
                 .attr('d', myPushPinDesign)
                 .on('mousedown', function(d)
                 {
-                    self.onDragStart(this, transX, transY, needleElement, exemplarValue, trackData.anchorVal);
+                    self.onDragStart(this, transX, transY, needleElement, textSelect, exemplarValue, trackData.anchorVal);
                 })
                 .on('mouseenter', () =>
                 {
@@ -1653,6 +1658,15 @@ export class ImageTrackWidget
                     console.log('P LEAVE');
                     this._inDragZone = false;
                 });
+            
+            const textPad = 4;
+            const textSelect = this.exemplarPinGroup.append('text') // put in semantically incorrect group to avoid mouseover problems and because I'm tired.
+                .attr('x', textPad)
+                .attr('y', yPos)
+                .attr('alignment-baseline', 'middle')
+                .classed('tinyText', true)
+                .classed('noSelect', true)
+                .text(Math.round(exemplarValue));
         }
         else
         {
@@ -1672,13 +1686,19 @@ export class ImageTrackWidget
         }
     }
 
-    private onDragStart(pinElement: SVGPathElement, transX: number, transY: number, needleSelect: d3.Selection<SVGLineElement, any, Element, any>, initialValue: number, anchorValue: number): void
+    private onDragStart(
+        pinElement: SVGPathElement,
+        transX: number, transY: number,
+        needleSelect: d3.Selection<SVGLineElement, any, Element, any>,
+        textSelect: d3.Selection<SVGTextElement, any, Element, any>,
+        initialValue: number, anchorValue: number): void
     {
         const coords = d3.mouse(pinElement);
         this._draggingPin = true;
         this._draggingPinElement = pinElement;
         this._initialDragCoords = [transX, transY];
         this._needleSelection = needleSelect;
+        this._textSelection = textSelect;
         this._totalDragOffset = [0, 0];
         this._initialPinValue = initialValue;
         this._anchorPinValue = anchorValue;
@@ -1705,20 +1725,18 @@ export class ImageTrackWidget
 
         if (!this.inDragZone)
         {
-            //reset pin do nothing.
+            //reset pin aka snap back
             d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
+            // this.needleSelection.attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
             this.needleSelection.attr('transform', '');
+            this.textSelection.attr('transform', '').text(Math.round(this.initialPinValue));
             return;
         }
-
-        const pixelDifference = this.totalDragOffset[1];
-        const valueDifference = this.normalizedHistogramScaleY.invert(pixelDifference);
-        const newValue = this.initialPinValue + valueDifference;
         
         const index = this.manualSampleValues.indexOf(this.anchorPinValue);
         if (index !== -1)
         {
-            this.manualSampleValues[index] = newValue;
+            this.manualSampleValues[index] = this.getCurrentDraggedValue();
             document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: this.currentSamplingStategy}));
         }
     }
@@ -1730,7 +1748,17 @@ export class ImageTrackWidget
             this.totalDragOffset[1] += moveY;
             d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0]}, ${this.initialDragCoords[1] + this.totalDragOffset[1]})`);
             this.needleSelection.attr('transform', `translate(0, ${this.totalDragOffset[1]})`);
+            this.textSelection
+                .attr('transform', `translate(0, ${this.totalDragOffset[1]})`)
+                .text(Math.round(this.getCurrentDraggedValue()));
         }
+    }
+
+    private getCurrentDraggedValue(): number
+    {
+        const pixelDifference = this.totalDragOffset[1];
+        const valueDifference = this.normalizedHistogramScaleY.invert(pixelDifference);
+        return this.initialPinValue + valueDifference;
     }
 
 
