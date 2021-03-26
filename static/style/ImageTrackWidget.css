@@ -94,3 +94,9 @@
     fill: none;
     stroke-linejoin: round;
 }
+
+.currentFrameLine {
+    stroke: #a5a5a5;
+    stroke-width: 1px;
+    stroke-dasharray: 3 3;
+}

@@ -236,6 +236,16 @@ export class ImageTrackWidget
         return this._sourceDestCell;
     }
     
+    private _exemplarScaleX : d3.ScaleLinear<number, number>;
+    public get exemplarScaleX() : d3.ScaleLinear<number, number> {
+        return this._exemplarScaleX;
+    }
+
+    private _exemplarScaleY : d3.ScaleLinear<number, number>;
+    public get exemplarScaleY() : d3.ScaleLinear<number, number> {
+        return this._exemplarScaleY;
+    }
+
     private _exemplarMinWidth : number;
     public get exemplarMinWidth() : number {
         return this._exemplarMinWidth;
@@ -1283,11 +1293,15 @@ export class ImageTrackWidget
                         {
                             // should use data, not full data to get the right color.
                             const [cell, _index] = this.parentWidget.data.GetCellFromLabel(point.get('Location ID'), point.get('Frame ID'), labelToMatch);
-                            let [r, g, b] = this.parentWidget.getCellColor(cell);
-                            outlineTileData.data[rIdx] = r;
-                            outlineTileData.data[rIdx + 1] = g;
-                            outlineTileData.data[rIdx + 2] = b;
-                            outlineTileData.data[rIdx + 3] = 255;
+                            let color = this.parentWidget.getCellColor(cell);
+                            if (color !== null)
+                            {
+                                let [r, g, b] = color;
+                                outlineTileData.data[rIdx] = r;
+                                outlineTileData.data[rIdx + 1] = g;
+                                outlineTileData.data[rIdx + 2] = b;
+                                outlineTileData.data[rIdx + 3] = 255;
+                            }
                         }
                     }
                     rIdx += 4;
@@ -1827,7 +1841,7 @@ export class ImageTrackWidget
         width = Math.min(width, 200); // max-width: 200
 
         const frameExtent = this.parentWidget.fullData.getMinMax('Frame ID');
-        const scaleX = d3.scaleLinear()
+        this._exemplarScaleX = d3.scaleLinear()
             .domain(frameExtent)
             .range([0, width]);
         
@@ -1847,11 +1861,22 @@ export class ImageTrackWidget
         let height = firstPosition[1] - firstPosition[0] + 1;
         height = Math.min(height, 200); // max-height: 200
 
-        const scaleY = d3.scaleLinear()
+        this._exemplarScaleY = d3.scaleLinear()
             .domain([yMin, yMax])
             .range([height, 0]);
 
-        let [exemplarGrowthCurves, averageGrowthLines]: [string[][], string[]] = this.generateExemplarGrowthCurves(scaleX, scaleY);
+        let [exemplarGrowthCurves, averageGrowthLines]: [string[][], string[]] = this.generateExemplarGrowthCurves();
+
+        const currentFrame = this.parentWidget.getCurrentFrameId();
+        groupListSelection.selectAll('.currentFrameLine')
+            .data((d,i) => [i])
+            .join('line')
+            .attr('x1', this.exemplarScaleX(currentFrame))
+            .attr('x2', this.exemplarScaleX(currentFrame))
+            .attr('y1', this.exemplarScaleY.range()[0])
+            .attr('y2', this.exemplarScaleY.range()[1])
+            .attr('stroke', 'black')
+            .classed('currentFrameLine', true);
 
         groupListSelection.selectAll('.averageCurve')
             .data((d,i) => [[averageGrowthLines[i], i] ])
@@ -1869,8 +1894,8 @@ export class ImageTrackWidget
 
         let scaleList: [d3.Axis<number | { valueOf(): number; }>, number][] =
         [
-            [d3.axisBottom(scaleX).ticks(5), height],
-            [d3.axisLeft(scaleY), 0]
+            [d3.axisBottom(this.exemplarScaleX).ticks(5), height],
+            [d3.axisLeft(this.exemplarScaleY), 0]
         ];
 
         groupListSelection.selectAll('.exemplarPlotAxis')
@@ -1885,6 +1910,27 @@ export class ImageTrackWidget
             });
     }
 
+    public updateCurrentFrameIndicator(frameId: number): void
+    {
+
+        let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplarPlotGrouper')
+            // .data(this.conditionLabelPositions)
+            // .join('g')
+            // .classed('exemplarPlotGrouper', true)
+            // .attr('transform', d => `translate(0, ${d[1][0]})`);
+
+        groupListSelection.selectAll('.currentFrameLine')
+            .data([42])
+            .join('line')
+            .attr('x1', this.exemplarScaleX(frameId))
+            .attr('x2', this.exemplarScaleX(frameId))
+            .attr('y1', this.exemplarScaleY.range()[0])
+            .attr('y2', this.exemplarScaleY.range()[1])
+            .attr('stroke', 'black')
+            .classed('currentFrameLine', true);
+
+    }
+
     private updateExemplarCurvesOffset(): void
     {
         // const contentOffset = Math.min(Number(this.selectedImageCanvas.attr('width')), this.innerContainerW);
@@ -1893,13 +1939,13 @@ export class ImageTrackWidget
         this.exemplarCurvesGroup.attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);
     }
 
-    private generateExemplarGrowthCurves(scaleX: d3.ScaleLinear<number, number>, scaleY: d3.ScaleLinear<number, number>): [string[][], string[]]
+    private generateExemplarGrowthCurves(): [string[][], string[]]
     {
         const xKey = 'Frame ID';
         const yKey = this.exemplarYKey;
         let line = d3.line<[number, number]>()
-            .x(d => scaleX(d[0]))
-            .y(d => scaleY(d[1]));
+            .x(d => this.exemplarScaleX(d[0]))
+            .y(d => this.exemplarScaleY(d[1]));
 
         // todo - maybe normalize this to a [number, number][] so filtering is easier.
         
@@ -1924,8 +1970,8 @@ export class ImageTrackWidget
 
 		let [minFrame, maxFrame] = this.parentWidget.fullData.getMinMax('Frame ID');
         let lineAvg = d3.line<[number, number]>()
-            .x(d => scaleX(d[0]))
-            .y(d => scaleY(d[1]));
+            .x(d => this.exemplarScaleX(d[0]))
+            .y(d => this.exemplarScaleY(d[1]));
 
         let averageGrowthLines: string[] = [];
         for (let facet of this.parentWidget.facetList)

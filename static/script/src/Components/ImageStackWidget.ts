@@ -126,6 +126,11 @@ export class ImageStackWidget {
 	public get toggleOptionsContainer() : HtmlSelection {
 		return this._toggleOptionsContainer;
 	}
+
+	private _legendToggleContainer : HtmlSelection;
+	public get legendToggleContainer() : HtmlSelection {
+		return this._legendToggleContainer;
+	}
 	
 	private _showOutlineToggle : HtmlSelection;
 	public get showOutlineToggle() : HtmlSelection {
@@ -136,6 +141,22 @@ export class ImageStackWidget {
 	public get invertImageToggle() : HtmlSelection {
 		return this._invertImageToggle;
 	}
+
+	// three color legend toggles
+	private _legendToggleSelected : HtmlSelection;
+	public get legendToggleSelected() : HtmlSelection {
+		return this._legendToggleSelected;
+	}
+
+	private _legendToggleFilteredOut : HtmlSelection;
+	public get legendToggleFilteredOut() : HtmlSelection {
+		return this._legendToggleFilteredOut;
+	}
+
+	private _legendToggleNotSelected : HtmlSelection;
+	public get legendToggleNotSelected() : HtmlSelection {
+		return this._legendToggleNotSelected;
+	}	
 	
 	private _selectedImageContainer: HtmlSelection;
 	public get selectedImageContainer(): HtmlSelection {
@@ -260,12 +281,12 @@ export class ImageStackWidget {
 			.classed('toggleOptions', true)
 			.classed('smallText', true);
 
+
 		const outlineId = 'imageToggle-outlines';
 		this._showOutlineToggle = this.toggleOptionsContainer.append('input')
 			.attr('type', 'checkbox')
 			.on('change', () => 
 			{
-				let node = document.getElementById(outlineId) as HTMLInputElement;
 				this.updateCanvas();
 			})
 			.attr('id', outlineId);
@@ -289,6 +310,61 @@ export class ImageStackWidget {
 		this.toggleOptionsContainer.append('label')
 			.attr('for', invertId)
 			.text('Invert');
+
+
+		// add three toggles for a legend and to hide only some outlines
+		this._legendToggleContainer = this.innerContainer.append('div')
+			.classed('toggleOptions', true)
+			.classed('smallText', true);
+
+
+		this._legendToggleSelected = this.legendToggleContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () => 
+			{
+				this.updateCanvas();
+			})
+			.classed('noDisp', true)
+			.attr('id', 'legendToggle-selected');
+		this.legendToggleContainer.append('label')
+			.attr('for', 'legendToggle-selected')
+			.classed('colorLegendLabel',true)
+			.classed('red', true)
+			.text('Selected');
+		(this.legendToggleSelected.node() as HTMLInputElement).checked = true;
+
+
+		this._legendToggleFilteredOut = this.legendToggleContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () => 
+			{
+				this.updateCanvas();
+			})
+			.classed('noDisp', true)
+			.attr('id', 'legendToggle-filteredOut');
+		this.legendToggleContainer.append('label')
+			.attr('for', 'legendToggle-filteredOut')
+			.classed('colorLegendLabel',true)
+			.classed('green', true)
+			.text('Filtered Out');
+		(this.legendToggleFilteredOut.node() as HTMLInputElement).checked = true;
+
+
+		this._legendToggleNotSelected = this.legendToggleContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () => 
+			{
+				this.updateCanvas();
+			})
+			.classed('noDisp', true)
+			.attr('id', 'legendToggle-notSelected');
+		this.legendToggleContainer.append('label')
+			.attr('for', 'legendToggle-notSelected')
+			.classed('colorLegendLabel',true)
+			.classed('blue', true)
+			.text('Not Selected');
+		(this.legendToggleNotSelected.node() as HTMLInputElement).checked = true;
+
 
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);
@@ -317,6 +393,7 @@ export class ImageStackWidget {
 		{
 			this.setNumExemplars();
 			this.updateTracksCanvas();
+			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
 		});
 
 		document.addEventListener('launchExemplarCurve', (e: CustomEvent) => {
@@ -452,6 +529,7 @@ export class ImageStackWidget {
 	private updateTracksCanvas(): void
 	{
 		let autoCurveList: conditionExemplar<CurveND>[];
+		let eventToDispatch = null;
 		if (this.inExemplarMode) {
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
@@ -475,6 +553,14 @@ export class ImageStackWidget {
 					}
 				}
 			}
+			if (!this.exemplarLocations.has(this.getCurrentLocationId()))
+			{
+				eventToDispatch = new CustomEvent('locFrameClicked', { detail:
+				{
+					locationId: justData[0].pointList[0].get('Location ID'),
+					frameId: justData[0].pointList[0].get('Frame ID')
+				}});
+			}
 		}
 		else {
 			autoCurveList = this.getCurvesBasedOnPointsAtCurrentFrame();
@@ -482,6 +568,10 @@ export class ImageStackWidget {
 			this.exemplarFrames.clear();
 		}
 		this.imageTrackWidget.draw(autoCurveList, this.manuallyPinnedTracks);
+		if (eventToDispatch)
+		{
+			document.dispatchEvent(eventToDispatch);
+		}
 	}
 
 	private getExemplarCurves(): conditionExemplar<CurveND>[]
@@ -568,11 +658,15 @@ export class ImageStackWidget {
 						let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
 						flatIdx *= 4;
 						let [cell, _index] = this.getCell(labelRun.label, this.data);
-						let [r, g, b] = this.getCellColor(cell);
-						myImageData.data[flatIdx] = r;
-						myImageData.data[flatIdx + 1] = g;
-						myImageData.data[flatIdx + 2] = b;
-						myImageData.data[flatIdx + 3] = 255;
+						let color = this.getCellColor(cell);
+						if (color !== null)
+						{
+							let [r, g, b] = color;
+							myImageData.data[flatIdx] = r;
+							myImageData.data[flatIdx + 1] = g;
+							myImageData.data[flatIdx + 2] = b;
+							myImageData.data[flatIdx + 3] = 255;
+						}
 					}
 				}
 			}
@@ -778,11 +872,15 @@ export class ImageStackWidget {
 						let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
 						flatIdx *= 4;
 						let [cell, _index] = this.getCell(labelRun.label, this.data);
-						let [r, g, b] = this.getCellColor(cell);
-						myImageData.data[flatIdx] = r;
-						myImageData.data[flatIdx + 1] = g;
-						myImageData.data[flatIdx + 2] = b;
-						myImageData.data[flatIdx + 3] = 200;
+						let color = this.getCellColor(cell);
+						if (color !== null)
+						{
+							let [r, g, b] = color;
+							myImageData.data[flatIdx] = r;
+							myImageData.data[flatIdx + 1] = g;
+							myImageData.data[flatIdx + 2] = b;
+							myImageData.data[flatIdx + 3] = 200;
+						}
 					}
 				}
 
@@ -862,18 +960,30 @@ export class ImageStackWidget {
 		return dataSource.GetCellFromLabel(this.getCurrentLocationId(), this.getCurrentFrameId(), label);
 	}
 
-	public getCellColor(cell: PointND | null): [number, number, number]
+	public getCellColor(cell: PointND | null): [number, number, number] | null
 	{
 		let color: [number, number, number] = [0, 0, 0];
 		if (!cell) {
+			if (!(this.legendToggleFilteredOut.node()as HTMLInputElement).checked)
+			{
+				return null
+			}
 			// nuted/darkened from SpringGreen
 			color = [119, 140, 77];
 		}
 		else if (cell.inBrush) {
+			if (!(this.legendToggleSelected.node()as HTMLInputElement).checked)
+			{
+				return null
+			}
 			// FireBrick
 			color = [178, 34, 34];
 		}
 		else {
+			if (!(this.legendToggleNotSelected.node()as HTMLInputElement).checked)
+			{
+				return null
+			}
 			// SteelBlue
 			color = [70, 130, 180];
 		}
