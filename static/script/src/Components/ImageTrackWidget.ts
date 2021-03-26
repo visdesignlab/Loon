@@ -1658,16 +1658,6 @@ export class ImageTrackWidget
                     self.onDragStart(this, transX, transY, needleElement, textSelect, exemplarValue, trackData.anchorVal, categoryIndex);
                 })
                 .classed(trackData.data.id, true);
-                // .on('mouseenter', () =>
-                // {
-                //     console.log('P ENTER');
-                //     this._inDragZone = true;
-                // })
-                // .on('mouseleave', () =>
-                // {
-                //     console.log('P LEAVE');
-                //     this._inDragZone = false;
-                // });
             
             const textPad = 4;
             const textSelect = this.exemplarPinGroup.append('text') // put in semantically incorrect group to avoid mouseover problems and because I'm tired.
@@ -1677,7 +1667,7 @@ export class ImageTrackWidget
                 .classed('pinLabel', true)
                 .classed('tinyText', true)
                 .classed('noSelect', true)
-                .text(Math.round(exemplarValue))
+                .text(this.formatPinLabel(exemplarValue))
                 .classed(trackData.data.id, true);
         }
         else
@@ -1698,6 +1688,20 @@ export class ImageTrackWidget
                 .classed('pinHead', true)
                 .classed(trackData.data.id, true);
         }
+    }
+
+    private formatPinLabel(value: number): string
+    {
+        let absVal = Math.abs(value);
+        if (absVal > 99.5) 
+        {
+            return Math.round(value).toString();
+        }
+        if (absVal > 9.5)
+        {
+            return value.toFixed(1);
+        }
+        return value.toFixed(2);
     }
 
     private onDragStart(
@@ -1791,7 +1795,7 @@ export class ImageTrackWidget
             this.needleSelection.attr('transform', `translate(0, ${yOffset})`);
             this.textSelection
                 .attr('transform', `translate(0, ${yOffset})`)
-                .text(Math.round(this.getCurrentDraggedValue()));
+                .text(this.formatPinLabel(this.getCurrentDraggedValue()));
         }
     }
 
