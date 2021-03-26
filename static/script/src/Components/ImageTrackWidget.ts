@@ -12,6 +12,7 @@ import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { CurveList } from '../DataModel/CurveList';
 import { HistogramWidget } from './HistogramWidget';
 import { OptionSelect } from './OptionSelect';
+import { PointCollection } from '../DataModel/PointCollection';
 
 export class ImageTrackWidget
 {
@@ -28,7 +29,7 @@ export class ImageTrackWidget
         this._exemplarYKey = 'Mass_norm';
         this._samplingStratOptions = samplingStratOptions;
 		this._smoothCurves = true;
-
+        this._draggingPin = false;
         // hardcoded from css
         this._cellTimelineMargin = {
             top: 36,
@@ -200,7 +201,12 @@ export class ImageTrackWidget
     private _histogramScaleYList : d3.ScaleLinear<number, number>[];
     public get histogramScaleYList() : d3.ScaleLinear<number, number>[] {
         return this._histogramScaleYList;
-    }    
+    }
+
+    private _normalizedHistogramScaleY : d3.ScaleLinear<number, number>;
+    public get normalizedHistogramScaleY() : d3.ScaleLinear<number, number> {
+        return this._normalizedHistogramScaleY;
+    }
     
     private _cellTimelineMargin : Margin;
     public get cellTimelineMargin() : Margin {
@@ -241,6 +247,41 @@ export class ImageTrackWidget
 	public get smoothCurves() : boolean {
 		return this._smoothCurves;
 	}
+
+    private _draggingPin : boolean;
+    public get draggingPin() : boolean {
+        return this._draggingPin;
+    }
+
+    private _draggingPinElement : SVGPathElement;
+    public get draggingPinElement() : SVGPathElement {
+        return this._draggingPinElement;
+    }
+
+    private _needleSelection : d3.Selection<SVGLineElement, any, Element, any>;
+    public get needleSelection() : d3.Selection<SVGLineElement, any, Element, any> {
+        return this._needleSelection;
+    }    
+
+    private _initialDragCoords : [number, number];
+    public get initialDragCoords() : [number, number] {
+        return this._initialDragCoords;
+    }
+
+    private _totalDragOffset : [number, number];
+    public get totalDragOffset() : [number, number] {
+        return this._totalDragOffset;
+    }
+
+    private _initialPinValue : number;
+    public get initialPinValue() : number {
+        return this._initialPinValue;
+    }
+
+    private _anchorPinValue : number;
+    public get anchorPinValue() : number {
+        return this._anchorPinValue;
+    }
     
     public init(): void
     {
@@ -259,7 +300,7 @@ export class ImageTrackWidget
         this._samplingStrategySelect = new OptionSelect('exemplarSamplingStratSelection', 'Sampled at');
         let buttonPropList: ButtonProps[] = [];
         this._currentSamplingStategy = this.samplingStratOptions[0]; // default to first
-        this._manualSampleValues = [];
+        this._manualSampleValues = []; // todo remove
         for (let option of this.samplingStratOptions)
         {
             let optionName: string;
@@ -410,6 +451,15 @@ export class ImageTrackWidget
 			this._smoothCurves = e.detail;
             this.drawExemplarGrowthCurves();
 		});
+        const self = this;
+        document.addEventListener('mousemove', function(e)
+        {
+            self.onDrag(e.movementX, e.movementY);
+        });
+        document.addEventListener('mouseup', function(e)
+        {
+            self.onDragEnd();
+        });
     }
 
     public async draw(tracks: conditionExemplar<CurveND>[], manuallyPinnedTracks: CurveND[]): Promise<void>
@@ -1446,13 +1496,13 @@ export class ImageTrackWidget
             .attr('stroke-width', '0px')
             .attr('fill', 'tomato')
             .attr('opacity', 0.5)
-            .on('click', function(d, i) 
+            .on('click', function(d) 
             {
                 const [_xPos, yPos] = d3.mouse(this as any);
-                const value = self.histogramScaleYList[i].invert(yPos);
+                const value = self.normalizedHistogramScaleY.invert(yPos);
                 self.manualSampleValues.push(value);
                 document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: self.currentSamplingStategy}));
-            })
+            });
     }
 
     private drawScentedWidgets(axisAnchor: number): void
@@ -1485,6 +1535,11 @@ export class ImageTrackWidget
 
             this.histogramScaleYList.push(scaleY);
         }
+        const firstExtent = this.conditionLabelPositions[0][1];
+        this._normalizedHistogramScaleY = d3.scaleLinear()
+            .domain([minBinBoundary, maxBinBoundary])
+            .range([0, firstExtent[1] - firstExtent[0]]);
+
         const padding = 4;
 		let biggestBinPercentage = d3.max(binArray, bin => d3.max(bin, d => d.length) / d3.sum(bin, d => d.length));
         const maxWidth = 52;
@@ -1558,7 +1613,7 @@ export class ImageTrackWidget
         const manual: boolean = trackData.type === 'manual'
         if (manual)
         {
-            this.manualExemplarPinGroup.append('line')
+            const needleElement = this.manualExemplarPinGroup.append('line')
                 .attr('x1', xPosHead)
                 .attr('x2', xPosPin)
                 .attr('y1', yPos)
@@ -1567,11 +1622,18 @@ export class ImageTrackWidget
 
             const myPushPinDesign = "M17.2,0.3c-2,0.4-2.7,1-3,1.5c-0.7,1.1,0,2.6-0.8,3c-0.1,0-0.1,0-0.2,0c-1,0-1.4,0-4,0c-2.9,0-4,0-5,0c-0.7,0-0.8-1-1-1.5C2.9,2.6,3,2.3,2.7,2C1.8,1.4,0.3,1.8,0.3,1.8s0-0.8,0,6.5c0,7.2,0,6.5,0,6.5s1.5,0.4,2.4-0.2C3,14.3,2.9,14,3.3,13.3c0.2-0.6,0.3-1.5,1-1.5c1,0,2.1,0,5,0c2.6,0,3,0,4,0s0.1,1.8,1,3c0.7,0.9,2.1,1.3,3,1.5c0-2.7,0-5.3,0-8S17.2,3,17.2,0.3z";
             const iconWidth = 17;
-            const iconHeight = 16;            
+            const iconHeight = 16;
+            const self = this;
+            const transX = xPosHead - iconWidth;
+            const transY = yPos - iconHeight / 2;
             this.manualExemplarPinGroup.append('path')
                 .classed('pinHead', true)
-                .attr('transform', `translate(${xPosHead - iconWidth}, ${yPos - iconHeight / 2})`)
-                .attr('d', myPushPinDesign);
+                .attr('transform', `translate(${transX}, ${transY})`)
+                .attr('d', myPushPinDesign)
+                .on('mousedown', function(d)
+                {
+                    self.onDragStart(this, transX, transY, needleElement, exemplarValue, trackData.anchorVal);
+                });
         }
         else
         {
@@ -1589,7 +1651,55 @@ export class ImageTrackWidget
                 .attr('r', radius)
                 .classed('pinHead', true)
         }
+    }
 
+    private onDragStart(pinElement: SVGPathElement, transX: number, transY: number, needleSelect: d3.Selection<SVGLineElement, any, Element, any>, initialValue: number, anchorValue: number): void
+    {
+        const coords = d3.mouse(pinElement);
+        this._draggingPin = true;
+        this._draggingPinElement = pinElement;
+        this._initialDragCoords = [transX, transY];
+        this._needleSelection = needleSelect;
+        this._totalDragOffset = [0, 0];
+        this._initialPinValue = initialValue;
+        this._anchorPinValue = anchorValue;
+        console.log('START', coords)
+        d3.select(pinElement).attr('transform', `translate(${transX}, ${transY})`);
+    }
+
+    private onDragEnd(): void
+    {
+        if (!this.draggingPin)
+        {
+            return;
+        }
+        // const coords = d3.mouse(pinElement);
+        this._draggingPin = false;
+
+        const pixelDifference = this.totalDragOffset[1];
+        const valueDifference = this.normalizedHistogramScaleY.invert(pixelDifference);
+        const newValue = this.initialPinValue + valueDifference;
+        
+        const index = this.manualSampleValues.indexOf(this.anchorPinValue);
+        if (index !== -1)
+        {
+            this.manualSampleValues[index] = newValue;
+            document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: this.currentSamplingStategy}));
+        }
+        
+        // if out of bounds by some definition....
+        // d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
+        // this.needleSelection.attr('transform', '');
+    }
+    
+    private onDrag(moveX: number, moveY: number): void
+    {
+        if (this.draggingPin)
+        {
+            this.totalDragOffset[1] += moveY;
+            d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0]}, ${this.initialDragCoords[1] + this.totalDragOffset[1]})`);
+            this.needleSelection.attr('transform', `translate(0, ${this.totalDragOffset[1]})`);
+        }
     }
 
 

@@ -119,5 +119,6 @@ export interface curveFilter {
 
 export interface conditionExemplar<dataType> {
 	data: dataType,
-	type: 'auto' | 'manual'
+	type: 'auto' | 'manual',
+	anchorVal?: number
 }

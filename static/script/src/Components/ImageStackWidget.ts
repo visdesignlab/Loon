@@ -518,7 +518,7 @@ export class ImageStackWidget {
 			for (let val of this.imageTrackWidget.manualSampleValues)
 			{
 				let closestCurve = this.getClosestCurve(tracks, val, this.exemplarAttribute);
-				conditionList.push({data: closestCurve, type: 'manual'});	
+				conditionList.push({data: closestCurve, type: 'manual', anchorVal: val});	
 			}
 			conditionList.sort((a, b) => a.data.get(this.exemplarAttribute) - b.data.get(this.exemplarAttribute));
 			curveList.push(...conditionList);
