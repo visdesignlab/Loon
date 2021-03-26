@@ -14,6 +14,7 @@ import { HistogramWidget } from './HistogramWidget';
 import { OptionSelect } from './OptionSelect';
 import { PointCollection } from '../DataModel/PointCollection';
 import { createNoSubstitutionTemplateLiteral } from 'typescript';
+import { curveBasis } from 'd3';
 
 export class ImageTrackWidget
 {
@@ -1769,10 +1770,12 @@ export class ImageTrackWidget
         {
             this._pinMoved = true;
             this.totalDragOffset[1] += moveY;
-            d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0]}, ${this.initialDragCoords[1] + this.totalDragOffset[1]})`);
-            this.needleSelection.attr('transform', `translate(0, ${this.totalDragOffset[1]})`);
+            let yOffset = this.initialDragCoords[1] + this.totalDragOffset[1];
+            yOffset = DevlibMath.clamp(yOffset, this.normalizedHistogramScaleY.range() as [number, number]);
+            d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0]}, ${yOffset})`);
+            this.needleSelection.attr('transform', `translate(0, ${yOffset - this.initialDragCoords[1]})`);
             this.textSelection
-                .attr('transform', `translate(0, ${this.totalDragOffset[1]})`)
+                .attr('transform', `translate(0, ${yOffset - this.initialDragCoords[1]})`)
                 .text(Math.round(this.getCurrentDraggedValue()));
         }
     }
@@ -1780,8 +1783,10 @@ export class ImageTrackWidget
     private getCurrentDraggedValue(): number
     {
         const pixelDifference = this.totalDragOffset[1];
-        const valueDifference = this.normalizedHistogramScaleY.invert(pixelDifference);
-        return this.initialPinValue + valueDifference;
+        const valueDifference = this.normalizedHistogramScaleY.invert(pixelDifference) - this.normalizedHistogramScaleY.invert(0);
+        let currentValue = this.initialPinValue + valueDifference;
+        currentValue = DevlibMath.clamp(currentValue, this.normalizedHistogramScaleY.domain() as [number, number]);
+        return currentValue;
     }
 
 
