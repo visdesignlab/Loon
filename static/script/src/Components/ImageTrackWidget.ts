@@ -300,6 +300,11 @@ export class ImageTrackWidget
         return this._pinMoved;
     }
     
+    private _dragGroupIndex : number;
+    public get dragGroupIndex() : number {
+        return this._dragGroupIndex;
+    }
+        
     public init(): void
     {
         const containerSelect = d3.select(this.container);
@@ -1521,8 +1526,8 @@ export class ImageTrackWidget
                 self.manualSampleValues.push(value);
                 document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: self.currentSamplingStategy}));
             })
-            .on('mouseleave', () => {this._inDragZone = false; console.log('R: LEAVE')})
-            .on('mouseenter', () => {this._inDragZone = true; console.log('R: ENTER')});
+            // .on('mouseleave', () => {this._inDragZone = false; console.log('R: LEAVE')})
+            // .on('mouseenter', () => {this._inDragZone = true; console.log('R: ENTER')});
     }
 
     private drawScentedWidgets(axisAnchor: number): void
@@ -1652,18 +1657,18 @@ export class ImageTrackWidget
                 .attr('d', myPushPinDesign)
                 .on('mousedown', function(d)
                 {
-                    self.onDragStart(this, transX, transY, needleElement, textSelect, exemplarValue, trackData.anchorVal);
+                    self.onDragStart(this, transX, transY, needleElement, textSelect, exemplarValue, trackData.anchorVal, categoryIndex);
                 })
-                .on('mouseenter', () =>
-                {
-                    console.log('P ENTER');
-                    this._inDragZone = true;
-                })
-                .on('mouseleave', () =>
-                {
-                    console.log('P LEAVE');
-                    this._inDragZone = false;
-                });
+                // .on('mouseenter', () =>
+                // {
+                //     console.log('P ENTER');
+                //     this._inDragZone = true;
+                // })
+                // .on('mouseleave', () =>
+                // {
+                //     console.log('P LEAVE');
+                //     this._inDragZone = false;
+                // });
             
             const textPad = 4;
             const textSelect = this.exemplarPinGroup.append('text') // put in semantically incorrect group to avoid mouseover problems and because I'm tired.
@@ -1697,7 +1702,8 @@ export class ImageTrackWidget
         transX: number, transY: number,
         needleSelect: d3.Selection<SVGLineElement, any, Element, any>,
         textSelect: d3.Selection<SVGTextElement, any, Element, any>,
-        initialValue: number, anchorValue: number): void
+        initialValue: number, anchorValue: number,
+        groupIndex: number): void
     {
         const coords = d3.mouse(pinElement);
         this._draggingPin = true;
@@ -1708,6 +1714,7 @@ export class ImageTrackWidget
         this._totalDragOffset = [0, 0];
         this._initialPinValue = initialValue;
         this._anchorPinValue = anchorValue;
+        this._dragGroupIndex = groupIndex;
         this._inDragZone = true;
         this._pinMoved = false;
 
@@ -1770,12 +1777,17 @@ export class ImageTrackWidget
         {
             this._pinMoved = true;
             this.totalDragOffset[1] += moveY;
-            let yOffset = this.initialDragCoords[1] + this.totalDragOffset[1];
-            yOffset = DevlibMath.clamp(yOffset, this.normalizedHistogramScaleY.range() as [number, number]);
-            d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0]}, ${yOffset})`);
-            this.needleSelection.attr('transform', `translate(0, ${yOffset - this.initialDragCoords[1]})`);
+            // let yOffset = this.initialDragCoords[1] + this.totalDragOffset[1];
+            // const groupOffset = this.histogramScaleYList[this.dragGroupIndex].range()[0];
+            // const firstOffset = this.histogramScaleYList[0].range()[0];
+            const valueOffsetPixels = this.normalizedHistogramScaleY(this.anchorPinValue);
+            const extent: [number, number] = this.normalizedHistogramScaleY.range().map(y => y - valueOffsetPixels) as [number, number];
+            let yOffset = DevlibMath.clamp(this.totalDragOffset[1], extent);
+            // console.log(this.totalDragOffset[1], extent, yOffset);
+            d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0]}, ${this.initialDragCoords[1] + yOffset})`);
+            this.needleSelection.attr('transform', `translate(0, ${yOffset})`);
             this.textSelection
-                .attr('transform', `translate(0, ${yOffset - this.initialDragCoords[1]})`)
+                .attr('transform', `translate(0, ${yOffset})`)
                 .text(Math.round(this.getCurrentDraggedValue()));
         }
     }
