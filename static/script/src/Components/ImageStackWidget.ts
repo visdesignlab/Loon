@@ -528,6 +528,7 @@ export class ImageStackWidget {
 	private updateTracksCanvas(): void
 	{
 		let autoCurveList: conditionExemplar<CurveND>[];
+		let eventToDispatch = null;
 		if (this.inExemplarMode) {
 			this.exemplarLocations.clear();
 			this.exemplarFrames.clear();
@@ -551,6 +552,14 @@ export class ImageStackWidget {
 					}
 				}
 			}
+			if (!this.exemplarLocations.has(this.getCurrentLocationId()))
+			{
+				eventToDispatch = new CustomEvent('locFrameClicked', { detail:
+				{
+					locationId: justData[0].pointList[0].get('Location ID'),
+					frameId: justData[0].pointList[0].get('Frame ID')
+				}});
+			}
 		}
 		else {
 			autoCurveList = this.getCurvesBasedOnPointsAtCurrentFrame();
@@ -558,6 +567,10 @@ export class ImageStackWidget {
 			this.exemplarFrames.clear();
 		}
 		this.imageTrackWidget.draw(autoCurveList, this.manuallyPinnedTracks);
+		if (eventToDispatch)
+		{
+			document.dispatchEvent(eventToDispatch);
+		}
 	}
 
 	private getExemplarCurves(): conditionExemplar<CurveND>[]
