@@ -54,7 +54,7 @@
     fill: grey;
     stroke: black;
     opacity: 0.6;
-    r: 3;
+    /* r: 3; */
 }
 
 .pinHead.manual {
@@ -63,7 +63,7 @@
 }
 
 .pinHead.selected {
-    r: 5;
+    /* r: 5; */
     opacity: 1;
 }
 

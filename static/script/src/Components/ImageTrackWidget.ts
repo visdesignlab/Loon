@@ -102,6 +102,11 @@ export class ImageTrackWidget
         return this._cellLabelGroup;
     }
 
+    private _labelLinePad : number;
+    public get labelLinePad() : number {
+        return this._labelLinePad;
+    }    
+
     private _scentedWidgetGroup : SvgSelection;
     public get scentedWidgetGroup() : SvgSelection {
         return this._scentedWidgetGroup;
@@ -110,6 +115,11 @@ export class ImageTrackWidget
     private _exemplarPinGroup : SvgSelection;
     public get exemplarPinGroup() : SvgSelection {
         return this._exemplarPinGroup;
+    }
+    
+    private _addPinRectGroup : SvgSelection;
+    public get addPinRectGroup() : SvgSelection {
+        return this._addPinRectGroup;
     }
 
     private _manualExemplarPinGroup : SvgSelection;
@@ -249,7 +259,7 @@ export class ImageTrackWidget
         this._samplingStrategySelect = new OptionSelect('exemplarSamplingStratSelection', 'Sampled at');
         let buttonPropList: ButtonProps[] = [];
         this._currentSamplingStategy = this.samplingStratOptions[0]; // default to first
-        this._manualSampleValues = [ 350 ]; // todo clear
+        this._manualSampleValues = [];
         for (let option of this.samplingStratOptions)
         {
             let optionName: string;
@@ -305,12 +315,17 @@ export class ImageTrackWidget
         this._cellLabelGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
+        this._labelLinePad = 16;
+
         this._scentedWidgetGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
         this._exemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
             
+        this._addPinRectGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
+
         this._manualExemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
             
@@ -1223,12 +1238,14 @@ export class ImageTrackWidget
             DevlibTSUtil.hide(this.scentedWidgetGroup.node());
             DevlibTSUtil.hide(this.exemplarPinGroup.node());
             DevlibTSUtil.hide(this.manualExemplarPinGroup.node());
+            DevlibTSUtil.hide(this.addPinRectGroup.node());
         }
         else
         {
             DevlibTSUtil.show(this.scentedWidgetGroup.node());
             DevlibTSUtil.show(this.exemplarPinGroup.node());
             DevlibTSUtil.show(this.manualExemplarPinGroup.node());
+            DevlibTSUtil.show(this.addPinRectGroup.node());
             let xAnchor = this.drawConditionLabels();
             if (onScroll)
             {
@@ -1237,6 +1254,7 @@ export class ImageTrackWidget
             else
             {
                 this.drawScentedWidgets(xAnchor);
+                this.drawAddPinRects(xAnchor);
             }
         }
         this.drawCellLabels(); // todo make this function conditional to always show pinned with star and only show others depending on if it's in exemplar mode.
@@ -1370,8 +1388,7 @@ export class ImageTrackWidget
 
     private drawConditionLabels(): number
     {
-        const pad = 16;
-        const xAnchor = this.cellTimelineMargin.left - pad;
+        const xAnchor = this.cellTimelineMargin.left - this.labelLinePad;
         const xAnchorLine = xAnchor - 4;
         this.cellLabelGroup.selectAll('text.conditionLabel')
             .data(this.conditionLabelPositions)
@@ -1408,13 +1425,38 @@ export class ImageTrackWidget
         
         this.manualExemplarPinGroup
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);    
+            
+        this.addPinRectGroup
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top - this.latestScroll[1]})`); 
 
         this.updateExemplarCurvesOffset();
     }
 
+    private drawAddPinRects(axisAnchor: number): void
+    {
+        const self = this;
+        this.addPinRectGroup.selectAll('rect')
+            .data(this.conditionLabelPositions)
+            .join('rect')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('transform', d => `translate(0, ${Math.max(0, d[1][0] - this.latestScroll[1])})`)
+            .attr('width', this.cellTimelineMargin.left - this.labelLinePad)
+            .attr('height', d => d[1][1] - d[1][0])
+            .attr('stroke-width', '0px')
+            .attr('fill', 'tomato')
+            .attr('opacity', 0.5)
+            .on('click', function(d, i) 
+            {
+                const [_xPos, yPos] = d3.mouse(this as any);
+                const value = self.histogramScaleYList[i].invert(yPos);
+                self.manualSampleValues.push(value);
+                document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: self.currentSamplingStategy}));
+            })
+    }
+
     private drawScentedWidgets(axisAnchor: number): void
     {
-
         let binArray: d3.Bin<NDim, number>[][] = [];
         const numBins = 48;
         this._histogramScaleYList = [];
