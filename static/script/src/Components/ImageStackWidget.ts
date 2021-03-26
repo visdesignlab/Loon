@@ -126,6 +126,11 @@ export class ImageStackWidget {
 	public get toggleOptionsContainer() : HtmlSelection {
 		return this._toggleOptionsContainer;
 	}
+
+	private _legendToggleContainer : HtmlSelection;
+	public get legendToggleContainer() : HtmlSelection {
+		return this._legendToggleContainer;
+	}
 	
 	private _showOutlineToggle : HtmlSelection;
 	public get showOutlineToggle() : HtmlSelection {
@@ -136,6 +141,22 @@ export class ImageStackWidget {
 	public get invertImageToggle() : HtmlSelection {
 		return this._invertImageToggle;
 	}
+
+	// three color legend toggles
+	private _legendToggleSelected : HtmlSelection;
+	public get legendToggleSelected() : HtmlSelection {
+		return this._legendToggleSelected;
+	}
+
+	private _legendToggleFilteredOut : HtmlSelection;
+	public get legendToggleFilteredOut() : HtmlSelection {
+		return this._legendToggleFilteredOut;
+	}
+
+	private _legendToggleNotSelected : HtmlSelection;
+	public get legendToggleNotSelected() : HtmlSelection {
+		return this._legendToggleNotSelected;
+	}	
 	
 	private _selectedImageContainer: HtmlSelection;
 	public get selectedImageContainer(): HtmlSelection {
@@ -260,12 +281,12 @@ export class ImageStackWidget {
 			.classed('toggleOptions', true)
 			.classed('smallText', true);
 
+
 		const outlineId = 'imageToggle-outlines';
 		this._showOutlineToggle = this.toggleOptionsContainer.append('input')
 			.attr('type', 'checkbox')
 			.on('change', () => 
 			{
-				let node = document.getElementById(outlineId) as HTMLInputElement;
 				this.updateCanvas();
 			})
 			.attr('id', outlineId);
@@ -289,6 +310,61 @@ export class ImageStackWidget {
 		this.toggleOptionsContainer.append('label')
 			.attr('for', invertId)
 			.text('Invert');
+
+
+		// add three toggles for a legend and to hide only some outlines
+		this._legendToggleContainer = this.innerContainer.append('div')
+			.classed('toggleOptions', true)
+			.classed('smallText', true);
+
+
+		this._legendToggleSelected = this.legendToggleContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () => 
+			{
+				// this.updateCanvas();
+			})
+			.classed('noDisp', true)
+			.attr('id', 'legendToggle-selected');
+		this.legendToggleContainer.append('label')
+			.attr('for', 'legendToggle-selected')
+			.classed('colorLegendLabel',true)
+			.classed('red', true)
+			.text('Selected');
+		(this.legendToggleSelected.node() as HTMLInputElement).checked = true;
+
+
+		this._legendToggleFilteredOut = this.legendToggleContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () => 
+			{
+				// this.updateCanvas();
+			})
+			.classed('noDisp', true)
+			.attr('id', 'legendToggle-filteredOut');
+		this.legendToggleContainer.append('label')
+			.attr('for', 'legendToggle-filteredOut')
+			.classed('colorLegendLabel',true)
+			.classed('green', true)
+			.text('Filtered Out');
+		(this.legendToggleFilteredOut.node() as HTMLInputElement).checked = true;
+
+
+		this._legendToggleNotSelected = this.legendToggleContainer.append('input')
+			.attr('type', 'checkbox')
+			.on('change', () => 
+			{
+				// this.updateCanvas();
+			})
+			.classed('noDisp', true)
+			.attr('id', 'legendToggle-notSelected');
+		this.legendToggleContainer.append('label')
+			.attr('for', 'legendToggle-notSelected')
+			.classed('colorLegendLabel',true)
+			.classed('blue', true)
+			.text('Not Selected');
+		(this.legendToggleNotSelected.node() as HTMLInputElement).checked = true;
+
 
 		this._selectedImageContainer = this.innerContainer.append('div')
 			.classed('noShrink', true);

@@ -24,6 +24,48 @@
 
 .toggleOptions {
     margin: 5px;
+    display: flex;
+    flex-direction: row;
+}
+
+
+.colorLegendLabel {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+    margin-left: 15px;
+}
+
+.colorLegendLabel:before {
+    content: '';
+    background: white;
+    min-width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    border: solid black 3px;
+}
+
+.red.colorLegendLabel:before {
+    border-color: rgb(178, 34, 34);
+}
+.green.colorLegendLabel:before {
+    border-color: rgb(119, 140, 77);
+}
+.blue.colorLegendLabel:before {
+    border-color: rgb(70, 130, 180);
+}
+
+input:checked + .colorLegendLabel:before {
+    background: black;
+}
+input:checked + .red.colorLegendLabel:before {
+    background: rgb(178, 34, 34);
+}
+input:checked + .green.colorLegendLabel:before {
+    background: rgb(119, 140, 77);
+}
+input:checked + .blue.colorLegendLabel:before {
+    background: rgb(70, 130, 180);
 }
 
 .cellAxisLabel.currentFrame {
