@@ -1293,11 +1293,15 @@ export class ImageTrackWidget
                         {
                             // should use data, not full data to get the right color.
                             const [cell, _index] = this.parentWidget.data.GetCellFromLabel(point.get('Location ID'), point.get('Frame ID'), labelToMatch);
-                            let [r, g, b] = this.parentWidget.getCellColor(cell);
-                            outlineTileData.data[rIdx] = r;
-                            outlineTileData.data[rIdx + 1] = g;
-                            outlineTileData.data[rIdx + 2] = b;
-                            outlineTileData.data[rIdx + 3] = 255;
+                            let color = this.parentWidget.getCellColor(cell);
+                            if (color !== null)
+                            {
+                                let [r, g, b] = color;
+                                outlineTileData.data[rIdx] = r;
+                                outlineTileData.data[rIdx + 1] = g;
+                                outlineTileData.data[rIdx + 2] = b;
+                                outlineTileData.data[rIdx + 3] = 255;
+                            }
                         }
                     }
                     rIdx += 4;
