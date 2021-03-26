@@ -293,6 +293,11 @@ export class ImageTrackWidget
     public get inDragZone() : boolean {
         return this._inDragZone;
     }
+
+    private _pinMoved : boolean;
+    public get pinMoved() : boolean {
+        return this._pinMoved;
+    }
     
     public init(): void
     {
@@ -1506,7 +1511,7 @@ export class ImageTrackWidget
             .attr('height', d => d[1][1] - d[1][0])
             .attr('stroke-width', '0px')
             .attr('fill', 'tomato')
-            .attr('opacity', 0.5)
+            .attr('opacity', 0.0)
             .attr('style', 'cursor: crosshair;')
             .on('click', function(d) 
             {
@@ -1703,9 +1708,16 @@ export class ImageTrackWidget
         this._initialPinValue = initialValue;
         this._anchorPinValue = anchorValue;
         this._inDragZone = true;
+        this._pinMoved = false;
+
+        const unpinOffset = 12;
         d3.select(pinElement)
-            .attr('transform', `translate(${transX}, ${transY})`)
+            .attr('transform', `translate(${transX - unpinOffset}, ${transY})`)
             .classed('grabbed', true);
+
+        needleSelect.attr('transform', `translate(${-unpinOffset}, 0)`);
+        textSelect.text('X');
+
         this.addPinRectGroup.selectAll('rect').classed('grabbed', true);
         this.needleSelection.classed('grabbed', true);
         // document.body.style.cursor = 'grabbing';
@@ -1723,20 +1735,30 @@ export class ImageTrackWidget
         this.addPinRectGroup.selectAll('rect').classed('grabbed', false);
         this.needleSelection.classed('grabbed', false);
 
-        if (!this.inDragZone)
-        {
-            //reset pin aka snap back
-            d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
-            // this.needleSelection.attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
-            this.needleSelection.attr('transform', '');
-            this.textSelection.attr('transform', '').text(Math.round(this.initialPinValue));
-            return;
-        }
+
+
+        // if (!this.inDragZone)
+        // {
+        //     //reset pin aka snap back
+        //     d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
+        //     // this.needleSelection.attr('transform', `translate(${this.initialDragCoords[0]}, ${this.initialDragCoords[1]})`);
+        //     this.needleSelection.attr('transform', '');
+        //     this.textSelection.attr('transform', '').text(Math.round(this.initialPinValue));
+        //     return;
+        // }
         
         const index = this.manualSampleValues.indexOf(this.anchorPinValue);
+
         if (index !== -1)
         {
-            this.manualSampleValues[index] = this.getCurrentDraggedValue();
+            if (!this.pinMoved)
+            {
+                this.manualSampleValues.splice(index, 1);
+            }
+            else
+            {
+                this.manualSampleValues[index] = this.getCurrentDraggedValue();
+            }
             document.dispatchEvent(new CustomEvent('samplingStrategyChange', {detail: this.currentSamplingStategy}));
         }
     }
@@ -1745,6 +1767,7 @@ export class ImageTrackWidget
     {
         if (this.draggingPin)
         {
+            this._pinMoved = true;
             this.totalDragOffset[1] += moveY;
             d3.select(this.draggingPinElement).attr('transform', `translate(${this.initialDragCoords[0] + this.totalDragOffset[0]}, ${this.initialDragCoords[1] + this.totalDragOffset[1]})`);
             this.needleSelection.attr('transform', `translate(0, ${this.totalDragOffset[1]})`);
