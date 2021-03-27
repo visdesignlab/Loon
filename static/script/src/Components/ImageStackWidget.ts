@@ -112,6 +112,11 @@ export class ImageStackWidget {
 		return this._innerContainer;
 	}
 
+	private _conditionLabel : HtmlSelection;
+	public get conditionLabel() : HtmlSelection {
+		return this._conditionLabel;
+	}
+
 	private _locationLabel: HtmlSelection;
 	public get locationLabel(): HtmlSelection {
 		return this._locationLabel;
@@ -158,6 +163,11 @@ export class ImageStackWidget {
 		return this._legendToggleNotSelected;
 	}	
 	
+	private _imageAndLegendContainer : HtmlSelection;
+	public get imageAndLegendContainer() : HtmlSelection {
+		return this._imageAndLegendContainer;
+	}
+
 	private _selectedImageContainer: HtmlSelection;
 	public get selectedImageContainer(): HtmlSelection {
 		return this._selectedImageContainer;
@@ -269,6 +279,10 @@ export class ImageStackWidget {
 		const locationFrameLabel = locationFrameLabelContainer.append('h3')
 			.classed('locationFrameLabel', true);
 
+		locationFrameLabel.node().append('Condition: ');
+		this._conditionLabel = locationFrameLabel.append('span')
+			.classed('locationFrameLabelValue', true);
+
 		locationFrameLabel.node().append('Location: ');
 		this._locationLabel = locationFrameLabel.append('span')
 			.classed('locationFrameLabelValue', true);
@@ -312,11 +326,38 @@ export class ImageStackWidget {
 			.text('Invert');
 
 
+		this._imageAndLegendContainer = this.innerContainer.append('div')
+			.classed('imageAndLegendContainer', true);
+
+		this._selectedImageContainer = this.imageAndLegendContainer.append('div')
+			.classed('noShrink', true);
+
+
+		this._selectedImageCanvas = this.selectedImageContainer.append('canvas')
+
+		this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) => {
+			this.onCanvasMouseMove(e)
+		});
+
+		this.selectedImageCanvas.node().addEventListener('click', (e: MouseEvent) => {
+			this.onCanvasClick(e)
+		});
+
+		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
+
+		this.selectedImageContainer
+			.on('mouseleave', () => {
+				this._mousePos = null;
+				this.hideSegmentHover();
+			});
+
 		// add three toggles for a legend and to hide only some outlines
-		this._legendToggleContainer = this.innerContainer.append('div')
+		this._legendToggleContainer = this.imageAndLegendContainer.append('div')
 			.classed('toggleOptions', true)
+			.classed('vertical', true)
 			.classed('smallText', true);
 
+		this.legendToggleContainer.append('div').attr('style', 'flex-grow: 1;'); // to center legend.
 
 		this._legendToggleSelected = this.legendToggleContainer.append('input')
 			.attr('type', 'checkbox')
@@ -365,27 +406,7 @@ export class ImageStackWidget {
 			.text('Not Selected');
 		(this.legendToggleNotSelected.node() as HTMLInputElement).checked = true;
 
-
-		this._selectedImageContainer = this.innerContainer.append('div')
-			.classed('noShrink', true);
-
-		this._selectedImageCanvas = this.selectedImageContainer.append('canvas')
-
-		this.selectedImageCanvas.node().addEventListener('mousemove', (e: MouseEvent) => {
-			this.onCanvasMouseMove(e)
-		});
-
-		this.selectedImageCanvas.node().addEventListener('click', (e: MouseEvent) => {
-			this.onCanvasClick(e)
-		});
-
-		this._canvasContext = (this.selectedImageCanvas.node() as HTMLCanvasElement).getContext('2d');
-
-		this.selectedImageContainer
-			.on('mouseleave', () => {
-				this._mousePos = null;
-				this.hideSegmentHover();
-			});
+		this.legendToggleContainer.append('div').attr('style', 'flex-grow: 1;'); // to center legend.
 
 		this.imageTrackWidget.init();
 
@@ -482,7 +503,10 @@ export class ImageStackWidget {
 
 	private updateLocationFrameLabel(): void
 	{
-		this.locationLabel.text(this.getCurrentLocationId());
+		const locId = this.getCurrentLocationId();
+		const labelList = this.fullData.inverseLocationMap.get(locId);
+		this.conditionLabel.text(labelList.join(' '));
+		this.locationLabel.text(locId);
 		this.frameLabel.text(this.getCurrentFrameId());
 	}
 
