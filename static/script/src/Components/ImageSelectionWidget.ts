@@ -258,7 +258,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     private drawFacetRecurse(
         remainingSubFacetIndices: number[],
-        categoryIndex: number = 0,
         verticalPosition: number = 0,
         facet?: Facet,
         containerSelection?: HtmlSelection): number
@@ -274,7 +273,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
         if (remainingSubFacetIndices.length === 0)
         {
-            this.drawTerminalFacet(container, facet.name.join(' '), facet.data, verticalPosition, 0, categoryIndex);
+            this.drawTerminalFacet(container, facet.name.join(' '), facet.data, verticalPosition, 0);
             return 1;
         }
 
@@ -303,16 +302,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         for (let childFacet of facetList)
         {
             childPosition++;
-            let count = this.drawFacetRecurse(remainingSubFacetIndices.slice(1), categoryIndex, childPosition, childFacet, grouperDiv);
+            let count = this.drawFacetRecurse(remainingSubFacetIndices.slice(1), childPosition, childFacet, grouperDiv);
             thisCount += count;
-            categoryIndex += count;
         }
         return thisCount;
     }
 
     private drawGrouperFacet(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): HtmlSelection
     {
-        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex, -1);
+        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
 
         const grouperDiv = containerSelection.append('div')
             .classed('locationListGrouper', true);
@@ -320,7 +318,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return grouperDiv;
     }
 
-    private drawTitleElement(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number,  categoryIndex: number): void
+    private drawTitleElement(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): void
     {
         const topPos = (verticalPosition - 1) * 19;
 
@@ -329,12 +327,12 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         {
             styleString += ` z-index: ${zIndex};`;
         }
-        if (categoryIndex >= 0)
+        if (this.imageStackWidget.colorLookup.has(name))
         {
-            let color = d3.hsl(categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex]);
+            let colorString = GroupByWidget.getColor([name] , this.imageStackWidget.colorLookup);
+            let color = d3.hsl(colorString);
 
             styleString += `color: ${color.darker(1.0).toString()};`
-            
             color.l = 0.95;
 
             styleString += `background: ${color.toString()};`
@@ -346,9 +344,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('style', styleString);
     }
 
-    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList, verticalPosition: number, zIndex: number, categoryIndex: number): void
+    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList, verticalPosition: number, zIndex: number): void
     {
-        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex, categoryIndex);
+        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
 
         const subListContainer = containerSelection.append('ul')
             .classed('subListContainer', true);
@@ -370,7 +368,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         if (!this.data.brushApplied)
         {
             const maxTotalCells = d3.max(this.imageMetaData.locationList, loc => loc.totalCount);
-            // const totalCellsExtent = d3.extent(this.imageMetaData.locationList, loc => loc.totalCount);
             countToPercent = d3.scaleLinear()
                 .domain([0, maxTotalCells])
                 .range([0, 1.0]);

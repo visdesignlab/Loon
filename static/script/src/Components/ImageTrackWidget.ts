@@ -12,6 +12,7 @@ import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { CurveList } from '../DataModel/CurveList';
 import { HistogramWidget } from './HistogramWidget';
 import { OptionSelect } from './OptionSelect';
+import { GroupByWidget } from './GroupByWidget';
 
 export class ImageTrackWidget
 {
@@ -310,7 +311,7 @@ export class ImageTrackWidget
     public get dragGroupIndex() : number {
         return this._dragGroupIndex;
     }
-        
+
     public init(): void
     {
         const containerSelect = d3.select(this.container);
@@ -675,7 +676,7 @@ export class ImageTrackWidget
 
     private getConditionNames(): string[]
     {
-        return this.parentWidget.facetList.map(facet => facet.name.join(' '));
+        return this.parentWidget.facetList.map(facet => facet.name.join('___'));
     }
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>
@@ -1014,31 +1015,15 @@ export class ImageTrackWidget
             height);
 
         const locationId = trackData.pointList[0].get('Location ID');
-        const color = this.getColor(locationId);
-        this.canvasContext.strokeStyle = color; //categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
-        this.canvasContext.fillStyle = color; //categoryIndex >= 10 ? 'black' : d3.schemeCategory10[categoryIndex];
+        const labelList = this.parentWidget.fullData.inverseLocationMap.get(locationId);
+        const color = GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
+        this.canvasContext.strokeStyle = color;
+        this.canvasContext.fillStyle = color;
         this.canvasContext.stroke();
         this.canvasContext.fill();
         this.canvasContext.closePath();
     }
 
-	private getColor(locationId: number): string
-	{
-        const labelList = this.parentWidget.fullData.inverseLocationMap.get(locationId);
-        const delim = '___';
-		let [l1, l2] = labelList.slice(0,2);
-		labelList.push(l1 + delim + l2)
-		labelList.push(l1 + delim + l1)
-		labelList.push(l2 + delim + l2)
-		for (let key of labelList)
-		{
-			if (this.parentWidget.colorLookup.has(key))
-			{
-				return this.parentWidget.colorLookup.get(key);
-			}
-		}
-		return 'grey';
-	}
 
     private static rectWidth(rect: Rect): number
     {
@@ -1408,7 +1393,9 @@ export class ImageTrackWidget
                 {
                     const track = this.manuallyPinnedTracks[d[0]];
                     const locId = track.pointList[0].get('Location ID');
-                    return this.getColor(locId);
+                    const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
+
+                    return GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
                 }
                 return 'black';
             })
@@ -1449,7 +1436,9 @@ export class ImageTrackWidget
                 {
                     const track = this.manuallyPinnedTracks[d[0]];
                     const locId = track.pointList[0].get('Location ID');
-                    return `color: ${this.getColor(locId)};`;
+                    const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
+
+                    return `color: ${GroupByWidget.getColor(labelList, this.parentWidget.colorLookup)};`;
                 }
             })
             .attr('title', 'Click to remove this favorite.')
@@ -1476,11 +1465,11 @@ export class ImageTrackWidget
             .data(this.conditionLabelPositions)
             .join('text')
             .classed('conditionLabel', true)
-            .text(d => d[0])
+            .text(d => d[0].replace('___', ' '))
             .attr('x', xAnchor)
             .attr('y', d => (d[1][0] + d[1][1]) / 2 - this.latestScroll[1])
             .attr('transform', d => `rotate(-90, ${xAnchor}, ${(d[1][0] + d[1][1]) / 2 - this.latestScroll[1]})`)
-            .attr('fill', (d,i) => i >= 10 ? 'black' : d3.schemeCategory10[i])
+            .attr('fill', (d,i) => GroupByWidget.getColor(d[0].split('___'), this.parentWidget.colorLookup))
             .classed('cellAxisLabel', true)
             .classed('rotated', true);
 
@@ -1491,7 +1480,7 @@ export class ImageTrackWidget
             .attr('x2', xAnchorLine)
             .attr('y1', d => Math.max(0, d[1][0] - this.latestScroll[1]))
             .attr('y2', d => Math.max(0, d[1][1] - this.latestScroll[1]))
-            .attr('stroke', (d,i) => i >= 10 ? 'black' : d3.schemeCategory10[i])
+            .attr('stroke', (d,i) => GroupByWidget.getColor(d[0].split('___'), this.parentWidget.colorLookup))
             .attr('stroke-width', '2px');
 
         return xAnchorLine;
@@ -1879,17 +1868,17 @@ export class ImageTrackWidget
             .classed('currentFrameLine', true);
 
         groupListSelection.selectAll('.averageCurve')
-            .data((d,i) => [[averageGrowthLines[i], i] ])
+            .data((d,i) => [[averageGrowthLines[i], d[0]] ])
             .join('path')
             .attr('d', d => d[0])
-            .attr('stroke', d => +d[1] >= 10 ? 'black' : d3.schemeCategory10[+d[1]])
+            .attr('stroke', d => GroupByWidget.getColor(d[1].split('___'), this.parentWidget.colorLookup))
             .classed('averageCurve', true);
 
         groupListSelection.selectAll('.exemplarCurve')
-            .data((d,i) => exemplarGrowthCurves[i].map(x => [x, i]))
+            .data((d,i) => exemplarGrowthCurves[i].map(x => [x, d[0]]))
             .join('path')
             .attr('d', d => d[0])
-            .attr('stroke', d => +d[1] >= 10 ? 'black' : d3.schemeCategory10[+d[1]])
+            .attr('stroke', d => GroupByWidget.getColor(d[1].split('___'), this.parentWidget.colorLookup))
             .classed('exemplarCurve', true);
 
         let scaleList: [d3.Axis<number | { valueOf(): number; }>, number][] =

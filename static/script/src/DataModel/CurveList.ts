@@ -33,7 +33,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._averageFilteredCurveCache = new Map<string, [number, number][]>();
 		this._averageCurveCache = new Map<string, [number, number][]>();
 		this._locationFrameSegmentLookup = new Map<number, Map<number, Map<number, [PointND, number]>>>();
-		// this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
 		const locationSet = new Set<number>();
 		for (let i = 0; i < this.length; i++)
 		{
@@ -163,7 +162,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return avgCurve;
 	}
 
-	public static medianFilter(points: [number, number][], window: number = 1): [number, number][]
+	public static medianFilter(points: [number, number][], window: number = 3): [number, number][]
 	{
 		const smoothedPoints: [number, number][] = points.map((value, index) =>
 		{
@@ -277,6 +276,15 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			bound: [maxLength / 2, maxLength]
 		}
 
+		// default to every other secondary filter. e.g. every other concentration
+		for (let i = 1; i < this.defaultFacetAxisTicks.xAxisTicks.length; i+=2)
+		{
+			const xKey = this.defaultFacetAxisTicks.xAxisTicks[i];
+			for (let yKey of this.defaultFacetAxisTicks.yAxisTicks)
+			{
+				this.conditionFilterState.get(yKey).set(xKey, false)
+			}
+		}
 		this.curveCollection.addBrushNoUpdate('default', filter);
 	}
 

@@ -3,6 +3,7 @@ import { OptionSelect } from "./OptionSelect";
 import { HtmlSelection, ButtonProps } from "../devlib/DevLibTypes";
 import { AppData, Facet } from "../types";
 import { DevlibTSUtil } from "../devlib/DevlibTSUtil";
+import { CurveList } from '../DataModel/CurveList';
 
 export class GroupByWidget
 {
@@ -64,7 +65,7 @@ export class GroupByWidget
         this._groupByInnerConainerIdList = [];
         this.addComponentId();
         this.drawLines([0]);
-
+        this.addGroupByLine(); // draw two lines by default
     }
 
     private drawLines(previousSelections: number[]): void
@@ -219,12 +220,12 @@ export class GroupByWidget
 
     private onGroupSelection(): void
     {
-        const facetList = this.getFlatFacetList();
-        const colorLookup = this.getColorLookup(facetList);
+        const flatFacetList = this.getFlatFacetList();
+        const colorLookup = this.getColorLookup();
         const customEvent: CustomEvent = new CustomEvent('groupByChanged', { detail:
         {
             groupIndex: this.currentSelectionIndexList,
-            flatFacetList: facetList,
+            flatFacetList: flatFacetList,
             colorLookup: colorLookup
         }});
         document.dispatchEvent(customEvent);
@@ -233,8 +234,10 @@ export class GroupByWidget
     public getFlatFacetList(): Facet[]
     {
         let flatFacetList: Facet[] = [{name: [], data: this.data}];
-        for (let index of this.currentSelectionIndexList)
+        let nestedFacetList: Facet[][] = []; // only get the last two layers of the faceting
+        for (let i = 0; i < this.currentSelectionIndexList.length; i++)
         {
+            let index = this.currentSelectionIndexList[i];
             let nextList = [];
             for (let {name: nameSoFar, data: data} of flatFacetList)
             {
@@ -258,17 +261,61 @@ export class GroupByWidget
         return flatFacetList;
     }
 
-    private getColorLookup(facetList): Map<string, string>
+    private getColorLookup(): Map<string, string>
 	{
+
+        const {
+            yAxisTicks: condition1Labels,
+            xAxisTicks: condition2Labels
+        } = (this.data as CurveList).defaultFacetAxisTicks;
+
+        const firstFacetIndex = this.currentSelectionIndexList[0];
+        const labels: string[] = firstFacetIndex === 1 ? condition2Labels : condition1Labels;
         const colorLookup = new Map<string, string>();
-		for (let i = 0; i < facetList.length; i++)
-		{
-			let color = i >= 10 ? 'black' : d3.schemeCategory10[i];
-			let keyList = facetList[i].name;
-			colorLookup.set(keyList.join('___'), color);
-			colorLookup.set([...keyList].reverse().join('___'), color);
-		}
+        const controlNames = GroupByWidget.getControlNames();
+        const controlColor = GroupByWidget.getControlColor();
+        const {scheme: colorScheme, skipIndices: skipColors} = GroupByWidget.getColorScheme();
+        let colorIndex = 0;
+        for (let label of labels)
+        {
+            while (skipColors.has(colorIndex))
+            {
+                colorIndex++;
+                colorIndex = colorIndex % colorScheme.length;
+            }
+            const color = controlNames.has(label) ? controlColor : colorScheme[colorIndex++];
+            colorLookup.set(label, color);
+        }
         return colorLookup;
 	}
 
+    private static getControlNames(): Set<string>
+    {
+        return new Set<string>([
+            'DMSO',
+            'Ethanol',
+            '0.0 um'
+        ])
+    }
+
+    private static getControlColor(): string
+    {
+        return 'grey';
+    }
+    private static getColorScheme(): {scheme: readonly string[], skipIndices: Set<number>}
+    {
+        return {scheme: d3.schemeSet1, skipIndices: new Set<number>([5, 8])};
+    }
+
+    public static getColor(labels: string[], colorLookup: Map<string, string>): string
+	{
+		for (let key of labels)
+		{
+			if (colorLookup.has(key))
+			{
+				return colorLookup.get(key);
+			}
+		}
+		return 'grey';
+	}
 }

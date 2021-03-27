@@ -199,8 +199,13 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	{	
 		let allData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
 		allData.ApplyDefaultFilters();
-		allData.OnBrushChange();
+		allData.ApplyNewFilter();
 		let filteredData = allData.CreateFilteredCurveList() as DataType;
+
+		// remove inBrush attributes set on tracks based on conditions filters
+		// this is needed to get the appropriate filtered data in the condition
+		// curve matrix widget.
+		allData.OnBrushChange();
 		this.SetData(filteredData, allData);
 	}
 
