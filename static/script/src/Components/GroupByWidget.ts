@@ -219,22 +219,24 @@ export class GroupByWidget
 
     private onGroupSelection(): void
     {
-        const facetList = this.getFlatFacetList();
-        const colorLookup = this.getColorLookup(facetList);
+        const [flatFacetList, nestedFacetList] = this.getFlatFacetList();
+        const colorLookup = this.getColorLookup(nestedFacetList);
         const customEvent: CustomEvent = new CustomEvent('groupByChanged', { detail:
         {
             groupIndex: this.currentSelectionIndexList,
-            flatFacetList: facetList,
+            flatFacetList: flatFacetList,
             colorLookup: colorLookup
         }});
         document.dispatchEvent(customEvent);
     }
 
-    public getFlatFacetList(): Facet[]
+    public getFlatFacetList(): [Facet[], Facet[][]]
     {
         let flatFacetList: Facet[] = [{name: [], data: this.data}];
-        for (let index of this.currentSelectionIndexList)
+        let nestedFacetList: Facet[][] = []; // only get the last two layers of the faceting
+        for (let i = 0; i < this.currentSelectionIndexList.length; i++)
         {
+            let index = this.currentSelectionIndexList[i];
             let nextList = [];
             for (let {name: nameSoFar, data: data} of flatFacetList)
             {
@@ -251,24 +253,79 @@ export class GroupByWidget
                     }
                 });
                 nextList.push(...subFacets);
+                if (i == this.currentSelectionIndexList.length - 1)
+                {
+                    if (i === 0)
+                    {
+                        nestedFacetList = subFacets.map(x => [x])
+                    }
+                    else
+                    {
+                        nestedFacetList.push(subFacets);
+                    }
+                }
             }
             flatFacetList = nextList;
         }
 
-        return flatFacetList;
+        return [flatFacetList, nestedFacetList];
     }
 
-    private getColorLookup(facetList): Map<string, string>
+    private getColorLookup(nestedFacetList: Facet[][]): Map<string, string>
 	{
         const colorLookup = new Map<string, string>();
-		for (let i = 0; i < facetList.length; i++)
-		{
-			let color = i >= 10 ? 'black' : d3.schemeCategory10[i];
-			let keyList = facetList[i].name;
-			colorLookup.set(keyList.join('___'), color);
-			colorLookup.set([...keyList].reverse().join('___'), color);
-		}
+        const l1 = nestedFacetList.length;
+        const l2 = d3.max(nestedFacetList, innerList => innerList.length);
+
+        const controlNames = GroupByWidget.getControlNames();
+        const controlColor = GroupByWidget.getControlColor();
+        const {scheme: colorScheme, skipIndices: skipColors} = GroupByWidget.getColorScheme();
+        let colorIndex = 0;
+        for (let i = 0; i < l1; i++)
+        {
+            while (skipColors.has(colorIndex))
+            {
+                colorIndex++;
+                colorIndex = colorIndex % colorScheme.length;
+            }
+            const innerList = nestedFacetList[i];
+            const firstFacet = nestedFacetList[i][0];
+            const colorKey = firstFacet.name[0];
+            const color = controlNames.has(colorKey) ? controlColor : colorScheme[colorIndex++];
+
+            colorLookup.set(colorKey, color);
+        }
+
         return colorLookup;
 	}
 
+    private static getControlNames(): Set<string>
+    {
+        return new Set<string>([
+            'DMSO',
+            'Ethanol',
+            '0.0 um'
+        ])
+    }
+
+    private static getControlColor(): string
+    {
+        return 'grey';
+    }
+    private static getColorScheme(): {scheme: readonly string[], skipIndices: Set<number>}
+    {
+        return {scheme: d3.schemeSet1, skipIndices: new Set<number>([5, 8])};
+    }
+
+    public static getColor(labels: string[], colorLookup: Map<string, string>): string
+	{
+		for (let key of labels)
+		{
+			if (colorLookup.has(key))
+			{
+				return colorLookup.get(key);
+			}
+		}
+		return 'grey';
+	}
 }

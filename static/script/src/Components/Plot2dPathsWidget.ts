@@ -8,6 +8,7 @@ import { OptionSelect } from './OptionSelect';
 import { DatasetSpec, Facet } from '../types';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 import { DataEvents } from '../DataModel/DataEvents';
+import { GroupByWidget } from './GroupByWidget';
 
 interface quickPickOption {
 	xKey: string,
@@ -682,19 +683,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		let labelData: [string, [number, number]][] = [];
 		for (let i = this.facetList.length - 1; i >= 0 ; i--)
 		{
-			if (i < 10)
-			{
-				canvasContext.globalAlpha = 0.85;
-				canvasContext.lineWidth = 2;
-			}
-			else
-			{
-				canvasContext.globalAlpha = 0.4;
-				canvasContext.lineWidth = 1;
-			}
+			canvasContext.globalAlpha = 0.85;
+			canvasContext.lineWidth = 2;
 
 			let facet = this.facetList[i];
-			canvasContext.strokeStyle = i >= 10 ? 'black' : d3.schemeCategory10[i];
+			canvasContext.strokeStyle = GroupByWidget.getColor(facet.name, this.colorLookup);
 			let dataPoints = facet.data.getAverageCurve(this.yKey, false, this.smoothCurves);
 			if (dataPoints.length !== 0)
 			{
@@ -725,7 +718,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				lastPoint = null;
 			}
-			labelData.unshift([facet.name.join(' '), lastPoint]);
+			labelData.unshift([facet.name.join('___'), lastPoint]);
 		}
 		this.drawLabels(labelData);
 	}
@@ -824,7 +817,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.classed('miniExemplarCurve', true)
 			.classed('allData', true)
 			.classed('active', !this.data.brushApplied)
-			.attr('stroke', d => this.getColor(d))
+			.attr('stroke', d => GroupByWidget.getColor(d, this.colorLookup))
 			.attr('d', d => 
 			{
 				let pathString = this.getGrowthLine(d, defaultFacets, lineAvg, false, false);
@@ -843,7 +836,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				.classed('miniExemplarCurve', true)
 				.classed('selection', true)
 				.classed('active', true)
-				.attr('stroke', d => this.getColor(d))
+				.attr('stroke', d => GroupByWidget.getColor(d, this.colorLookup))
 				.attr('d', d => 
 				{
 					return this.getGrowthLine(d, defaultFacets, lineAvg, true, false);
@@ -1093,23 +1086,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		DevlibTSUtil.hide(document.getElementById('conditionFilterApplyButton'));
 	}
 
-	private getColor(labels: [string, string]): string
-	{
-		let [drugLabel, concLabel] = labels;
-		let keyOptions = [drugLabel, concLabel]
-		keyOptions.push(`${drugLabel}___${concLabel}`)
-		keyOptions.push(`${drugLabel}___${drugLabel}`)
-		keyOptions.push(`${concLabel}___${concLabel}`)
-		for (let key of keyOptions)
-		{
-			if (this.colorLookup.has(key))
-			{
-				return this.colorLookup.get(key);
-			}
-		}
-		return 'grey';
-	}
-
 	private updateConditionFilterSelection(): void
 	{
 		this.miniCellSelect.classed('inFilter', d => 
@@ -1217,7 +1193,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private drawLabels(labelData: [string, [number, number] | null][]): void
 	{
 		const indexedPoints: [string, [number, number] | null, number][] = labelData.map((d,i) => [d[0], d[1], i]);
-		const validPoints = indexedPoints.filter((x, i) => x[1] !== null && i < 10);
+		const validPoints = indexedPoints.filter((x, i) => x[1] !== null);
 		const pixelSpacePoints: [number, number, number][] = validPoints.map(d => [this.scaleX(d[1][0]), this.scaleY(d[1][1]), d[2]]);
 		this.averageCurveLabelContainer.selectAll('circle')
 			.data(pixelSpacePoints)
@@ -1225,16 +1201,16 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('cx', d => d[0])
 			.attr('cy', d => d[1])
 			.attr('r', 3)
-			.attr('fill', d => d[2] >= 10 ? 'black' : d3.schemeCategory10[d[2]]);
+			.attr('fill', d => GroupByWidget.getColor(labelData[d[2]][0].split('___'), this.colorLookup));
 
-		const radius = 9;
+		const radius = d3.scaleLinear<number, number>()
+			.domain([5,50])
+			.range([9,2])
+			.clamp(true)
+			(labelData.length);
+
 		const forceNodes: any[] = pixelSpacePoints.map(d => {return {x: d[0], y: d[1] }});
 		this._forceSimulation = d3.forceSimulation(forceNodes)
-			.force('repel', d3.forceCollide().radius(radius))
-			.force('attractY', d3.forceY().y(d => 
-				{
-					return pixelSpacePoints[d.index][1];
-				}))
 			.force('contraintX', alpha => 
 			{
 				for (let i = 0; i < forceNodes.length; i++)
@@ -1243,22 +1219,36 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 					forceNodes[i].x = pixelSpacePoints[i][0];
 				}
 			})
+			.force('repel', d3.forceCollide().radius(radius))
+			.force('attractY', d3.forceY().y(d => 
+				{
+					return pixelSpacePoints[d.index][1];
+				}))
 			.on('tick', () => 
 			{
 				console.log('tick')
 			});
 		this.forceSimulation.stop();
-		this.forceSimulation.tick(10);
+		this.forceSimulation.tick(1000);
 
+
+		const fontSize = d3.scaleLinear<number, number>()
+			.domain([5,30])
+			.range([12,7])
+			.clamp(true)
+			(labelData.length);
+		
 		const horizontalPad = 12;
 		this.averageCurveLabelContainer.selectAll('text')
 			.data(forceNodes)
 			.join('text')
 			.attr('transform', d => `translate(${d.x + horizontalPad}, ${d.y})`)
 			.attr('alignment-baseline', 'central')
-			.text((d,i) => labelData[i][0])
-			.attr('fill', (d, i) => pixelSpacePoints[i][2] >= 10 ? 'black' : d3.schemeCategory10[pixelSpacePoints[i][2]])
-			.attr('stroke', (d, i) => pixelSpacePoints[i][2] >= 10 ? 'black' : d3.schemeCategory10[pixelSpacePoints[i][2]])
+			.text((d,i) => labelData[i][0].replace('___', ' '))
+			.attr('style', `font-size: ${fontSize}pt;`)
+			.attr('stroke', (d, i) => GroupByWidget.getColor(labelData[pixelSpacePoints[i][2]][0].split('___'), this.colorLookup))
+			.attr('fill', (d, i) => GroupByWidget.getColor(labelData[pixelSpacePoints[i][2]][0].split('___'), this.colorLookup));
+			
 	}
 
 	private clearLabels(): void

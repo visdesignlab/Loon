@@ -163,7 +163,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return avgCurve;
 	}
 
-	public static medianFilter(points: [number, number][], window: number = 1): [number, number][]
+	public static medianFilter(points: [number, number][], window: number = 3): [number, number][]
 	{
 		const smoothedPoints: [number, number][] = points.map((value, index) =>
 		{
