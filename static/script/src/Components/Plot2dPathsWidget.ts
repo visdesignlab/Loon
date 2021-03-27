@@ -59,7 +59,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._xKey = initialOption.xKey;
 		this._yKey = initialOption.yKey;
 		this._inAverageMode = initialOption.averaged;
-		this._inFacetMode = false;
+		this._inFacetMode = true;
 		this._tempConditionFilterState = new Map<string, Map<string, boolean>>();
 		this._smoothCurves = true;
 	}
@@ -614,7 +614,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		this.svgSelect.classed('noDisp', this.inFacetMode);
 		this.svgFacetSelect.classed('noDisp', !this.inFacetMode);
-		if (this.inFacetMode)
+		if (this.inFacetMode && this.dataSuperset)
 		{
 			this.resetTempConditionFilter();
 		}
