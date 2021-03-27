@@ -488,6 +488,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				this.margin.right = 120;
 				DevlibTSUtil.hide(this.facetButton);
+				DevlibTSUtil.show(this.averageLegendSelect.node());
+				DevlibTSUtil.show(this.facetLegendSelect.node());
 				if (this.inFacetMode)
 				{
 					DevlibTSUtil.show(this.compareConditionButton);
@@ -509,6 +511,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				DevlibTSUtil.show(this.facetButton);
 				DevlibTSUtil.hide(this.selectConditionButton);
 				DevlibTSUtil.hide(this.compareConditionButton);
+				DevlibTSUtil.hide(this.averageLegendSelect.node());
+				DevlibTSUtil.hide(this.facetLegendSelect.node());
 			}
 			this.setWidthHeight();
 			this.OnResize();
