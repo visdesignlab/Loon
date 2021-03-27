@@ -49,8 +49,8 @@
 .colorLegendLabel:before {
     content: '';
     background: white;
-    min-width: 14px;
-    height: 14px;
+    min-width: 12px;
+    height: 12px;
     margin-right: 4px;
     border: solid black 2px;
 }
