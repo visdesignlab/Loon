@@ -3,6 +3,7 @@ import { OptionSelect } from "./OptionSelect";
 import { HtmlSelection, ButtonProps } from "../devlib/DevLibTypes";
 import { AppData, Facet } from "../types";
 import { DevlibTSUtil } from "../devlib/DevlibTSUtil";
+import { CurveList } from '../DataModel/CurveList';
 
 export class GroupByWidget
 {
@@ -219,8 +220,8 @@ export class GroupByWidget
 
     private onGroupSelection(): void
     {
-        const [flatFacetList, nestedFacetList] = this.getFlatFacetList();
-        const colorLookup = this.getColorLookup(nestedFacetList);
+        const flatFacetList = this.getFlatFacetList();
+        const colorLookup = this.getColorLookup();
         const customEvent: CustomEvent = new CustomEvent('groupByChanged', { detail:
         {
             groupIndex: this.currentSelectionIndexList,
@@ -230,7 +231,7 @@ export class GroupByWidget
         document.dispatchEvent(customEvent);
     }
 
-    public getFlatFacetList(): [Facet[], Facet[][]]
+    public getFlatFacetList(): Facet[]
     {
         let flatFacetList: Facet[] = [{name: [], data: this.data}];
         let nestedFacetList: Facet[][] = []; // only get the last two layers of the faceting
@@ -253,49 +254,38 @@ export class GroupByWidget
                     }
                 });
                 nextList.push(...subFacets);
-                if (i == this.currentSelectionIndexList.length - 1)
-                {
-                    if (i === 0)
-                    {
-                        nestedFacetList = subFacets.map(x => [x])
-                    }
-                    else
-                    {
-                        nestedFacetList.push(subFacets);
-                    }
-                }
             }
             flatFacetList = nextList;
         }
 
-        return [flatFacetList, nestedFacetList];
+        return flatFacetList;
     }
 
-    private getColorLookup(nestedFacetList: Facet[][]): Map<string, string>
+    private getColorLookup(): Map<string, string>
 	{
-        const colorLookup = new Map<string, string>();
-        const l1 = nestedFacetList.length;
-        const l2 = d3.max(nestedFacetList, innerList => innerList.length);
 
+        const {
+            yAxisTicks: condition1Labels,
+            xAxisTicks: condition2Labels
+        } = (this.data as CurveList).defaultFacetAxisTicks;
+
+        const firstFacetIndex = this.currentSelectionIndexList[0];
+        const labels: string[] = firstFacetIndex === 1 ? condition2Labels : condition1Labels;
+        const colorLookup = new Map<string, string>();
         const controlNames = GroupByWidget.getControlNames();
         const controlColor = GroupByWidget.getControlColor();
         const {scheme: colorScheme, skipIndices: skipColors} = GroupByWidget.getColorScheme();
         let colorIndex = 0;
-        for (let i = 0; i < l1; i++)
+        for (let label of labels)
         {
             while (skipColors.has(colorIndex))
             {
                 colorIndex++;
                 colorIndex = colorIndex % colorScheme.length;
             }
-            const innerList = nestedFacetList[i];
-            const firstFacet = nestedFacetList[i][0];
-            const colorKey = firstFacet.name[0];
-            const color = controlNames.has(colorKey) ? controlColor : colorScheme[colorIndex++];
-
-            colorLookup.set(colorKey, color);
+            const color = controlNames.has(label) ? controlColor : colorScheme[colorIndex++];
+            colorLookup.set(label, color);
         }
-
         return colorLookup;
 	}
 

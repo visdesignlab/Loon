@@ -33,7 +33,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		this._averageFilteredCurveCache = new Map<string, [number, number][]>();
 		this._averageCurveCache = new Map<string, [number, number][]>();
 		this._locationFrameSegmentLookup = new Map<number, Map<number, Map<number, [PointND, number]>>>();
-		// this._locationFrameSegmentLookup = new Map<string, [PointND, number]>();
 		const locationSet = new Set<number>();
 		for (let i = 0; i < this.length; i++)
 		{

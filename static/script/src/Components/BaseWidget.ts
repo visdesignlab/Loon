@@ -253,7 +253,7 @@ export abstract class BaseWidget<DataType extends AppData<DataSpecType>, DataSpe
 		contentContainer.classList.add('largePopupContent');
 		this.largePopup.appendChild(contentContainer);
 		this._largePopupContent = contentContainer;
-		this.drawFacetedData(groupByWidget.getFlatFacetList()[0]);
+		this.drawFacetedData(groupByWidget.getFlatFacetList());
 	}
 
 	protected drawFacetedData(facetList: Facet[]): void
