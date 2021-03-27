@@ -276,6 +276,15 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 			bound: [maxLength / 2, maxLength]
 		}
 
+		// default to every other secondary filter. e.g. every other concentration
+		for (let i = 1; i < this.defaultFacetAxisTicks.xAxisTicks.length; i+=2)
+		{
+			const xKey = this.defaultFacetAxisTicks.xAxisTicks[i];
+			for (let yKey of this.defaultFacetAxisTicks.yAxisTicks)
+			{
+				this.conditionFilterState.get(yKey).set(xKey, false)
+			}
+		}
 		this.curveCollection.addBrushNoUpdate('default', filter);
 	}
 
