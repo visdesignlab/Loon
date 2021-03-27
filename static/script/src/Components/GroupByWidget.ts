@@ -65,7 +65,7 @@ export class GroupByWidget
         this._groupByInnerConainerIdList = [];
         this.addComponentId();
         this.drawLines([0]);
-
+        this.addGroupByLine(); // draw two lines by default
     }
 
     private drawLines(previousSelections: number[]): void
