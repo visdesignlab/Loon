@@ -372,6 +372,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 .domain([0, maxTotalCells])
                 .range([0, 1.0]);
         }
+        else
+        {
+            const maxInBrushCells = d3.max(this.imageMetaData.locationList, loc => loc.inBrushCount);
+            countToPercent = d3.scaleLinear()
+                .domain([0, maxInBrushCells])
+                .range([0, 1.0]);
+        }
 
         listElement.html(null)
             .append('button')
@@ -383,7 +390,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('style', d => 
             {
                 const location = this.imageMetaData.locationLookup.get(d);
-                const percent = this.data.brushApplied ? location.inBrushPercent : countToPercent(location.totalCount);
+                const percent = this.data.brushApplied ? countToPercent(location.inBrushCount) : countToPercent(location.totalCount);
                 const stop = (1 - percent) * 100
                 const barColor = '#EDCAC9'; // lighter firebrick
                 return `background: linear-gradient(to left, rgba(255,255,255,0), rgba(255,255,255,0) ${stop}%, ${barColor}, ${stop}%, ${barColor})`
@@ -422,7 +429,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         let domainMax: number;
         if (this.data.brushApplied)
         {
-            domainMax = 1; // max percent is 1.0
+            domainMax = d3.max(this.imageMetaData.locationList, imgLoc=> d3.max(imgLoc.frameList, frame => frame.inBrushCount));
         }
         else
         {
@@ -444,15 +451,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('x2', d => this.frameScaleX(d.frameId))
             .attr('y1', d => 
                 {
-                    let toScale = this.data.brushApplied ? d.inBrushPercent : d.totalCount;
+                    let toScale = this.data.brushApplied ? d.inBrushCount : d.totalCount;
                     return (this.frameHeight - this.frameScaleHeight(toScale)) / 2;
                 })
             .attr('y2', d => 
                 {
-                    let toScale = this.data.brushApplied ? d.inBrushPercent : d.totalCount;
+                    let toScale = this.data.brushApplied ? d.inBrushCount : d.totalCount;
                     return this.frameHeight - (this.frameHeight - this.frameScaleHeight(toScale)) / 2
                 })
-            .attr('stroke-width', d => this.data.brushApplied ? scaleLineWidth(d.inBrushPercent) : scaleLineWidth(d.totalCount))
+            .attr('stroke-width', d => this.data.brushApplied ? scaleLineWidth(d.inBrushCount) : scaleLineWidth(d.totalCount))
             .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
             .classed('tickMark', true);
     
@@ -555,8 +562,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         const xLow = this.frameScaleX(lowFrameId);
         const xHigh = this.frameScaleX(highFrameId);
 
-        const h1 = (this.frameScaleHeight(frameLow.inBrushPercent) + this.frameHeight) / 2;
-        const h2 = (this.frameScaleHeight(frameHigh.inBrushPercent) + this.frameHeight) / 2;
+        const h1 = (this.frameScaleHeight(frameLow.inBrushCount) + this.frameHeight) / 2;
+        const h2 = (this.frameScaleHeight(frameHigh.inBrushCount) + this.frameHeight) / 2;
 
         const betweenTickMargin = 2;
         const fromBottomMargin = 6;
@@ -663,7 +670,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     {
         const frame = this.imageMetaData.locationLookup.get(locationId).frameLookup.get(frameId);
         const xPos = this.frameScaleX(frameId);
-        const tickHeight = this.frameScaleHeight(frame.inBrushPercent);
+        const tickHeight = this.frameScaleHeight(frame.inBrushCount);
         const dotR = 2;
         const dotMargin = 3;
         const margin = (this.frameHeight - tickHeight) / 2
