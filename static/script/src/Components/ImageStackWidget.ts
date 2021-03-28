@@ -603,11 +603,8 @@ export class ImageStackWidget {
 		const trackLengthKey = 'Track Length';
 		for (let facet of this.facetList) {
 			let facetData: CurveList = facet.data;
-			let maxLength = facetData.curveCollection.getMinMax(trackLengthKey)[1];
-			// let longTracks = facetData.curveList.filter(x => x.get(trackLengthKey) > (maxLength / 2.0));
 			let tracks = facetData.curveList;
 			let numCurves = tracks.length;
-			// const percentages = [0.05, 0.50, 0.95]; // todo make this more general
 			const samplingStat = this.imageTrackWidget.currentSamplingStategy.strat;
 			let percentages: number[];
 			if (Array.isArray(samplingStat))
