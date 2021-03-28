@@ -490,7 +490,7 @@ export class ImageTrackWidget
             self.onDragEnd();
         });
 
-        document.addEventListener('locFameClicked', (e: CustomEvent) =>
+        document.addEventListener('locFrameClicked', (e: CustomEvent) =>
         {
             const frameId = e.detail.frameId;
             this.updateCurrentFrameIndicator(frameId);
