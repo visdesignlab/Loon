@@ -93,7 +93,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public get xAxisFacetSelect() : SvgSelection {
 		return this._xAxisFacetSelect;
 	}
-	
+
+	private _averageLegendSelect : SvgSelection;
+	public get averageLegendSelect() : SvgSelection {
+		return this._averageLegendSelect;
+	}
+
+	private _facetLegendSelect : SvgSelection;
+	public get facetLegendSelect() : SvgSelection {
+		return this._facetLegendSelect;
+	}
+
 	private _canvasContainer : SvgSelection;
 	public get canvasContainer() : SvgSelection {
 		return this._canvasContainer;
@@ -257,7 +267,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._margin = {
 			top: 20,
 			right: 120,
-			bottom: 42,
+			bottom: 62,
 			left: 64
 		}
 	}
@@ -325,7 +335,14 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._averageCurveLabelContainer = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
+		this._averageLegendSelect = this.svgSelect.append('g')
+			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
+		
+		this._facetLegendSelect = this.svgFacetSelect.append('g')
+			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
+		
 		this.initQuickPickOptions();
+		this.drawLegend();
 
 		document.addEventListener('groupByChanged', async (e: CustomEvent) =>
 		{
@@ -471,6 +488,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			{
 				this.margin.right = 120;
 				DevlibTSUtil.hide(this.facetButton);
+				DevlibTSUtil.show(this.averageLegendSelect.node());
+				DevlibTSUtil.show(this.facetLegendSelect.node());
 				if (this.inFacetMode)
 				{
 					DevlibTSUtil.show(this.compareConditionButton);
@@ -492,6 +511,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				DevlibTSUtil.show(this.facetButton);
 				DevlibTSUtil.hide(this.selectConditionButton);
 				DevlibTSUtil.hide(this.compareConditionButton);
+				DevlibTSUtil.hide(this.averageLegendSelect.node());
+				DevlibTSUtil.hide(this.facetLegendSelect.node());
 			}
 			this.setWidthHeight();
 			this.OnResize();
@@ -694,9 +715,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				if (this.data.brushApplied)
 				{
 					canvasContext.save()
-					canvasContext.setLineDash([2, 3]);
+					// canvasContext.setLineDash([2, 3]);
 					canvasContext.globalAlpha *= 0.8;
-					canvasContext.lineWidth *= 0.5;
+					canvasContext.lineWidth = 1;
 				}
 				const path = new Path2D(lineAvg(dataPoints));
 				canvasContext.stroke(path);
@@ -1267,6 +1288,100 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.call(d3.axisLeft(this.scaleY).ticks(5));
 	}
+	
+	private drawLegend(): void
+	{
+		this.drawAverageLegend();
+		this.drawFacetLegend();
+	}
+
+	private drawAverageLegend(): void
+	{
+		const lineWidth = 24;
+		const textOffset = 4;
+		const selectedTextWidth = 55; // approximate
+		const betweenPad = 20;
+		this.averageLegendSelect.append('line')
+			.attr('x1', 0)
+			.attr('x2', lineWidth)
+			.attr('y1', 0)
+			.attr('y2', 0)
+			.attr('stroke-width', 2)
+			.attr('stroke', 'black')
+			.attr('opacity', 0.85);
+
+		this.averageLegendSelect.append('circle')
+			.attr('cx', lineWidth)
+			.attr('cy', 0)
+			.attr('r', 3)
+			.attr('fill', 'black')
+			.attr('opacity', 0.85);
+
+		this.averageLegendSelect.append('text')
+			.attr('alignment-baseline', 'middle')
+			.attr('transform', `translate(${lineWidth + textOffset},0)`)
+			.classed('smallText', true)
+			.text('Selected');
+
+		this.averageLegendSelect.append('line')
+			.attr('x1', textOffset + selectedTextWidth + betweenPad + lineWidth)
+			.attr('x2', textOffset + selectedTextWidth + betweenPad + 2 * lineWidth)
+			.attr('y1', 0)
+			.attr('y2', 0)
+			.attr('stroke-width', 1)
+			.attr('stroke', 'black')
+			.attr('opacity', 0.8);
+
+		this.averageLegendSelect.append('text')
+			.attr('alignment-baseline', 'middle')
+			.attr('transform', `translate(${2 * lineWidth + 2 * textOffset + selectedTextWidth + betweenPad},0)`)
+			.classed('smallText', true)
+			.text('All');
+	}
+
+	private drawFacetLegend(): void
+	{
+		const lineWidth = 24;
+		const textOffset = 4;
+		const selectedTextWidth = 55; // approximate
+		const betweenPad = 20;
+		this.facetLegendSelect.append('line')
+			.attr('x1', 0)
+			.attr('x2', lineWidth)
+			.attr('y1', 0)
+			.attr('y2', 0)
+			.attr('stroke-width', 2)
+			.attr('stroke', 'black')
+
+		this.facetLegendSelect.append('text')
+			.attr('alignment-baseline', 'middle')
+			.attr('transform', `translate(${lineWidth + textOffset},0)`)
+			.classed('smallText', true)
+			.text('Selected');
+	
+		this.facetLegendSelect.append('rect')
+			.attr('x', textOffset + selectedTextWidth + betweenPad + lineWidth)
+			.attr('y', -lineWidth/2)
+			.attr('width', lineWidth)
+			.attr('height', lineWidth)
+			.attr('stroke', 'none')
+			.attr('fill', 'rgb(236, 236, 236)');
+
+		this.facetLegendSelect.append('line')
+			.attr('x1', textOffset + selectedTextWidth + betweenPad + lineWidth)
+			.attr('x2', textOffset + selectedTextWidth + betweenPad + 2 * lineWidth)
+			.attr('y1', -lineWidth/2)
+			.attr('y2', -lineWidth/2)
+			.attr('stroke-width', 1)
+			.attr('stroke', 'black')
+			.attr('opacity', 0.6);
+
+		this.facetLegendSelect.append('text')
+			.attr('alignment-baseline', 'middle')
+			.attr('transform', `translate(${2 * lineWidth + 2 * textOffset + selectedTextWidth + betweenPad},0)`)
+			.classed('smallText', true)
+			.text('All');
+	}
 
     private showLabel(): void
     {
@@ -1289,6 +1404,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 
 			this.svgFacetSelect.attr('width', this.width);
 			this.svgFacetSelect.attr('height', this.height);
+
+			this.averageLegendSelect.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
+			this.facetLegendSelect.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
+		
 
 			this.canvasContainer
 				.attr('width', this.vizWidth)

@@ -11,6 +11,7 @@ import { RichTooltip } from './RichTooltip';
 import { ImageLocation } from '../DataModel/ImageLocation';
 import { GroupByWidget } from './GroupByWidget';
 import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -55,6 +56,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._locationSelectionContainer;
     }
 
+    private _menuBarContainer : HtmlSelection;
+    public get menuBarContainer() : HtmlSelection {
+        return this._menuBarContainer;
+    }
+    
+    private _legendContentContainer : HtmlSelection;
+    public get legendContentContainer() : HtmlSelection {
+        return this._legendContentContainer;
+    }
+    
     private _groupByWidget : GroupByWidget;
     public get groupByWidget() : GroupByWidget {
         return this._groupByWidget;
@@ -161,10 +172,27 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
 
+        this._menuBarContainer = this.locationSelectionContainer.append('div')
+            .classed('menuBarContainer', true);
+
+            
         document.onkeydown = (event) => {this.handleKeyDown(event)};
+        
+        this._groupByWidget = new GroupByWidget(this.menuBarContainer);
+        
+        const legendButton = DevlibTSUtil.getIconButton('anchor', () => 
+        {
+            this.legendContentContainer.classed('noDisp', !this.legendContentContainer.classed('noDisp'));
+        }, 'Legend');
+        this.menuBarContainer.node().appendChild(legendButton);
 
-        this._groupByWidget = new GroupByWidget(this.locationSelectionContainer);
-
+        this._legendContentContainer = this.menuBarContainer.append('div')
+            .classed('legendContentContainer', true)
+            .classed('noDisp', true);
+        
+        this.legendContentContainer.append('img')
+            .attr('src', '/static/assets/image-selection-legend.png');
+            
         this._locationListContainer = this.locationSelectionContainer.append('div')
             .classed('locationListContainer', true);
 
@@ -372,6 +400,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 .domain([0, maxTotalCells])
                 .range([0, 1.0]);
         }
+        else
+        {
+            const maxInBrushCells = d3.max(this.imageMetaData.locationList, loc => loc.inBrushCount);
+            countToPercent = d3.scaleLinear()
+                .domain([0, maxInBrushCells])
+                .range([0, 1.0]);
+        }
 
         listElement.html(null)
             .append('button')
@@ -383,7 +418,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('style', d => 
             {
                 const location = this.imageMetaData.locationLookup.get(d);
-                const percent = this.data.brushApplied ? location.inBrushPercent : countToPercent(location.totalCount);
+                const percent = this.data.brushApplied ? countToPercent(location.inBrushCount) : countToPercent(location.totalCount);
                 const stop = (1 - percent) * 100
                 const barColor = '#EDCAC9'; // lighter firebrick
                 return `background: linear-gradient(to left, rgba(255,255,255,0), rgba(255,255,255,0) ${stop}%, ${barColor}, ${stop}%, ${barColor})`
@@ -422,7 +457,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         let domainMax: number;
         if (this.data.brushApplied)
         {
-            domainMax = 1; // max percent is 1.0
+            domainMax = d3.max(this.imageMetaData.locationList, imgLoc=> d3.max(imgLoc.frameList, frame => frame.inBrushCount));
         }
         else
         {
@@ -444,15 +479,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('x2', d => this.frameScaleX(d.frameId))
             .attr('y1', d => 
                 {
-                    let toScale = this.data.brushApplied ? d.inBrushPercent : d.totalCount;
+                    let toScale = this.data.brushApplied ? d.inBrushCount : d.totalCount;
                     return (this.frameHeight - this.frameScaleHeight(toScale)) / 2;
                 })
             .attr('y2', d => 
                 {
-                    let toScale = this.data.brushApplied ? d.inBrushPercent : d.totalCount;
+                    let toScale = this.data.brushApplied ? d.inBrushCount : d.totalCount;
                     return this.frameHeight - (this.frameHeight - this.frameScaleHeight(toScale)) / 2
                 })
-            .attr('stroke-width', d => this.data.brushApplied ? scaleLineWidth(d.inBrushPercent) : scaleLineWidth(d.totalCount))
+            .attr('stroke-width', d => this.data.brushApplied ? scaleLineWidth(d.inBrushCount) : scaleLineWidth(d.totalCount))
             .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
             .classed('tickMark', true);
     
@@ -555,8 +590,8 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         const xLow = this.frameScaleX(lowFrameId);
         const xHigh = this.frameScaleX(highFrameId);
 
-        const h1 = (this.frameScaleHeight(frameLow.inBrushPercent) + this.frameHeight) / 2;
-        const h2 = (this.frameScaleHeight(frameHigh.inBrushPercent) + this.frameHeight) / 2;
+        const h1 = (this.frameScaleHeight(frameLow.inBrushCount) + this.frameHeight) / 2;
+        const h2 = (this.frameScaleHeight(frameHigh.inBrushCount) + this.frameHeight) / 2;
 
         const betweenTickMargin = 2;
         const fromBottomMargin = 6;
@@ -663,7 +698,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     {
         const frame = this.imageMetaData.locationLookup.get(locationId).frameLookup.get(frameId);
         const xPos = this.frameScaleX(frameId);
-        const tickHeight = this.frameScaleHeight(frame.inBrushPercent);
+        const tickHeight = this.frameScaleHeight(frame.inBrushCount);
         const dotR = 2;
         const dotMargin = 3;
         const margin = (this.frameHeight - tickHeight) / 2

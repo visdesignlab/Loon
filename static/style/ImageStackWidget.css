@@ -7,6 +7,11 @@
     margin: 10px;
 }
 
+.imageAndLegendContainer {
+    display: flex;
+    flex-direction: row;
+}
+
 .locationFrameLabelContainer {
     padding-left: 20px;
     background: #f1f1f1;
@@ -28,21 +33,27 @@
     flex-direction: row;
 }
 
+.toggleOptions.vertical {
+    flex-direction: column;
+}
+
 
 .colorLegendLabel {
     display: flex;
     align-items: center;
-    margin-right: 15px;
-    margin-left: 15px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    flex-direction: column;
+    text-align: center;
 }
 
 .colorLegendLabel:before {
     content: '';
     background: white;
-    min-width: 16px;
-    height: 16px;
-    margin-right: 4px;
-    border: solid black 3px;
+    min-width: 12px;
+    height: 12px;
+    border: solid black 2px;
 }
 
 .red.colorLegendLabel:before {
@@ -59,13 +70,13 @@ input:checked + .colorLegendLabel:before {
     background: black;
 }
 input:checked + .red.colorLegendLabel:before {
-    background: rgb(178, 34, 34);
+    background: rgba(178, 34, 34, 0.6);
 }
 input:checked + .green.colorLegendLabel:before {
-    background: rgb(119, 140, 77);
+    background: rgba(119, 140, 77, 0.6);
 }
 input:checked + .blue.colorLegendLabel:before {
-    background: rgb(70, 130, 180);
+    background: rgba(70, 130, 180, 0.6);
 }
 
 .cellAxisLabel.currentFrame {
