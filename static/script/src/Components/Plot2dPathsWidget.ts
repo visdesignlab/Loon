@@ -336,10 +336,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
 		this._averageLegendSelect = this.svgSelect.append('g')
-			.attr('transform', `translate(${this.margin.left + this.vizWidth - 60}, ${this.margin.top + this.vizHeight + 30})`);
+			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
 		
 		this._facetLegendSelect = this.svgFacetSelect.append('g')
-			.attr('transform', `translate(${this.margin.left + this.vizWidth - 60}, ${this.margin.top + this.vizHeight + 30})`);
+			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
 		
 		this.initQuickPickOptions();
 		this.drawLegend();
@@ -1405,8 +1405,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			this.svgFacetSelect.attr('width', this.width);
 			this.svgFacetSelect.attr('height', this.height);
 
-			this.averageLegendSelect.attr('transform', `translate(${this.margin.left + this.vizWidth - 60}, ${this.margin.top + this.vizHeight + 30})`);
-			this.facetLegendSelect.attr('transform', `translate(${this.margin.left + this.vizWidth - 60}, ${this.margin.top + this.vizHeight + 30})`);
+			this.averageLegendSelect.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
+			this.facetLegendSelect.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
 		
 
 			this.canvasContainer
