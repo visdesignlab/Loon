@@ -344,10 +344,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
 		this._averageLegendSelect = this.svgSelect.append('g')
-			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
+			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 44})`);
 		
 		this._facetLegendSelect = this.svgFacetSelect.append('g')
-			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
+			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 44})`);
 		
 		this.initQuickPickOptions();
 		this.drawLegend();
@@ -1397,17 +1397,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	
 		this.facetLegendSelect.append('rect')
 			.attr('x', textOffset + selectedTextWidth + betweenPad + lineWidth)
-			.attr('y', -lineWidth/2)
+			.attr('y', 0)
 			.attr('width', lineWidth)
-			.attr('height', lineWidth)
+			.attr('height', lineWidth/2)
 			.attr('stroke', 'none')
 			.attr('fill', 'rgb(236, 236, 236)');
 
 		this.facetLegendSelect.append('line')
 			.attr('x1', textOffset + selectedTextWidth + betweenPad + lineWidth)
 			.attr('x2', textOffset + selectedTextWidth + betweenPad + 2 * lineWidth)
-			.attr('y1', -lineWidth/2)
-			.attr('y2', -lineWidth/2)
+			.attr('y1', 0)
+			.attr('y2', 0)
 			.attr('stroke-width', 1)
 			.attr('stroke', 'black')
 			.attr('opacity', 0.6);
@@ -1441,8 +1441,8 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			this.svgFacetSelect.attr('width', this.width);
 			this.svgFacetSelect.attr('height', this.height);
 
-			this.averageLegendSelect.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
-			this.facetLegendSelect.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 30})`);
+			this.averageLegendSelect.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 44})`);
+			this.facetLegendSelect.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 44})`);
 		
 
 			this.canvasContainer
