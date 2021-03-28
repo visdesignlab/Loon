@@ -34,6 +34,7 @@ export class ImageStackWidget {
 		this._condensedModeCount = 7;
 		this._exemplarLocations = new Set();
 		this._exemplarFrames = new Map();
+		this._colorLookup = new Map<string, string>();
 		this._facetList = [];
 		this._manuallyPinnedTracks = [];
 		this._mousePos = null;
@@ -697,7 +698,10 @@ export class ImageStackWidget {
 
 	private drawDefaultCanvas(): void
 	{
-		this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
+		if (this.defaultCanvasState)
+		{	
+			this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
+		}
 	}
 
 	private drawPinnedCellMarkers(): void

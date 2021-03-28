@@ -1273,7 +1273,10 @@ export class ImageTrackWidget
 
     private async drawOutlines(drawDefaultCanvas = true): Promise<void>
     {
-
+        if (!this.defaultCanvasState)
+        {
+            return;
+        }
         if (drawDefaultCanvas)
         {
             this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
@@ -1999,7 +2002,10 @@ export class ImageTrackWidget
 
     public updateCurrentFrameIndicator(frameId: number): void
     {
-
+        if (!this.exemplarScaleX)
+        {
+            return
+        }
         let groupListSelection = this.exemplarCurvesGroup.selectAll('.plotGrouper')
 
         groupListSelection.selectAll('.currentFrameLine')
