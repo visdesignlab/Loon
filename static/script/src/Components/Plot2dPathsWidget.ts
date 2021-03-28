@@ -1041,6 +1041,35 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			})
 			.on('mouseleave', () => this.miniCellSelect.selectAll('rect').classed('hovered', false))
 			.text(d => d);
+
+		// add all button
+		this.xAxisFacetSelect.append('foreignObject')
+			.attr('width', maxLabelWidth)
+			// .attr('width', miniSize)
+			.attr('height', maxLabelHeight)
+			.attr('transform', `translate(${-maxLabelWidth - labelPadding}, ${labelPadding})`)
+		  .append('xhtml:div')
+			.classed('x', true)
+			.classed('axisButtonContainer', true)
+		  .append('button')
+		  	.classed('basicIconButton', true)
+			.attr('style', `max-width: ${maxLabelWidth}px; min-width: ${maxLabelWidth}px; height: ${maxLabelHeight}px`)
+		  	.attr('title', 'Select all conditions')
+			.text('All')
+			.on('click', () =>
+			{
+				if (this.allConditionsTrue())
+				{
+					this.setAllConditionsFalse();
+				}
+				else
+				{
+					this.setAllConditionsTrue();
+				}
+				this.updateConditionFilterSelection();
+			})
+			.on('mouseenter', () => this.miniCellSelect.selectAll('rect').classed('hovered', true))
+			.on('mouseleave', () => this.miniCellSelect.selectAll('rect').classed('hovered', false));
 	}
 
 	private getGrowthLine(
@@ -1200,6 +1229,17 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			for (let key of map.keys())
 			{
 				map.set(key, false);
+			}
+		}
+	}
+
+	private setAllConditionsTrue(): void
+	{
+		for (let map of this.tempConditionFilterState.values())
+		{
+			for (let key of map.keys())
+			{
+				map.set(key, true);
 			}
 		}
 	}
