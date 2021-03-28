@@ -79,6 +79,11 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._smoothCurves = true;
 	}
 
+	private _titleBarContainer : HtmlSelection;
+    public get titleBarContainer() : HtmlSelection {
+        return this._titleBarContainer;
+    }
+
 	private _svgSelect : SvgSelection;
 	public get svgSelect() : SvgSelection {
 		return this._svgSelect;
@@ -285,7 +290,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	protected setMargin(): void
 	{
 		this._margin = {
-			top: 20,
+			top: 54,
 			right: 120,
 			bottom: 62,
 			left: 64
@@ -295,18 +300,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	protected init(): void
 	{
 		const containerSelect = d3.select(this.container);
-		containerSelect
-			.on('mouseenter', () =>
-			{
-				if (this.data && !this.isClone)
-				{
-					this.showQuickPickContainer();
-				}
-			})
-			.on('mouseleave', () =>
-			{
-				this.hideQuickPickContainer();
-			})
+
+		this._titleBarContainer = containerSelect.append('div')
+			.classed('titleBarContainer', true);
+
 		this._svgSelect = containerSelect.append("svg");
 		this._mainGroupSelect = this.svgSelect.append("g")
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
@@ -364,7 +361,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._facetLegendSelect = this.svgFacetSelect.append('g')
 			.attr('transform', `translate(${this.margin.left/2}, ${this.margin.top + this.vizHeight + 44})`);
 		
-		this.initQuickPickOptions();
 		this.drawLegend();
 
 		document.addEventListener('groupByChanged', async (e: CustomEvent) =>
@@ -397,29 +393,47 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
             this.updateCurrentFrameIndicator(frameId);
         });
 
-		this._selectConditionButton = this.AddButton('layer-group', 'Filter data on experimental conditions', () =>
+		this._selectConditionButton = DevlibTSUtil.getIconButton('th', () =>
 		{
-			DevlibTSUtil.hide(this.selectConditionButton);
-			DevlibTSUtil.show(this.compareConditionButton);
+			this._inFacetMode = true;
+			this.selectConditionButton.classList.add('selected');
+			this.compareConditionButton.classList.remove('selected');
 			this.drawFacetContent()
 		},
-		'Select Conditions');
+		'Facet');
+		this.selectConditionButton.title = 'Filter data on experimental conditions';
+		this.selectConditionButton.style.height = '100%';
+		this.titleBarContainer.node().appendChild(this.selectConditionButton);
 
-		this._compareConditionButton = this.AddButton('layer-group', 'Show conditions together to compare them', () =>
+		this._compareConditionButton = DevlibTSUtil.getIconButton('chart-line', () =>
 		{
-			DevlibTSUtil.show(this.selectConditionButton);
-			DevlibTSUtil.hide(this.compareConditionButton);
+			this._inFacetMode = false;
+			this.selectConditionButton.classList.remove('selected');
+			this.compareConditionButton.classList.add('selected');
 			this.drawFacetContent()
 		},
-		'Compare Conditions');
+		'Compare');
+		this.compareConditionButton.title = 'Filter data on experimental conditions';
+		this.compareConditionButton.style.height = '100%';
+		this.titleBarContainer.node().appendChild(this.compareConditionButton);
+		this.titleBarContainer.append('div').attr('style', 'flex-grow: 1;');
 
-		DevlibTSUtil.hide(this.compareConditionButton);
+		if (this.inFacetMode)
+		{
+			this.selectConditionButton.classList.add('selected');
+		}
+		else
+		{
+			this.compareConditionButton.classList.add('selected');
+		}
+
+		this.initQuickPickOptions();
 	}
 
 	private initQuickPickOptions(): void
 	{
 		const containerId = this.ComponentId + '-quickPickContainer';
-		this._quickPickContainerSelect = d3.select(this.container).append('div')
+		this._quickPickContainerSelect = this.titleBarContainer.append('div')
 			.classed('quickPickContainer', true)
 			.attr('id', containerId);
 
@@ -442,7 +456,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			}
 			buttonPropList.push(buttonProp);
 		}
-		this.hideQuickPickContainer();
 		this.quickPickOptionSelect.onDataChange(buttonPropList, this.initialQuickPickOptionIndex);
 	}
 
@@ -486,15 +499,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this.yLabelTextSelect.attr('transform', transformText);
 	}
 
-	private showQuickPickContainer(): void
-	{
-		this.quickPickContainerSelect.classed('noDisp', false);
-	}
-
-	private hideQuickPickContainer(): void
-	{
-		this.quickPickContainerSelect.classed('noDisp', true);
-	}
 
 	public OnDataChange(): void
 	{
@@ -519,14 +523,14 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				DevlibTSUtil.hide(this.facetButton);
 				DevlibTSUtil.show(this.averageLegendSelect.node());
 				DevlibTSUtil.show(this.facetLegendSelect.node());
-				if (this.inFacetMode)
-				{
+				// if (this.inFacetMode)
+				// {
 					DevlibTSUtil.show(this.compareConditionButton);
-				}
-				else
-				{
+				// }
+				// else
+				// {
 					DevlibTSUtil.show(this.selectConditionButton);
-				}
+				// }
 			}
 			else
 			{
@@ -798,7 +802,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private updateFacetPaths(): void
 	{
 		const margin = {
-			top: 30,
+			top: 64,
 			left: 120,
 			right: 20,
 			bottom: 48
@@ -1292,7 +1296,6 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	{
 		if (this.inAverageMode)
 		{
-			this._inFacetMode = !this.inFacetMode;
 			this.swapSvgVisibility();
 			this.updatePaths();
 		}
