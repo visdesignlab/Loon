@@ -414,7 +414,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			this.drawFacetContent()
 		},
 		'Compare');
-		this.compareConditionButton.title = 'Filter data on experimental conditions';
+		this.compareConditionButton.title = 'Compare average curves across experimental conditions';
 		this.compareConditionButton.style.height = '100%';
 		this.compareConditionButton.classList.add('tab');
 		this.titleBarContainer.node().appendChild(this.compareConditionButton);
