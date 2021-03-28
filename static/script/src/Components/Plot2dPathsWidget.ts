@@ -117,7 +117,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private _averageCurveLabelContainer : SvgSelection;
 	public get averageCurveLabelContainer() : SvgSelection {
 		return this._averageCurveLabelContainer;
-	}	
+	}
+
+	private _currentFrameIndicator : SvgSelection;
+	public get currentFrameIndicator() : SvgSelection {
+		return this._currentFrameIndicator;
+	}
 
 	private _canBrush : boolean;
 	public get canBrush() : boolean {
@@ -332,6 +337,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`)
 			.classed("labelColor", true);
 
+		this._currentFrameIndicator = this.svgSelect.append('g')
+			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
+	
 		this._averageCurveLabelContainer = this.svgSelect.append('g')
 			.attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
 
@@ -367,6 +375,12 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				this.OnDataChange();
 			}
 		});
+
+		document.addEventListener('locFrameClicked', (e: CustomEvent) =>
+        {
+            const frameId = e.detail.frameId;
+            this.updateCurrentFrameIndicator(frameId);
+        });
 
 		this._selectConditionButton = this.AddButton('layer-group', 'Filter data on experimental conditions', () =>
 		{
@@ -742,6 +756,28 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			labelData.unshift([facet.name.join('___'), lastPoint]);
 		}
 		this.drawLabels(labelData);
+		// this.updateCurrentFrameIndicator();
+	}
+
+	private updateCurrentFrameIndicator(frameId?: number): void
+	{
+		if (this.inAverageMode && !this.inFacetMode && typeof(frameId) !== 'undefined')
+		{
+			this.currentFrameIndicator.selectAll('line')
+				.data([42])
+				.join('line')
+				.attr('x1', this.scaleX(frameId))
+				.attr('x2', this.scaleX(frameId))
+				.attr('y1', this.scaleY.range()[0])
+				.attr('y2', this.scaleY.range()[1])
+				.attr('stroke', 'black')
+				.classed('currentFrameLine', true);
+		}
+		else
+		{
+			this.currentFrameIndicator.selectAll('line').remove();
+		}
+
 	}
 
 	private updateFacetPaths(): void
