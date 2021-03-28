@@ -681,8 +681,8 @@ export class ImageStackWidget {
 						let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
 						flatIdx *= 4;
 						let [cell, _index] = this.getCell(labelRun.label, this.data);
-						let color = this.getCellColor(cell);
-						if (color !== null)
+						let {color: color, show: show}= this.getCellColor(cell);
+						if (show)
 						{
 							let [r, g, b] = color;
 							myImageData.data[flatIdx] = r;
@@ -895,15 +895,12 @@ export class ImageStackWidget {
 						let flatIdx = (rowIdx - firstIndex) * this.imageStackDataRequest.tileWidth + colIdx;
 						flatIdx *= 4;
 						let [cell, _index] = this.getCell(labelRun.label, this.data);
-						let color = this.getCellColor(cell);
-						if (color !== null)
-						{
-							let [r, g, b] = color;
-							myImageData.data[flatIdx] = r;
-							myImageData.data[flatIdx + 1] = g;
-							myImageData.data[flatIdx + 2] = b;
-							myImageData.data[flatIdx + 3] = 200;
-						}
+						let {color: color, show: show} = this.getCellColor(cell);
+						let [r, g, b] = color;
+						myImageData.data[flatIdx] = r;
+						myImageData.data[flatIdx + 1] = g;
+						myImageData.data[flatIdx + 2] = b;
+						myImageData.data[flatIdx + 3] = 200;
 					}
 				}
 
@@ -983,34 +980,29 @@ export class ImageStackWidget {
 		return dataSource.GetCellFromLabel(this.getCurrentLocationId(), this.getCurrentFrameId(), label);
 	}
 
-	public getCellColor(cell: PointND | null): [number, number, number] | null
+	public getCellColor(cell: PointND | null): { color: [number, number, number], show: boolean }
 	{
 		let color: [number, number, number] = [0, 0, 0];
-		if (!cell) {
-			if (!(this.legendToggleFilteredOut.node()as HTMLInputElement).checked)
-			{
-				return null
-			}
+		let show: boolean;
+		if (!cell)
+		{
 			// nuted/darkened from SpringGreen
 			color = [119, 140, 77];
+			show = (this.legendToggleFilteredOut.node()as HTMLInputElement).checked
 		}
-		else if (cell.inBrush) {
-			if (!(this.legendToggleSelected.node()as HTMLInputElement).checked)
-			{
-				return null
-			}
+		else if (cell.inBrush)
+		{
 			// FireBrick
 			color = [178, 34, 34];
+			show = (this.legendToggleSelected.node()as HTMLInputElement).checked;
 		}
-		else {
-			if (!(this.legendToggleNotSelected.node()as HTMLInputElement).checked)
-			{
-				return null
-			}
+		else
+		{
 			// SteelBlue
 			color = [70, 130, 180];
+			show = (this.legendToggleNotSelected.node()as HTMLInputElement).checked;
 		}
-		return color
+		return {color: color, show: show};
 	}
 
 	public changeSelectedImage(newIndex: number): void {

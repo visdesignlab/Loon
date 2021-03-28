@@ -924,7 +924,6 @@ export class ImageTrackWidget
                         }
                     }
                     resolve();
-                    // this.drawOutlines(sourceDestCell);
                     webWorker.terminate();
                 }
             });
@@ -1292,8 +1291,8 @@ export class ImageTrackWidget
                         {
                             // should use data, not full data to get the right color.
                             const [cell, _index] = this.parentWidget.data.GetCellFromLabel(point.get('Location ID'), point.get('Frame ID'), labelToMatch);
-                            let color = this.parentWidget.getCellColor(cell);
-                            if (color !== null)
+                            let {color: color, show: show} = this.parentWidget.getCellColor(cell);
+                            if (show)
                             {
                                 let [r, g, b] = color;
                                 outlineTileData.data[rIdx] = r;
@@ -1315,7 +1314,6 @@ export class ImageTrackWidget
         // cell labels
         if (!this.parentWidget.inExemplarMode)
         {
-            // this.drawCellLabels();
             DevlibTSUtil.hide(this.scentedWidgetGroup.node());
             DevlibTSUtil.hide(this.exemplarPinGroup.node());
             DevlibTSUtil.hide(this.manualExemplarPinGroup.node());
