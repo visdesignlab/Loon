@@ -301,7 +301,7 @@ export class ImageStackWidget {
 			.attr('type', 'checkbox')
 			.on('change', () => 
 			{
-				this.updateCanvas();
+				this.OnBrushChange();
 			})
 			.attr('id', outlineId);
 		this.toggleOptionsContainer.append('label')
@@ -363,7 +363,7 @@ export class ImageStackWidget {
 			.attr('type', 'checkbox')
 			.on('change', () => 
 			{
-				this.updateCanvas();
+				this.OnBrushChange();
 			})
 			.classed('noDisp', true)
 			.attr('id', 'legendToggle-selected');
@@ -379,7 +379,7 @@ export class ImageStackWidget {
 			.attr('type', 'checkbox')
 			.on('change', () => 
 			{
-				this.updateCanvas();
+				this.OnBrushChange();
 			})
 			.classed('noDisp', true)
 			.attr('id', 'legendToggle-filteredOut');
@@ -395,7 +395,7 @@ export class ImageStackWidget {
 			.attr('type', 'checkbox')
 			.on('change', () => 
 			{
-				this.updateCanvas();
+				this.OnBrushChange();
 			})
 			.classed('noDisp', true)
 			.attr('id', 'legendToggle-notSelected');
@@ -453,7 +453,6 @@ export class ImageStackWidget {
 			this._colorLookup = e.detail.colorLookup;
 			this.updateTracksCanvas();
 			document.dispatchEvent(new CustomEvent('imageSelectionRedraw'));
-
 		});
 	}
 

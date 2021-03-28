@@ -157,6 +157,11 @@ export class ImageTrackWidget
 		return this._canvasContext;
     }
     
+	private _defaultCanvasState: ImageData;
+	public get defaultCanvasState(): ImageData {
+		return this._defaultCanvasState;
+	}
+
     private _trackList : conditionExemplar<CurveND>[];
     public get trackList() : conditionExemplar<CurveND>[] {
         return this._trackList;
@@ -661,6 +666,8 @@ export class ImageTrackWidget
         // I don't know why gulp isn't recognizing allSettled. The version should
         // be correct. But I'm tired of seeing the error.
         await (Promise as any).allSettled(drawTrackPromises);
+        this._defaultCanvasState = this.canvasContext.getImageData(0, 0, canvasWidth, totalHeight);
+        await this.drawOutlines(false);
         DevlibTSUtil.stopSpinner();
     }
 
@@ -739,7 +746,7 @@ export class ImageTrackWidget
         this.drawTrackBackgroundAndTimeRange(trackData, maxWidth, maxHeight, minFrame, verticalOffset, categoryIndex, isStarred);
 
         let asyncFunctionList = [];
-        let blobRequests = [];
+        let blobRequests: Promise<[number, number, Blob, string]>[] = [];
         let offsetArray: [number, number][] = [];
         for (let i = 0; i < boundingBoxList.length; i++)
         {
@@ -767,7 +774,7 @@ export class ImageTrackWidget
 
         let results = await Promise.all(blobRequests);
         let sourceDestCell = [];
-                let workerData = [];
+                let workerData: [Blob, number, number, number, number][] = [];
                 let webWorker = new Worker('/static/script/dist/ImageWorker.js');
                 for (let j = 0; j < results.length; j++)
                 {
@@ -917,7 +924,7 @@ export class ImageTrackWidget
                         }
                     }
                     resolve();
-                    this.drawOutlines(sourceDestCell);
+                    // this.drawOutlines(sourceDestCell);
                     webWorker.terminate();
                 }
             });
@@ -1249,18 +1256,19 @@ export class ImageTrackWidget
         return [labelPositions[labelIndex][0], labelIndex];
     }
 
-    private async drawOutlines(sourceDestCell?: [Rect, [number, number], PointND][]): Promise<void>
+    private async drawOutlines(drawDefaultCanvas = true): Promise<void>
     {
+
+        if (drawDefaultCanvas)
+        {
+            this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
+        }
         if (!(this.parentWidget.showOutlineToggle.node() as HTMLInputElement).checked)
         {
             // don't do it!
             return;
         }
-        if (!sourceDestCell)
-        {
-            sourceDestCell = this.sourceDestCell
-        }
-        for (let [sourceRect, [dX, dY], point] of sourceDestCell)
+        for (let [sourceRect, [dX, dY], point] of this.sourceDestCell)
         {
             let width = ImageTrackWidget.rectWidth(sourceRect);
             let height = ImageTrackWidget.rectHeight(sourceRect);
