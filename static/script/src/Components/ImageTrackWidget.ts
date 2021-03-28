@@ -1827,7 +1827,7 @@ export class ImageTrackWidget
                         - rightPadding;
 
         width = Math.max(width, this.exemplarMinWidth); // min-width: 80
-        width = Math.min(width, 200); // max-width: 200
+        width = Math.min(width, 240); // max-width: 240
 
         const frameExtent = this.parentWidget.fullData.getMinMax('Frame ID');
         this._exemplarScaleX = d3.scaleLinear()
@@ -1848,7 +1848,7 @@ export class ImageTrackWidget
 
         const firstPosition = this.conditionLabelPositions[0][1];
         let height = firstPosition[1] - firstPosition[0] + 1;
-        height = Math.min(height, 200); // max-height: 200
+        height = Math.min(height, 120); // max-height: 150
 
         this._exemplarScaleY = d3.scaleLinear()
             .domain([yMin, yMax])
