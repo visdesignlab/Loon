@@ -263,7 +263,11 @@ export class GroupByWidget
 
     private getColorLookup(): Map<string, string>
 	{
-
+        const colorLookup = new Map<string, string>();
+        if (!(this.data as CurveList).defaultFacetAxisTicks)
+        {
+            return colorLookup;
+        }
         const {
             yAxisTicks: condition1Labels,
             xAxisTicks: condition2Labels
@@ -271,7 +275,6 @@ export class GroupByWidget
 
         const firstFacetIndex = this.currentSelectionIndexList[0];
         const labels: string[] = firstFacetIndex === 1 ? condition2Labels : condition1Labels;
-        const colorLookup = new Map<string, string>();
         const controlNames = GroupByWidget.getControlNames();
         const controlColor = GroupByWidget.getControlColor();
         const {scheme: colorScheme, skipIndices: skipColors} = GroupByWidget.getColorScheme();

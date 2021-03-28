@@ -22,6 +22,12 @@
     background: rgb(226, 226, 226, 0.5);
 }
 
+.basicIconButton.tab.selected {
+    background: white;
+    border-bottom: 0;
+    border-radius: 4px 4px 0px 0px;
+}
+
 .basicIconButton.compact {
     width: 24px;
     height: 24px;
