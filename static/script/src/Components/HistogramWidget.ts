@@ -25,7 +25,7 @@ export class HistogramWidget extends BaseWidget<PointCollection, DatasetSpec> {
     protected Clone(container: HTMLElement): BaseWidget<PointCollection, DatasetSpec>
     {
 		const canBrush = false;
-        let clone = new HistogramWidget(container, this.valueKey, canBrush, true);
+        let clone = new HistogramWidget(container, this.valueKey, canBrush, false);
         return clone;
     }
 

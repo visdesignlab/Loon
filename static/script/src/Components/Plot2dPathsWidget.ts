@@ -32,6 +32,15 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._facetList = [];
 		this._colorLookup = new Map<string, string>();
 		this._isClone = isClone;
+		if (isClone)
+		{
+			this._inAverageMode = false;
+			this._inFacetMode = false;
+			DevlibTSUtil.hide(this.averageLegendSelect.node());
+			DevlibTSUtil.hide(this.selectConditionButton);
+			DevlibTSUtil.hide(this.compareConditionButton);
+		}
+		this.swapSvgVisibility();
 		if (this.inAverageMode)
 		{
 			DevlibTSUtil.hide(this.facetButton);
@@ -41,7 +50,13 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 	protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
 		const canBrush = false;
-		return new Plot2dPathsWidget(container, this.quickPickOptions, this.quickPickOptionSelect.currentSelectionIndex, this.squareAspectRatio, canBrush, true);
+		return new Plot2dPathsWidget(
+			container,
+			this.quickPickOptions,
+			this.quickPickOptionSelect.currentSelectionIndex,
+			this.squareAspectRatio,
+			canBrush,
+			true);
 	}
 
 	private _isClone : boolean;
@@ -283,7 +298,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		containerSelect
 			.on('mouseenter', () =>
 			{
-				if (this.data)
+				if (this.data && !this.isClone)
 				{
 					this.showQuickPickContainer();
 				}
@@ -301,7 +316,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		this._yAxisFacetSelect = this.svgFacetSelect.append('g')
 		this._xAxisFacetSelect = this.svgFacetSelect.append('g')
 
-		this.swapSvgVisibility();
+		// this.swapSvgVisibility();
 
 		this._canvasContainer = this.mainGroupSelect
 			.append('foreignObject')
