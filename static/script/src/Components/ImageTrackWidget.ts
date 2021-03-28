@@ -489,6 +489,12 @@ export class ImageTrackWidget
         {
             self.onDragEnd();
         });
+
+        document.addEventListener('locFameClicked', (e: CustomEvent) =>
+        {
+            const frameId = e.detail.frameId;
+            this.updateCurrentFrameIndicator(frameId);
+        });
     }
 
     public async draw(tracks: conditionExemplar<CurveND>[], manuallyPinnedTracks: CurveND[]): Promise<void>
@@ -1903,10 +1909,6 @@ export class ImageTrackWidget
     {
 
         let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplarPlotGrouper')
-            // .data(this.conditionLabelPositions)
-            // .join('g')
-            // .classed('exemplarPlotGrouper', true)
-            // .attr('transform', d => `translate(0, ${d[1][0]})`);
 
         groupListSelection.selectAll('.currentFrameLine')
             .data([42])

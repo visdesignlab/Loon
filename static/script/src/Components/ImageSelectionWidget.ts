@@ -516,7 +516,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 const mouseX = event.offsetX;
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
-                this.onClickLocationFrame(locId, frameId);
+                // this.onClickLocationFrame(locId, frameId);
+
+                document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
+                    {
+                        locationId: locId,
+                        frameId: frameId
+                    }}));
             });
         }
     }
@@ -533,12 +539,23 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             case 37: // left
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
-                this.onClickLocationFrame(locId, nextFrameId);
+                // this.onClickLocationFrame(locId, nextFrameId);
+                document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
+                    {
+                        locationId: locId,
+                        frameId: nextFrameId
+                    }}));
 				break;
             case 39: // right
                 const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
                 nextFrameId = Math.min(frameId + 1, maxFrameId);
-                this.onClickLocationFrame(locId, nextFrameId);
+                // this.onClickLocationFrame(locId, nextFrameId);
+                
+                document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
+                    {
+                        locationId: locId,
+                        frameId: nextFrameId
+                    }}));
                 break;
 		}
 	}
