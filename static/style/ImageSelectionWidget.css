@@ -5,6 +5,28 @@
     font-family: 'Montserrat', sans-serif;
 }
 
+.menuBarContainer {
+    display: flex;
+    background: #f1f1f1;
+}
+
+.legendContentContainer {
+    position: fixed;
+    background: white;
+    z-index: 9999;
+    top: 48px;
+    left: 30%;
+    border: solid black 1px;
+
+    padding: 12px;
+    box-shadow: black 2px 2px 10px 0px;
+}
+
+.legendContentContainer img{
+    max-width: 900px;
+    background: white;
+}
+
 .locationListGrouper {
     padding-left: 10px;
     border: dashed;

@@ -11,6 +11,7 @@ import { RichTooltip } from './RichTooltip';
 import { ImageLocation } from '../DataModel/ImageLocation';
 import { GroupByWidget } from './GroupByWidget';
 import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
+import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
@@ -55,6 +56,16 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         return this._locationSelectionContainer;
     }
 
+    private _menuBarContainer : HtmlSelection;
+    public get menuBarContainer() : HtmlSelection {
+        return this._menuBarContainer;
+    }
+    
+    private _legendContentContainer : HtmlSelection;
+    public get legendContentContainer() : HtmlSelection {
+        return this._legendContentContainer;
+    }
+    
     private _groupByWidget : GroupByWidget;
     public get groupByWidget() : GroupByWidget {
         return this._groupByWidget;
@@ -161,10 +172,27 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._locationSelectionContainer = this.innerContainer.append('div')
             .classed('locationSelectionContainer', true);
 
+        this._menuBarContainer = this.locationSelectionContainer.append('div')
+            .classed('menuBarContainer', true);
+
+            
         document.onkeydown = (event) => {this.handleKeyDown(event)};
+        
+        this._groupByWidget = new GroupByWidget(this.menuBarContainer);
+        
+        const legendButton = DevlibTSUtil.getIconButton('anchor', () => 
+        {
+            this.legendContentContainer.classed('noDisp', !this.legendContentContainer.classed('noDisp'));
+        }, 'Legend');
+        this.menuBarContainer.node().appendChild(legendButton);
 
-        this._groupByWidget = new GroupByWidget(this.locationSelectionContainer);
-
+        this._legendContentContainer = this.menuBarContainer.append('div')
+            .classed('legendContentContainer', true)
+            .classed('noDisp', true);
+        
+        this.legendContentContainer.append('img')
+            .attr('src', '/static/assets/image-selection-legend.png');
+            
         this._locationListContainer = this.locationSelectionContainer.append('div')
             .classed('locationListContainer', true);
 
