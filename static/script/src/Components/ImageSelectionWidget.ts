@@ -182,7 +182,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         
         const legendButton = DevlibTSUtil.getIconButton('question-circle', () => 
         {
-            this.legendContentContainer.classed('noDisp', !this.legendContentContainer.classed('noDisp'));
+            const showLegend = this.legendContentContainer.classed('noDisp')
+            d3.select(legendButton).classed('selected', showLegend);
+            this.legendContentContainer.classed('noDisp', !showLegend);
         }, 'Legend');
         this.menuBarContainer.node().appendChild(legendButton);
 

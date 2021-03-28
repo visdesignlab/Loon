@@ -4,14 +4,13 @@
 
 .titleContainer {
     background: #f1f1f1;
-    padding: 4px;
     display: flex;
 }
 
 .attributeTitle {
     text-align: center;
     flex-grow: 1;
-    padding-top: 3px;
+    padding-top: 6px;
 }
 
 .toggleButtonContainer {
@@ -116,10 +115,6 @@
     display: flex;
     align-items: flex-end;
     flex-direction: column;
-}
-
-.expandButton {
-    padding: 2px 3px
 }
 
 .distributionPlotContainer {

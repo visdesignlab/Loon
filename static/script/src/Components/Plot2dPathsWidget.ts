@@ -403,6 +403,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		'Facet');
 		this.selectConditionButton.title = 'Filter data on experimental conditions';
 		this.selectConditionButton.style.height = '100%';
+		this.selectConditionButton.classList.add('tab');
 		this.titleBarContainer.node().appendChild(this.selectConditionButton);
 
 		this._compareConditionButton = DevlibTSUtil.getIconButton('chart-line', () =>
@@ -415,6 +416,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 		'Compare');
 		this.compareConditionButton.title = 'Filter data on experimental conditions';
 		this.compareConditionButton.style.height = '100%';
+		this.compareConditionButton.classList.add('tab');
 		this.titleBarContainer.node().appendChild(this.compareConditionButton);
 		this.titleBarContainer.append('div').attr('style', 'flex-grow: 1;');
 

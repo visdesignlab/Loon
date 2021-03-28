@@ -7,12 +7,6 @@
     align-items: center;
 }
 
-.titleBarContainer button.selected {
-    background: white;
-    border-bottom: 0;
-    border-radius: 4px 4px 0px 0px;
-}
-
 .quickPickContainer {
     margin-right: 36px;
 }

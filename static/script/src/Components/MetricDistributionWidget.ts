@@ -207,6 +207,9 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 						title = 'Cell-Level Attributes';
 					}
 					this.titleContainerSelection
+						.append('div')
+						.attr('style', 'width: 32px'); // spacer div
+					this.titleContainerSelection
 						.append('span')
 						.text(title)
 						.classed('attributeTitle', true)
@@ -272,9 +275,9 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 	private initExpandCollapseButton(toShow: HTMLElement[]): void
 	{
 		this._expandButtonSelect = this.titleContainerSelection.append('button')
-			.lower()
-			.classed('expandButton', true)
-			.classed('devlibButton', true)
+			// .lower()
+			.classed('basicIconButton', true)
+			.classed('tab', true)
 			.classed('noDisp', true)
 			.attr('id', 'MetricDistributionWidget-expandButton')
 			.attr("title", "Open distribution selection widget.")
@@ -286,6 +289,7 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 					{
 						element.classList.add('noDisp');
 					}
+					this.expandButtonSelect.classed('selected', false);
 				}
 				else
 				{
@@ -293,10 +297,11 @@ export class MetricDistributionWidget extends BaseWidget<CurveList, DatasetSpec>
 					{
 						element.classList.remove('noDisp');
 					}
+					this.expandButtonSelect.classed('selected', true);
 				}
 				this._showingSelectionMatrix = !this.showingSelectionMatrix;
 			});
-		let icon = DevlibTSUtil.getFontAwesomeIcon('th');
+		let icon = DevlibTSUtil.getFontAwesomeIcon('cog');
 		this.expandButtonSelect.node().appendChild(icon);
 	}
 
