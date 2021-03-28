@@ -24,6 +24,7 @@ export class ImageTrackWidget
         this._horizontalPad = 8;
         this._trackToPlotPadding = 48;
         this._exemplarMinWidth = 80;
+        this._minHeightForFavorites = 120 + 2 * this.verticalPad;
         this._frameLabelPositions = [];
         this._cellLabelPositions = [];
         this._exemplarYKey = 'Mass_norm';
@@ -171,6 +172,11 @@ export class ImageTrackWidget
     public get manuallyPinnedTracks() : CurveND[] {
         return this._manuallyPinnedTracks;
     }
+
+    private _minHeightForFavorites : number;
+    public get minHeightForFavorites() : number {
+        return this._minHeightForFavorites;
+    }    
     
     private _verticalPad : number;
     public get verticalPad() : number {
@@ -485,6 +491,12 @@ export class ImageTrackWidget
 			this._smoothCurves = e.detail;
             this.drawExemplarGrowthCurves();
 		});
+
+        document.addEventListener('manualPinToggle', (e: CustomEvent) => 
+        {
+            this.drawExemplarGrowthCurves();
+        })
+
         const self = this;
         document.addEventListener('mousemove', function(e)
         {
@@ -616,6 +628,10 @@ export class ImageTrackWidget
             let track = combinedTracks[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
             let trackHeight = maxHeightList[i];
+            if (this.parentWidget.inExemplarMode && i === this.manuallyPinnedTracks.length && this.manuallyPinnedTracks.length > 0)
+            {
+                verticalOffset = Math.max(verticalOffset, this.minHeightForFavorites);
+            }
             verticalOffsetList.push(verticalOffset);
             const categoryIndex = Math.floor(sampledIdx / numExemplars);
             let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex, isStarred);
@@ -1825,10 +1841,11 @@ export class ImageTrackWidget
 
         this.updateExemplarCurvesOffset();
 
-        let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplarPlotGrouper')
+        let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplar.plotGrouper')
             .data(this.conditionLabelPositions)
             .join('g')
-            .classed('exemplarPlotGrouper', true)
+            .classed('exemplar', true)
+            .classed('plotGrouper', true)
             .attr('transform', d => `translate(0, ${d[1][0]})`);
 
         const rightPadding = 4;
@@ -1847,8 +1864,9 @@ export class ImageTrackWidget
             .range([0, width]);
         
         const yKey = this.exemplarYKey;
-        let yMin = d3.min(this.trackList, curve => d3.min(curve.data.pointList, point => point.get(yKey)));
-        let yMax = d3.max(this.trackList, curve => d3.max(curve.data.pointList, point => point.get(yKey)));
+        const allData = [...this.manuallyPinnedTracks, ...this.trackList.map(exemplar => exemplar.data)];
+        let yMin = d3.min(allData, curve => d3.min(curve.pointList, point => point.get(yKey)));
+        let yMax = d3.max(allData, curve => d3.max(curve.pointList, point => point.get(yKey)));
 
         for (let facet of this.parentWidget.facetList)
         {
@@ -1860,13 +1878,17 @@ export class ImageTrackWidget
 
         const firstPosition = this.conditionLabelPositions[0][1];
         let height = firstPosition[1] - firstPosition[0] + 1;
-        height = Math.min(height, 120); // max-height: 150
+        height = Math.min(height, 120); // max-height 120
 
         this._exemplarScaleY = d3.scaleLinear()
             .domain([yMin, yMax])
             .range([height, 0]);
 
-        let [exemplarGrowthCurves, averageGrowthLines]: [string[][], string[]] = this.generateExemplarGrowthCurves();
+        let {
+            favoriteCurves: favoriteCurves,
+            exemplarCurves: exemplarGrowthCurves,
+            averageCurves: averageGrowthLines
+         } = this.generateExemplarGrowthCurves();
 
         const currentFrame = this.parentWidget.getCurrentFrameId();
         groupListSelection.selectAll('.currentFrameLine')
@@ -1887,10 +1909,18 @@ export class ImageTrackWidget
             .classed('averageCurve', true);
 
         groupListSelection.selectAll('.exemplarCurve')
-            .data((d,i) => exemplarGrowthCurves[i].map(x => [x, d[0]]))
+            .data((d,i) => exemplarGrowthCurves[i].map(x =>
+            {
+                return {
+                    pathString: x,
+                    label: d[0],
+                    groupIndex: i
+                }
+            }))
             .join('path')
-            .attr('d', d => d[0])
-            .attr('stroke', d => GroupByWidget.getColor(d[1].split('___'), this.parentWidget.colorLookup))
+            .attr('d', d => d.pathString)
+            .attr('stroke', d => GroupByWidget.getColor(d.label.split('___'), this.parentWidget.colorLookup))
+            .attr('data-cellId', (d, i) => this.trackList[i + this.parentWidget.numExemplars * d.groupIndex].data.id)
             .classed('exemplarCurve', true);
 
         let scaleList: [d3.Axis<number | { valueOf(): number; }>, number][] =
@@ -1909,12 +1939,68 @@ export class ImageTrackWidget
                 axisFunc = d[0][0];
                 axisFunc(d3.select(this) as any);
             });
+
+        this.drawFavoriteGrowthCurves(favoriteCurves, scaleList);
+    }
+
+    private drawFavoriteGrowthCurves(favoriteCurves: string[], scaleList: [d3.Axis<number | { valueOf(): number; }>, number][]): void
+    {
+        if (this.manuallyPinnedTracks.length === 0)
+        {
+            this.exemplarCurvesGroup.selectAll('.favorite.plotGrouper').classed('noDisp', true);
+            return;
+        }
+        const groupSelection = this.exemplarCurvesGroup.selectAll('.favorite.plotGrouper')
+            .data([42])
+            .join('g')
+            .classed('favorite', true)
+            .classed('plotGrouper', true)
+            .classed('noDisp', false)
+            .attr('transform', d => `translate(0, ${this.verticalPad})`);
+
+        const currentFrame = this.parentWidget.getCurrentFrameId();
+        groupSelection.selectAll('.currentFrameLine')
+            .data((d,i) => [i])
+            .join('line')
+            .attr('x1', this.exemplarScaleX(currentFrame))
+            .attr('x2', this.exemplarScaleX(currentFrame))
+            .attr('y1', this.exemplarScaleY.range()[0])
+            .attr('y2', this.exemplarScaleY.range()[1])
+            .attr('stroke', 'black')
+            .classed('currentFrameLine', true);
+        
+        groupSelection.selectAll('.exemplarCurve')
+            .data(d => favoriteCurves)
+            .join('path')
+            .attr('d', d => d)
+            .attr('stroke', (d, i) => 
+            {
+                const track = this.manuallyPinnedTracks[i];
+                const firstPoint = track.pointList[0];
+                const locId = firstPoint.get('Location ID');
+                const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
+                const color = GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
+                return color;
+            })
+            .attr('data-cellId', (d, i) => this.manuallyPinnedTracks[i].id)
+            .classed('exemplarCurve', true);
+
+        groupSelection.selectAll('.exemplarPlotAxis')
+            .data((d, i) => scaleList.map(x => [x, i]))
+            .join('g')
+            .classed('exemplarPlotAxis', true)
+            .attr('transform', (d) => `translate(0, ${d[0][1]})`)
+            .each(function(d) {
+                let axisFunc: d3.Axis<number | {valueOf(): number;}>;
+                axisFunc = d[0][0];
+                axisFunc(d3.select(this) as any);
+            });
     }
 
     public updateCurrentFrameIndicator(frameId: number): void
     {
 
-        let groupListSelection = this.exemplarCurvesGroup.selectAll('.exemplarPlotGrouper')
+        let groupListSelection = this.exemplarCurvesGroup.selectAll('.plotGrouper')
 
         groupListSelection.selectAll('.currentFrameLine')
             .data([42])
@@ -1930,13 +2016,12 @@ export class ImageTrackWidget
 
     private updateExemplarCurvesOffset(): void
     {
-        // const contentOffset = Math.min(Number(this.selectedImageCanvas.attr('width')), this.innerContainerW);
         const contentOffset = Number(this.selectedImageCanvas.attr('width'));
         const offsetToExemplarCurves = this.cellTimelineMargin.left + contentOffset + this.trackToPlotPadding;
         this.exemplarCurvesGroup.attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top - this.latestScroll[1]})`);
     }
 
-    private generateExemplarGrowthCurves(): [string[][], string[]]
+    private generateExemplarGrowthCurves(): {favoriteCurves: string[], exemplarCurves: string[][], averageCurves: string[]}
     {
         const xKey = 'Frame ID';
         const yKey = this.exemplarYKey;
@@ -1946,7 +2031,19 @@ export class ImageTrackWidget
 
         // todo - maybe normalize this to a [number, number][] so filtering is easier.
         
-        let outerList: string[][] = [];
+        let favoriteCurves: string[] = [];
+        for (let track of this.manuallyPinnedTracks)
+        {
+            let pointList = this.extract2DArray(track.pointList, xKey, yKey);
+            if (this.smoothCurves)
+            {
+                pointList = CurveList.medianFilter(pointList);
+            }
+            let pathString = line(pointList);
+            favoriteCurves.push(pathString);
+        }
+
+        let exemplarCurves: string[][] = [];
         for (let i = 0; i < this.trackList.length; i += this.parentWidget.numExemplars)
         {
             let pathList: string[] = [];
@@ -1960,7 +2057,7 @@ export class ImageTrackWidget
                 let pathString = line(pointList);
                 pathList.push(pathString);
             }
-            outerList.push(pathList);
+            exemplarCurves.push(pathList);
         }
 
         // average growth calculation
@@ -1978,7 +2075,11 @@ export class ImageTrackWidget
             averageGrowthLines.push(averageGrowthCurveString);
         }
 
-        return [outerList, averageGrowthLines];
+        return {
+            favoriteCurves: favoriteCurves,
+            exemplarCurves: exemplarCurves,
+            averageCurves: averageGrowthLines
+        }
     }
 
     private extract2DArray(pointList: PointND[], xKey: string, yKey: string): [number, number][]
@@ -2007,20 +2108,26 @@ export class ImageTrackWidget
             this.manualExemplarPinGroup.selectAll('*').classed('selected', false);
             if (typeof(rowIndex) !== 'undefined')
             {
-                if (rowIndex <this.manuallyPinnedTracks.length)
+                if (rowIndex < this.manuallyPinnedTracks.length)
                 {
                     let foundMatch = this.hoverNodeWithText(svgSelection.nodes(), cellId);
                     svgSelection = this.frameLabelGroup.selectAll('text') as SvgSelection;
                     if (!foundMatch)
                     {
                         this.hoverNodeWithText(svgSelection.nodes(), '');
-                        return
+                        // return
                     }
                 }
-                rowIndex -= this.manuallyPinnedTracks.length;
+
+                const data = [...this.manuallyPinnedTracks, ...this.trackList.map(exemplar => exemplar.data)];
                 this.exemplarCurvesGroup.selectAll('.exemplarCurve')
-                    .data(this.trackList)
-                    .classed('selected', (d, i) => i == rowIndex)
+                    .data(data)
+                    .classed('selected', function(d, i)
+                    {
+                        i == rowIndex
+                        const thisCellId = d3.select(this).attr('data-cellId');
+                        return thisCellId === cellId;
+                    });
     
                 this.exemplarPinGroup.selectAll('*')
                     .classed('selected', function(d, i) 
