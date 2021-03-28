@@ -2124,28 +2124,30 @@ export class ImageTrackWidget
                         // return
                     }
                 }
-
-                const data = [...this.manuallyPinnedTracks, ...this.trackList.map(exemplar => exemplar.data)];
-                this.exemplarCurvesGroup.selectAll('.exemplarCurve')
-                    .data(data)
-                    .classed('selected', function(d, i)
-                    {
-                        i == rowIndex
-                        const thisCellId = d3.select(this).attr('data-cellId');
-                        return thisCellId === cellId;
-                    });
-    
-                this.exemplarPinGroup.selectAll('*')
-                    .classed('selected', function(d, i) 
-                    {
-                        return d3.select(this).classed(cellId);
-                    });
-    
-                this.manualExemplarPinGroup.selectAll('*')
-                    .classed('selected', function(d, i) 
-                    {
-                        return d3.select(this).classed(cellId);
-                    });
+                if (cellId)
+                {
+                    const data = [...this.manuallyPinnedTracks, ...this.trackList.map(exemplar => exemplar.data)];
+                    this.exemplarCurvesGroup.selectAll('.exemplarCurve')
+                        .data(data)
+                        .classed('selected', function(d, i)
+                        {
+                            i == rowIndex
+                            const thisCellId = d3.select(this).attr('data-cellId');
+                            return thisCellId === cellId;
+                        });
+        
+                    this.exemplarPinGroup.selectAll('*')
+                        .classed('selected', function(d, i) 
+                        {
+                            return d3.select(this).classed(cellId);
+                        });
+        
+                    this.manualExemplarPinGroup.selectAll('*')
+                        .classed('selected', function(d, i) 
+                        {
+                            return d3.select(this).classed(cellId);
+                        });
+                }
     
     
                 let searchText: string;

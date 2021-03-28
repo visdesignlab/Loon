@@ -1059,11 +1059,10 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 			.text(d => d);
 
 		// add all button
-		this.xAxisFacetSelect.append('foreignObject')
+		this.yAxisFacetSelect.append('foreignObject')
 			.attr('width', maxLabelWidth)
-			// .attr('width', miniSize)
 			.attr('height', maxLabelHeight)
-			.attr('transform', `translate(${-maxLabelWidth - labelPadding}, ${labelPadding})`)
+			.attr('transform', `translate(${-maxLabelWidth - labelPadding}, ${vizHeight + labelPadding})`)
 		  .append('xhtml:div')
 			.classed('x', true)
 			.classed('axisButtonContainer', true)
