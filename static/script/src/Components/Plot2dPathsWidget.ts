@@ -523,14 +523,9 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
 				DevlibTSUtil.hide(this.facetButton);
 				DevlibTSUtil.show(this.averageLegendSelect.node());
 				DevlibTSUtil.show(this.facetLegendSelect.node());
-				// if (this.inFacetMode)
-				// {
-					DevlibTSUtil.show(this.compareConditionButton);
-				// }
-				// else
-				// {
-					DevlibTSUtil.show(this.selectConditionButton);
-				// }
+
+				DevlibTSUtil.show(this.compareConditionButton);
+				DevlibTSUtil.show(this.selectConditionButton);
 			}
 			else
 			{
