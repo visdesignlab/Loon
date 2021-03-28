@@ -180,7 +180,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         
         this._groupByWidget = new GroupByWidget(this.menuBarContainer);
         
-        const legendButton = DevlibTSUtil.getIconButton('anchor', () => 
+        const legendButton = DevlibTSUtil.getIconButton('question-circle', () => 
         {
             this.legendContentContainer.classed('noDisp', !this.legendContentContainer.classed('noDisp'));
         }, 'Legend');
