@@ -1193,11 +1193,19 @@ export class ImageTrackWidget
         if (trackLocation == currentLocation)
         {
             let displayedPoint = curve.pointList.find(point => point.get('Frame ID') === displayedFrameId);
-            this.parentWidget.imageStackDataRequest.getLabel(displayedPoint.get('Location ID'), displayedPoint.get('Frame ID') - 1,
-            (rowArray: ImageLabels, firstIndex: number) =>
+            if (displayedPoint)
             {
-                this.parentWidget.showSegmentHover(rowArray, displayedPoint.get('segmentLabel'), firstIndex, true);
-            });
+
+                this.parentWidget.imageStackDataRequest.getLabel(displayedPoint.get('Location ID'), displayedPoint.get('Frame ID') - 1,
+                (rowArray: ImageLabels, firstIndex: number) =>
+                {
+                    this.parentWidget.showSegmentHover(rowArray, displayedPoint.get('segmentLabel'), firstIndex, true);
+                });
+            }
+            else
+            {
+                this.parentWidget.hideSegmentHover(true);
+            }
         }
         else
         {
