@@ -271,11 +271,12 @@ export class ImageStackWidget {
 
 	public init(): void {
 		const containerSelect = d3.select(this.container);
+
+		const locationFrameLabelContainer = containerSelect.append('div')
+			.classed('locationFrameLabelContainer', true);
+
 		this._innerContainer = containerSelect.append('div')
 			.classed('innerContainer', true);
-
-		const locationFrameLabelContainer = this.innerContainer.append('div')
-			.classed('locationFrameLabelContainer', true);
 
 		const locationFrameLabel = locationFrameLabelContainer.append('h3')
 			.classed('locationFrameLabel', true);
@@ -292,6 +293,7 @@ export class ImageStackWidget {
 		this._frameLabel = locationFrameLabel.append('span')
 			.classed('locationFrameLabelValue', true);
 
+		this.innerContainer.append('div').attr('style', 'flex-grow: 1;');
 		this._toggleOptionsContainer = this.innerContainer.append('div')
 			.classed('toggleOptions', true)
 			.classed('smallText', true);
@@ -333,6 +335,7 @@ export class ImageStackWidget {
 		this._selectedImageContainer = this.imageAndLegendContainer.append('div')
 			.classed('noShrink', true);
 
+		this.innerContainer.append('div').attr('style', 'flex-grow: 2;');
 
 		this._selectedImageCanvas = this.selectedImageContainer.append('canvas')
 
