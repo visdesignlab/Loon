@@ -20,7 +20,7 @@ export class ImageTrackWidget
     {
         this._container = container;
         this._parentWidget = parent;
-        this._verticalPad = 16;
+        this._verticalPad = 24;
         this._horizontalPad = 8;
         this._trackToPlotPadding = 48;
         this._exemplarMinWidth = 80;
@@ -999,9 +999,9 @@ export class ImageTrackWidget
         this.canvasContext.fill();
         this.canvasContext.closePath();
 
-        const timeRangeHeight = 1;
+        const timeRangeHeight = 6;
         const timeRangeVerticalOffset = verticalOffset - marginY - timeRangeHeight;
-        this.drawTimeRange(trackData, [minDestX - marginX, maxDestX + marginX], timeRangeHeight, timeRangeVerticalOffset, categoryIndex);
+        this.drawTimeRange(trackData, [minDestX, maxDestX], timeRangeHeight, timeRangeVerticalOffset, categoryIndex);
     }
 
     private drawTimeRange(
@@ -1024,12 +1024,14 @@ export class ImageTrackWidget
         let timeRangePx = timeRange.map(t => scaleX(t));
 
         // Total possible time
+        const smallHeight = 0.5 * height;
+        const heightDiff = height - smallHeight;
         this.canvasContext.beginPath();
         this.canvasContext.rect(
             extentX[0],
-            verticalOffset,
+            verticalOffset + (heightDiff / 2),
             extentX[1] - extentX[0] + 1,
-            height);
+            smallHeight);
         this.canvasContext.fillStyle = 'grey';
         this.canvasContext.fill();
         this.canvasContext.closePath();
