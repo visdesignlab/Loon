@@ -203,15 +203,14 @@ export class ScatterPlotWidget extends BaseWidget<PointCollection, DatasetSpec> 
 
 				return !isNaN(point.get(this.xKey))
 					&& !isNaN(point.get(this.yKey))
-					&& point.inBrush;
 			});
 
 		const canvasContext = this.canvasElement.getContext('2d');
 		canvasContext.clearRect(0,0, this.vizWidth, this.vizHeight);
-        canvasContext.fillStyle = 'black';
 		for (let i = 0; i < validPoints.length; i++)
 		{
 			let point = validPoints[i];
+			canvasContext.fillStyle = point.inBrush ? 'firebrick': 'black';
 			let x = this.scaleX(point.get(this.xKey));
 			let y = this.scaleY(point.get(this.yKey));
 			canvasContext.beginPath();

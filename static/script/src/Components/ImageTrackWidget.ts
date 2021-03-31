@@ -20,7 +20,7 @@ export class ImageTrackWidget
     {
         this._container = container;
         this._parentWidget = parent;
-        this._verticalPad = 24;
+        this._verticalPad = 16;
         this._horizontalPad = 8;
         this._trackToPlotPadding = 48;
         this._exemplarMinWidth = 80;
