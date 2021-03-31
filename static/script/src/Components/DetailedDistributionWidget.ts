@@ -334,9 +334,10 @@ export class DetailedDistributionWidget extends BaseWidget<CurveList, DatasetSpe
 		}
 
         let distributionMinMax = data.getMinMax(this.attributeKey);
+        const maxAbsVal = d3.max(distributionMinMax, x => Math.abs(x))
         // let distributionMinMax = this.pointCollection.getMinMax(this.attributeKey);
         this._scaleX = d3.scaleLinear<number, number>()
-                        .domain(distributionMinMax)
+                        .domain([-maxAbsVal, maxAbsVal])
                         .range([0, this.vizWidth]);
 
 
