@@ -597,6 +597,7 @@ export class ImageTrackWidget
 
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
         let totalHeight = this.verticalPad * (combinedTracks.length + 1);
+        totalHeight += 200;
         const betweenGroupPad = 16;
         const heightOfManuallyPinned = d3.sum(maxHeightList.slice(0, this.manuallyPinnedTracks.length));
         if (this.parentWidget.inExemplarMode)
