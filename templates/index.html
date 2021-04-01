@@ -61,6 +61,10 @@ p {
   align-items: flex-start;
 }
 
+.important-links {
+  margin-top: 8px;
+  margin-bottom: 24px;
+}
 
 .button-link {
     background: white;
@@ -72,6 +76,7 @@ p {
     margin: 2px;
     padding: 6px 10px;
     color: #666666;
+    text-decoration: none;
 }
 
 .button-link.big {
@@ -135,7 +140,7 @@ p {
 <body>
 
 <div class='menu'>
-  <button class="button-link" onclick="window.location.href = '/overview' "><i class="fas fa-user"></i> Log in</button>
+  <a class="button-link" href='/overview'><i class="fas fa-user"></i> Log in</a>
 </div>
 
 <div class='title-icon'>
@@ -152,11 +157,14 @@ p {
 
 <h2>Using Exemplars to Visualize Large Scale Microscopy Data</h2>
 
+
+
 <div class='important-links'>
-  <button class='button-link'>Publication <i class="far fa-file-pdf"></i></button>
-  <button class='button-link' onclick="window.location.href = 'https://github.com/visdesignlab/Loon' ">Code <i class="fas fa-code"></i></button>
-  <button class='button-link'>Video <i class="fab fa-youtube"></i></button>
+  <a class='button-link' href='https://sci.utah.edu/~vdl/papers/2021_vis_loon.pdf'>Publication <i class="far fa-file-pdf"></i></a>
+  <a class='button-link' href='https://github.com/visdesignlab/Loon'>Code <i class="fas fa-code"></i></a>
 </div>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Y7u3Kg3At9A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <p>Loon is a visualization analysis tool for quantitative phase microscopy data. Due to the high-throughput of automated imaging systems, Loon selects exemplar data points to display for the user. Also, it supports multiple visualization windows that are linked together through selection and filtering.</p>
 
@@ -205,7 +213,7 @@ p {
 
 
 <div class='big-link'>
-  <button class="big button-link" onclick="window.location.href = '/detailedView/Example_MCF7' ">Load Example Dataset <i class="fas fa-external-link-alt"></i></button>
+  <a class="big button-link" href='/detailedView/Example_MCF7'>Load Example Dataset <i class="fas fa-external-link-alt"></i></a>
   <p>
     <span class='warning'>Warning:</span> Loading the first time can take several minutes and will transfers several hundred megabytes of data to your computer. You can remove this from storage by selecting the garbage can icon within the app. 
   </p>
