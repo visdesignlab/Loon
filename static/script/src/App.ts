@@ -11,8 +11,7 @@ import {KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devl
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
 import { DevlibTSUtil } from './devlib/DevlibTSUtil';
-import { openDB, deleteDB, wrap, unwrap, IDBPDatabase } from 'idb';
-import { CurveList } from './DataModel/CurveList';
+import { openDB, IDBPDatabase } from 'idb';
 
 export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	

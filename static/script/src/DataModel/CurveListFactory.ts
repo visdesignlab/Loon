@@ -66,7 +66,13 @@ export class CurveListFactory {
 		return facetList;
 	}
 
-	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], dataSpec: DatasetSpec, idkey: string = "id", tKeyOptions: string[] = ["Time (h)"]): CurveList
+	public static CreateCurveListFromCSVObject(
+		csvObject: d3.DSVRowArray<string>,
+		derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
+		derivedPointDataFunctions: KeyedPointDerivationFunction[],
+		dataSpec: DatasetSpec,
+		idkey: string = "id",
+		tKeyOptions: string[] = ["Time (h)"]): CurveList
 	{
 		console.log(csvObject);
 		const curveList: CurveND[] = [];
@@ -130,6 +136,10 @@ export class CurveListFactory {
 				return values;
 			})
 			.entries(csvObject);
+
+		// console.log('pojoList start')
+		// console.log(pojoList)
+		// console.log('pojoList end')
 
 		for (let plainCurve of pojoList)
 		{
