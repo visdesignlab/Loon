@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { load } from "protobufjs";
 import { CurveList } from '../src/DataModel/CurveList';
 import { CurveListFactory } from '../src/DataModel/CurveListFactory';
 import { DerivedTrackValueFunctions } from '../src/DataModel/DerivedTrackValueFunctions';
