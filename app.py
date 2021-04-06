@@ -322,7 +322,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     if not meanIntensityIncluded and areaIndex >= 0:
         pixelSize = getPixelSize(folderId, data_allframes)[0][0]
         if colHeaders is not None:
-            colHeaderString += ',' + 'Mean Intensity'
+            colHeaderList.append('Mean Intensity')
     if not locIncluded:
         locationArray = getLocationArray(folderId, data_allframes)
         if colHeaders is not None:
@@ -407,15 +407,15 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
                 label = labelLookup.get(cellId, {}).get(frameId, -1)
                 dataRow.append(label)
         dataRowList.append(dataRow)
-        returnStr += ','.join([str(x) for x in dataRow])
-        returnStr += '\n'
+        # returnStr += ','.join([str(x) for x in dataRow])
+        # returnStr += '\n'
 
-    locationMaps = buildLocationMaps(colHeaderString.split(','), dataRowArray)
+    locationMaps = buildLocationMaps(colHeaderList, dataRowList)
     addLocationMaps(folderId, locationMaps)
-    cache(folderId, 'massOverTime.csv', returnStr)
-    return returnStr
-                dataRow.append(label)
-        dataRowList.append(dataRow)
+    # cache(folderId, 'massOverTime.csv', returnStr)
+    # return returnStr
+    # dataRow.append(label)
+    # dataRowList.append(dataRow)
 
     pbCsv = pbCsv_pb2.PbCsv()
     pbCsv.headerList.extend(colHeaderList)
