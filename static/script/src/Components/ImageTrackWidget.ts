@@ -711,29 +711,38 @@ export class ImageTrackWidget
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>
     {
-        let listOfLists: Rect[][] = [];
+        const listOfLengths: number[] = [];
+        const boundingBoxPromises: Promise<Rect>[] = [];
         for (let track of trackList)
         {
-            let thisList: Rect[] = [];
             if (this.parentWidget.inCondensedMode)
             {
                 const end = Math.min(track.length, this.parentWidget.condensedModeCount);
                 for (let i = 0; i < end; i++)
                 {
                     let point: PointND = this.getPointInCondensedMode(track, i);
-                    const boundingBox = await this.getCellBoundingBox(point);
-                    thisList.push(boundingBox);
+                    const boundingBoxPromise = this.getCellBoundingBox(point);
+                    boundingBoxPromises.push(boundingBoxPromise);
                 }
+                listOfLengths.push(end)
             }
             else
             {
                 for (let point of track.pointList)
                 {
-                    const boundingBox = await this.getCellBoundingBox(point);
-                    thisList.push(boundingBox);
+                    const boundingBoxPromise = this.getCellBoundingBox(point);
+                    boundingBoxPromises.push(boundingBoxPromise);
                 }
             }
-            listOfLists.push(thisList);
+            listOfLengths.push(track.pointList.length);
+        }
+        const boundingBoxList = await Promise.all(boundingBoxPromises);
+        let listOfLists: Rect[][] = [];
+        let start = 0;
+        for (let length of listOfLengths)
+        {
+            listOfLists.push(boundingBoxList.slice(start, length));
+            start += length;
         }
         return listOfLists;
     }
