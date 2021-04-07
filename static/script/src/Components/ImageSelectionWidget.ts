@@ -15,15 +15,20 @@ import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
-    constructor(container: HTMLElement, samplingStratOptions: {"strat": (number[] | number), "label": string}[], isClone: boolean = false)
+    constructor(
+        container: HTMLElement,
+        samplingStratOptions: {"strat": (number[] | number), "label": string}[],
+        imageStackDataRequest: ImageStackDataRequest,
+        isClone: boolean = false)
     {
         super(container, false, samplingStratOptions);
         this._isClone = isClone;
+        this._imageStackDataRequest = imageStackDataRequest;
     }
 
     protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        return new ImageSelectionWidget(container, this.samplingStratOptions, true);
+        return new ImageSelectionWidget(container, this.samplingStratOptions, this.imageStackDataRequest, true);
     }
 
 	private _isClone : boolean;
@@ -235,7 +240,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public OnDataChange()
 	{
         this._imageMetaData = ImageMetaData.fromPointCollection(this.fullData);
-        this._imageStackDataRequest = new ImageStackDataRequest(this.data.Specification.googleDriveId);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
         this.groupByWidget.updateGroupByOptions(this.data);
         this._hoveredLocationId = null;

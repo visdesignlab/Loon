@@ -6,22 +6,23 @@ import {Plot2dPathsWidget} from './Components/Plot2dPathsWidget';
 import {MetricDistributionWidget} from './Components/MetricDistributionWidget';
 import {ImageSelectionWidget} from './Components/ImageSelectionWidget';
 import {LayoutFramework} from './LayoutFramework';
-import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData, PbCurveList} from './types';
+import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData, PbCurveList, DatasetSpec} from './types';
 import {CurveDerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
 import { DevlibTSUtil } from './devlib/DevlibTSUtil';
 import { openDB, IDBPDatabase } from 'idb';
 import { load } from "protobufjs";
+import { ImageStackDataRequest } from './DataModel/ImageStackDataRequest';
 
-export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
+export class App<DataType extends AppData<DatasetSpec>> {
 	
 	constructor(container: HTMLElement,
 				fromPbObject: (
 					data: PbCurveList,
 					derivedTrackDataFunctions: CurveDerivationFunction[],
 					derivedPointDataFunctions: CurveDerivationFunction[],
-					dataSpec: DataSpecType
+					dataSpec: DatasetSpec
 					) => DataType,
 				derivedTrackDataFunctions: CurveDerivationFunction[],
 				derivedPointDataFunctions: CurveDerivationFunction[]) {
@@ -68,8 +69,8 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		return this._componentContainers;
 	}
 
-	private _dataFromPbObject : (data: PbCurveList, derivedTrackDataFunctions: CurveDerivationFunction[], derivedPointDataFunctions: CurveDerivationFunction[], dataSpec: DataSpecType) => DataType;
-	public get dataFromPbObject() : (data: PbCurveList, derivedTrackDataFunctions: CurveDerivationFunction[], derivedPointDataFunctions: CurveDerivationFunction[], dataSpec: DataSpecType) => DataType{
+	private _dataFromPbObject : (data: PbCurveList, derivedTrackDataFunctions: CurveDerivationFunction[], derivedPointDataFunctions: CurveDerivationFunction[], dataSpec: DatasetSpec) => DataType;
+	public get dataFromPbObject() : (data: PbCurveList, derivedTrackDataFunctions: CurveDerivationFunction[], derivedPointDataFunctions: CurveDerivationFunction[], dataSpec: DatasetSpec) => DataType{
 		return this._dataFromPbObject;
 	}
 
@@ -87,6 +88,11 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	public get dataStore() : IDBPDatabase<unknown> {
 		return this._dataStore;
 	}
+	
+	private _imageStackDataRequest : ImageStackDataRequest;
+	public get imageStackDataRequest() : ImageStackDataRequest {
+		return this._imageStackDataRequest;
+	}	
 
 	public async InitDataStore(): Promise<void>
 	{
@@ -145,7 +151,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 				newComponent = new MetricDistributionWidget(container, initArgs.metricDistributionCollectionLevel);
 				break;
 			case ComponentType.ImageSelectionWidget:
-				newComponent = new ImageSelectionWidget(container, initArgs.samplingStrat);
+				newComponent = new ImageSelectionWidget(container, initArgs.samplingStrat, this.imageStackDataRequest);
 				break;
 			case ComponentType.DetailedDistribution:
 				newComponent = new DetailedDistributionWidget(container, initArgs.metricDistributionCollectionLevel, initArgs.attributeKey);
@@ -173,7 +179,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		});
 	}
 
-	private fetchPb(filename: string, dataSpec: DataSpecType, key: string): void
+	private fetchPb(filename: string, dataSpec: DatasetSpec, key: string): void
 	{
 		load('/static/protoDefs/PbCurveList.proto', async (err, root) =>
 		{
@@ -203,8 +209,10 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		});
 	}
 
-	private initData(data: PbCurveList, dataSpec: DataSpecType): void
+	private initData(data: PbCurveList, dataSpec: DatasetSpec): void
 	{	
+		// initialize here to request data sooner
+		this._imageStackDataRequest = new ImageStackDataRequest(dataSpec.googleDriveId);
 		let allData: DataType = this.dataFromPbObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
 		allData.ApplyDefaultFilters();
 		allData.ApplyNewFilter();
