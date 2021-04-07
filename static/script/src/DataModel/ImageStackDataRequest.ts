@@ -24,13 +24,10 @@ export class ImageStackDataRequest
     public constructor(driveId: string)
     {
         this._driveId = driveId;
-        this._metaDataLoaded = false;
+        // this._metaDataLoaded = false;
 
-        const metaDataFilename = `/data/${driveId}/imageMetaData.json`;
-        d3.json(metaDataFilename).then(data =>
-        {
-            this.initImageMetaData(data);
-        });
+        const metaDataFilename = `/data/${this.driveId}/imageMetaData.json`;
+        this._jsonPromise = d3.json(metaDataFilename);
 
         load("/static/protoDefs/RLE.proto", async (err, root) => {
             if (err)
@@ -53,13 +50,20 @@ export class ImageStackDataRequest
         this._maxLabelCount = 100;
     }
 
+    public async init(): Promise<void>
+    {
+        const metaDataFilename = `/data/${this.driveId}/imageMetaData.json`;
+        let data = await this.jsonPromise;
+        this.initImageMetaData(data);
+    }
+
     private initImageMetaData(data: any): void
     {
         this._tileWidth = data.tileWidth;
         this._tileHeight = data.tileHeight;
         this._numberOfColumns = data.numberOfColumns;
         this._tilesPerFile = data.tilesPerFile;
-        this._metaDataLoaded = true;
+        // this._metaDataLoaded = true;
         if (data.scaleFactor)
         {
             this._scaleFactor = data.scaleFactor;
@@ -70,11 +74,15 @@ export class ImageStackDataRequest
         }
     }
     
-    
-    private _metaDataLoaded : boolean;
-    public get metaDataLoaded() : boolean {
-        return this._metaDataLoaded;
+    private _jsonPromise : Promise<any>;
+    public get jsonPromise() : Promise<any> {
+        return this._jsonPromise;
     }
+    
+    // private _metaDataLoaded : boolean;
+    // public get metaDataLoaded() : boolean {
+    //     return this._metaDataLoaded;
+    // }
 
     private _driveId : string;
     public get driveId() : string {
@@ -150,16 +158,19 @@ export class ImageStackDataRequest
 
     public async getImage(location: number, frameIndex: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): Promise<void>
     {
-        console.log('getImage', location, frameIndex);
+        console.log('   -  -  - - - ----------- - - -  -  -   ')
+        console.log('getImage', location, frameIndex, this.scaleFactor);
+        console.log(this.imageLabelsMessage); 
         console.trace();
-        if (!this.metaDataLoaded || !this.imageLabelsMessage)
-        {
-            setTimeout(() =>
-            {
-                this.getImage(location, frameIndex, callback)
-            }, 50); // todo fallback
-            return;
-        }
+
+        // if (!this.metaDataLoaded)
+        // {
+        //     setTimeout(() =>
+        //     {
+        //         this.getImage(location, frameIndex, callback)
+        //     }, 50); // todo fallback
+        //     return;
+        // }
         let [top, left] = this.getTileTopLeft(frameIndex);
         let bundleIndex = Math.floor(frameIndex / this.tilesPerFile);
         let key = [location, bundleIndex].join('-');
@@ -223,6 +234,7 @@ export class ImageStackDataRequest
         }
         else
         {
+            console.log('runWithCachedImage');
             // loading, try again later
             setTimeout(() => {
                 this.runWithCachedImage(key, top, left, callback);
@@ -257,7 +269,7 @@ export class ImageStackDataRequest
     
     public async getLabel(location: number, frameIndex: number, callback: (rowData: ImageLabels, firstIndex: number) => void): Promise<void>
     {
-        if (!this.metaDataLoaded)
+        if (!this.imageLabelsMessage)
         {
             setTimeout(() =>
             {

@@ -203,9 +203,10 @@ export class App<DataType extends AppData<DatasetSpec>> {
 				await this.dataStore.put<any>('tracks', buffer, key);
 				// I could store the message object directly. The tradeoff is maybe (untested) slightly faster unboxing, but it does take up more space.
 			}
-			
+
 			// initialize here to request data sooner
 			this._imageStackDataRequest = new ImageStackDataRequest(dataSpec.googleDriveId);
+			await this.imageStackDataRequest.init();
 			for (let component of this.componentList)
 			{
 				if (component instanceof ImageSelectionWidget)
