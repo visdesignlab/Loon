@@ -31,7 +31,15 @@ export class ImageStackDataRequest
         {
             this.initImageMetaData(data);
         });
-        
+
+        load("/static/protoDefs/RLE.proto", async (err, root) => {
+            if (err)
+            {
+                throw err;
+            }
+            this._imageLabelsMessage = root.lookupType("imageLabels.ImageLabels");
+        });
+
         openDB('loon-db').then(async dataStore => 
         {
             this._dataStore = dataStore;
@@ -135,9 +143,16 @@ export class ImageStackDataRequest
 		return this._dataStore;
 	}
 
+    private _imageLabelsMessage : any;
+    public get imageLabelsMessage() : any {
+        return this._imageLabelsMessage;
+    }    
+
     public async getImage(location: number, frameIndex: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): Promise<void>
     {
-        if (!this.metaDataLoaded)
+        console.log('getImage', location, frameIndex);
+        console.trace();
+        if (!this.metaDataLoaded || !this.imageLabelsMessage)
         {
             setTimeout(() =>
             {
@@ -240,7 +255,7 @@ export class ImageStackDataRequest
 		return [top, left];
     }
     
-    public getLabel(location: number, frameIndex: number, callback: (rowData: ImageLabels, firstIndex: number) => void): void
+    public async getLabel(location: number, frameIndex: number, callback: (rowData: ImageLabels, firstIndex: number) => void): Promise<void>
     {
         if (!this.metaDataLoaded)
         {
@@ -268,13 +283,14 @@ export class ImageStackDataRequest
         this.labelArray[thisIndex] = [null, key];
 
         const labelUrl = `/data/${this.driveId}/label_${location}_${bundleIndex}.pb`;
-        load("/static/protoDefs/RLE.proto", async (err, root) => {
-            if (err)
-            {
-                throw err;
-            }
-            // Obtain a message type
-            let ImageLabelsMessage = root.lookupType("imageLabels.ImageLabels");
+
+        // load("/static/protoDefs/RLE.proto", async (err, root) => {
+        //     if (err)
+        //     {
+        //         throw err;
+        //     }
+        //     // Obtain a message type
+        //     let ImageLabelsMessage = root.lookupType("imageLabels.ImageLabels");
 
             let buffer;
             if (this.dataStore)
@@ -289,12 +305,12 @@ export class ImageStackDataRequest
             }
 
             // Decode an Uint8Array (browser) or Buffer (node) to a message
-            let message = ImageLabelsMessage.decode(new Uint8Array(buffer)) as any;
+            let message = this.imageLabelsMessage.decode(new Uint8Array(buffer)) as any;
 
             this.labelArray[thisIndex] = [message, key];
-            console.log(message);
+            // console.log(message);
             callback(message, firstIndex);
-        });
+        // });
 
         return;
     }
