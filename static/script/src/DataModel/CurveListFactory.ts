@@ -108,7 +108,6 @@ export class CurveListFactory {
 			curveList.push(curve);
 		}
 		const curveListObj = new CurveList(curveList, dataSpec);
-		curveListObj.setInputKey(tKey);
 		return curveListObj;
 	}
 

@@ -86,11 +86,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 	}
 	public set curveCollection(v : CurveCollection) {
 		this._curveCollection = v;
-	}	
-
-	private _inputKey : string;
-	public get inputKey() : string {
-		return this._inputKey;
 	}
 
 	private _minMaxMap : Map<string, [number, number]>;
@@ -630,15 +625,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		return true;
 	}
 
-	public setInputKey(key: string): void
-	{
-		this._inputKey = key;
-		for (let curve of this.curveList)
-		{
-			curve.sort(key);
-		}
-	}
-
 	public removeCurveBrush(brushKey: string): void
 	{
 		this.curveBrushList.delete(brushKey);
@@ -674,65 +660,6 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		}
 
 		return pointList;
-	}
-
-	public calculateDepth(depthKey: string, valueKey: string): void
-	{
-		if (this.isKeySet(depthKey))
-		{
-			// depth is already set
-			return;
-		}
-		this.initValue(depthKey, 0);
-
-		const allBands = CurveList.getAllPossible2Bands(this.curveList) as [CurveND, CurveND][];
-		for (let band of allBands)
-		{
-			for (let curve of this.curveList)
-			{
-				const depthContribution = this.getDepthContribution(curve, band, valueKey);
-				const oldDepth = curve.get(depthKey);
-				curve.addValue(depthKey, oldDepth + depthContribution);
-			}
-		}
-
-		// todo - normalize
-
-	}
-
-	private getDepthContribution(curve: CurveND, [b1, b2]: [CurveND, CurveND], valueKey: string): number
-	{
-		let depth = 0;
-		for (let i = 0; i < curve.pointList.length; i++)
-		{
-			let point: PointND = curve.pointList[i];
-			const t = point.get(this.inputKey);
-			let thisVal = point.get(valueKey);
-			let b1Val = b1.getPointValue(t, valueKey);
-			let b2Val = b2.getPointValue(t, valueKey);
-			let minVal = Math.min(b1Val, b2Val);
-			let maxVal = Math.max(b1Val, b2Val);
-			if (minVal <= thisVal && thisVal <= maxVal)
-			{
-				const weight = curve.getPointWeight(i);
-				depth += weight;
-			}
-		}
-		return depth;
-	}
-
-	static getAllPossible2Bands(list: any[]): [any, any][]
-	{
-		const bandList: [any, any][] = [];
-		for (let i = 0; i < list.length; i++)
-		{
-			for (let j = i + 1; j < list.length; j++)
-			{
-				let b: [any, any] = [list[i], list[j]];
-				bandList.push(b);
-			}
-		}
-		return bandList
 	}
 
 	[Symbol.iterator](): Iterator<PointND>
