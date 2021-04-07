@@ -33,5 +33,11 @@
   "bugs": {
     "url": "https://github.com/visdesignlab/cell-growth/issues"
   },
-  "homepage": "https://github.com/visdesignlab/cell-growth#readme"
+  "homepage": "https://github.com/visdesignlab/cell-growth#readme",
+  "devDependencies": {
+    "gulp-minify": "^3.1.0",
+    "gulp-sourcemaps": "^3.0.0",
+    "gulp-uglify": "^3.0.2",
+    "vinyl-buffer": "^1.0.1"
+  }
 }
