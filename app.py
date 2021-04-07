@@ -264,9 +264,17 @@ def cache(folderId: str, filename: str, data, isBinary = False) -> None:
     cache.close()
     return
 
+# @app.route('/data/<string:folderId>/massOverTime.csv')
+# @authRequired
+# def getMassOverTimeCsv(folderId: str): # -> flask.Response:
+#     filename = 'massOverTime.csv'
+#     if isCached(folderId, filename):
+#         return getCached(folderId, filename)
+#     return ''
+
 @app.route('/data/<string:folderId>/massOverTime.pb')
 @authRequired
-def getMassOverTimeCsv(folderId: str): # -> flask.Response:
+def getMassOverTimePb(folderId: str): # -> flask.Response:
     filename = 'massOverTime.pb'
     if isCached(folderId, filename):
         filePath = cachePath(folderId, filename)

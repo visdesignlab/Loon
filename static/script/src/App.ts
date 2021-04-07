@@ -6,28 +6,29 @@ import {Plot2dPathsWidget} from './Components/Plot2dPathsWidget';
 import {MetricDistributionWidget} from './Components/MetricDistributionWidget';
 import {ImageSelectionWidget} from './Components/ImageSelectionWidget';
 import {LayoutFramework} from './LayoutFramework';
-import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData} from './types';
-import {KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devlib/DevLibTypes';
+import {Frame, ComponentType, ComponentInitInfo, Arguments, AppData, PbCurveList} from './types';
+import {CurveDerivationFunction} from './devlib/DevLibTypes';
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
 import { DevlibTSUtil } from './devlib/DevlibTSUtil';
 import { openDB, IDBPDatabase } from 'idb';
+import { load } from "protobufjs";
 
 export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	
 	constructor(container: HTMLElement,
-				fromCsvObject: (
-					data: d3.DSVRowArray<string>,
-					derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
-					derivedPointDataFunctions: KeyedPointDerivationFunction[],
+				fromPbObject: (
+					data: PbCurveList,
+					derivedTrackDataFunctions: CurveDerivationFunction[],
+					derivedPointDataFunctions: CurveDerivationFunction[],
 					dataSpec: DataSpecType
 					) => DataType,
-				derivedTrackDataFunctions: KeyedTrackDerivationFunction[],
-				derivedPointDataFunctions: KeyedPointDerivationFunction[]) {
+				derivedTrackDataFunctions: CurveDerivationFunction[],
+				derivedPointDataFunctions: CurveDerivationFunction[]) {
 		this._container = container;
 		this._componentList = [];
 		this._layoutFramework = new LayoutFramework(container);
-		this._dataFromCSVObject = fromCsvObject;
+		this._dataFromPbObject = fromPbObject;
 
 		this._trackDerivationFunctions = derivedTrackDataFunctions;
 		this._pointDerivationFunctions = derivedPointDataFunctions;
@@ -67,18 +68,18 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 		return this._componentContainers;
 	}
 
-	private _dataFromCSVObject : (data: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], dataSpec: DataSpecType) => DataType;
-	public get dataFromCSVObject() : (data: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], dataSpec: DataSpecType) => DataType{
-		return this._dataFromCSVObject;
+	private _dataFromPbObject : (data: PbCurveList, derivedTrackDataFunctions: CurveDerivationFunction[], derivedPointDataFunctions: CurveDerivationFunction[], dataSpec: DataSpecType) => DataType;
+	public get dataFromPbObject() : (data: PbCurveList, derivedTrackDataFunctions: CurveDerivationFunction[], derivedPointDataFunctions: CurveDerivationFunction[], dataSpec: DataSpecType) => DataType{
+		return this._dataFromPbObject;
 	}
 
-	private _trackDerivationFunctions : KeyedTrackDerivationFunction[];
-	public get trackDerivationFunctions() : KeyedTrackDerivationFunction[] {
+	private _trackDerivationFunctions : CurveDerivationFunction[];
+	public get trackDerivationFunctions() : CurveDerivationFunction[] {
 		return this._trackDerivationFunctions;
 	}
 
-	private _pointDerivationFunctions : KeyedPointDerivationFunction[];
-	public get pointDerivationFunctions() : KeyedPointDerivationFunction[] {
+	private _pointDerivationFunctions : CurveDerivationFunction[];
+	public get pointDerivationFunctions() : CurveDerivationFunction[] {
 		return this._pointDerivationFunctions;
 	}
 
@@ -168,38 +169,43 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	{
 		await d3.json("../../../data/" + filename).then(async (data: any) =>
 		{
+			this.fetchPb(`${data.googleDriveId}/massOverTime.pb`, data, data.googleDriveId);
+		});
+	}
+
+	private fetchPb(filename: string, dataSpec: DataSpecType, key: string): void
+	{
+		load('/static/protoDefs/PbCurveList.proto', async (err, root) =>
+		{
+			if (err)
+			{
+				throw err;
+			}
+			let CurveListMessage = root.lookupType("pbCurveList.PbCurveList");
+
+			let buffer;
 			if (this.dataStore)
 			{
 				let store = this.dataStore.transaction('tracks', 'readonly').objectStore('tracks');
-				let storedAllData = await store.get(data.googleDriveId);
-				if (storedAllData)
-				{
-					// todo add a check for if pb file or not
-					this.initData(storedAllData, data);
-					return;
-				}
+				buffer = await store.get(key);
 			}
-			this.fetchCsv(`${data.googleDriveId}/massOverTime.csv`, data, data.googleDriveId);
-		});
-	}
-
-	// private async fetchPb()
-
-	private async fetchCsv(filename: string, dataSpec: DataSpecType, key: string): Promise<void>
-	{
-		await d3.csv("../../../data/" + filename).then(async data =>
-		{
-			if (this.dataStore)
+			if (!buffer || Array.isArray(buffer))
 			{
-				await this.dataStore.put<any>('tracks', data, key);
+				// cached pb data is an arraybuffer (Array.isArray is false)
+				// cached csv data is an array - we want to replace this.
+				buffer = await d3.buffer('../../../data/' + filename);
+				await this.dataStore.put<any>('tracks', buffer, key);
+				// I could store the message object directly. The tradeoff is maybe (untested) slightly faster unboxing, but it does take up more space.
 			}
-			this.initData(data, dataSpec);
+			 // Decode an Uint8Array (browser) or Buffer (node) to a message
+			let message: PbCurveList = CurveListMessage.decode(new Uint8Array(buffer)) as any;
+			this.initData(message, dataSpec);
 		});
 	}
 
-	private initData(data: d3.DSVRowArray<string>, dataSpec: DataSpecType): void
+	private initData(data: PbCurveList, dataSpec: DataSpecType): void
 	{	
-		let allData: DataType = this.dataFromCSVObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
+		let allData: DataType = this.dataFromPbObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
 		allData.ApplyDefaultFilters();
 		allData.ApplyNewFilter();
 		let filteredData = allData.CreateFilteredCurveList() as DataType;

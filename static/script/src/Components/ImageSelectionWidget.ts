@@ -596,9 +596,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             return;
         }
         const curve = this.fullData.curveLookup.get(cellId);
+        const locId = curve.get('Location ID')
         const firstPoint = curve.pointList[0];
         const lowFrameId = firstPoint.get("Frame ID");
-        const locId = firstPoint.get('Location ID')
         const location: ImageLocation = this.imageMetaData.locationLookup.get(locId);
         const frameLow: ImageFrame = location.frameLookup.get(lowFrameId);
         

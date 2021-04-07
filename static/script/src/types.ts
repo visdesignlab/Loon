@@ -122,3 +122,23 @@ export interface conditionExemplar<dataType> {
 	type: 'auto' | 'manual',
 	anchorVal?: number
 }
+
+
+export interface PbCurveList
+{
+	pointAttrNames: string[],
+	curveAttrNames: string[],
+	curveList: Curve[]
+}
+
+export interface Curve
+{
+	id: number,
+	valueList: number[],
+	pointList: Point[]
+}
+
+export interface Point
+{
+	valueList: number[]
+}

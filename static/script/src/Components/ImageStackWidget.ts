@@ -566,8 +566,7 @@ export class ImageStackWidget {
 			{
 				for (let curve of curveList)
 				{
-					const firstPoint = curve.pointList[0];
-					const locId = firstPoint.get('Location ID')
+					const locId = curve.get('Location ID')
 					this.exemplarLocations.add(locId);
 					if (!this.exemplarFrames.has(locId)) {
 						this.exemplarFrames.set(locId, new Set());
@@ -584,7 +583,7 @@ export class ImageStackWidget {
 			{
 				eventToDispatch = new CustomEvent('locFrameClicked', { detail:
 				{
-					locationId: justData[0].pointList[0].get('Location ID'),
+					locationId: justData[0].get('Location ID'),
 					frameId: justData[0].pointList[0].get('Frame ID')
 				}});
 			}
@@ -712,12 +711,12 @@ export class ImageStackWidget {
 
 		for (let track of this.manuallyPinnedTracks)
 		{
+			if (track.get('Location ID') !== this.getCurrentLocationId())
+			{
+				break;
+			}
 			for (let point of track.pointList)
 			{
-				if (point.get('Location ID') !== this.getCurrentLocationId())
-				{
-					break;
-				}
 				if (point.get('Frame ID') === this.getCurrentFrameId())
 				{
 					this.drawCellCenter(point, 3);
@@ -869,8 +868,8 @@ export class ImageStackWidget {
 		let pageY = 0;
 		if (cell) {
 			let canvasBoundRect = this.selectedImageCanvas.node().getBoundingClientRect();
-			cellX = (cell.get('X') + cell.get('xShift')) / this.imageStackDataRequest.scaleFactor;
-			cellY = (cell.get('Y') + cell.get('yShift')) / this.imageStackDataRequest.scaleFactor;
+			cellX = (cell.get('X') + cell.parent.get('xShift')) / this.imageStackDataRequest.scaleFactor;
+			cellY = (cell.get('Y') + cell.parent.get('yShift')) / this.imageStackDataRequest.scaleFactor;
 			pageX = canvasBoundRect.x + cellX;
 			pageY = canvasBoundRect.y + cellY;
 
@@ -927,8 +926,8 @@ export class ImageStackWidget {
 	{
 		if (cell)
 		{
-			let cellX = (cell.get('X') + cell.get('xShift')) / this.imageStackDataRequest.scaleFactor;
-			let cellY = (cell.get('Y') + cell.get('yShift')) / this.imageStackDataRequest.scaleFactor;
+			let cellX = (cell.get('X') + cell.parent.get('xShift')) / this.imageStackDataRequest.scaleFactor;
+			let cellY = (cell.get('Y') + cell.parent.get('yShift')) / this.imageStackDataRequest.scaleFactor;
 			this.canvasContext.beginPath();
 			this.canvasContext.arc(cellX, cellY, radius, 0, 2 * Math.PI);
 			this.canvasContext.strokeStyle = 'black';
