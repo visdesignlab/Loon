@@ -11,8 +11,7 @@ import {KeyedTrackDerivationFunction, KeyedPointDerivationFunction} from './devl
 import {DataEvents} from './DataModel/DataEvents';
 import { DetailedDistributionWidget } from './Components/DetailedDistributionWidget';
 import { DevlibTSUtil } from './devlib/DevlibTSUtil';
-import { openDB, deleteDB, wrap, unwrap, IDBPDatabase } from 'idb';
-import { CurveList } from './DataModel/CurveList';
+import { openDB, IDBPDatabase } from 'idb';
 
 export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 	
@@ -175,6 +174,7 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 				let storedAllData = await store.get(data.googleDriveId);
 				if (storedAllData)
 				{
+					// todo add a check for if pb file or not
 					this.initData(storedAllData, data);
 					return;
 				}
@@ -182,6 +182,8 @@ export class App<DataType extends AppData<DataSpecType>, DataSpecType> {
 			this.fetchCsv(`${data.googleDriveId}/massOverTime.csv`, data, data.googleDriveId);
 		});
 	}
+
+	// private async fetchPb()
 
 	private async fetchCsv(filename: string, dataSpec: DataSpecType, key: string): Promise<void>
 	{

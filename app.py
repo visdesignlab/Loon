@@ -28,8 +28,12 @@ from PIL import ImageChops
 import piexif
 import numpy as np
 
+# for doing preprocessing on tracks array
+import pandas as pd;
+
 # for generating pb files
-import pbCsv_pb2
+# import pbCsv_pb2
+import pbCurveList_pb2
 
 # for saving structured exif data
 import json
@@ -407,44 +411,40 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
                 label = labelLookup.get(cellId, {}).get(frameId, -1)
                 dataRow.append(label)
         dataRowList.append(dataRow)
-        # returnStr += ','.join([str(x) for x in dataRow])
-        # returnStr += '\n'
 
     locationMaps = buildLocationMaps(colHeaderList, dataRowList)
     addLocationMaps(folderId, locationMaps)
-    # cache(folderId, 'massOverTime.csv', returnStr)
-    # return returnStr
-    # dataRow.append(label)
-    # dataRowList.append(dataRow)
 
-    pbCsv = pbCsv_pb2.PbCsv()
-    pbCsv.headerList.extend(colHeaderList)
+    curveNames = {'Location ID', 'xShift', 'yShift'}
+    for key in colHeaderList:
+        if key.startswith('condition_'):
+            curveNames.add(key)
 
-    dataColumnList = [list(x) for x in zip(*dataRowList)]
-    for column in dataColumnList:
-        pbColumn = pbCsv.columnList.add()
-        if any([int(x) != x for x in column]):
-            # float
-            pbColumn.columnFloat.valueList.extend(column)
-        else:
-            pbColumn.columnInt.valueList.extend([int(x) for x in column])
+    curveAttrNames = [x for x in colHeaderList if x in curveNames]
+    curveNames.add('id')
+    pointAttrNames = [x for x in colHeaderList if x not in curveNames]
+    pbCurveList = pbCurveList_pb2.PbCurveList()
+    pbCurveList.pointAttrNames.extend(pointAttrNames)
+    pbCurveList.curveAttrNames.extend(curveAttrNames)
 
+    tKey = colHeaderList[timeIndex]
+    idKey = colHeaderList[idIndex]
+    df = pd.DataFrame(data=dataRowList, columns=colHeaderList)
+    curveList = df.groupby(idKey)
+    for curveId, curve in curveList:
+        curve.sort_values(tKey)
+        pbCurve = pbCurveList.curveList.add()
+        pbCurve.id = int(curveId)
+        for key in curveAttrNames:
+            val = curve.head(1)[key]
+            pbCurve.valueList.extend([val])
+        for _idx, point in curve.iterrows():
+            pbPoint = pbCurve.pointList.add()
+            for key in pointAttrNames:
+                val = point[key]
+                pbPoint.valueList.extend([val])
 
-
-    # for dataRow in dataRowList:
-    #     pbRow = pbCsv.rowList.add()
-    #     # for val in dataRow:
-    #         # num = pbRow.valueList.add()
-    #         # if int(val) == val:
-    #         #     if abs(val) == val:
-    #         #         num.value_uint = int(val)
-    #         #     else:
-    #         #         num.value_sint = int(val)
-    #         # else:
-    #         #     num.value_float = val
-    #     pbRow.valueList.extend([str(x) for x in dataRow])
-
-    pbString = pbCsv.SerializeToString()
+    pbString = pbCurveList.SerializeToString()
 
     cache(folderId, 'massOverTime.pb', pbString, True)
     return pbString
