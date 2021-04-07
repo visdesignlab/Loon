@@ -59,7 +59,13 @@ export class CurveListFactory {
 		return facetList;
 	}
 
-	public static CreateCurveListFromPbObject(pbObject: PbCurveList,  derivedTrackDataFunctions: CurveDerivationFunction[], derivedPointDataFunctions: CurveDerivationFunction[], dataSpec: DatasetSpec, idkey: string = "id", tKeyOptions: string[] = ["Time (h)"]): CurveList
+	public static CreateCurveListFromPbObject(
+		pbObject: PbCurveList,
+		derivedTrackDataFunctions: CurveDerivationFunction[],
+		derivedPointDataFunctions: CurveDerivationFunction[],
+		dataSpec: DatasetSpec,
+		idkey: string = "id",
+		tKeyOptions: string[] = ["Time (h)"]): CurveList
 	{
 		const curveList: CurveND[] = [];
 		let tKey: string = null;
