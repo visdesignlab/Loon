@@ -733,15 +733,15 @@ export class ImageTrackWidget
                     const boundingBoxPromise = this.getCellBoundingBox(point);
                     boundingBoxPromises.push(boundingBoxPromise);
                 }
+                listOfLengths.push(track.pointList.length);
             }
-            listOfLengths.push(track.pointList.length);
         }
         const boundingBoxList = await Promise.all(boundingBoxPromises);
         let listOfLists: Rect[][] = [];
         let start = 0;
         for (let length of listOfLengths)
         {
-            listOfLists.push(boundingBoxList.slice(start, length));
+            listOfLists.push(boundingBoxList.slice(start, start + length));
             start += length;
         }
         return listOfLists;

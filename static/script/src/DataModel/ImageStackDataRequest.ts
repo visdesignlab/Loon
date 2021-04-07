@@ -27,21 +27,14 @@ export class ImageStackDataRequest
         this._metaDataLoaded = false;
 
         const metaDataFilename = `/data/${driveId}/imageMetaData.json`;
+        d3.json(metaDataFilename).then(data =>
+        {
+            this.initImageMetaData(data);
+        });
+        
         openDB('loon-db').then(async dataStore => 
         {
             this._dataStore = dataStore;
-            let store = this.dataStore.transaction('images', 'readonly').objectStore('images');
-            let data = await store.get(metaDataFilename);
-            if (data)
-            {
-                this.initImageMetaData(data);
-                return;
-            }
-            d3.json(metaDataFilename).then(data =>
-            {
-                this.initImageMetaData(data);
-                this.dataStore.put<any>('images', data, metaDataFilename);
-            });
         });
 
         this._blobArray= [];

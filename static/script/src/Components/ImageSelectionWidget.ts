@@ -18,17 +18,15 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     constructor(
         container: HTMLElement,
         samplingStratOptions: {"strat": (number[] | number), "label": string}[],
-        imageStackDataRequest: ImageStackDataRequest,
         isClone: boolean = false)
     {
         super(container, false, samplingStratOptions);
         this._isClone = isClone;
-        this._imageStackDataRequest = imageStackDataRequest;
     }
 
     protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
     {
-        return new ImageSelectionWidget(container, this.samplingStratOptions, this.imageStackDataRequest, true);
+        return new ImageSelectionWidget(container, this.samplingStratOptions, true);
     }
 
 	private _isClone : boolean;
@@ -44,6 +42,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     private _imageStackDataRequest : ImageStackDataRequest;
     public get imageStackDataRequest() : ImageStackDataRequest {
         return this._imageStackDataRequest;
+    }
+    public set imageStackDataRequest(v: ImageStackDataRequest) {
+        this._imageStackDataRequest = v;
     }
 
     private _innerContainer : HtmlSelection;

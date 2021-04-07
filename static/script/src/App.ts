@@ -151,7 +151,7 @@ export class App<DataType extends AppData<DatasetSpec>> {
 				newComponent = new MetricDistributionWidget(container, initArgs.metricDistributionCollectionLevel);
 				break;
 			case ComponentType.ImageSelectionWidget:
-				newComponent = new ImageSelectionWidget(container, initArgs.samplingStrat, this.imageStackDataRequest);
+				newComponent = new ImageSelectionWidget(container, initArgs.samplingStrat);
 				break;
 			case ComponentType.DetailedDistribution:
 				newComponent = new DetailedDistributionWidget(container, initArgs.metricDistributionCollectionLevel, initArgs.attributeKey);
@@ -203,16 +203,25 @@ export class App<DataType extends AppData<DatasetSpec>> {
 				await this.dataStore.put<any>('tracks', buffer, key);
 				// I could store the message object directly. The tradeoff is maybe (untested) slightly faster unboxing, but it does take up more space.
 			}
-			 // Decode an Uint8Array (browser) or Buffer (node) to a message
+			
+			// initialize here to request data sooner
+			this._imageStackDataRequest = new ImageStackDataRequest(dataSpec.googleDriveId);
+			for (let component of this.componentList)
+			{
+				if (component instanceof ImageSelectionWidget)
+				{
+					component.imageStackDataRequest = this.imageStackDataRequest;
+				}
+			}
+
+			// Decode an Uint8Array (browser) or Buffer (node) to a message
 			let message: PbCurveList = CurveListMessage.decode(new Uint8Array(buffer)) as any;
 			this.initData(message, dataSpec);
 		});
 	}
 
 	private initData(data: PbCurveList, dataSpec: DatasetSpec): void
-	{	
-		// initialize here to request data sooner
-		this._imageStackDataRequest = new ImageStackDataRequest(dataSpec.googleDriveId);
+	{
 		let allData: DataType = this.dataFromPbObject(data, this.trackDerivationFunctions, this.pointDerivationFunctions, dataSpec);
 		allData.ApplyDefaultFilters();
 		allData.ApplyNewFilter();

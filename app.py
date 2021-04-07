@@ -695,6 +695,10 @@ def getImageStackMetaData(folderId: str, locationId: int) -> str:
 @app.route('/data/<string:folderId>/imageMetaData.json')
 @authRequired
 def getImageStackMetaDataJson(folderId: str):
+    filename = 'imageMetaData.json'
+    if isCached(folderId, filename):
+        return getCached(folderId, filename)
+
     innerFolderId, _ = getFileId(folderId, '.vizMetaData',True)
     if innerFolderId is None:
         return
@@ -708,7 +712,6 @@ def getImageStackMetaDataJson(folderId: str):
 @app.route('/data/<string:folderId>/img_<int:locationId>_<int:bundleIndex>.jpg')
 @authRequired
 def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
-    # to make local testing less painful
     folder = '{}/data{}'.format(folderId, locationId)
     filename = 'D{}.jpg'.format(bundleIndex)
     if isCached(folder, filename):
@@ -727,7 +730,6 @@ def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
 @app.route('/data/<string:folderId>/label_<int:locationId>_<int:bundleIndex>.pb')
 @authRequired
 def getImageLabelBundle(folderId: str, locationId: int, bundleIndex: int):
-    # to make local testing less painful
     folder = '{}/data{}'.format(folderId, locationId)
     filename = 'L{}.pb'.format(bundleIndex)
     if isCached(folder, filename):
