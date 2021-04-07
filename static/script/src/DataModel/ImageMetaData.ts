@@ -1,4 +1,4 @@
-import { PointCollection } from './PointCollection';
+import { CurveList } from './CurveList';
 import { ImageLocation } from './ImageLocation';
 
 export class ImageMetaData
@@ -46,12 +46,12 @@ export class ImageMetaData
     }
 
 
-    public updateInBrushProp(pointList: PointCollection): void
+    public updateInBrushProp(pointList: CurveList): void
     {
         this.resetAllToFalse();
         for (let point of pointList)
         {
-            let locId: number = point.get(this.locationIdKey);
+            let locId: number = point.parent.get(this.locationIdKey);
             let frameId: number = point.get(this.frameIdKey);
             let location = this.locationLookup.get(locId);
             let frame = location.frameLookup.get(frameId);
@@ -83,14 +83,14 @@ export class ImageMetaData
         }
     }
     
-    static fromPointCollection(pointList: PointCollection, locationIdKey: string = 'Location ID', frameIdKey: string = 'Frame ID'): ImageMetaData
+    static fromPointCollection(pointList: CurveList, locationIdKey: string = 'Location ID', frameIdKey: string = 'Frame ID'): ImageMetaData
     {
         let imgMetaData = new ImageMetaData();
         imgMetaData._locationIdKey = locationIdKey;
         imgMetaData._frameIdKey = frameIdKey;
         for (let point of pointList)
         {
-            let locId: number = point.get(locationIdKey);
+            let locId: number = point.parent.get(locationIdKey);
             let frameId: number = point.get(frameIdKey);
             let imageLocation: ImageLocation;
             if (imgMetaData.locationLookup.has(locId))

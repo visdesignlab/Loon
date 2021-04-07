@@ -10,7 +10,7 @@ let metaContainer: HTMLElement = document.querySelector('#metaContainer');
 
 let derivedTrackDataFunctions = DerivedTrackValueFunctions.GetFunctionList();
 let derivedPointDataFunctions = DerivedPointValueFunctions.GetFunctionList();
-let app: App<CurveList, DatasetSpec> = new App<CurveList, DatasetSpec>(metaContainer, CurveListFactory.CreateCurveListFromCSVObject, derivedTrackDataFunctions, derivedPointDataFunctions);
+let app: App<CurveList, DatasetSpec> = new App<CurveList, DatasetSpec>(metaContainer, CurveListFactory.CreateCurveListFromPbObject, derivedTrackDataFunctions, derivedPointDataFunctions);
 window.onresize = () => app.OnWindowResize();
 
 d3.json('/static/layouts/defaultLayout.json').then(async (data: any) =>

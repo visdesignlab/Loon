@@ -37,7 +37,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		for (let i = 0; i < this.length; i++)
 		{
 			let point = this[i] as PointND;
-			let loc = point.get('Location ID');
+			let loc = point.parent.get('Location ID');
 			locationSet.add(loc);
 			if (!this._locationFrameSegmentLookup.has(loc))
 			{
@@ -378,8 +378,7 @@ export class CurveList extends PointCollection implements AppData<DatasetSpec>
 		const inFilterLocations: Set<number> = this.generateInFilterLocations();
 		for (let curve of this.curveList)
 		{
-			const firstPoint = curve.pointList[0];
-			const location = firstPoint.get('Location ID');
+			const location = curve.get('Location ID');
 			if (!inFilterLocations.has(location))
 			{
 				curve.inBrush = false;

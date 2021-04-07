@@ -784,7 +784,7 @@ export class ImageTrackWidget
 
             const frameIndex = frameId - 1;
 
-            let blobRequest = this.parentWidget.imageStackDataRequest.getImagePromise(point.get('Location ID'), frameIndex);
+            let blobRequest = this.parentWidget.imageStackDataRequest.getImagePromise(trackData.get('Location ID'), frameIndex);
 
             blobRequests.push(blobRequest);
         }
@@ -1045,7 +1045,7 @@ export class ImageTrackWidget
             timeRangePx[1] - timeRangePx[0] + 1,
             height);
 
-        const locationId = trackData.pointList[0].get('Location ID');
+        const locationId = trackData.get('Location ID');
         const labelList = this.parentWidget.fullData.inverseLocationMap.get(locationId);
         const color = GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
         this.canvasContext.strokeStyle = color;
@@ -1068,7 +1068,7 @@ export class ImageTrackWidget
 
     private async getCellBoundingBox(point: PointND): Promise<Rect>
     {
-        const locId = point.get('Location ID');
+        const locId = point.parent.get('Location ID');
         const frameId = point.get('Frame ID');
         const frameIndex = frameId - 1; // MatLab..        
         const segmentId = point.get('segmentLabel');
@@ -1146,8 +1146,7 @@ export class ImageTrackWidget
             frameId = frameIndex + 1;
         }
 
-        let firstPoint = curve.pointList[0];
-        const trackLocation = firstPoint.get('Location ID');
+        const trackLocation = curve.get('Location ID');
         let event = new CustomEvent('locFrameClicked', { detail:
         {
             locationId: trackLocation,
@@ -1189,8 +1188,7 @@ export class ImageTrackWidget
 
         this.parentWidget.selectedImgIndex;
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
-        let firstPoint = curve.pointList[0];
-        const trackLocation = firstPoint.get('Location ID');
+        const trackLocation = curve.get('Location ID');
         const currentLocation = this.parentWidget.getCurrentLocationId();
         
         if (trackLocation == currentLocation)
@@ -1199,7 +1197,7 @@ export class ImageTrackWidget
             if (displayedPoint)
             {
 
-                this.parentWidget.imageStackDataRequest.getLabel(displayedPoint.get('Location ID'), displayedPoint.get('Frame ID') - 1,
+                this.parentWidget.imageStackDataRequest.getLabel(curve.get('Location ID'), displayedPoint.get('Frame ID') - 1,
                 (rowArray: ImageLabels, firstIndex: number) =>
                 {
                     this.parentWidget.showSegmentHover(rowArray, displayedPoint.get('segmentLabel'), firstIndex, true);
@@ -1306,7 +1304,7 @@ export class ImageTrackWidget
             let labelToMatch = point.get('segmentLabel');
             let frameIndex = point.get('Frame ID') - 1;
             let rIdx = 0;
-            let [labelArray, firstIndex] = await this.parentWidget.imageStackDataRequest.getLabelPromise(point.get('Location ID'), frameIndex);
+            let [labelArray, firstIndex] = await this.parentWidget.imageStackDataRequest.getLabelPromise(point.parent.get('Location ID'), frameIndex);
             for (let y = sTop; y <= sBot; y++)
             {
                 for (let x = sLeft; x <= sRight; x++)
@@ -1320,7 +1318,7 @@ export class ImageTrackWidget
                         if (this.parentWidget.isBorder(label, rowIdx, colIdx, labelArray))
                         {
                             // should use data, not full data to get the right color.
-                            const [cell, _index] = this.parentWidget.data.GetCellFromLabel(point.get('Location ID'), point.get('Frame ID'), labelToMatch);
+                            const [cell, _index] = this.parentWidget.data.GetCellFromLabel(point.parent.get('Location ID'), point.get('Frame ID'), labelToMatch);
                             let {color: color, show: show} = this.parentWidget.getCellColor(cell);
                             if (show)
                             {
@@ -1434,7 +1432,7 @@ export class ImageTrackWidget
                 if (d[0] < this.manuallyPinnedTracks.length)
                 {
                     const track = this.manuallyPinnedTracks[d[0]];
-                    const locId = track.pointList[0].get('Location ID');
+                    const locId = track.get('Location ID');
                     const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
 
                     return GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
@@ -1477,7 +1475,7 @@ export class ImageTrackWidget
                 if (d[0] < this.manuallyPinnedTracks.length)
                 {
                     const track = this.manuallyPinnedTracks[d[0]];
-                    const locId = track.pointList[0].get('Location ID');
+                    const locId = track.get('Location ID');
                     const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
 
                     return `color: ${GroupByWidget.getColor(labelList, this.parentWidget.colorLookup)};`;
@@ -1990,8 +1988,7 @@ export class ImageTrackWidget
             .attr('stroke', (d, i) => 
             {
                 const track = this.manuallyPinnedTracks[i];
-                const firstPoint = track.pointList[0];
-                const locId = firstPoint.get('Location ID');
+                const locId = track.get('Location ID');
                 const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
                 const color = GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
                 return color;

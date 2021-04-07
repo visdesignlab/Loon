@@ -1,20 +1,10 @@
-export interface StringToStringObj {
-    [key: string]: string;
-}
+import { CurveND } from "../DataModel/CurveND";
 
-export interface TrackDerivationFunction
+
+export interface CurveDerivationFunction
 {
-    (pointList: StringToNumberObj[]): number[] | null;
+    (curve: CurveND): void;
 }
-
-export interface PointDerivationFunction
-{
-    (pointList: StringToNumberObj[]): number[][];
-}
-
-
-export type KeyedTrackDerivationFunction = [string[], TrackDerivationFunction];
-export type KeyedPointDerivationFunction = [string[], PointDerivationFunction];
 
 
 

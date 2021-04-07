@@ -1,63 +1,50 @@
-import { StringToNumberObj, TrackDerivationFunction } from '../devlib/DevLibTypes'
+import { StringToNumberObj, CurveDerivationFunction } from '../devlib/DevLibTypes'
+import { CurveND } from './CurveND';
 
 export class DerivedTrackValueFunctions
 {
-    public static GetFunctionList(): [string[], TrackDerivationFunction][]
+    public static GetFunctionList(): CurveDerivationFunction[]
     {
-        let functionList: [string[], TrackDerivationFunction][] = [];
-        functionList.push([['Track Length'], this.trackLength]);
+        let functionList: CurveDerivationFunction[] = [];
+        functionList.push(this.trackLength);
         for (let toAverage of ['Mass (pg)', 'shape factor', 'Mass_norm', 'Mean Intensity', 'Area'])
         {
-            functionList.push([['Avg. ' + toAverage], (pointList: StringToNumberObj[]) => this.averageAttribute(pointList, toAverage)]);
+            functionList.push( (curve: CurveND) => this.averageAttribute('Avg. ' + toAverage, toAverage, curve) );
         }
-        functionList.push([['Growth Rate', 'Intercept', 'Initial Mass', 'Exponential Growth Constant', 'r_squared'], this.growthRateStats]);
+        functionList.push(this.growthRateStats);
         return functionList;
     }
 
-    private static trackLength(pointList: StringToNumberObj[]): [number]
+    private static trackLength(curve: CurveND): void
     {
-        let firstTime = pointList[0]['Time (h)'];
-        let lastTime = pointList[pointList.length - 1]['Time (h)'];
-        return [lastTime - firstTime];
+        let firstTime = curve.pointList[0].get('Time (h)');
+        let lastTime = curve.pointList[curve.pointList.length - 1].get('Time (h)');
+        let trackLength = lastTime - firstTime;
+        curve.addValue('Track Length', trackLength);
+        return;
     }
 
-    private static averageAttribute(pointList: StringToNumberObj[], attributeKey: string): [number] | null
+    private static averageAttribute(newKey: string, referenceKey: string, curve: CurveND): void
     {
-        const firstPoint = pointList[0];
-        if (!Object.keys(firstPoint).includes(attributeKey))
+        const firstPoint = curve.pointList[0];
+        if (!firstPoint.valueMap.has(referenceKey))
         {
-            return null;
+            curve.addValue(newKey, null);
+            return;
         }
         let total = 0;
-        for (let point of pointList)
+        for (let point of curve.pointList)
         {
-            total += point[attributeKey];
+            total += point.get(referenceKey);
         }
-        return [total / pointList.length];
+        const newValue = total / curve.pointList.length;
+        curve.addValue(newKey, newValue);
+        return
     }
 
-    // private static averageMass(pointList: StringToNumberObj[]): [number]
-    // {
-    //     let totalMass = 0;
-    //     for (let point of pointList)
-    //     {
-    //         totalMass += point['Mass (pg)'];
-    //     }
-    //     return [totalMass / pointList.length];
-    // }
-
-    // private static averageShapeFactor(pointList: StringToNumberObj[]): [number]
-    // {
-    //     let totalShapeFactor = 0;
-    //     for (let point of pointList)
-    //     {
-    //         totalShapeFactor += point['shape factor'];
-    //     }
-    //     return [totalShapeFactor / pointList.length];
-    // }
-
-    private static growthRateStats(pointList: StringToNumberObj[]): [number, number, number, number, number]
+    private static growthRateStats(curve: CurveND): void
     {
+        const attrList = ['Growth Rate', 'Intercept', 'Initial Mass', 'Exponential Growth Constant', 'r_squared']
         // Referenced math
         // https://en.wikipedia.org/wiki/Ordinary_least_squares#Simple_linear_regression_model
         let sumX = 0;
@@ -65,15 +52,20 @@ export class DerivedTrackValueFunctions
         let sumYY = 0;
         let sumXY = 0;
         let sumXX = 0;
-        let N = pointList.length;
+        let N = curve.pointList.length;
         if (N === 1)
         {
-            return [ NaN, NaN, NaN, NaN, NaN ]; // calculating the slope of one point is actually point...less
+            // calculating the slope of one point is actually point...less
+            for (let attr of attrList)
+            {
+                curve.addValue(attr, NaN);
+            }
+            return; 
         }
-        for (let point of pointList)
+        for (let point of curve.pointList)
         {
-            let x = point['Time (h)'];
-            let y = point['Mass (pg)'];
+            let x = point.get('Time (h)');
+            let y = point.get('Mass (pg)');
             sumX += x;
             sumY += y;
             sumYY += y*y;
@@ -86,7 +78,7 @@ export class DerivedTrackValueFunctions
         let variance = sumXX - N_inv * sumX * sumX;
         let slope = covariance / variance;
         let intercept = N_inv * (sumY - slope * sumX);
-        let initialMass = pointList[0]['Time (h)'] * slope + intercept;
+        let initialMass = curve.pointList[0].get('Time (h)') * slope + intercept;
         let exponentialGrowthConstant = slope / initialMass;
 
         // r_squared equation from here
@@ -94,11 +86,18 @@ export class DerivedTrackValueFunctions
         let r_top = (N_inv * sumXY - N_inv * sumX * N_inv * sumY);
         let r_bot = Math.sqrt( (N_inv * sumXX - N_inv * sumX * N_inv * sumX) * (N_inv * sumYY - N_inv * sumY * N_inv * sumY) );
         let r_squared = Math.pow((r_top / r_bot), 2);
-        return [ slope, intercept, initialMass, exponentialGrowthConstant, r_squared ];
+        const values = [ slope, intercept, initialMass, exponentialGrowthConstant, r_squared ]
+        for (let i = 0; i < attrList.length; i++)
+        {
+            let attr = attrList[i];
+            let value = values[i];
+            curve.addValue(attr, value);
+        }
+        return;
     }
 
 
-    // private static functionName(pointList: StringToNumberObj[]): number
+    // private static functionName(pointList: CurveND): void
     // {
         
     // }

@@ -1,39 +1,41 @@
-import { StringToNumberObj, PointDerivationFunction } from '../devlib/DevLibTypes'
+import { CurveDerivationFunction } from '../devlib/DevLibTypes'
+import { CurveND } from './CurveND';
 
 export class DerivedPointValueFunctions
 {
-    public static GetFunctionList(): [string[], PointDerivationFunction][]
+    public static GetFunctionList(): CurveDerivationFunction[]
     {
         let functionList = [];
-        functionList.push([['Mass_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Mass (pg)', pointList, false)]);
-        functionList.push([['Time_norm'], (pointList: StringToNumberObj[]) => this.normAttr('Time (h)', pointList)]);
+        functionList.push( (curve: CurveND) => this.normAttr('Mass_norm', 'Mass (pg)', curve, false) );
+        functionList.push( (curve: CurveND) => this.normAttr('Time_norm', 'Time (h)', curve) );
         return functionList;
     }
 
-    private static normAttr(attrKey: string, pointList: StringToNumberObj[], zeroNorm = true): [number[]]
+    private static normAttr(newKey: string, referenceKey: string, curve: CurveND, zeroNorm = true): void
     {
-        let newValues: number[] = [];
-        if (pointList.length === 0)
+        if (curve.pointList.length === 0)
         {
-            return [newValues];
+            return;
         }
-        const firstVal: number = pointList[0][attrKey];
-        for (let point of pointList)
+        const firstVal: number = curve.pointList[0].get(referenceKey);
+        for (let point of curve.pointList)
         {
-            let oldVal = point[attrKey];
+            let oldVal = point.get(referenceKey);
+            let newVal: number;
             if (zeroNorm)
             {
-                newValues.push(oldVal - firstVal);
+                newVal = oldVal - firstVal
             }
             else
             {   
-                newValues.push(oldVal / firstVal);
+                newVal = oldVal / firstVal;
             }
+            point.addValue(newKey, newVal);
         }
-        return [newValues];
+        return;
     }
 
-    // private static functionName(pointList: StringToNumberObj[]): number[]
+    // private static functionName(curve: CurveND): number[]
     // {
         
     // }
