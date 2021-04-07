@@ -244,21 +244,26 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
         this.groupByWidget.updateGroupByOptions(this.data);
         this._hoveredLocationId = null;
-        this.setImageStackWidget(true);
-        this.OnBrushChange();
+        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+
+        this.imageStackWidget.SetData(this.data, this.fullData, currentLocation, this.imageStackDataRequest, true);
+
+        this.imageMetaData.updateInBrushProp(this.data);
+        this.draw();
 
     }
     
     public setImageStackWidget(skipImageTrackDraw = false): void
     {
         const [locId, frameId] = this.selectedLocFrame;
+        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+        this.imageStackWidget.imageLocation = currentLocation;
         this.imageStackDataRequest.getImage(locId, frameId, (top, left, blob) => 
         {
-            this.imageStackWidget.SetImageProperties(skipImageTrackDraw, blob);
+            this.imageStackWidget.SetImageBlob(blob);
+            this.imageStackWidget.draw(skipImageTrackDraw);
         });
 
-        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        this.imageStackWidget.SetData(this.data, this.fullData, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
     }
 
 	protected OnResize(): void
@@ -523,7 +528,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 const mouseX = event.offsetX;
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
-                // this.onClickLocationFrame(locId, frameId);
 
                 document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
                     {
@@ -537,7 +541,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private handleKeyDown(event: KeyboardEvent): void
 	{
         let newIndex: number;
-        // const [locId, frameId] = this.hoveredLocFrame;
         const [locId, frameId] = this.selectedLocFrame;
         const location = this.imageMetaData.locationLookup.get(locId);
         let nextFrameId: number;
@@ -546,7 +549,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             case 37: // left
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
-                // this.onClickLocationFrame(locId, nextFrameId);
                 document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
                     {
                         locationId: locId,
@@ -556,7 +558,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             case 39: // right
                 const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
                 nextFrameId = Math.min(frameId + 1, maxFrameId);
-                // this.onClickLocationFrame(locId, nextFrameId);
                 
                 document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
                     {
@@ -658,7 +659,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
         // todo this should be more targeted.
         this.draw();
-        // this.drawExtractedDots(d3.select(svgElement), locId, this.imageStackWidget.exemplarFrames.get(locId));
     }
 
     private drawExtractedDots(svgContainer: SvgSelection, locationId: number, frameSet: Set<number>): void
@@ -744,10 +744,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     private onClickLocation(locationId: number): void
     {
-        if (locationId === this.selectedLocationId)
-        {
-            return;
-        }
         this.changeLocationSelection(locationId);
         const skipImageTrackDraw = true;
         this.setImageStackWidget(skipImageTrackDraw);
@@ -760,9 +756,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         {
             return;
         }
+        this.updateSelectedDots(locationId, frameId);
         this.onClickLocation(locationId);
         this.imageStackWidget.changeSelectedImage(frameId - 1); // matlab
-        this.updateSelectedDots(locationId, frameId);
         this.imageStackWidget.imageTrackWidget.updateCurrentFrameIndicator(frameId);
     }
     

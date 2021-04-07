@@ -158,19 +158,6 @@ export class ImageStackDataRequest
 
     public async getImage(location: number, frameIndex: number, callback: (top: number, left: number, blob: Blob, imageUrl: string) => void): Promise<void>
     {
-        console.log('   -  -  - - - ----------- - - -  -  -   ')
-        console.log('getImage', location, frameIndex, this.scaleFactor);
-        console.log(this.imageLabelsMessage); 
-        console.trace();
-
-        // if (!this.metaDataLoaded)
-        // {
-        //     setTimeout(() =>
-        //     {
-        //         this.getImage(location, frameIndex, callback)
-        //     }, 50); // todo fallback
-        //     return;
-        // }
         let [top, left] = this.getTileTopLeft(frameIndex);
         let bundleIndex = Math.floor(frameIndex / this.tilesPerFile);
         let key = [location, bundleIndex].join('-');
@@ -200,7 +187,6 @@ export class ImageStackDataRequest
                 return;
             }
         }
-
 
         let xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
@@ -234,8 +220,6 @@ export class ImageStackDataRequest
         }
         else
         {
-            console.log('runWithCachedImage');
-            // loading, try again later
             setTimeout(() => {
                 this.runWithCachedImage(key, top, left, callback);
             }, 50);
@@ -274,10 +258,10 @@ export class ImageStackDataRequest
             setTimeout(() =>
             {
                 this.getLabel(location, frameIndex, callback)
-            }, 50); // todo fallback
+            }, 50);
             return;
         }
-        // let [top, left] = this.getTileTopLeft(frameIndex);
+
         let firstIndex: number = (frameIndex % this.tilesPerFile) * this.tileHeight;
         let bundleIndex = Math.floor(frameIndex / this.tilesPerFile);
         let key = [location, bundleIndex].join('-');
@@ -296,33 +280,23 @@ export class ImageStackDataRequest
 
         const labelUrl = `/data/${this.driveId}/label_${location}_${bundleIndex}.pb`;
 
-        // load("/static/protoDefs/RLE.proto", async (err, root) => {
-        //     if (err)
-        //     {
-        //         throw err;
-        //     }
-        //     // Obtain a message type
-        //     let ImageLabelsMessage = root.lookupType("imageLabels.ImageLabels");
+        let buffer;
+        if (this.dataStore)
+        {
+            let store = this.dataStore.transaction('images', 'readonly').objectStore('images');
+            buffer = await store.get(labelUrl);
+        }
+        if (!buffer)
+        {
+            buffer = await d3.buffer(labelUrl);
+            await this.dataStore.put<any>('images', buffer, labelUrl);
+        }
 
-            let buffer;
-            if (this.dataStore)
-            {
-                let store = this.dataStore.transaction('images', 'readonly').objectStore('images');
-                buffer = await store.get(labelUrl);
-            }
-            if (!buffer)
-            {
-                buffer = await d3.buffer(labelUrl);
-                await this.dataStore.put<any>('images', buffer, labelUrl);
-            }
+        // Decode an Uint8Array (browser) or Buffer (node) to a message
+        let message = this.imageLabelsMessage.decode(new Uint8Array(buffer)) as any;
 
-            // Decode an Uint8Array (browser) or Buffer (node) to a message
-            let message = this.imageLabelsMessage.decode(new Uint8Array(buffer)) as any;
-
-            this.labelArray[thisIndex] = [message, key];
-            // console.log(message);
-            callback(message, firstIndex);
-        // });
+        this.labelArray[thisIndex] = [message, key];
+        callback(message, firstIndex);
 
         return;
     }

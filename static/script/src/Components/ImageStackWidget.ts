@@ -74,6 +74,9 @@ export class ImageStackWidget {
 	public get imageLocation(): ImageLocation {
 		return this._imageLocation;
 	}
+	public set imageLocation(v: ImageLocation) {
+		this._imageLocation = v;
+	}
 
 	private _imageStackBlob: Blob;
 	public get imageStackBlob(): Blob {
@@ -466,19 +469,12 @@ export class ImageStackWidget {
 		this._imageStackDataRequest = imageStackDataRequest;
 		this._selectedImgIndex = 0;
 		this._imageLocation = imageLocation;
-		this.SetImageProperties(skipImageTrackDraw); // default values before image load
-		this.draw(skipImageTrackDraw);
 		document.dispatchEvent(new CustomEvent('exemplarAttributeChange', { detail: this.inExemplarMode ? this.exemplarAttribute : null }));
 	}
 
-	public SetImageProperties(skipImageTrackDraw: boolean, blob?: Blob, imageWidth?: number, imageHeight?: number, numColumns?: number, scaleFactor?: number): void
+	public SetImageBlob(blob: Blob): void
 	{
-		// default values for when loading, or if image isn't found
-		if (!imageWidth) { imageWidth = 256; }
-		if (!imageHeight) { imageHeight = 256; }
-		if (!numColumns) { numColumns = 10; }
 		this._imageStackBlob = blob;
-		this.draw(skipImageTrackDraw);
 	}
 
 	public draw(skipImageTrackDraw = false): void {
@@ -581,6 +577,8 @@ export class ImageStackWidget {
 			}
 			if (!this.exemplarLocations.has(this.getCurrentLocationId()))
 			{
+				console.log('goofy click to change location...')
+				console.log(justData[0].get('Location ID'), justData[0].pointList[0].get('Frame ID'))
 				eventToDispatch = new CustomEvent('locFrameClicked', { detail:
 				{
 					locationId: justData[0].get('Location ID'),
