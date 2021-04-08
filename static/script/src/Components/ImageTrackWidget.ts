@@ -688,6 +688,32 @@ export class ImageTrackWidget
         DevlibTSUtil.stopSpinner();
     }
 
+    public invertImageData(): void
+    {
+        let w = this.defaultCanvasState.width;
+        let h = this.defaultCanvasState.height;
+        let data = this.defaultCanvasState.data;
+
+        for (let [sourceRect, destOffset, _cell] of this.sourceDestCell)
+        {
+            let width = ImageTrackWidget.rectWidth(sourceRect);
+            let height = ImageTrackWidget.rectHeight(sourceRect);
+            for (let sx = 0; sx < width; sx++)
+            {
+                let x = sx + destOffset[0];
+                for (let sy = 0; sy < height; sy++)
+                {
+                    let y = sy + destOffset[1];
+                    let i = 4 * (y * w + x);
+
+			        data[i] = 255 - data[i];
+			        data[i+1] = 255 - data[i+1];
+			        data[i+2] = 255 - data[i+2];
+                }
+            }
+        }
+    }
+
     private getMaxGroupHeight(maxHeightList: number[]): number
     {
         if (!this.parentWidget.inExemplarMode)
@@ -865,7 +891,6 @@ export class ImageTrackWidget
                     offsetArray.push(destOffset);
                     let sourceRect: Rect = [[copyLeft, copyTop], [copyLeft + copyWidth, copyTop + copyHeight]];
                     this.sourceDestCell.push([sourceRect, destOffset, point]);
-                    sourceDestCell.push([sourceRect, destOffset, point]);
                     workerData.push([blob, copyLeft, copyTop, copyWidth, copyHeight]);
 
                 }

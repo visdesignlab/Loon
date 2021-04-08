@@ -324,7 +324,7 @@ export class ImageStackWidget {
 				let node = document.getElementById(invertId) as HTMLInputElement;
 				this.selectedImageContainer.classed('invert', node.checked);
 				this.selectedImageCanvas.classed('invert', node.checked);
-				this.updateCanvas();
+				this.invertCanvas();
 			})
 			.attr('id', invertId);
 		this.toggleOptionsContainer.append('label')
@@ -517,6 +517,12 @@ export class ImageStackWidget {
 	public getCurrentFrameId(): number
 	{
 		return this.selectedImgIndex + 1;
+	}
+
+	private invertCanvas(): void
+	{
+		this.imageTrackWidget.invertImageData();
+		this.OnBrushChange();
 	}
 
 	private updateCanvas(skipImageTrackDraw = false): void
