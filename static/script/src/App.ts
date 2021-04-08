@@ -199,7 +199,32 @@ export class App<DataType extends AppData<DatasetSpec>> {
 			{
 				// cached pb data is an arraybuffer (Array.isArray is false)
 				// cached csv data is an array - we want to replace this.
-				buffer = await d3.buffer('../../../data/' + filename);
+				const fullPath = '../../../data/' + filename;
+				let requestHead = await fetch(fullPath, {
+					method: 'HEAD'
+				});
+				const contentLength = +requestHead.headers.get('content-length');
+				buffer = new Uint8Array(contentLength);
+
+				// request multiple chunks simultaneously to increase download speed.
+				const maxChunkSize = 5 * 1024 * 1024; // 5 MB
+				const numChunks = Math.ceil(contentLength  / maxChunkSize)
+				const chunkRequestList: Promise<void>[] = [];
+
+				for (let i = 0; i < numChunks; i++)
+				{
+					const chunkRequest = d3.buffer(fullPath, {
+						headers:
+						{
+							'Range': `bytes=${i * maxChunkSize}-${Math.min(contentLength, i * maxChunkSize + maxChunkSize - 1)}`
+						}
+					}).then((chunk: ArrayBuffer) => 
+					{
+						buffer.set(new Uint8Array(chunk), i * maxChunkSize);
+					});
+					chunkRequestList.push(chunkRequest);
+				}
+				await Promise.all(chunkRequestList); // need all to finish
 				await this.dataStore.put<any>('tracks', buffer, key);
 				// I could store the message object directly. The tradeoff is maybe (untested) slightly faster unboxing, but it does take up more space.
 			}

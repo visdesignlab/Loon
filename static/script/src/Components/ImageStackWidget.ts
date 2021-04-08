@@ -583,8 +583,6 @@ export class ImageStackWidget {
 			}
 			if (!this.exemplarLocations.has(this.getCurrentLocationId()))
 			{
-				console.log('goofy click to change location...')
-				console.log(justData[0].get('Location ID'), justData[0].pointList[0].get('Frame ID'))
 				eventToDispatch = new CustomEvent('locFrameClicked', { detail:
 				{
 					locationId: justData[0].get('Location ID'),
