@@ -207,7 +207,7 @@ export class App<DataType extends AppData<DatasetSpec>> {
 				buffer = new Uint8Array(contentLength);
 
 				// request multiple chunks simultaneously to increase download speed.
-				const maxChunkSize = 5 * 1024 * 1024; // 5 MB
+				const maxChunkSize = 1 * 1024 * 1024; // 5 MB
 				const numChunks = Math.ceil(contentLength  / maxChunkSize)
 				const chunkRequestList: Promise<void>[] = [];
 
