@@ -323,6 +323,16 @@ export class ImageTrackWidget
         return this._dragGroupIndex;
     }
 
+    private _trackHeightList : number[];
+    public get trackHeightList() : number[] {
+        return this._trackHeightList;
+    }
+    
+    private _trackVerticalOffsetList : number[];
+    public get trackVerticalOffsetList() : number[] {
+        return this._trackVerticalOffsetList;
+    }   
+
     public init(): void
     {
         const containerSelect = d3.select(this.container);
@@ -393,8 +403,6 @@ export class ImageTrackWidget
         this.samplingStrategySelect.onDataChange(buttonPropList);
 
         this._svgContainer = containerSelect.append('svg');
-        this._cellLabelGroup = this.svgContainer.append('g')
-            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
         this._labelLinePad = 16;
 
@@ -410,6 +418,9 @@ export class ImageTrackWidget
         this._manualExemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
             
+        this._cellLabelGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
+
         const offsetToExemplarCurves = this.cellTimelineMargin.left;
         this._exemplarCurvesGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top})`);
@@ -558,7 +569,7 @@ export class ImageTrackWidget
         const combinedTracks = [...this.manuallyPinnedTracks, ...justData];
         this._sourceDestCell = [];
         let listOfBoundingBoxLists = await this.getBoundingBoxLists(combinedTracks);
-        let maxHeightList: number[] = [];
+        this._trackHeightList = [];
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
             (rectList: Rect[]) =>
             {
@@ -568,7 +579,7 @@ export class ImageTrackWidget
         for (let rectList of listOfBoundingBoxLists)
         {
             let thisHeight = d3.max(rectList, r => ImageTrackWidget.rectHeight(r));
-            maxHeightList.push(thisHeight); 
+            this.trackHeightList.push(thisHeight); 
         }
 
         let minFrameId = d3.min(combinedTracks, 
@@ -592,14 +603,14 @@ export class ImageTrackWidget
         {
             numFrames = maxFrameId - minFrameId + 1;
         }
-        const maxGroupContentHeight = this.getMaxGroupHeight(maxHeightList);
+        const maxGroupContentHeight = this.getMaxGroupHeight(this.trackHeightList);
         const numExemplars = this.parentWidget.numExemplars;
 
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
         let totalHeight = this.verticalPad * (combinedTracks.length + 1);
         totalHeight += 200;
         const betweenGroupPad = 16;
-        const heightOfManuallyPinned = d3.sum(maxHeightList.slice(0, this.manuallyPinnedTracks.length));
+        const heightOfManuallyPinned = d3.sum(this.trackHeightList.slice(0, this.manuallyPinnedTracks.length));
         if (this.parentWidget.inExemplarMode)
         {
             const numGroups = (this.trackList.length / numExemplars);
@@ -609,7 +620,7 @@ export class ImageTrackWidget
         }
         else
         {
-            totalHeight += d3.sum(maxHeightList);
+            totalHeight += d3.sum(this.trackHeightList);
 
         }
         this.selectedImageCanvas
@@ -620,7 +631,7 @@ export class ImageTrackWidget
         this._cellLabelPositions = [];
 
         let drawTrackPromises = [];
-        let verticalOffsetList = [];
+        this._trackVerticalOffsetList = [];
         const pinOffset = this.manuallyPinnedTracks.length;
         for (let i = 0; i < combinedTracks.length; i++)
         {
@@ -628,12 +639,12 @@ export class ImageTrackWidget
             const sampledIdx = i - pinOffset;
             let track = combinedTracks[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
-            let trackHeight = maxHeightList[i];
+            let trackHeight = this.trackHeightList[i];
             if (this.parentWidget.inExemplarMode && i === this.manuallyPinnedTracks.length && this.manuallyPinnedTracks.length > 0)
             {
                 verticalOffset = Math.max(verticalOffset, this.minHeightForFavorites);
             }
-            verticalOffsetList.push(verticalOffset);
+            this.trackVerticalOffsetList.push(verticalOffset);
             const categoryIndex = Math.floor(sampledIdx / numExemplars);
             let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex, isStarred);
             drawTrackPromises.push(done);
@@ -642,7 +653,7 @@ export class ImageTrackWidget
             if (this.parentWidget.inExemplarMode && !isStarred)
             {
                 let groupStartIdx = (sampledIdx - (sampledIdx % numExemplars)) + pinOffset; // I have regrets combining these lists.
-                let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
+                let diffBetweenMax = maxGroupContentHeight - d3.sum(this.trackHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
                 if (i % numExemplars < numExemplars)
                 {
                     let extraPadding = diffBetweenMax / (numExemplars - 1);
@@ -664,9 +675,9 @@ export class ImageTrackWidget
                 const idx = i + pinOffset;
                 const groupIndex = i / numExemplars;
                 let name = conditionNames[groupIndex];
-                const top = verticalOffsetList[idx];
+                const top = this.trackVerticalOffsetList[idx];
                 const indexBot = idx + numExemplars - 1;
-                const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot];
+                const bot = this.trackVerticalOffsetList[indexBot] + this.trackHeightList[indexBot];
                 this.conditionLabelPositions.push([name, [top, bot]]);
             }
         }
@@ -1697,18 +1708,20 @@ export class ImageTrackWidget
         for (let i = 0; i < curveList.length; i++)
         {
             const categoryIndex = Math.floor(i / this.parentWidget.numExemplars);
-            this.drawPin(curveList[i], categoryIndex);
+            this.drawPin(curveList[i], i + this.manuallyPinnedTracks.length, categoryIndex);
         }
     }
 
-    private drawPin(trackData: conditionExemplar<CurveND>, categoryIndex: number): void
+    private drawPin(trackData: conditionExemplar<CurveND>, rowIndex: number, categoryIndex: number): void
     {
         let exemplarValue = trackData.data.get(this.parentWidget.exemplarAttribute);
         let yPos = this.histogramScaleYList[categoryIndex](exemplarValue);
         let [xPosPin, xPosHead] = this.histogramScaleX.range();
-        const manual: boolean = trackData.type === 'manual'
+        const manual: boolean = trackData.type === 'manual';
+        let groupSelection: SvgSelection;
         if (manual)
         {
+            groupSelection = this.manualExemplarPinGroup; 
             const needleElement = this.manualExemplarPinGroup.append('line')
                 .attr('x1', xPosHead)
                 .attr('x2', xPosPin)
@@ -1746,6 +1759,7 @@ export class ImageTrackWidget
         }
         else
         {
+            groupSelection = this.exemplarPinGroup;
             this.exemplarPinGroup.append('line')
                 .attr('x1', xPosHead)
                 .attr('x2', xPosPin)
@@ -1762,6 +1776,17 @@ export class ImageTrackWidget
                 .classed('pinHead', true)
                 .classed(trackData.data.id, true);
         }
+
+        const trackCenter = this.trackVerticalOffsetList[rowIndex] + (this.trackHeightList[rowIndex] / 2.0);
+
+        groupSelection.append('line')
+            .attr('x1', xPosPin)
+            .attr('x2', xPosPin + 30)
+            .attr('y1', yPos)
+            .attr('y2', trackCenter)
+            .classed('pinConnectLine', true)
+            .classed(trackData.data.id, true);
+
     }
 
     private formatPinLabel(value: number): string

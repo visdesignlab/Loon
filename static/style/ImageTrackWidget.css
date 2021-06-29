@@ -15,6 +15,11 @@
 .cellAxisLabel {
     font-family: 'Montserrat', sans-serif;
     font-size: 11pt;
+    stroke: white;
+    stroke-width: 2px;
+    paint-order: stroke;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .cellAxisLabel.left {
@@ -43,6 +48,7 @@
     stroke: black;
     opacity: 0.3;
     stroke-width: 1;
+    stroke-linecap: round;
 }
 
 .pinLine.selected {
@@ -51,6 +57,19 @@
 }
 .pinLabel.selected {
     text-decoration: underline;
+}
+
+.pinConnectLine {
+    stroke: black;
+    opacity: 0.3;
+    stroke-width: 1;
+    /* stroke-dasharray: 3 2; */
+}
+
+.pinConnectLine.selected {
+    opacity: 1;
+    stroke-width: 2;
+    /* stroke-dasharray: none; */
 }
 
 .pinHead {
