@@ -665,7 +665,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     {
         let frameList = Array.from(frameSet);
         let xyList: [number, number][] = frameList.map(frame => this.getDotCenters(locationId, frame)[0]);
-        const dotR = 1.5;
+        const dotR = 2.5;
         svgContainer.selectAll('.extractDot')
             .data(xyList)
             .join('circle')
@@ -676,13 +676,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('stroke', 'black')
             .attr('r', dotR)
             .attr('opacity', 0.6)
-            .attr('stroke-width', 0.5);
+            .attr('stroke-width', 1);
     }
 
     private drawHoverDots(svgContainer: SvgSelection, locationId: number, frameId: number): void
     {
         const xyPositions: [number, number][] = this.getDotCenters(locationId, frameId);
-        const dotR = 2;
+        const dotR = 2.5;
         svgContainer.selectAll('.hoverDot')
             .data(xyPositions)
             .join('circle')
@@ -692,7 +692,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('fill', '#ECECEC')
             .attr('stroke', 'black')
             .attr('r', dotR)
-            .attr('stroke-width', 0.5);
+            .attr('stroke-width', 1);
     }
 
     private drawSelectedDots(): void
