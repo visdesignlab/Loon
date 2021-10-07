@@ -1,4 +1,10 @@
-# Loon – a Visualization Tool for Quantitative Phase Microscopy Data
+# Loon: Using Exemplars to Visualize Large-Scale Microscopy Data
+
+This repo corresponds to the award winning paper published in IEEE Transactions on Visualization and Computer Graphics (Vis): [10.1109/TVCG.2021.3114766](http://dx.doi.org/10.1109/TVCG.2021.3114766)
+
+A deployed version of the tool is available at [loon.sci.utah.edu](loon.sci.utah.edu)
+
+A video describing the technique can be found at [https://www.youtube.com/watch?v=Y7u3Kg3At9A&t=3s](https://www.youtube.com/watch?v=Y7u3Kg3At9A&t=3s)
 
 ## Download/Install
 `git clone https://github.com/visdesignlab/cell-growth.git`
