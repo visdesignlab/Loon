@@ -44,7 +44,6 @@ app.secret_key = settings.FLASK_SECRET_KEY
 
 @app.route('/auth')
 def auth():
-    flask.session['uid'] = uuid.uuid4()
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(settings.CLIENT_SECRETS_FILENAME, scopes=SCOPES)
     flow.redirect_uri = url_for('authCallback', _external=True)
 
@@ -974,7 +973,8 @@ def openAnyMatlabFile(bytesIO) -> Union[dict, h5py.File]:
     try:
         outputDict = h5py.File(bytesIO, 'r')
     except:
-        tempFilename = settings.TEMP_FILES_FOLDER + flask.session['uid'].hex + '.mat'
+        uid = uuid.uuid4()
+        tempFilename = settings.TEMP_FILES_FOLDER + uid.hex + '.mat'
         tmpFile = open(tempFilename, 'wb')
         tmpFile.write(bytesIO.getvalue())
         tmpFile.close()
