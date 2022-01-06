@@ -4,7 +4,7 @@ This repo corresponds to the award winning paper published in IEEE Transactions 
 
 A deployed version of the tool is available at [loon.sci.utah.edu](loon.sci.utah.edu)
 
-A video describing the technique can be found at [https://www.youtube.com/watch?v=Y7u3Kg3At9A&t=3s](https://www.youtube.com/watch?v=Y7u3Kg3At9A&t=3s)
+A video describing the technique can be found at [https://www.youtube.com/watch?v=Y7u3Kg3At9A](https://www.youtube.com/watch?v=Y7u3Kg3At9A)
 
 ## Download/Install
 `git clone https://github.com/visdesignlab/cell-growth.git`
