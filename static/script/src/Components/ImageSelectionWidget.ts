@@ -15,7 +15,10 @@ import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     
-    constructor(container: HTMLElement, samplingStratOptions: {"strat": (number[] | number), "label": string}[], isClone: boolean = false)
+    constructor(
+        container: HTMLElement,
+        samplingStratOptions: {"strat": (number[] | number), "label": string}[],
+        isClone: boolean = false)
     {
         super(container, false, samplingStratOptions);
         this._isClone = isClone;
@@ -39,6 +42,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
     private _imageStackDataRequest : ImageStackDataRequest;
     public get imageStackDataRequest() : ImageStackDataRequest {
         return this._imageStackDataRequest;
+    }
+    public set imageStackDataRequest(v: ImageStackDataRequest) {
+        this._imageStackDataRequest = v;
     }
 
     private _innerContainer : HtmlSelection;
@@ -235,25 +241,29 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	public OnDataChange()
 	{
         this._imageMetaData = ImageMetaData.fromPointCollection(this.fullData);
-        this._imageStackDataRequest = new ImageStackDataRequest(this.data.Specification.googleDriveId);
         this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
         this.groupByWidget.updateGroupByOptions(this.data);
         this._hoveredLocationId = null;
-        this.setImageStackWidget(true);
-        this.OnBrushChange();
+        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+
+        this.imageStackWidget.SetData(this.data, this.fullData, currentLocation, this.imageStackDataRequest, true);
+
+        this.imageMetaData.updateInBrushProp(this.data);
+        this.draw();
 
     }
     
     public setImageStackWidget(skipImageTrackDraw = false): void
     {
         const [locId, frameId] = this.selectedLocFrame;
+        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+        this.imageStackWidget.imageLocation = currentLocation;
         this.imageStackDataRequest.getImage(locId, frameId, (top, left, blob) => 
         {
-            this.imageStackWidget.SetImageProperties(skipImageTrackDraw, blob);
+            this.imageStackWidget.SetImageBlob(blob);
+            this.imageStackWidget.draw(skipImageTrackDraw);
         });
 
-        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
-        this.imageStackWidget.SetData(this.data, this.fullData, currentLocation, this.imageStackDataRequest, skipImageTrackDraw);
     }
 
 	protected OnResize(): void
@@ -518,7 +528,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
                 const mouseX = event.offsetX;
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
-                // this.onClickLocationFrame(locId, frameId);
 
                 document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
                     {
@@ -532,7 +541,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 	private handleKeyDown(event: KeyboardEvent): void
 	{
         let newIndex: number;
-        // const [locId, frameId] = this.hoveredLocFrame;
         const [locId, frameId] = this.selectedLocFrame;
         const location = this.imageMetaData.locationLookup.get(locId);
         let nextFrameId: number;
@@ -541,7 +549,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             case 37: // left
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
-                // this.onClickLocationFrame(locId, nextFrameId);
                 document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
                     {
                         locationId: locId,
@@ -551,7 +558,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             case 39: // right
                 const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
                 nextFrameId = Math.min(frameId + 1, maxFrameId);
-                // this.onClickLocationFrame(locId, nextFrameId);
                 
                 document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
                     {
@@ -596,9 +602,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             return;
         }
         const curve = this.fullData.curveLookup.get(cellId);
+        const locId = curve.get('Location ID')
         const firstPoint = curve.pointList[0];
         const lowFrameId = firstPoint.get("Frame ID");
-        const locId = firstPoint.get('Location ID')
         const location: ImageLocation = this.imageMetaData.locationLookup.get(locId);
         const frameLow: ImageFrame = location.frameLookup.get(lowFrameId);
         
@@ -653,14 +659,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         }
         // todo this should be more targeted.
         this.draw();
-        // this.drawExtractedDots(d3.select(svgElement), locId, this.imageStackWidget.exemplarFrames.get(locId));
     }
 
     private drawExtractedDots(svgContainer: SvgSelection, locationId: number, frameSet: Set<number>): void
     {
         let frameList = Array.from(frameSet);
         let xyList: [number, number][] = frameList.map(frame => this.getDotCenters(locationId, frame)[0]);
-        const dotR = 1.5;
+        const dotR = 2.5;
         svgContainer.selectAll('.extractDot')
             .data(xyList)
             .join('circle')
@@ -671,13 +676,13 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('stroke', 'black')
             .attr('r', dotR)
             .attr('opacity', 0.6)
-            .attr('stroke-width', 0.5);
+            .attr('stroke-width', 1);
     }
 
     private drawHoverDots(svgContainer: SvgSelection, locationId: number, frameId: number): void
     {
         const xyPositions: [number, number][] = this.getDotCenters(locationId, frameId);
-        const dotR = 2;
+        const dotR = 2.5;
         svgContainer.selectAll('.hoverDot')
             .data(xyPositions)
             .join('circle')
@@ -687,7 +692,7 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('fill', '#ECECEC')
             .attr('stroke', 'black')
             .attr('r', dotR)
-            .attr('stroke-width', 0.5);
+            .attr('stroke-width', 1);
     }
 
     private drawSelectedDots(): void
@@ -739,10 +744,6 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
     private onClickLocation(locationId: number): void
     {
-        if (locationId === this.selectedLocationId)
-        {
-            return;
-        }
         this.changeLocationSelection(locationId);
         const skipImageTrackDraw = true;
         this.setImageStackWidget(skipImageTrackDraw);
@@ -755,9 +756,9 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         {
             return;
         }
+        this.updateSelectedDots(locationId, frameId);
         this.onClickLocation(locationId);
         this.imageStackWidget.changeSelectedImage(frameId - 1); // matlab
-        this.updateSelectedDots(locationId, frameId);
         this.imageStackWidget.imageTrackWidget.updateCurrentFrameIndicator(frameId);
     }
     

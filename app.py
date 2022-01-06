@@ -28,6 +28,13 @@ from PIL import ImageChops
 import piexif
 import numpy as np
 
+# for doing preprocessing on tracks array
+import pandas as pd;
+
+# for generating pb files
+# import pbCsv_pb2
+import pbCurveList_pb2
+
 # for saving structured exif data
 import json
 
@@ -37,7 +44,6 @@ app.secret_key = settings.FLASK_SECRET_KEY
 
 @app.route('/auth')
 def auth():
-    flask.session['uid'] = uuid.uuid4()
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(settings.CLIENT_SECRETS_FILENAME, scopes=SCOPES)
     flow.redirect_uri = url_for('authCallback', _external=True)
 
@@ -257,10 +263,18 @@ def cache(folderId: str, filename: str, data, isBinary = False) -> None:
     cache.close()
     return
 
-@app.route('/data/<string:folderId>/massOverTime.csv')
+# @app.route('/data/<string:folderId>/massOverTime.csv')
+# @authRequired
+# def getMassOverTimeCsv(folderId: str): # -> flask.Response:
+#     filename = 'massOverTime.csv'
+#     if isCached(folderId, filename):
+#         return getCached(folderId, filename)
+#     return ''
+
+@app.route('/data/<string:folderId>/massOverTime.pb')
 @authRequired
-def getMassOverTimeCsv(folderId: str): # -> flask.Response:
-    filename = 'massOverTime.csv'
+def getMassOverTimePb(folderId: str): # -> flask.Response:
+    filename = 'massOverTime.pb'
     if isCached(folderId, filename):
         filePath = cachePath(folderId, filename)
         cachedModifiedTime = os.path.getmtime(filePath)
@@ -273,7 +287,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     data_allframes = getData_AllFrames(folderId)
     colHeaders = getColTracksHeader(folderId, data_allframes)
     if colHeaders is None:
-        colHeaderString = 'X,Y,Mass (pg),Time (h),id,Mean Value,Shape Factor,Location ID,Frame ID,xShift,yShift,segmentLabel'
+        colHeaderList = ['X', 'Y', 'Mass (pg)', 'Time (h)', 'id', 'Mean Value', 'Shape Factor', 'Location ID', 'Frame ID', 'xShift', 'yShift', 'segmentLabel']
         areaIndex = -1
         massIndex = 2
         timeIndex = 3
@@ -296,7 +310,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
         massIndex = colHeaders.index('Mass (pg)')
         timeIndex = colHeaders.index('Time (h)')
         idIndex = colHeaders.index('id')
-        colHeaderString = ','.join(colHeaders)
+        colHeaderList = [x for x in colHeaders]
 
     massOverTime = getMassOverTimeArray(folderId, data_allframes)
 
@@ -319,25 +333,25 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
     if not meanIntensityIncluded and areaIndex >= 0:
         pixelSize = getPixelSize(folderId, data_allframes)[0][0]
         if colHeaders is not None:
-            colHeaderString += ',' + 'Mean Intensity'
+            colHeaderList.append('Mean Intensity')
     if not locIncluded:
         locationArray = getLocationArray(folderId, data_allframes)
         if colHeaders is not None:
-            colHeaderString += ',' + 'Location ID'
+            colHeaderList.append('Location ID')
     if not frameIncluded:
         frameArray = getFrameArray(folderId, data_allframes)
         if colHeaders is not None:
-            colHeaderString += ',' + 'Frame ID'
+            colHeaderList.append('Frame ID')
     if not xShiftIncluded:
         xShiftArray = getXShiftArray(folderId, data_allframes)
         if colHeaders is not None:
-            colHeaderString += ',' + 'xShift'
+            colHeaderList.append('xShift')
     if not yShiftIncluded:
         yShiftArray = getYShiftArray(folderId, data_allframes)
         if colHeaders is not None:
-            colHeaderString += ',' + 'yShift'
+            colHeaderList.append('yShift')
     if not segLabelIncluded and colHeaders is not None:
-        colHeaderString += ',' + 'segmentLabel'
+        colHeaderList.append('segmentLabel')
     
     if not allIncluded:
         timeToIndex = {}
@@ -374,10 +388,9 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
         uniqueLocationList.sort()
         labelLookup = buildLabelLookup(folderId, massOverTime, timeToIndex, uniqueLocationList)
 
-    returnStr = colHeaderString + '\n'
-    dataRowArray = []
+    dataRowList = []
     for index, row in enumerate(massOverTime):
-        dataRow = [x for x in row]
+        dataRow = [x for x in row] # convert to vanilla python array
         if not allIncluded:
             if not meanIntensityIncluded and areaIndex >= 0:
                 miConstant = 5555 + (5/9) # Cite: Eddie's email.
@@ -386,8 +399,7 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
                 area = dataRow[areaIndex]
                 meanIntensity = mass / (area * (pixelSize**2) * miConstant)
                 dataRow.append(meanIntensity)
-
-            time = row[timeIndex]
+            time = dataRow[timeIndex]
             if not (locIncluded and frameIncluded and xShiftIncluded and yShiftIncluded):
                 locationId, frameId, xShift, yShift = timeToIndex[time]
             # this corrects the xShift/yShift problem.
@@ -405,14 +417,44 @@ def getMassOverTimeCsv(folderId: str): # -> flask.Response:
                 cellId = row[idIndex]
                 label = labelLookup.get(cellId, {}).get(frameId, -1)
                 dataRow.append(label)
-        dataRowArray.append(dataRow)
-        returnStr += ','.join([str(x) for x in dataRow])
-        returnStr += '\n'
+        dataRowList.append(dataRow)
 
-    locationMaps = buildLocationMaps(colHeaderString.split(','), dataRowArray)
+    locationMaps = buildLocationMaps(colHeaderList, dataRowList)
     addLocationMaps(folderId, locationMaps)
-    cache(folderId, 'massOverTime.csv', returnStr)
-    return returnStr
+
+    curveNames = {'Location ID', 'xShift', 'yShift'}
+    for key in colHeaderList:
+        if key.startswith('condition_'):
+            curveNames.add(key)
+
+    curveAttrNames = [x for x in colHeaderList if x in curveNames]
+    curveNames.add('id')
+    pointAttrNames = [x for x in colHeaderList if x not in curveNames]
+    pbCurveList = pbCurveList_pb2.PbCurveList()
+    pbCurveList.pointAttrNames.extend(pointAttrNames)
+    pbCurveList.curveAttrNames.extend(curveAttrNames)
+
+    tKey = colHeaderList[timeIndex]
+    idKey = colHeaderList[idIndex]
+    df = pd.DataFrame(data=dataRowList, columns=colHeaderList)
+    curveList = df.groupby(idKey)
+    for curveId, curve in curveList:
+        curve.sort_values(tKey)
+        pbCurve = pbCurveList.curveList.add()
+        pbCurve.id = int(curveId)
+        for key in curveAttrNames:
+            val = curve.head(1)[key]
+            pbCurve.valueList.extend([val])
+        for _idx, point in curve.iterrows():
+            pbPoint = pbCurve.pointList.add()
+            for key in pointAttrNames:
+                val = point[key]
+                pbPoint.valueList.extend([val])
+
+    pbString = pbCurveList.SerializeToString()
+
+    cache(folderId, 'massOverTime.pb', pbString, True)
+    return pbString
 
 def buildLocationMaps(columnHeaderArray: List[str], dataRowArray: List[List[float]]) -> Dict[str, Dict[str, List[List[int]]]]:
     locationMaps = {}
@@ -652,6 +694,10 @@ def getImageStackMetaData(folderId: str, locationId: int) -> str:
 @app.route('/data/<string:folderId>/imageMetaData.json')
 @authRequired
 def getImageStackMetaDataJson(folderId: str):
+    filename = 'imageMetaData.json'
+    if isCached(folderId, filename):
+        return getCached(folderId, filename)
+
     innerFolderId, _ = getFileId(folderId, '.vizMetaData',True)
     if innerFolderId is None:
         return
@@ -665,7 +711,6 @@ def getImageStackMetaDataJson(folderId: str):
 @app.route('/data/<string:folderId>/img_<int:locationId>_<int:bundleIndex>.jpg')
 @authRequired
 def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
-    # to make local testing less painful
     folder = '{}/data{}'.format(folderId, locationId)
     filename = 'D{}.jpg'.format(bundleIndex)
     if isCached(folder, filename):
@@ -684,7 +729,6 @@ def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
 @app.route('/data/<string:folderId>/label_<int:locationId>_<int:bundleIndex>.pb')
 @authRequired
 def getImageLabelBundle(folderId: str, locationId: int, bundleIndex: int):
-    # to make local testing less painful
     folder = '{}/data{}'.format(folderId, locationId)
     filename = 'L{}.pb'.format(bundleIndex)
     if isCached(folder, filename):
@@ -929,7 +973,8 @@ def openAnyMatlabFile(bytesIO) -> Union[dict, h5py.File]:
     try:
         outputDict = h5py.File(bytesIO, 'r')
     except:
-        tempFilename = settings.TEMP_FILES_FOLDER + flask.session['uid'].hex + '.mat'
+        uid = uuid.uuid4()
+        tempFilename = settings.TEMP_FILES_FOLDER + uid.hex + '.mat'
         tmpFile = open(tempFilename, 'wb')
         tmpFile.write(bytesIO.getvalue())
         tmpFile.close()

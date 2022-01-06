@@ -1,14 +1,8 @@
-import * as d3 from 'd3';
-import { DevlibMath } from '../devlib/DevlibMath';
 import { CurveList } from './CurveList';
 import { CurveND } from './CurveND';
 import { PointND } from './PointND';
-import { StringToStringObj, StringToNumberObj, KeyedTrackDerivationFunction, KeyedPointDerivationFunction } from '../devlib/DevLibTypes'
-import { DatasetSpec, Facet, LocationMapList } from '../types';
-
-interface StringToNumberOrList {
-    [key: string]: number | StringToNumberObj[];
-}
+import { CurveDerivationFunction } from '../devlib/DevLibTypes'
+import { DatasetSpec, Facet, LocationMapList, PbCurveList } from '../types';
 
 export class CurveListFactory {
 
@@ -43,8 +37,7 @@ export class CurveListFactory {
 
 		for (let curve of fullData.curveList)
 		{
-			let firstPoint = curve.pointList[0];
-			let location = firstPoint.get('Location ID');
+			let location = curve.get('Location ID');
 			let category = locToCat.get(location);
 			if (!pointMap.has(category))
 			{
@@ -66,14 +59,19 @@ export class CurveListFactory {
 		return facetList;
 	}
 
-	public static CreateCurveListFromCSVObject(csvObject: d3.DSVRowArray<string>, derivedTrackDataFunctions: KeyedTrackDerivationFunction[], derivedPointDataFunctions: KeyedPointDerivationFunction[], dataSpec: DatasetSpec, idkey: string = "id", tKeyOptions: string[] = ["Time (h)"]): CurveList
+	public static CreateCurveListFromPbObject(
+		pbObject: PbCurveList,
+		derivedTrackDataFunctions: CurveDerivationFunction[],
+		derivedPointDataFunctions: CurveDerivationFunction[],
+		dataSpec: DatasetSpec,
+		idkey: string = "id",
+		tKeyOptions: string[] = ["Time (h)"]): CurveList
 	{
-		console.log(csvObject);
 		const curveList: CurveND[] = [];
 		let tKey: string = null;
 		for (let keyOption of tKeyOptions)
 		{
-			if (csvObject.columns.includes(keyOption))
+			if (pbObject.pointAttrNames.includes(keyOption))
 			{
 				tKey = keyOption;
 				break;
@@ -84,119 +82,40 @@ export class CurveListFactory {
 			throw new Error("Dataset does not contain any tKey column. Allowed Keys: " + tKeyOptions.toString())
 		}
 
-		let pojoList = d3.nest<StringToStringObj, StringToNumberOrList>()
-			.key(d => d[idkey])
-			.rollup((rows: any[]) =>
-			{ 
-				const values: StringToNumberOrList = {};
-				const points: StringToNumberObj[] = [];
-				for (let row of rows)
-				{
-					const tValue: string = row[tKey];
-					if (!DevlibMath.isNumber(tValue))
-					{
-
-						for (let key in row)
-						{
-							if (key === idkey || key === tKey)
-							{
-								continue;
-							}
-							const value = row[key];
-							if (!DevlibMath.isNumber)
-							{
-								continue;
-							}
-							values[tValue] = +value;
-							break;
-						}
-						continue;
-					}
-					const point: StringToNumberObj = {};
-
-					for (let key in row)
-					{
-						if (key === idkey)
-						{
-							continue;
-						}
-						point[key] = +row[key];
-					}
-					points.push(point);
-				}
-				values.points = points;
-				CurveListFactory.calculateDerivedPointValues(values, derivedPointDataFunctions);
-				CurveListFactory.calculateDerivedTrackValues(values, derivedTrackDataFunctions);
-				return values;
-			})
-			.entries(csvObject);
-
-		for (let plainCurve of pojoList)
+		for (let pbCurve of pbObject.curveList)
 		{
-			let numericKey = +plainCurve.key;
-			// js formats the number as '123.0', Instead I want '123'
-			const curve = new CurveND(numericKey.toString());
-			for (let key in plainCurve.value)
+			const curve = new CurveND(pbCurve.id.toString());
+			for (let i = 0; i < pbObject.curveAttrNames.length; i++)
 			{
-				let value = plainCurve.value[key];
-				if (typeof value === "number")
-				{
-					curve.addValue(key, value);
-					continue;
-				}
-				for (let pojoPoint of value)
-				{
-					const point = new PointND(pojoPoint);
-					curve.addPoint(point);
-				}
+				const key = pbObject.curveAttrNames[i];
+				const value = pbCurve.valueList[i];
+				curve.addValue(key, value)
 			}
+			for (let pbPoint of pbCurve.pointList)
+			{
+				const point = new PointND();
+				for (let i = 0; i < pbObject.pointAttrNames.length; i++)
+				{
+					const key = pbObject.pointAttrNames[i];
+					const value = pbPoint.valueList[i];
+					point.addValue(key, value)
+				}
+				
+				curve.addPoint(point);
+			}
+			CurveListFactory.calculateDerivedPointValues(curve, derivedPointDataFunctions)
+			CurveListFactory.calculateDerivedPointValues(curve, derivedTrackDataFunctions)
 			curveList.push(curve);
 		}
-		// console.log(curveList);
 		const curveListObj = new CurveList(curveList, dataSpec);
-		curveListObj.setInputKey(tKey);
 		return curveListObj;
 	}
 
-	private static calculateDerivedTrackValues(values: StringToNumberOrList, derivedTrackDataFunctions: KeyedTrackDerivationFunction[]): void
+	private static calculateDerivedPointValues(curve: CurveND, derivedPointDataFunctions: CurveDerivationFunction[]): void
 	{
-		let points: StringToNumberObj[] = values.points as StringToNumberObj[];
-		for (let [attrNameList, func] of derivedTrackDataFunctions)
+		for (let func of derivedPointDataFunctions)
 		{
-			let valueList = func(points);
-			if (valueList === null)
-			{
-				continue;
-			}
-			for (let i = 0; i < attrNameList.length; i++)
-			{
-				let attrName = attrNameList[i];
-				let val = valueList[i];
-				values[attrName] = val;
-			}
-		}
-	}
-
-	private static calculateDerivedPointValues(values: StringToNumberOrList, derivedPointDataFunctions: KeyedPointDerivationFunction[]): void
-	{
-		let points: StringToNumberObj[] = values.points as StringToNumberObj[];
-		for (let [attrNameList, func] of derivedPointDataFunctions)
-		{
-			let valueListOfLists = func(points);
-			if (valueListOfLists === null)
-			{
-				continue;
-			}
-			for (let i = 0; i < attrNameList.length; i++)
-			{
-				let attrName = attrNameList[i];
-				let valueList = valueListOfLists[i];
-				for (let j = 0; j < points.length; j++)
-				{
-					points[j][attrName] = valueList[j];
-				}
-
-			}
+			func(curve);
 		}
 	}
 }

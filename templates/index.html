@@ -4,7 +4,11 @@
 {% if deploy%}
 <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 {% endif %}
-<!-- <link rel="icon" type="image/png" href="/static/assets/vdl-logo.svg"> -->
+<link rel="icon" type="image/png" sizes="256x256" href="/static/assets/favicon-256.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/static/assets/favicon-64.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/static/assets/favicon-48.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/assets/favicon-16.png">
 <link rel="shortcut icon" href="/static/assets/favicon.ico">
 <link href="https://fonts.googleapis.com/css?family=Montserrat&amp;display=swap" rel="stylesheet">
 <script src="https://kit.fontawesome.com/de8d467ef5.js"></script>
@@ -136,6 +140,18 @@ p {
   font-size: 18pt;
 }
 
+.award {
+  color: #E58035;
+  font-weight: 800;
+}
+
+.citation {
+  font-size: 12pt;
+  /* background: #f7f7f7; */
+  padding: 10px;
+  /* border: solid #191919 1px; */
+}
+
 </style>
 </head>
 
@@ -157,7 +173,7 @@ p {
 
 </div>
 
-<h2>Using Exemplars to Visualize Large Scale Microscopy Data</h2>
+<h2>Using Exemplars to Visualize Large-Scale Microscopy Data</h2>
 
 
 
@@ -169,6 +185,7 @@ p {
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Y7u3Kg3At9A" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <p>Loon is a visualization analysis tool for quantitative phase microscopy data. Due to the high-throughput of automated imaging systems, Loon selects exemplar data points to display for the user. Also, it supports multiple visualization windows that are linked together through selection and filtering.</p>
+<p>This work is based on an <span class="award">award winning paper</span> published in IEEE Transactions on Visualization and Computer Graphics (VIS) 2021 (DOI: <a href="http://dx.doi.org/10.1109/TVCG.2021.3114766">10.1109/TVCG.2021.3114766</a>)</p>
 
 
 <div class='important-people'>
@@ -221,5 +238,12 @@ p {
   </p>
 </div>
 
+
+<h3>Citation</h3>
+<p class="citation">
+Lange, Devin, Eddie Polanco, Robert Judson-Torres, Thomas Zangle, and Alexander Lex.<br>
+<b>Loon: Using Exemplars to Visualize Large-Scale Microscopy Data</b><br>
+<i>IEEE Transactions on Visualization and Computer Graphics, 2021</i><br>
+<b>DOI: </b><a href="https://doi.org/10.1109/TVCG.2021.3114766">10.1109/TVCG.2021.3114766</a></p>
 
 </body>

@@ -323,6 +323,16 @@ export class ImageTrackWidget
         return this._dragGroupIndex;
     }
 
+    private _trackHeightList : number[];
+    public get trackHeightList() : number[] {
+        return this._trackHeightList;
+    }
+    
+    private _trackVerticalOffsetList : number[];
+    public get trackVerticalOffsetList() : number[] {
+        return this._trackVerticalOffsetList;
+    }   
+
     public init(): void
     {
         const containerSelect = d3.select(this.container);
@@ -393,8 +403,6 @@ export class ImageTrackWidget
         this.samplingStrategySelect.onDataChange(buttonPropList);
 
         this._svgContainer = containerSelect.append('svg');
-        this._cellLabelGroup = this.svgContainer.append('g')
-            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
             
         this._labelLinePad = 16;
 
@@ -410,6 +418,9 @@ export class ImageTrackWidget
         this._manualExemplarPinGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);  
             
+        this._cellLabelGroup = this.svgContainer.append('g')
+            .attr('transform', d => `translate(0, ${this.cellTimelineMargin.top})`);
+
         const offsetToExemplarCurves = this.cellTimelineMargin.left;
         this._exemplarCurvesGroup = this.svgContainer.append('g')
             .attr('transform', d => `translate(${offsetToExemplarCurves}, ${this.cellTimelineMargin.top})`);
@@ -558,7 +569,7 @@ export class ImageTrackWidget
         const combinedTracks = [...this.manuallyPinnedTracks, ...justData];
         this._sourceDestCell = [];
         let listOfBoundingBoxLists = await this.getBoundingBoxLists(combinedTracks);
-        let maxHeightList: number[] = [];
+        this._trackHeightList = [];
         let maxWidth: number = d3.max(listOfBoundingBoxLists, 
             (rectList: Rect[]) =>
             {
@@ -568,7 +579,7 @@ export class ImageTrackWidget
         for (let rectList of listOfBoundingBoxLists)
         {
             let thisHeight = d3.max(rectList, r => ImageTrackWidget.rectHeight(r));
-            maxHeightList.push(thisHeight); 
+            this.trackHeightList.push(thisHeight); 
         }
 
         let minFrameId = d3.min(combinedTracks, 
@@ -592,14 +603,14 @@ export class ImageTrackWidget
         {
             numFrames = maxFrameId - minFrameId + 1;
         }
-        const maxGroupContentHeight = this.getMaxGroupHeight(maxHeightList);
+        const maxGroupContentHeight = this.getMaxGroupHeight(this.trackHeightList);
         const numExemplars = this.parentWidget.numExemplars;
 
         const canvasWidth = numFrames * maxWidth + this.horizontalPad * (numFrames + 1);
         let totalHeight = this.verticalPad * (combinedTracks.length + 1);
         totalHeight += 200;
         const betweenGroupPad = 16;
-        const heightOfManuallyPinned = d3.sum(maxHeightList.slice(0, this.manuallyPinnedTracks.length));
+        const heightOfManuallyPinned = d3.sum(this.trackHeightList.slice(0, this.manuallyPinnedTracks.length));
         if (this.parentWidget.inExemplarMode)
         {
             const numGroups = (this.trackList.length / numExemplars);
@@ -609,7 +620,7 @@ export class ImageTrackWidget
         }
         else
         {
-            totalHeight += d3.sum(maxHeightList);
+            totalHeight += d3.sum(this.trackHeightList);
 
         }
         this.selectedImageCanvas
@@ -620,7 +631,7 @@ export class ImageTrackWidget
         this._cellLabelPositions = [];
 
         let drawTrackPromises = [];
-        let verticalOffsetList = [];
+        this._trackVerticalOffsetList = [];
         const pinOffset = this.manuallyPinnedTracks.length;
         for (let i = 0; i < combinedTracks.length; i++)
         {
@@ -628,12 +639,12 @@ export class ImageTrackWidget
             const sampledIdx = i - pinOffset;
             let track = combinedTracks[i];
             let boundingBoxList = listOfBoundingBoxLists[i];
-            let trackHeight = maxHeightList[i];
+            let trackHeight = this.trackHeightList[i];
             if (this.parentWidget.inExemplarMode && i === this.manuallyPinnedTracks.length && this.manuallyPinnedTracks.length > 0)
             {
                 verticalOffset = Math.max(verticalOffset, this.minHeightForFavorites);
             }
-            verticalOffsetList.push(verticalOffset);
+            this.trackVerticalOffsetList.push(verticalOffset);
             const categoryIndex = Math.floor(sampledIdx / numExemplars);
             let done = this.drawTrack(track, boundingBoxList, maxWidth, trackHeight, minFrameId, verticalOffset, categoryIndex, isStarred);
             drawTrackPromises.push(done);
@@ -642,7 +653,7 @@ export class ImageTrackWidget
             if (this.parentWidget.inExemplarMode && !isStarred)
             {
                 let groupStartIdx = (sampledIdx - (sampledIdx % numExemplars)) + pinOffset; // I have regrets combining these lists.
-                let diffBetweenMax = maxGroupContentHeight - d3.sum(maxHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
+                let diffBetweenMax = maxGroupContentHeight - d3.sum(this.trackHeightList.slice(groupStartIdx, groupStartIdx + numExemplars));
                 if (i % numExemplars < numExemplars)
                 {
                     let extraPadding = diffBetweenMax / (numExemplars - 1);
@@ -664,9 +675,9 @@ export class ImageTrackWidget
                 const idx = i + pinOffset;
                 const groupIndex = i / numExemplars;
                 let name = conditionNames[groupIndex];
-                const top = verticalOffsetList[idx];
+                const top = this.trackVerticalOffsetList[idx];
                 const indexBot = idx + numExemplars - 1;
-                const bot = verticalOffsetList[indexBot] + maxHeightList[indexBot];
+                const bot = this.trackVerticalOffsetList[indexBot] + this.trackHeightList[indexBot];
                 this.conditionLabelPositions.push([name, [top, bot]]);
             }
         }
@@ -686,6 +697,32 @@ export class ImageTrackWidget
         this._defaultCanvasState = this.canvasContext.getImageData(0, 0, canvasWidth, totalHeight);
         await this.drawOutlines(false);
         DevlibTSUtil.stopSpinner();
+    }
+
+    public invertImageData(): void
+    {
+        let w = this.defaultCanvasState.width;
+        let h = this.defaultCanvasState.height;
+        let data = this.defaultCanvasState.data;
+
+        for (let [sourceRect, destOffset, _cell] of this.sourceDestCell)
+        {
+            let width = ImageTrackWidget.rectWidth(sourceRect);
+            let height = ImageTrackWidget.rectHeight(sourceRect);
+            for (let sx = 0; sx < width; sx++)
+            {
+                let x = sx + destOffset[0];
+                for (let sy = 0; sy < height; sy++)
+                {
+                    let y = sy + destOffset[1];
+                    let i = 4 * (y * w + x);
+
+			        data[i] = 255 - data[i];
+			        data[i+1] = 255 - data[i+1];
+			        data[i+2] = 255 - data[i+2];
+                }
+            }
+        }
     }
 
     private getMaxGroupHeight(maxHeightList: number[]): number
@@ -711,29 +748,38 @@ export class ImageTrackWidget
 
     private async getBoundingBoxLists(trackList: CurveND[]): Promise<Rect[][]>
     {
-        let listOfLists: Rect[][] = [];
+        const listOfLengths: number[] = [];
+        const boundingBoxPromises: Promise<Rect>[] = [];
         for (let track of trackList)
         {
-            let thisList: Rect[] = [];
             if (this.parentWidget.inCondensedMode)
             {
                 const end = Math.min(track.length, this.parentWidget.condensedModeCount);
                 for (let i = 0; i < end; i++)
                 {
                     let point: PointND = this.getPointInCondensedMode(track, i);
-                    const boundingBox = await this.getCellBoundingBox(point);
-                    thisList.push(boundingBox);
+                    const boundingBoxPromise = this.getCellBoundingBox(point);
+                    boundingBoxPromises.push(boundingBoxPromise);
                 }
+                listOfLengths.push(end)
             }
             else
             {
                 for (let point of track.pointList)
                 {
-                    const boundingBox = await this.getCellBoundingBox(point);
-                    thisList.push(boundingBox);
+                    const boundingBoxPromise = this.getCellBoundingBox(point);
+                    boundingBoxPromises.push(boundingBoxPromise);
                 }
+                listOfLengths.push(track.pointList.length);
             }
-            listOfLists.push(thisList);
+        }
+        const boundingBoxList = await Promise.all(boundingBoxPromises);
+        let listOfLists: Rect[][] = [];
+        let start = 0;
+        for (let length of listOfLengths)
+        {
+            listOfLists.push(boundingBoxList.slice(start, start + length));
+            start += length;
         }
         return listOfLists;
     }
@@ -784,7 +830,7 @@ export class ImageTrackWidget
 
             const frameIndex = frameId - 1;
 
-            let blobRequest = this.parentWidget.imageStackDataRequest.getImagePromise(point.get('Location ID'), frameIndex);
+            let blobRequest = this.parentWidget.imageStackDataRequest.getImagePromise(trackData.get('Location ID'), frameIndex);
 
             blobRequests.push(blobRequest);
         }
@@ -856,7 +902,6 @@ export class ImageTrackWidget
                     offsetArray.push(destOffset);
                     let sourceRect: Rect = [[copyLeft, copyTop], [copyLeft + copyWidth, copyTop + copyHeight]];
                     this.sourceDestCell.push([sourceRect, destOffset, point]);
-                    sourceDestCell.push([sourceRect, destOffset, point]);
                     workerData.push([blob, copyLeft, copyTop, copyWidth, copyHeight]);
 
                 }
@@ -1045,7 +1090,7 @@ export class ImageTrackWidget
             timeRangePx[1] - timeRangePx[0] + 1,
             height);
 
-        const locationId = trackData.pointList[0].get('Location ID');
+        const locationId = trackData.get('Location ID');
         const labelList = this.parentWidget.fullData.inverseLocationMap.get(locationId);
         const color = GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
         this.canvasContext.strokeStyle = color;
@@ -1068,7 +1113,7 @@ export class ImageTrackWidget
 
     private async getCellBoundingBox(point: PointND): Promise<Rect>
     {
-        const locId = point.get('Location ID');
+        const locId = point.parent.get('Location ID');
         const frameId = point.get('Frame ID');
         const frameIndex = frameId - 1; // MatLab..        
         const segmentId = point.get('segmentLabel');
@@ -1146,8 +1191,7 @@ export class ImageTrackWidget
             frameId = frameIndex + 1;
         }
 
-        let firstPoint = curve.pointList[0];
-        const trackLocation = firstPoint.get('Location ID');
+        const trackLocation = curve.get('Location ID');
         let event = new CustomEvent('locFrameClicked', { detail:
         {
             locationId: trackLocation,
@@ -1189,8 +1233,7 @@ export class ImageTrackWidget
 
         this.parentWidget.selectedImgIndex;
         const displayedFrameId = this.parentWidget.getCurrentFrameId();
-        let firstPoint = curve.pointList[0];
-        const trackLocation = firstPoint.get('Location ID');
+        const trackLocation = curve.get('Location ID');
         const currentLocation = this.parentWidget.getCurrentLocationId();
         
         if (trackLocation == currentLocation)
@@ -1199,7 +1242,7 @@ export class ImageTrackWidget
             if (displayedPoint)
             {
 
-                this.parentWidget.imageStackDataRequest.getLabel(displayedPoint.get('Location ID'), displayedPoint.get('Frame ID') - 1,
+                this.parentWidget.imageStackDataRequest.getLabel(curve.get('Location ID'), displayedPoint.get('Frame ID') - 1,
                 (rowArray: ImageLabels, firstIndex: number) =>
                 {
                     this.parentWidget.showSegmentHover(rowArray, displayedPoint.get('segmentLabel'), firstIndex, true);
@@ -1306,7 +1349,7 @@ export class ImageTrackWidget
             let labelToMatch = point.get('segmentLabel');
             let frameIndex = point.get('Frame ID') - 1;
             let rIdx = 0;
-            let [labelArray, firstIndex] = await this.parentWidget.imageStackDataRequest.getLabelPromise(point.get('Location ID'), frameIndex);
+            let [labelArray, firstIndex] = await this.parentWidget.imageStackDataRequest.getLabelPromise(point.parent.get('Location ID'), frameIndex);
             for (let y = sTop; y <= sBot; y++)
             {
                 for (let x = sLeft; x <= sRight; x++)
@@ -1320,7 +1363,7 @@ export class ImageTrackWidget
                         if (this.parentWidget.isBorder(label, rowIdx, colIdx, labelArray))
                         {
                             // should use data, not full data to get the right color.
-                            const [cell, _index] = this.parentWidget.data.GetCellFromLabel(point.get('Location ID'), point.get('Frame ID'), labelToMatch);
+                            const [cell, _index] = this.parentWidget.data.GetCellFromLabel(point.parent.get('Location ID'), point.get('Frame ID'), labelToMatch);
                             let {color: color, show: show} = this.parentWidget.getCellColor(cell);
                             if (show)
                             {
@@ -1434,7 +1477,7 @@ export class ImageTrackWidget
                 if (d[0] < this.manuallyPinnedTracks.length)
                 {
                     const track = this.manuallyPinnedTracks[d[0]];
-                    const locId = track.pointList[0].get('Location ID');
+                    const locId = track.get('Location ID');
                     const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
 
                     return GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
@@ -1477,7 +1520,7 @@ export class ImageTrackWidget
                 if (d[0] < this.manuallyPinnedTracks.length)
                 {
                     const track = this.manuallyPinnedTracks[d[0]];
-                    const locId = track.pointList[0].get('Location ID');
+                    const locId = track.get('Location ID');
                     const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
 
                     return `color: ${GroupByWidget.getColor(labelList, this.parentWidget.colorLookup)};`;
@@ -1665,18 +1708,20 @@ export class ImageTrackWidget
         for (let i = 0; i < curveList.length; i++)
         {
             const categoryIndex = Math.floor(i / this.parentWidget.numExemplars);
-            this.drawPin(curveList[i], categoryIndex);
+            this.drawPin(curveList[i], i + this.manuallyPinnedTracks.length, categoryIndex);
         }
     }
 
-    private drawPin(trackData: conditionExemplar<CurveND>, categoryIndex: number): void
+    private drawPin(trackData: conditionExemplar<CurveND>, rowIndex: number, categoryIndex: number): void
     {
         let exemplarValue = trackData.data.get(this.parentWidget.exemplarAttribute);
         let yPos = this.histogramScaleYList[categoryIndex](exemplarValue);
         let [xPosPin, xPosHead] = this.histogramScaleX.range();
-        const manual: boolean = trackData.type === 'manual'
+        const manual: boolean = trackData.type === 'manual';
+        let groupSelection: SvgSelection;
         if (manual)
         {
+            groupSelection = this.manualExemplarPinGroup; 
             const needleElement = this.manualExemplarPinGroup.append('line')
                 .attr('x1', xPosHead)
                 .attr('x2', xPosPin)
@@ -1714,6 +1759,7 @@ export class ImageTrackWidget
         }
         else
         {
+            groupSelection = this.exemplarPinGroup;
             this.exemplarPinGroup.append('line')
                 .attr('x1', xPosHead)
                 .attr('x2', xPosPin)
@@ -1730,6 +1776,17 @@ export class ImageTrackWidget
                 .classed('pinHead', true)
                 .classed(trackData.data.id, true);
         }
+
+        const trackCenter = this.trackVerticalOffsetList[rowIndex] + (this.trackHeightList[rowIndex] / 2.0);
+
+        groupSelection.append('line')
+            .attr('x1', xPosPin)
+            .attr('x2', xPosPin + 30)
+            .attr('y1', yPos)
+            .attr('y2', trackCenter)
+            .classed('pinConnectLine', true)
+            .classed(trackData.data.id, true);
+
     }
 
     private formatPinLabel(value: number): string
@@ -1990,8 +2047,7 @@ export class ImageTrackWidget
             .attr('stroke', (d, i) => 
             {
                 const track = this.manuallyPinnedTracks[i];
-                const firstPoint = track.pointList[0];
-                const locId = firstPoint.get('Location ID');
+                const locId = track.get('Location ID');
                 const labelList = this.parentWidget.fullData.inverseLocationMap.get(locId);
                 const color = GroupByWidget.getColor(labelList, this.parentWidget.colorLookup);
                 return color;
