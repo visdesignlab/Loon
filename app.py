@@ -254,9 +254,9 @@ def combineDatasetSpecs(fileContentList: List[Tuple[str, str]]) -> str:
     for fileContent, filename in fileContentList:
         fileSpecObj = json.loads(fileContent)
         id = fileSpecObj['uniqueId']
-        fileSpecObj['vizLinkHtml'] = '<a href="/detailedView{}">Viz Link</a>'.format(id)
+        fileSpecObj['vizLinkHtml'] = '<a href="/detailedView/{}" target="_blank">Viz Link</a>'.format(id)
         driveUrl = 'https://drive.google.com/drive/u/1/folders/{}'.format(fileSpecObj['googleDriveId'])
-        fileSpecObj['driveLinkHtml'] = '<a href="{}">Drive Link</a>'.format(driveUrl)
+        fileSpecObj['driveLinkHtml'] = '<a href="{}" target="_blank">Drive Link</a>'.format(driveUrl)
         combinedList.append(fileSpecObj)
         authorSet.add(fileSpecObj['author'])
         fileSpecObj['fileSize'] = int(fileSpecObj['fileSize']) / (1024 * 1024.0)
