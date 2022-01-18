@@ -261,7 +261,16 @@ def cache(folderId: str, filename: str, data, isBinary = False) -> None:
 @authRequired
 def getMassOverTimePb(folderId: str): # -> flask.Response:
     filename = 'massOverTime.pb'
-    fileId, service = getFileId(folderId, filename, True)
+
+    innerFolderId, _ = getFileId(folderId, '.vizMetaData',True)
+    if innerFolderId is None:
+        print('getMassOverTimePb: ".vizMetaData" does not exist')
+        return '' 
+    fileId, service = getFileId(innerFolderId, filename, True)
+    if fileId is None:
+        print('getMassOverTimePb: "' + filename + '" does not exist')
+        return ''
+
     if isCached(folderId, filename):
         filePath = cachePath(folderId, filename)
         cachedModifiedTime = os.path.getmtime(filePath)
