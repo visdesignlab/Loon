@@ -124,7 +124,7 @@ def getDatasetList() -> str:
         return flask.redirect(filePath[1:]) # don't want '.' here
     return "{}"
 
-@app.route('/data/datasetList_update.json')
+@app.route('/data/update_dataset_list')
 @authRequired
 def updateDataSpecList() -> str:
     credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
@@ -136,19 +136,24 @@ def updateDataSpecList() -> str:
     print('Number of .vizMetaDataFolders:', len(candidateFiles))
     skipCount = 0
     filenameSet = set()
+    textLines = []
     for index, candidateFile in enumerate(candidateFiles):
         print('Building: {}/{}'.format(index+1, len(candidateFiles)))
+        folderId = candidateFile['id']
         print('\t' + candidateFile['id'])
-        dataSpecObj = getDataSpecObj(service, candidateFile)
+        dataSpecObj, msg = getDataSpecObj(service, candidateFile)
         print('dataSpecObj', dataSpecObj)
         if dataSpecObj is None:
+            textLines.append('FAIL (' + msg + ') - ' + folderId)
             skipCount += 1
             continue
         filename = dataSpecObj['uniqueId']
         if filename in filenameSet:
+            textLines.append('FAIL (duplicate filename[' + filename + ']) - ' + folderId)
             # Google allows two file of the same name in a folder.
             # I do not.
             continue
+        textLines.append('PASS - ' + folderId)
         filenameSet.add(filename)
         filename = './static/cache/datasetList/' + filename + '.json'
         print('open file:', filename)
@@ -159,47 +164,60 @@ def updateDataSpecList() -> str:
         dataSpecFile.close()
     print('')
     print('done')
-    resultStr = 'Total: {}; '.format(len(candidateFiles))
-    resultStr += 'Skipped: {}; '.format(skipCount)
-    resultStr += 'Unique Filenames: {}; '.format(len(filenameSet))
-    resultStr += 'dupFilenames: {}'.format(len(candidateFiles) - skipCount - len(filenameSet))
+    summaryText = 'Total: {}; '.format(len(candidateFiles))
+    summaryText += 'Passed: {}; '.format(len(candidateFiles) - skipCount)
+    summaryText += 'Failed: {}; '.format(skipCount)
+    # resultStr += 'Unique Filenames: {}; '.format(len(filenameSet))
+    # resultStr += 'dupFilenames: {}'.format(len(candidateFiles) - skipCount - len(filenameSet))
     combineDatasetSpecsFromLocalFiles()
-    return resultStr
+    return flask.render_template('update_dataset_list.html', textLines=textLines, summaryText=summaryText, deploy=settings.FLASK_ENV == 'production')
 
-def getDataSpecObj(service, googleDriveFile) -> Union[Dict, None]:
+
+def getDataSpecObj(service, googleDriveFile) -> Tuple[Union[Dict, None], str]:
     folderId = googleDriveFile['id']
     metaDataFileId, _ = getFileId(folderId, 'experimentMetaData.json', True)
     if metaDataFileId is None:
-        print('\tgetDataSpecObj: missing experimentMetaData.json in', folderId)
-        return None
+        msg = 'Missing experimentMetaData.json in ' +  folderId
+        print('\tgetDataSpecObj:' + msg)
+        return None, msg
     metaDataFile = getFileFromGoogleDrive(metaDataFileId, service)
 
     massOverTimeFileId, _ = getFileId(folderId, 'massOverTime.pb', True)
     if massOverTimeFileId is None:
-        print('\tgetDataSpecObj: missing massOverTime.pb in', folderId)
-        return None
+        msg = 'Missing massOverTime.pb in ' + folderId
+        print('\tgetDataSpecObj: ' + msg)
+        return None, msg
     massOverTimeMetaData = getFileMetaDataFromGoogleDrive(massOverTimeFileId, service, 'size')
 
     dataSpecObj = json.loads(metaDataFile.read())
 
     parentId = googleDriveFile['parents'][0]
     folderPathList = getFolderPathFromGoogleDrive(service, settings.TOP_GOOGLE_DRIVE_FOLDER_ID, parentId)
+    unknownFolder = False
     if len(folderPathList) == 0:
-        print('\tgetDataSpecObj: cannot find', parentId, 'in', settings.TOP_GOOGLE_DRIVE_FOLDER_ID)
-        return None
+        unknownFolder = True
+        msg = 'Cannot find ' + parentId + ' in ' + settings.TOP_GOOGLE_DRIVE_FOLDER_ID
+        print('\tgetDataSpecObj: ' + msg)
+        # return None, msg
 
     dataSpecObj['googleDriveId'] = parentId
     if dataSpecObj.get('folder', '') == '':
-        dataSpecObj['folder'] = '/'.join(folderPathList) + '/'
+        if unknownFolder:
+            dataSpecObj['folder'] = 'unknown'
+        else:
+            dataSpecObj['folder'] = '/'.join(folderPathList) + '/'
     if dataSpecObj.get('author', '') == '':
         dataSpecObj['author'] = googleDriveFile['owners'][0]['displayName']
     if dataSpecObj.get('displayName', '') == '':
-        dataSpecObj['displayName'] = folderPathList[2] + '/.../' + folderPathList[-1]
+        if unknownFolder:
+            dataSpecObj['displayName'] = 'unkown'
+        else:
+            dataSpecObj['displayName'] = folderPathList[2] + '/.../' + folderPathList[-1]
     if dataSpecObj.get('uniqueId', '') == '':
         dataSpecObj['uniqueId'] = parentId
     dataSpecObj['modifiedDate'] = googleDriveFile['modifiedTime'].split('T')[0]
     dataSpecObj['fileSize'] = massOverTimeMetaData['size']
-    return dataSpecObj
+    return dataSpecObj, 'OK'
 
 def getFolderPathFromGoogleDrive(service, topDir, bottomDir) -> List[str]:
     pathList = []
