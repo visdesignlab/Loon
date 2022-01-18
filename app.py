@@ -120,10 +120,8 @@ def getDatasetConfig(datasetId: str) -> str:
 def getDatasetList() -> str:
     cachePath = './static/cache/datasetList'
     filePath = cachePath + '/derived/combined.json'
-    # combineDatasetSpecsFromLocalFiles()
     if os.path.exists(filePath):
         return flask.redirect(filePath[1:]) # don't want '.' here
-
     return "{}"
 
 @app.route('/data/datasetList_update.json')
@@ -131,56 +129,76 @@ def getDatasetList() -> str:
 def updateDataSpecList() -> str:
     credentials = google.oauth2.credentials.Credentials(**flask.session['credentials'])
     service: googleapiclient.discovery.Resource = googleapiclient.discovery.build('drive', 'v3', credentials=credentials)
-    query = "name = 'data_allFrames.mat'"
-    responseFields = "nextPageToken, files(parents, size, modifiedTime)"
+    query = "name = '.vizMetaData'"
+    responseFields = "nextPageToken, files(id, parents, modifiedTime, owners)"
     results = service.files().list(q=query, fields=responseFields, pageSize=1000).execute()
     candidateFiles = results.get('files', [])
+    print('Number of .vizMetaDataFolders:', len(candidateFiles))
     skipCount = 0
     filenameSet = set()
     for index, candidateFile in enumerate(candidateFiles):
-        print('Building: {}/{}'.format(index, len(candidateFiles)), end='\r')
+        print('Building: {}/{}'.format(index+1, len(candidateFiles)))
+        print('\t' + candidateFile['id'])
         dataSpecObj = getDataSpecObj(service, candidateFile)
+        print('dataSpecObj', dataSpecObj)
         if dataSpecObj is None:
             skipCount += 1
             continue
-        filename = dataSpecObj['folder'].rstrip('/').replace('/', '__')
+        filename = dataSpecObj['uniqueId']
         if filename in filenameSet:
             # Google allows two file of the same name in a folder.
             # I do not.
             continue
         filenameSet.add(filename)
         filename = './static/cache/datasetList/' + filename + '.json'
-        if os.path.exists(filename):
-            dataSpecFile = open(filename, 'r+')
-            existingContent = dataSpecFile.read()
-            if existingContent:
-                existingObj = json.loads(existingContent)
-                # TODO for now this overwrites everything, may want to make this smarter if we end up using more than this one time
-                existingObj.update(dataSpecObj)
-                dataSpecObj = existingObj
-        else:
-            dataSpecFile = open(filename, 'w')
-        dataSpecFile.write(json.dumps(dataSpecObj))
+        print('open file:', filename)
+        dataSpecFile = open(filename, 'w')
+        writeToFile = json.dumps(dataSpecObj)
+        print('write to file', writeToFile)
+        dataSpecFile.write(writeToFile)
+        dataSpecFile.close()
     print('')
     print('done')
     resultStr = 'Total: {}; '.format(len(candidateFiles))
     resultStr += 'Skipped: {}; '.format(skipCount)
     resultStr += 'Unique Filenames: {}; '.format(len(filenameSet))
     resultStr += 'dupFilenames: {}'.format(len(candidateFiles) - skipCount - len(filenameSet))
+    combineDatasetSpecsFromLocalFiles()
     return resultStr
 
 def getDataSpecObj(service, googleDriveFile) -> Union[Dict, None]:
-    dataSpecObj = {}
+    folderId = googleDriveFile['id']
+    metaDataFileId, _ = getFileId(folderId, 'experimentMetaData.json', True)
+    if metaDataFileId is None:
+        print('\tgetDataSpecObj: missing experimentMetaData.json in', folderId)
+        return None
+    metaDataFile = getFileFromGoogleDrive(metaDataFileId, service)
+
+    massOverTimeFileId, _ = getFileId(folderId, 'massOverTime.pb', True)
+    if massOverTimeFileId is None:
+        print('\tgetDataSpecObj: missing massOverTime.pb in', folderId)
+        return None
+    massOverTimeMetaData = getFileMetaDataFromGoogleDrive(massOverTimeFileId, service, 'size')
+
+    dataSpecObj = json.loads(metaDataFile.read())
+
     parentId = googleDriveFile['parents'][0]
     folderPathList = getFolderPathFromGoogleDrive(service, settings.TOP_GOOGLE_DRIVE_FOLDER_ID, parentId)
     if len(folderPathList) == 0:
+        print('\tgetDataSpecObj: cannot find', parentId, 'in', settings.TOP_GOOGLE_DRIVE_FOLDER_ID)
         return None
+
     dataSpecObj['googleDriveId'] = parentId
-    dataSpecObj['folder'] = '/'.join(folderPathList) + '/'
-    dataSpecObj['author'] = folderPathList[1]
-    dataSpecObj['displayName'] = folderPathList[1] + '/.../' + folderPathList[-1]
+    if dataSpecObj.get('folder', '') == '':
+        dataSpecObj['folder'] = '/'.join(folderPathList) + '/'
+    if dataSpecObj.get('author', '') == '':
+        dataSpecObj['author'] = googleDriveFile['owners'][0]['displayName']
+    if dataSpecObj.get('displayName', '') == '':
+        dataSpecObj['displayName'] = folderPathList[2] + '/.../' + folderPathList[-1]
+    if dataSpecObj.get('uniqueId', '') == '':
+        dataSpecObj['uniqueId'] = parentId
     dataSpecObj['modifiedDate'] = googleDriveFile['modifiedTime'].split('T')[0]
-    dataSpecObj['fileSize'] = googleDriveFile['size']
+    dataSpecObj['fileSize'] = massOverTimeMetaData['size']
     return dataSpecObj
 
 def getFolderPathFromGoogleDrive(service, topDir, bottomDir) -> List[str]:
@@ -217,15 +235,16 @@ def combineDatasetSpecs(fileContentList: List[Tuple[str, str]]) -> str:
     maxSize = 0
     for fileContent, filename in fileContentList:
         fileSpecObj = json.loads(fileContent)
-        id = filename.split('.')[0]
-        fileSpecObj['uniqueId'] = id
-        fileSpecObj['vizLinkHtml'] = '<a href="/{}">Viz Link</a>'.format(id)
+        id = fileSpecObj['uniqueId']
+        fileSpecObj['vizLinkHtml'] = '<a href="/detailedView{}">Viz Link</a>'.format(id)
         driveUrl = 'https://drive.google.com/drive/u/1/folders/{}'.format(fileSpecObj['googleDriveId'])
         fileSpecObj['driveLinkHtml'] = '<a href="{}">Drive Link</a>'.format(driveUrl)
         combinedList.append(fileSpecObj)
         authorSet.add(fileSpecObj['author'])
         fileSpecObj['fileSize'] = int(fileSpecObj['fileSize']) / (1024 * 1024.0)
         maxSize = max(maxSize, fileSpecObj['fileSize'])
+
+        del fileSpecObj['locationMaps'] # there is no point in copying these over
     totalDatset['authorList'] = list(authorSet)
     totalDatset['sizeRange'] = [0, maxSize]
     totalDatset['datasetList'] = combinedList
@@ -284,7 +303,6 @@ def getMassOverTimePb(folderId: str): # -> flask.Response:
 
     cache(folderId, 'massOverTime.pb', f.getbuffer(), True) 
 
-    f.seek(0)
     response = flask.send_file(f, mimetype='application/octet-stream')
     return response
  
@@ -302,7 +320,6 @@ def getImageStackMetaDataJson(folderId: str):
     if fileId is None:
         return
     f = getFileFromGoogleDrive(fileId, service)
-    f.seek(0)
     return flask.send_file(f, mimetype='application/json')
 
 @app.route('/data/<string:folderId>/img_<int:locationId>_<int:bundleIndex>.jpg')
@@ -316,11 +333,10 @@ def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
     innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
     if innerFolderId is None:
         return
-    fileId, service = getFileId(innerFolderId, 'D{}.jpg'.format(bundleIndex),)
+    fileId, service = getFileId(innerFolderId, 'D{}.jpg'.format(bundleIndex))
     if fileId is None:
         return
     f = getFileFromGoogleDrive(fileId, service)
-    f.seek(0)
     return flask.send_file(f, mimetype='image/jpeg')
 
 @app.route('/data/<string:folderId>/label_<int:locationId>_<int:bundleIndex>.pb')
@@ -334,11 +350,10 @@ def getImageLabelBundle(folderId: str, locationId: int, bundleIndex: int):
     innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
     if innerFolderId is None:
         return
-    fileId, service = getFileId(innerFolderId, 'L{}.pb'.format(bundleIndex),)
+    fileId, service = getFileId(innerFolderId, 'L{}.pb'.format(bundleIndex))
     if fileId is None:
         return
     f = getFileFromGoogleDrive(fileId, service)
-    f.seek(0)
     return flask.send_file(f, mimetype='application/octet-stream')
 
 def getFileId(folderId: str, filename: str, doNotAbort = False) -> Tuple[str, googleapiclient.discovery.Resource]:
@@ -376,7 +391,7 @@ def getFileFromGoogleDrive(googleFileId: str, service: googleapiclient.discovery
     while done is False:
         status, done = downloader.next_chunk()
         print( "Download {} %".format(int(status.progress() * 100)), end='\r')
-
+    f.seek(0)
     return f
 
 def getLastModifiedTimeFromGoogleDrive(googleFileId: str, service: googleapiclient.discovery.Resource) -> float:
