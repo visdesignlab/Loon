@@ -1,7 +1,6 @@
 import * as d3 from 'd3';
 import { IDBPDatabase, openDB } from 'idb';
 import { load } from 'protobufjs';
-import { App } from '../App';
 
 export interface ImageLabels {
     rowList: Row[];
@@ -41,8 +40,7 @@ export class ImageStackDataRequest {
         this._clearLabelCacheTimerKeys = new Map();
         this._blobCache = new Map();
         this._clearBlobCacheTimerKeys = new Map();
-        // this._cacheLifetime = 1000 * 60 * 5; // 5 minutes in milliseconds
-        this._cacheLifetime = 1000 * 60;
+        this._cacheLifetime = 1000 * 60 * 5; // 5 minutes in milliseconds
     }
 
     public async init(): Promise<void> {
