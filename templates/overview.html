@@ -1,33 +1,85 @@
-<!doctype html>
+<!DOCTYPE html>
 <title>Loon - Overview</title>
-<link href="https://unpkg.com/lineupjs/build/LineUpJS.css" rel="stylesheet">
+<link href="https://unpkg.com/lineupjs/build/LineUpJS.css" rel="stylesheet" />
 <script src="https://unpkg.com/lineupjs/build/LineUpJS.js"></script>
-<link rel="icon" type="image/png" sizes="256x256" href="/static/assets/favicon-256.png">
-<link rel="icon" type="image/png" sizes="64x64" href="/static/assets/favicon-64.png">
-<link rel="icon" type="image/png" sizes="48x48" href="/static/assets/favicon-48.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/static/assets/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/static/assets/favicon-16.png">
-<link rel="shortcut icon" href="/static/assets/favicon.ico">
+<link
+    rel="icon"
+    type="image/png"
+    sizes="256x256"
+    href="/static/assets/favicon-256.png"
+/>
+<link
+    rel="icon"
+    type="image/png"
+    sizes="64x64"
+    href="/static/assets/favicon-64.png"
+/>
+<link
+    rel="icon"
+    type="image/png"
+    sizes="48x48"
+    href="/static/assets/favicon-48.png"
+/>
+<link
+    rel="icon"
+    type="image/png"
+    sizes="32x32"
+    href="/static/assets/favicon-32.png"
+/>
+<link
+    rel="icon"
+    type="image/png"
+    sizes="16x16"
+    href="/static/assets/favicon-16.png"
+/>
+<link rel="shortcut icon" href="/static/assets/favicon.ico" />
 {% if deploy%}
-<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+<meta
+    http-equiv="Content-Security-Policy"
+    content="upgrade-insecure-requests"
+/>
 {% endif %}
 <style>
+    body {
+        margin: 0;
+        padding: 0;
+    }
 
-body {
-  margin: 0;
-  padding: 0;
-}
-
-.lu {
-  clear: both;
-  position: absolute;
-  top: 1px;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0;
-}
-
+    .lu {
+        clear: both;
+        position: absolute;
+        top: 40px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 0;
+    }
+    .toolbar {
+        display: flex;
+        flex-direction: column;
+    }
+    .toolbar a {
+        color: black;
+        text-decoration: none;
+        border: solid black 1px;
+        border-radius: 6px;
+        padding: 4px;
+        background: #e0e4ff;
+        text-align: center;
+        margin: 4px;
+    }
 </style>
 
-<script type="module" src="{{ url_for('static', filename='script/dist/setupTable.js') }}"></script>
+<body>
+    <div class="toolbar">
+        <a href="/data/update_dataset_list" target="_blank"
+            >Update Dataset List</a
+        >
+    </div>
+    <div id="lineup-container"></div>
+</body>
+
+<script
+    type="module"
+    src="{{ url_for('static', filename='script/dist/setupTable.js') }}"
+></script>
