@@ -152,7 +152,6 @@ export class ImageStackDataRequest {
         }
         const imgUrl = `/data/${this.driveId}/img_${location}_${bundleIndex}.jpg`;
         this.blobCache.set(key, { img: null, url: null });
-        console.log('CACHE SIZE (blob):', this.blobCache.size);
         if (this.dataStore) {
             // try and get from data store
             let store = this.dataStore
@@ -162,7 +161,6 @@ export class ImageStackDataRequest {
             if (blob) {
                 let url = window.URL.createObjectURL(blob);
                 this.blobCache.set(key, { img: blob, url: url });
-                console.log('CACHE SIZE (blob):', this.blobCache.size);
                 this.setCacheTimeout(
                     key,
                     this.blobCache,
@@ -182,7 +180,6 @@ export class ImageStackDataRequest {
             }
             let url = window.URL.createObjectURL(blob);
             this.blobCache.set(key, { img: blob, url: url });
-            console.log('CACHE SIZE (blob):', this.blobCache.size);
             this.setCacheTimeout(
                 key,
                 this.blobCache,
@@ -300,7 +297,6 @@ export class ImageStackDataRequest {
         callback: (rowData: ImageLabels, firstIndex: number) => void
     ): Promise<void> {
         this.labelCache.set(key, null);
-        console.log('CACHE SIZE (label):', this.blobCache.size);
 
         const labelUrl = `/data/${this.driveId}/label_${location}_${bundleIndex}.pb`;
 
@@ -321,7 +317,6 @@ export class ImageStackDataRequest {
         ) as any;
 
         this.labelCache.set(key, message);
-        console.log('CACHE SIZE (label):', this.blobCache.size);
         this.setCacheTimeout(
             key,
             this.labelCache,
@@ -360,11 +355,8 @@ export class ImageStackDataRequest {
         const timeoutId = setTimeout(() => {
             cache.delete(key);
             timerKeys.delete(key);
-            console.log('CACHE Down:', cache.size);
-            console.log('Timer Size Down:', timerKeys.size);
         }, this.cacheLifetime) as unknown as number;
         timerKeys.set(key, timeoutId);
-        console.log('Timer Size Up:', timerKeys.size);
     }
 
     private clearCacheTimeout(
@@ -374,7 +366,6 @@ export class ImageStackDataRequest {
         if (timerKeys.has(key)) {
             clearTimeout(timerKeys.get(key));
             timerKeys.delete(key);
-            console.log('Timer Size Down:', timerKeys.size);
         }
     }
 
