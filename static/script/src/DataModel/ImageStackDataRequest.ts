@@ -172,8 +172,8 @@ export class ImageStackDataRequest {
         let xhr = new XMLHttpRequest();
         xhr.responseType = 'blob';
         xhr.onload = () => {
-            let blob = xhr.response;
-            if (this.dataStore) {
+            let blob = xhr.response as Blob;
+            if (this.dataStore && blob.size > 0) {
                 this.dataStore.put<any>('images', blob, imgUrl);
             }
             let url = window.URL.createObjectURL(blob);
@@ -298,7 +298,7 @@ export class ImageStackDataRequest {
 
         const labelUrl = `/data/${this.driveId}/label_${location}_${bundleIndex}.pb`;
 
-        let buffer;
+        let buffer: ArrayBuffer;
         if (this.dataStore) {
             let store = this.dataStore
                 .transaction('images', 'readonly')
@@ -307,7 +307,9 @@ export class ImageStackDataRequest {
         }
         if (!buffer) {
             buffer = await d3.buffer(labelUrl);
-            await this.dataStore.put<any>('images', buffer, labelUrl);
+            if (buffer.byteLength > 0) {
+                await this.dataStore.put<any>('images', buffer, labelUrl);
+            }
         }
 
         let message = this.imageLabelsMessage.decode(

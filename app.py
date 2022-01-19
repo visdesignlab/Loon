@@ -348,12 +348,18 @@ def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
     if isCached(folder, filename):
         return getCached(folder, filename)
 
-    innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
-    if innerFolderId is None:
-        return
-    fileId, service = getFileId(innerFolderId, 'D{}.jpg'.format(bundleIndex))
-    if fileId is None:
-        return
+    try:
+        # Google Drive API sometimes fails inside getFileId
+        innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
+        if innerFolderId is None:
+            return
+        fileId, service = getFileId(innerFolderId, 'D{}.jpg'.format(bundleIndex))
+        if fileId is None:
+            return
+    except:
+        print('Error: Failed in getFileId because of google drive API')
+        return flask.send_file(io.BytesIO(), mimetype='image/jpeg')
+
     f = getFileFromGoogleDrive(fileId, service)
     return flask.send_file(f, mimetype='image/jpeg')
 
@@ -365,12 +371,17 @@ def getImageLabelBundle(folderId: str, locationId: int, bundleIndex: int):
     if isCached(folder, filename):
         return getCached(folder, filename)
 
-    innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
-    if innerFolderId is None:
-        return
-    fileId, service = getFileId(innerFolderId, 'L{}.pb'.format(bundleIndex))
-    if fileId is None:
-        return
+    try:
+        # Google Drive API sometimes fails inside getFileId
+        innerFolderId, _ = getFileId(folderId, 'data{}'.format(locationId), True)
+        if innerFolderId is None:
+            return
+        fileId, service = getFileId(innerFolderId, 'L{}.pb'.format(bundleIndex))
+        if fileId is None:
+            return
+    except:
+        print('Error: Failed in getFileId because of google drive API')
+        return flask.send_file(io.BytesIO(), mimetype='application/octet-stream')  
     f = getFileFromGoogleDrive(fileId, service)
     return flask.send_file(f, mimetype='application/octet-stream')
 
@@ -407,8 +418,12 @@ def getFileFromGoogleDrive(googleFileId: str, service: googleapiclient.discovery
     downloader = MediaIoBaseDownload(f, request)
     done = False
     while done is False:
-        status, done = downloader.next_chunk()
-        print( "Download {} %".format(int(status.progress() * 100)), end='\r')
+        try:
+            status, done = downloader.next_chunk()
+            print("Download {} %".format(int(status.progress() * 100)), end='\r')
+        except:
+            print("ERROR: Failed to download file from Google Drive. FileID:", googleFileId)
+            return f
     f.seek(0)
     return f
 
