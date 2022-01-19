@@ -38,7 +38,11 @@ export class ImageStackDataRequest {
         });
 
         this._labelCache = new Map();
+        this._clearLabelCacheTimerKeys = new Map();
         this._blobCache = new Map();
+        this._clearBlobCacheTimerKeys = new Map();
+        // this._cacheLifetime = 1000 * 60 * 5; // 5 minutes in milliseconds
+        this._cacheLifetime = 1000 * 60;
     }
 
     public async init(): Promise<void> {
@@ -98,13 +102,23 @@ export class ImageStackDataRequest {
     public get blobCache(): Map<string, { img: Blob; url: string }> {
         return this._blobCache;
     }
-    public set blobCache(v: Map<string, { img: Blob; url: string }>) {
-        this._blobCache = v;
+    private _clearBlobCacheTimerKeys: Map<string, number>;
+    public get clearBlobCacheTimerKeys(): Map<string, number> {
+        return this._clearBlobCacheTimerKeys;
     }
 
     private _labelCache: Map<string, ImageLabels>;
     public get labelCache(): Map<string, ImageLabels> {
         return this._labelCache;
+    }
+    private _clearLabelCacheTimerKeys: Map<string, number>;
+    public get clearLabelCacheTimerKeys(): Map<string, number> {
+        return this._clearLabelCacheTimerKeys;
+    }
+
+    private _cacheLifetime: number;
+    public get cacheLifetime(): number {
+        return this._cacheLifetime;
     }
 
     private _dataStore: IDBPDatabase<unknown>;
@@ -130,12 +144,15 @@ export class ImageStackDataRequest {
         let [top, left] = this.getTileTopLeft(frameIndex);
         let bundleIndex = Math.floor(frameIndex / this.tilesPerFile);
         let key = [location, bundleIndex].join('-');
+        this.clearCacheTimeout(this.clearBlobCacheTimerKeys, key);
+
         if (this.blobCache.has(key)) {
             this.runWithCachedImage(key, top, left, callback);
             return;
         }
         const imgUrl = `/data/${this.driveId}/img_${location}_${bundleIndex}.jpg`;
         this.blobCache.set(key, { img: null, url: null });
+        console.log('CACHE SIZE (blob):', this.blobCache.size);
         if (this.dataStore) {
             // try and get from data store
             let store = this.dataStore
@@ -144,8 +161,13 @@ export class ImageStackDataRequest {
             let blob = await store.get(imgUrl);
             if (blob) {
                 let url = window.URL.createObjectURL(blob);
-
                 this.blobCache.set(key, { img: blob, url: url });
+                console.log('CACHE SIZE (blob):', this.blobCache.size);
+                this.setCacheTimeout(
+                    key,
+                    this.blobCache,
+                    this.clearBlobCacheTimerKeys
+                );
                 callback(top, left, blob, url);
                 return;
             }
@@ -160,7 +182,12 @@ export class ImageStackDataRequest {
             }
             let url = window.URL.createObjectURL(blob);
             this.blobCache.set(key, { img: blob, url: url });
-
+            console.log('CACHE SIZE (blob):', this.blobCache.size);
+            this.setCacheTimeout(
+                key,
+                this.blobCache,
+                this.clearBlobCacheTimerKeys
+            );
             callback(top, left, blob, url);
         };
         xhr.onerror = e => {
@@ -185,6 +212,11 @@ export class ImageStackDataRequest {
     ): void {
         let cachedElement = this.blobCache.get(key);
         if (cachedElement.img && cachedElement.url) {
+            this.setCacheTimeout(
+                key,
+                this.blobCache,
+                this.clearBlobCacheTimerKeys
+            );
             callback(top, left, cachedElement.img, cachedElement.url);
         } else {
             setTimeout(() => {
@@ -245,6 +277,7 @@ export class ImageStackDataRequest {
         let bundleIndex = Math.floor(frameIndex / this.tilesPerFile);
         let key = [location, bundleIndex].join('-');
 
+        this.clearCacheTimeout(this.clearLabelCacheTimerKeys, key);
         if (this.labelCache.has(key)) {
             this.runWithCachedLabel(key, firstIndex, callback);
             return;
@@ -266,9 +299,8 @@ export class ImageStackDataRequest {
         bundleIndex: number,
         callback: (rowData: ImageLabels, firstIndex: number) => void
     ): Promise<void> {
-        console.log('NO CACHE');
-
         this.labelCache.set(key, null);
+        console.log('CACHE SIZE (label):', this.blobCache.size);
 
         const labelUrl = `/data/${this.driveId}/label_${location}_${bundleIndex}.pb`;
 
@@ -289,8 +321,13 @@ export class ImageStackDataRequest {
         ) as any;
 
         this.labelCache.set(key, message);
+        console.log('CACHE SIZE (label):', this.blobCache.size);
+        this.setCacheTimeout(
+            key,
+            this.labelCache,
+            this.clearLabelCacheTimerKeys
+        );
         callback(message, firstIndex);
-
         return;
     }
 
@@ -299,16 +336,45 @@ export class ImageStackDataRequest {
         firstIndex: number,
         callback: (rowData: ImageLabels, firstIndex: number) => void
     ): void {
-        console.log('CACHE');
-
         let cachedElement = this.labelCache.get(key);
         if (cachedElement !== null) {
+            this.setCacheTimeout(
+                key,
+                this.labelCache,
+                this.clearLabelCacheTimerKeys
+            );
             callback(cachedElement, firstIndex);
         } else {
             // loading, try again later
             setTimeout(() => {
                 this.runWithCachedLabel(key, firstIndex, callback);
             }, 50);
+        }
+    }
+
+    private setCacheTimeout(
+        key: string,
+        cache: Map<string, any>,
+        timerKeys: Map<string, number>
+    ): void {
+        const timeoutId = setTimeout(() => {
+            cache.delete(key);
+            timerKeys.delete(key);
+            console.log('CACHE Down:', cache.size);
+            console.log('Timer Size Down:', timerKeys.size);
+        }, this.cacheLifetime) as unknown as number;
+        timerKeys.set(key, timeoutId);
+        console.log('Timer Size Up:', timerKeys.size);
+    }
+
+    private clearCacheTimeout(
+        timerKeys: Map<string, number>,
+        key: string
+    ): void {
+        if (timerKeys.has(key)) {
+            clearTimeout(timerKeys.get(key));
+            timerKeys.delete(key);
+            console.log('Timer Size Down:', timerKeys.size);
         }
     }
 
