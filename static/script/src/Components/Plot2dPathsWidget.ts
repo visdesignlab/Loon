@@ -1395,7 +1395,7 @@ export class Plot2dPathsWidget extends BaseWidget<CurveList, DatasetSpec> {
                 return false;
             }
             let letRowFilters = this.tempConditionFilterState.get(d[0]);
-            if (this.tempConditionFilterState.has(d[1])) {
+            if (!letRowFilters.has(d[1])) {
                 return false;
             }
             return letRowFilters.get(d[1]);
