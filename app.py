@@ -1,9 +1,7 @@
 from io import BytesIO
-import os, io, math, random
+import os, io
 from functools import wraps
 from typing import Dict, Tuple, List, Union, Set
-import array
-import uuid
 from datetime import datetime
 
 import settings
@@ -19,23 +17,7 @@ import googleapiclient.discovery
 from googleapiclient.http import MediaIoBaseDownload
 import google_auth_oauthlib.flow
 
-# working with matlab (.mat) files, especially images
-import h5py
-from scipy.io import loadmat
-from PIL import Image
-from PIL import ImageFilter
-from PIL import ImageChops
-import piexif
-import numpy as np
-
-# for doing preprocessing on tracks array
-import pandas as pd;
-
-# for generating pb files
-# import pbCsv_pb2
-import pbCurveList_pb2
-
-# for saving structured exif data
+# various json manipulation
 import json
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
