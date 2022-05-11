@@ -1,0 +1,162 @@
+{
+	"direction": "row",
+	"inside":[
+		{
+			"direction": "col",
+			"fraction": 0,
+			"minSize": "48px",
+			"maxSize": "48px",
+			"inside":
+			{
+						
+				"type": "Toolbar",
+				"initArgs":
+				{
+				}
+			}
+		},
+		{
+			"direction": "col",
+			"fraction": 1,
+			"inside": [
+				{
+					"direction": "row",
+					"fraction": 100,
+					"inside": [
+						{
+							"direction": "col",
+							"fraction": 37,
+							"inside": [
+								{
+									"direction": "row",
+									"fraction": 4,
+									"inside": 
+									{
+										"type": "Plot2dPathsWidget",
+										"initArgs":
+										{
+											"quickPickOptions": [
+												{
+													"xKey": "Frame ID",
+													"yKey": "Mass_norm",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "Mass (pg)",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "shape factor",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "Area",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Frame ID",
+													"yKey": "Mean Intensity",
+													"averaged": true,
+													"squareAspectRatio": false
+												},{
+													"xKey": "Time_norm",
+													"yKey": "Mass_norm",
+													"averaged": false,
+													"squareAspectRatio": false
+												}, {
+													"xKey": "Time (h)",
+													"yKey": "Mass_norm",
+													"averaged": false,
+													"squareAspectRatio": false
+												}, {
+													"xKey": "Time (h)",
+													"yKey": "Mass (pg)",
+													"averaged": false,
+													"squareAspectRatio": false
+												}, {
+													"xKey": "X",
+													"yKey": "Y",
+													"averaged": false,
+													"squareAspectRatio": true
+												}
+											],
+											"squareAspectRatio": false
+										}
+									}
+								},				{
+									"direction": "row",
+									"fraction": 0,
+									"minSize": "120px",
+									"maxSize": "120px",
+									"inside": 
+									{
+										
+										"type": "DetailedDistribution",
+										"initArgs":
+										{
+											"metricDistributionCollectionLevel": "Curve",
+											"attributeKey": "Exponential Growth Constant"
+										}
+									}
+								},
+								{
+									"direction": "row",
+									"fraction": 3,
+									"inside": [
+										{
+											"direction": "col",
+											"fraction": 1,
+											"inside": 
+											{
+												"type": "MetricDistributionWidget",
+												"initArgs":
+												{
+													"metricDistributionCollectionLevel": "Point"
+												}
+											}
+										},
+										{
+											"direction": "col",
+											"fraction": 1,
+											"inside": 
+											{
+												"type": "MetricDistributionWidget",
+												"initArgs":
+												{
+													"metricDistributionCollectionLevel": "Curve"
+												}
+											}
+										}
+									]
+								}
+							]
+						},
+						{
+							"direction": "col",
+							"fraction": 63,
+							"inside":
+							{
+								"type": "ImageSelectionWidget",
+								"initArgs":
+								{
+									"samplingStrat": [
+										{"strat": [0.05, 0.5, 0.95], "label": ""},
+										{"strat": [0.25, 0.5, 0.75], "label": ""},
+										{"strat": [0.0, 1.0], "label": ""},
+										{"strat": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0], "label": "Min/Max and 20th percentiles"},
+										{"strat": [0.0, 0.17, 0.33, 0.5, 0.67, 0.83, 1.0], "label": "Min/Max and (1/6)th percentiles"},
+										{"strat": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "label": "Min/Max and 10th percentiles"},
+										{"strat": 3, "label": ""}
+									]
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

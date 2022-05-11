@@ -280,6 +280,7 @@ def cache(folderId: str, filename: str, data, isBinary = False) -> None:
 @authRequired
 def getMassOverTimePb(folderId: str): # -> flask.Response:
     filename = 'massOverTime.pb'
+    return getCached(folderId, filename)
 
     innerFolderId, _ = getFileId(folderId, '.vizMetaData',True)
     if innerFolderId is None:
@@ -297,6 +298,7 @@ def getMassOverTimePb(folderId: str): # -> flask.Response:
         if cachedModifiedTime > driveModifiedTime:
             print('loading cached files from ' + folderId)
             return getCached(folderId, filename)
+
 
     print('getting ' + filename + ' from ' + folderId)
     f = getFileFromGoogleDrive(fileId, service)

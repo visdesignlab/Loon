@@ -35,7 +35,7 @@ export class ImageStackWidget {
         console.log(d3);
         console.log(this);
         this._tooltip = new RichTooltip();
-        this._exemplarAttribute = 'Avg. Mass (pg)'; // TODO change default
+        this._exemplarAttribute = 'Mass (pg) (avg)'; // TODO change default
         this._inExemplarMode = true;
         this._inCondensedMode = true;
         this._condensedModeCount = 7;
