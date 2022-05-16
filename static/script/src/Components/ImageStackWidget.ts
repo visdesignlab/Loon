@@ -183,14 +183,29 @@ export class ImageStackWidget {
         return this._selectedImageContainer;
     }
 
+    private _selectedImageContainer2: HtmlSelection;
+    public get selectedImageContainer2(): HtmlSelection {
+        return this._selectedImageContainer2;
+    }
+
     private _selectedImageCanvas: HtmlSelection;
     public get selectedImageCanvas(): HtmlSelection {
         return this._selectedImageCanvas;
     }
 
+    private _selectedImageCanvas2: HtmlSelection;
+    public get selectedImageCanvas2(): HtmlSelection {
+        return this._selectedImageCanvas2;
+    }
+
     private _canvasContext: CanvasRenderingContext2D;
     public get canvasContext(): CanvasRenderingContext2D {
         return this._canvasContext;
+    }
+
+    private _canvasContext2: CanvasRenderingContext2D;
+    public get canvasContext2(): CanvasRenderingContext2D {
+        return this._canvasContext2;
     }
 
     private _data: CurveList;
@@ -344,7 +359,9 @@ export class ImageStackWidget {
                     invertId
                 ) as HTMLInputElement;
                 this.selectedImageContainer.classed('invert', node.checked);
+                this.selectedImageContainer2.classed('invert', node.checked);
                 this.selectedImageCanvas.classed('invert', node.checked);
+                this.selectedImageCanvas2.classed('invert', node.checked);
                 this.invertCanvas();
             })
             .attr('id', invertId);
@@ -361,10 +378,17 @@ export class ImageStackWidget {
             .append('div')
             .classed('noShrink', true);
 
+        this._selectedImageContainer2 = this.imageAndLegendContainer
+            .append('div')
+            .classed('noShrink', true);
+
         this.innerContainer.append('div').attr('style', 'flex-grow: 2;');
 
         this._selectedImageCanvas =
             this.selectedImageContainer.append('canvas');
+
+        this._selectedImageCanvas2 =
+            this.selectedImageContainer2.append('canvas');
 
         this.selectedImageCanvas
             .node()
@@ -380,6 +404,10 @@ export class ImageStackWidget {
 
         this._canvasContext = (
             this.selectedImageCanvas.node() as HTMLCanvasElement
+        ).getContext('2d');
+
+        this._canvasContext2 = (
+            this.selectedImageCanvas2.node() as HTMLCanvasElement
         ).getContext('2d');
 
         this.selectedImageContainer.on('mouseleave', () => {
@@ -576,6 +604,10 @@ export class ImageStackWidget {
             return;
         }
         this.selectedImageCanvas
+            .attr('width', this.imageStackDataRequest?.tileWidth)
+            .attr('height', this.imageStackDataRequest?.tileHeight);
+
+        this.selectedImageCanvas2
             .attr('width', this.imageStackDataRequest?.tileWidth)
             .attr('height', this.imageStackDataRequest?.tileHeight);
 
@@ -781,6 +813,7 @@ export class ImageStackWidget {
     private drawDefaultCanvas(): void {
         if (this.defaultCanvasState) {
             this.canvasContext.putImageData(this.defaultCanvasState, 0, 0);
+            this.canvasContext2.putImageData(this.defaultCanvasState, 0, 0);
         }
     }
 
@@ -1156,6 +1189,7 @@ export class ImageStackWidget {
 
     private setImageInlineStyle(index: number, includeFallback = true): void {
         this.imageStackDataRequest?.getImage(
+            'D',
             this.getCurrentLocationId(),
             index,
             (top, left, _blob, imageUrl) => {
@@ -1164,6 +1198,7 @@ export class ImageStackWidget {
 					background-position-y: ${-top}px;
 					width: ${this.imageStackDataRequest?.tileWidth}px;
 					height: ${this.imageStackDataRequest?.tileHeight}px;
+                    margin-right: 10px;
 					`;
                 if (imageUrl) {
                     styleString += `background-image: url(${imageUrl});`;
@@ -1173,6 +1208,28 @@ export class ImageStackWidget {
                     styleString += 'background-color: #ebebeb;';
                 }
                 this.selectedImageContainer.attr('style', styleString);
+            }
+        );
+        this.imageStackDataRequest?.getImage(
+            'F',
+            this.getCurrentLocationId(),
+            index,
+            (top, left, _blob, imageUrl) => {
+                let styleString: string = `
+					background-position-x: ${-left}px;
+					background-position-y: ${-top}px;
+					width: ${this.imageStackDataRequest?.tileWidth}px;
+					height: ${this.imageStackDataRequest?.tileHeight}px;
+                    margin-right: 10px;
+					`;
+                if (imageUrl) {
+                    styleString += `background-image: url(${imageUrl});`;
+                }
+
+                if (includeFallback) {
+                    styleString += 'background-color: #ebebeb;';
+                }
+                this.selectedImageContainer2.attr('style', styleString);
             }
         );
     }

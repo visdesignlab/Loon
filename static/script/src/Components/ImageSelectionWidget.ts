@@ -14,153 +14,161 @@ import { ImageStackDataRequest } from '../DataModel/ImageStackDataRequest';
 import { DevlibTSUtil } from '../devlib/DevlibTSUtil';
 
 export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
-    
     constructor(
         container: HTMLElement,
-        samplingStratOptions: {"strat": (number[] | number), "label": string}[],
-        isClone: boolean = false)
-    {
+        samplingStratOptions: { strat: number[] | number; label: string }[],
+        isClone: boolean = false
+    ) {
         super(container, false, samplingStratOptions);
         this._isClone = isClone;
     }
 
-    protected Clone(container: HTMLElement): BaseWidget<CurveList, DatasetSpec>
-    {
-        return new ImageSelectionWidget(container, this.samplingStratOptions, true);
+    protected Clone(
+        container: HTMLElement
+    ): BaseWidget<CurveList, DatasetSpec> {
+        return new ImageSelectionWidget(
+            container,
+            this.samplingStratOptions,
+            true
+        );
     }
 
-	private _isClone : boolean;
-	public get isClone() : boolean {
-		return this._isClone;
-	}
+    private _isClone: boolean;
+    public get isClone(): boolean {
+        return this._isClone;
+    }
 
-    private _imageMetaData : ImageMetaData;
-    public get imageMetaData() : ImageMetaData {
+    private _imageMetaData: ImageMetaData;
+    public get imageMetaData(): ImageMetaData {
         return this._imageMetaData;
     }
-    
-    private _imageStackDataRequest : ImageStackDataRequest;
-    public get imageStackDataRequest() : ImageStackDataRequest {
+
+    private _imageStackDataRequest: ImageStackDataRequest;
+    public get imageStackDataRequest(): ImageStackDataRequest {
         return this._imageStackDataRequest;
     }
     public set imageStackDataRequest(v: ImageStackDataRequest) {
         this._imageStackDataRequest = v;
     }
 
-    private _innerContainer : HtmlSelection;
-    public get innerContainer() : HtmlSelection {
+    private _innerContainer: HtmlSelection;
+    public get innerContainer(): HtmlSelection {
         return this._innerContainer;
     }
-    
-    private _imageTrackContainer : HtmlSelection;
-    public get imageTrackContainer() : HtmlSelection {
-        return this._imageTrackContainer;
-    }    
 
-    private _locationSelectionContainer : HtmlSelection;
-    public get locationSelectionContainer() : HtmlSelection {
+    private _imageTrackContainer: HtmlSelection;
+    public get imageTrackContainer(): HtmlSelection {
+        return this._imageTrackContainer;
+    }
+
+    private _locationSelectionContainer: HtmlSelection;
+    public get locationSelectionContainer(): HtmlSelection {
         return this._locationSelectionContainer;
     }
 
-    private _menuBarContainer : HtmlSelection;
-    public get menuBarContainer() : HtmlSelection {
+    private _menuBarContainer: HtmlSelection;
+    public get menuBarContainer(): HtmlSelection {
         return this._menuBarContainer;
     }
-    
-    private _legendContentContainer : HtmlSelection;
-    public get legendContentContainer() : HtmlSelection {
+
+    private _legendContentContainer: HtmlSelection;
+    public get legendContentContainer(): HtmlSelection {
         return this._legendContentContainer;
     }
-    
-    private _groupByWidget : GroupByWidget;
-    public get groupByWidget() : GroupByWidget {
+
+    private _groupByWidget: GroupByWidget;
+    public get groupByWidget(): GroupByWidget {
         return this._groupByWidget;
     }
 
-    private _locationListContainer : HtmlSelection;
-    public get locationListContainer() : HtmlSelection {
+    private _locationListContainer: HtmlSelection;
+    public get locationListContainer(): HtmlSelection {
         return this._locationListContainer;
     }
 
-    private _imageStackContainer : HtmlSelection;
-    public get imageStackContainer() : HtmlSelection {
+    private _imageStackContainer: HtmlSelection;
+    public get imageStackContainer(): HtmlSelection {
         return this._imageStackContainer;
     }
-    
-    private _imageStackWidget : ImageStackWidget;
-    public get imageStackWidget() : ImageStackWidget {
+
+    private _imageStackWidget: ImageStackWidget;
+    public get imageStackWidget(): ImageStackWidget {
         return this._imageStackWidget;
     }
-    
-    private _selectedLocationId : number | null;
-    public get selectedLocationId() : number | null {
+
+    private _selectedLocationId: number | null;
+    public get selectedLocationId(): number | null {
         return this._selectedLocationId;
     }
-    
+
     // location ID for hovered track
-    private _hoveredLocationId : number | null;
-    public get hoveredLocationId() : number | null {
+    private _hoveredLocationId: number | null;
+    public get hoveredLocationId(): number | null {
         return this._hoveredLocationId;
     }
 
-    private _frameTooltip : RichTooltip;
-    public get frameTooltip() : RichTooltip {
+    private _frameTooltip: RichTooltip;
+    public get frameTooltip(): RichTooltip {
         return this._frameTooltip;
     }
 
-    private _frameHeight : number;
-    public get frameHeight() : number {
+    private _frameHeight: number;
+    public get frameHeight(): number {
         return this._frameHeight;
-    }    
+    }
 
-    private _frameHeightSelected : number;
-    public get frameHeightSelected() : number {
+    private _frameHeightSelected: number;
+    public get frameHeightSelected(): number {
         return this._frameHeightSelected;
-    }    
+    }
 
-    private _frameMarginTopBot : number;
-    public get frameMarginTopBot() : number {
+    private _frameMarginTopBot: number;
+    public get frameMarginTopBot(): number {
         return this._frameMarginTopBot;
     }
-    
-    private _frameScaleX : d3.ScaleLinear<number, number>;
-    public get frameScaleX() : d3.ScaleLinear<number, number> {
+
+    private _frameScaleX: d3.ScaleLinear<number, number>;
+    public get frameScaleX(): d3.ScaleLinear<number, number> {
         return this._frameScaleX;
     }
 
-    private _frameScaleHeight : d3.ScaleLinear<number, number>;
-    public get frameScaleHeight() : d3.ScaleLinear<number, number> {
+    private _frameScaleHeight: d3.ScaleLinear<number, number>;
+    public get frameScaleHeight(): d3.ScaleLinear<number, number> {
         return this._frameScaleHeight;
     }
-    
-    private _hoveredLocFrame : [number, number] | null;
-    public get hoveredLocFrame() : [number, number] | null {
+
+    private _hoveredLocFrame: [number, number] | null;
+    public get hoveredLocFrame(): [number, number] | null {
         return this._hoveredLocFrame;
     }
-    
-    private _selectedLocFrame : [number, number];
-    public get selectedLocFrame() : [number, number] {
+
+    private _selectedLocFrame: [number, number];
+    public get selectedLocFrame(): [number, number] {
         return this._selectedLocFrame;
     }
 
-    private _hoveredLocId : number | null;
-    public get hoveredLocId() : number | null {
+    private _hoveredLocId: number | null;
+    public get hoveredLocId(): number | null {
         return this._hoveredLocId;
     }
 
-    private _samplingStratOptions : {"strat": (number[] | number), "label": string}[];
-    public get samplingStratOptions() : {"strat": (number[] | number), "label": string}[] {
+    private _samplingStratOptions: {
+        strat: number[] | number;
+        label: string;
+    }[];
+    public get samplingStratOptions(): {
+        strat: number[] | number;
+        label: string;
+    }[] {
         return this._samplingStratOptions;
     }
 
-    protected initProps(props?: any[]): void
-    {
+    protected initProps(props?: any[]): void {
         super.initProps();
         this._samplingStratOptions = props[0];
     }
 
-	public init(): void
-	{
+    public init(): void {
         this._frameHeight = 32; // hardcoded based on CSS
         this._frameHeightSelected = 32; // also based on CSS
         this._frameMarginTopBot = 12;
@@ -172,125 +180,145 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.innerContainer.classed('imageSelectionContainer', true);
 
         this._imageTrackContainer = d3.select(this.container).append('div');
-        this.imageTrackContainer
-            .classed('imageTrackContainer', true);
+        this.imageTrackContainer.classed('imageTrackContainer', true);
 
-        this._locationSelectionContainer = this.innerContainer.append('div')
-            .classed('locationSelectionContainer', true);
+        this._locationSelectionContainer = this.innerContainer
+            .append('div')
+            .classed('locationSelectionContainer', true)
+            .classed('noDisp', true);
 
-        this._menuBarContainer = this.locationSelectionContainer.append('div')
+        this._menuBarContainer = this.locationSelectionContainer
+            .append('div')
             .classed('menuBarContainer', true);
 
-            
-        document.onkeydown = (event) => {this.handleKeyDown(event)};
-        
+        document.onkeydown = event => {
+            this.handleKeyDown(event);
+        };
+
         this._groupByWidget = new GroupByWidget(this.menuBarContainer);
-        
-        const legendButton = DevlibTSUtil.getIconButton('question-circle', () => 
-        {
-            const showLegend = this.legendContentContainer.classed('noDisp')
-            d3.select(legendButton).classed('selected', showLegend);
-            this.legendContentContainer.classed('noDisp', !showLegend);
-        }, 'Legend');
+
+        const legendButton = DevlibTSUtil.getIconButton(
+            'question-circle',
+            () => {
+                const showLegend =
+                    this.legendContentContainer.classed('noDisp');
+                d3.select(legendButton).classed('selected', showLegend);
+                this.legendContentContainer.classed('noDisp', !showLegend);
+            },
+            'Legend'
+        );
         this.menuBarContainer.node().appendChild(legendButton);
 
-        this._legendContentContainer = this.menuBarContainer.append('div')
+        this._legendContentContainer = this.menuBarContainer
+            .append('div')
             .classed('legendContentContainer', true)
             .classed('noDisp', true);
-        
-        this.legendContentContainer.append('img')
+
+        this.legendContentContainer
+            .append('img')
             .attr('src', '/static/assets/image-selection-legend.png');
-            
-        this._locationListContainer = this.locationSelectionContainer.append('div')
+
+        this._locationListContainer = this.locationSelectionContainer
+            .append('div')
             .classed('locationListContainer', true);
 
-        this._imageStackContainer = this.innerContainer.append('div')
+        this._imageStackContainer = this.innerContainer
+            .append('div')
             .classed('imageStackContainer', true)
             .classed('overflow-scroll', true);
-        this._imageStackWidget = new ImageStackWidget(this.imageStackContainer.node(), this.imageTrackContainer.node(), this.vizHeight, this.samplingStratOptions);
+        this._imageStackWidget = new ImageStackWidget(
+            this.imageStackContainer.node(),
+            this.imageTrackContainer.node(),
+            this.vizHeight,
+            this.samplingStratOptions
+        );
 
-        document.addEventListener('frameHoverChange', (e: CustomEvent) => 
-        {
+        document.addEventListener('frameHoverChange', (e: CustomEvent) => {
             const locId = e.detail.locationId;
             const frameId = e.detail.frameId;
             const cellId = e.detail.cellId;
             this.onHoverLocationFrame(locId, frameId, cellId, false);
         });
 
-        document.addEventListener('locFrameClicked', (e: CustomEvent) =>
-        {
+        document.addEventListener('locFrameClicked', (e: CustomEvent) => {
             const locId = e.detail.locationId;
             const frameId = e.detail.frameId;
             this.onClickLocationFrame(locId, frameId);
         });
 
-
-        document.addEventListener('imageSelectionRedraw', (e: CustomEvent) => 
-        {
+        document.addEventListener('imageSelectionRedraw', (e: CustomEvent) => {
             this.draw();
         });
 
-        document.addEventListener('manualPinToggle', (e: CustomEvent) => 
-		{
+        document.addEventListener('manualPinToggle', (e: CustomEvent) => {
             this.updateAllExtractedDots();
-		});
+        });
 
         this.OnResize();
-	}
+    }
 
-	public OnDataChange()
-	{
+    public OnDataChange() {
         this._imageMetaData = ImageMetaData.fromPointCollection(this.fullData);
-        this._selectedLocationId = this.imageMetaData.locationList[0].locationId;
+        this._selectedLocationId =
+            this.imageMetaData.locationList[0].locationId;
         this.groupByWidget.updateGroupByOptions(this.data);
         this._hoveredLocationId = null;
-        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+        let currentLocation = this.imageMetaData.locationLookup.get(
+            this.selectedLocationId
+        );
 
-        this.imageStackWidget.SetData(this.data, this.fullData, currentLocation, this.imageStackDataRequest, true);
+        this.imageStackWidget.SetData(
+            this.data,
+            this.fullData,
+            currentLocation,
+            this.imageStackDataRequest,
+            true
+        );
 
         this.imageMetaData.updateInBrushProp(this.data);
         this.draw();
-
     }
-    
-    public setImageStackWidget(skipImageTrackDraw = false): void
-    {
+
+    public setImageStackWidget(skipImageTrackDraw = false): void {
         const [locId, frameId] = this.selectedLocFrame;
-        let currentLocation = this.imageMetaData.locationLookup.get(this.selectedLocationId);
+        let currentLocation = this.imageMetaData.locationLookup.get(
+            this.selectedLocationId
+        );
         this.imageStackWidget.imageLocation = currentLocation;
-        this.imageStackDataRequest.getImage(locId, frameId, (top, left, blob) => 
-        {
-            this.imageStackWidget.SetImageBlob(blob);
-            this.imageStackWidget.draw(skipImageTrackDraw);
-        });
-
+        this.imageStackDataRequest.getImage(
+            'D',
+            locId,
+            frameId,
+            (top, left, blob) => {
+                this.imageStackWidget.SetImageBlob(blob);
+                this.imageStackWidget.draw(skipImageTrackDraw);
+            }
+        );
     }
 
-	protected OnResize(): void
-	{
+    protected OnResize(): void {
         const topHeightMax = 0.5 * this.height;
         const botHeightMax = this.height - topHeightMax;
         this.imageStackWidget.OnResize(topHeightMax, botHeightMax, this.width);
         this.locationSelectionContainer
             .classed('overflow-scroll', true)
-            .attr('style', `max-height: ${topHeightMax}px`)
-        this.imageTrackContainer
-            .attr('style',
+            .attr('style', `max-height: ${topHeightMax}px`);
+        this.imageTrackContainer.attr(
+            'style',
             `max-width: ${this.width}px;
             max-height: ${botHeightMax}px;
             width: ${this.width}px;
-            height: ${botHeightMax}px;`)
-	}
+            height: ${botHeightMax}px;`
+        );
+    }
 
-    public OnBrushChange(): void
-    {
+    public OnBrushChange(): void {
         this.imageMetaData.updateInBrushProp(this.data);
         this.draw();
         this.imageStackWidget.OnBrushChange();
     }
-    
-    private draw(): void
-    {
+
+    private draw(): void {
         this.locationListContainer.html(null);
         this.drawFacetRecurse(this.groupByWidget.currentSelectionIndexList);
         this.drawSelectedDots();
@@ -300,30 +328,29 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         remainingSubFacetIndices: number[],
         verticalPosition: number = 0,
         facet?: Facet,
-        containerSelection?: HtmlSelection): number
-    {
+        containerSelection?: HtmlSelection
+    ): number {
         let container: HtmlSelection;
-        if (containerSelection)
-        {
+        if (containerSelection) {
             container = containerSelection;
-        }
-        else
-        {
+        } else {
             container = this.locationListContainer;
         }
-        if (remainingSubFacetIndices.length === 0)
-        {
-            this.drawTerminalFacet(container, facet.name.join(' '), facet.data, verticalPosition, 0);
+        if (remainingSubFacetIndices.length === 0) {
+            this.drawTerminalFacet(
+                container,
+                facet.name.join(' '),
+                facet.data,
+                verticalPosition,
+                0
+            );
             return 1;
         }
 
         let data: CurveList;
-        if (facet)
-        {
+        if (facet) {
             data = facet.data;
-        }
-        else
-        {
+        } else {
             data = this.data;
         }
 
@@ -332,258 +359,332 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
 
         let hardCodedOption = facetOptions[facetIndex];
         let facetList = hardCodedOption.GetFacets();
-        let grouperDiv
-        if (facet)
-        {
-            grouperDiv  = this.drawGrouperFacet(container, facet.name.join(' '), verticalPosition, remainingSubFacetIndices.length);
+        let grouperDiv;
+        if (facet) {
+            grouperDiv = this.drawGrouperFacet(
+                container,
+                facet.name.join(' '),
+                verticalPosition,
+                remainingSubFacetIndices.length
+            );
         }
         let childPosition = verticalPosition;
         let thisCount = 0;
-        for (let childFacet of facetList)
-        {
+        for (let childFacet of facetList) {
             childPosition++;
-            let count = this.drawFacetRecurse(remainingSubFacetIndices.slice(1), childPosition, childFacet, grouperDiv);
+            let count = this.drawFacetRecurse(
+                remainingSubFacetIndices.slice(1),
+                childPosition,
+                childFacet,
+                grouperDiv
+            );
             thisCount += count;
         }
         return thisCount;
     }
 
-    private drawGrouperFacet(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): HtmlSelection
-    {
-        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
+    private drawGrouperFacet(
+        containerSelection: HtmlSelection,
+        name: string,
+        verticalPosition: number,
+        zIndex: number
+    ): HtmlSelection {
+        this.drawTitleElement(
+            containerSelection,
+            name,
+            verticalPosition,
+            zIndex
+        );
 
-        const grouperDiv = containerSelection.append('div')
+        const grouperDiv = containerSelection
+            .append('div')
             .classed('locationListGrouper', true);
 
         return grouperDiv;
     }
 
-    private drawTitleElement(containerSelection: HtmlSelection, name: string, verticalPosition: number, zIndex: number): void
-    {
+    private drawTitleElement(
+        containerSelection: HtmlSelection,
+        name: string,
+        verticalPosition: number,
+        zIndex: number
+    ): void {
         const topPos = (verticalPosition - 1) * 19;
 
         let styleString = `top: ${topPos}px;`;
-        if (zIndex > 0)
-        {
+        if (zIndex > 0) {
             styleString += ` z-index: ${zIndex};`;
         }
-        if (this.imageStackWidget.colorLookup.has(name))
-        {
-            let colorString = GroupByWidget.getColor([name] , this.imageStackWidget.colorLookup);
+        if (this.imageStackWidget.colorLookup.has(name)) {
+            let colorString = GroupByWidget.getColor(
+                [name],
+                this.imageStackWidget.colorLookup
+            );
             let color = d3.hsl(colorString);
 
-            styleString += `color: ${color.darker(1.0).toString()};`
+            styleString += `color: ${color.darker(1.0).toString()};`;
             color.l = 0.95;
 
-            styleString += `background: ${color.toString()};`
+            styleString += `background: ${color.toString()};`;
         }
 
-        containerSelection.append('div')
+        containerSelection
+            .append('div')
             .text(name)
             .classed('locationListCatTitle', true)
             .attr('style', styleString);
     }
 
-    private drawTerminalFacet(containerSelection: HtmlSelection, name: string, data: CurveList, verticalPosition: number, zIndex: number): void
-    {
-        this.drawTitleElement(containerSelection, name, verticalPosition, zIndex);
+    private drawTerminalFacet(
+        containerSelection: HtmlSelection,
+        name: string,
+        data: CurveList,
+        verticalPosition: number,
+        zIndex: number
+    ): void {
+        this.drawTitleElement(
+            containerSelection,
+            name,
+            verticalPosition,
+            zIndex
+        );
 
-        const subListContainer = containerSelection.append('ul')
+        const subListContainer = containerSelection
+            .append('ul')
             .classed('subListContainer', true);
 
         let locationList: number[] = data.locationList;
-        if (this.imageStackWidget.inCondensedMode)
-        {
-            locationList = locationList.filter(loc => this.imageStackWidget.exemplarLocations.has(loc))
+        if (this.imageStackWidget.inCondensedMode) {
+            locationList = locationList.filter(loc =>
+                this.imageStackWidget.exemplarLocations.has(loc)
+            );
         }
-        if (locationList.length === 0)
-        {
+        if (locationList.length === 0) {
             return;
         }
-        const listElement = subListContainer.selectAll('li')
+        const listElement = subListContainer
+            .selectAll('li')
             .data(locationList)
             .join('li');
 
-        let countToPercent: d3.ScaleLinear<number, number>
-        if (!this.data.brushApplied)
-        {
-            const maxTotalCells = d3.max(this.imageMetaData.locationList, loc => loc.totalCount);
-            countToPercent = d3.scaleLinear()
+        let countToPercent: d3.ScaleLinear<number, number>;
+        if (!this.data.brushApplied) {
+            const maxTotalCells = d3.max(
+                this.imageMetaData.locationList,
+                loc => loc.totalCount
+            );
+            countToPercent = d3
+                .scaleLinear()
                 .domain([0, maxTotalCells])
                 .range([0, 1.0]);
-        }
-        else
-        {
-            const maxInBrushCells = d3.max(this.imageMetaData.locationList, loc => loc.inBrushCount);
-            countToPercent = d3.scaleLinear()
+        } else {
+            const maxInBrushCells = d3.max(
+                this.imageMetaData.locationList,
+                loc => loc.inBrushCount
+            );
+            countToPercent = d3
+                .scaleLinear()
                 .domain([0, maxInBrushCells])
                 .range([0, 1.0]);
         }
 
-        listElement.html(null)
+        listElement
+            .html(null)
             .append('button')
             .text(d => d)
             .classed('locationButton', true)
             .classed('toggleButton', true)
             .classed('selected', d => d == this.selectedLocationId)
             .attr('id', d => 'imageLocation-' + d)
-            .attr('style', d => 
-            {
+            .attr('style', d => {
                 const location = this.imageMetaData.locationLookup.get(d);
-                const percent = this.data.brushApplied ? countToPercent(location.inBrushCount) : countToPercent(location.totalCount);
-                const stop = (1 - percent) * 100
+                const percent = this.data.brushApplied
+                    ? countToPercent(location.inBrushCount)
+                    : countToPercent(location.totalCount);
+                const stop = (1 - percent) * 100;
                 const barColor = '#EDCAC9'; // lighter firebrick
-                return `background: linear-gradient(to left, rgba(255,255,255,0), rgba(255,255,255,0) ${stop}%, ${barColor}, ${stop}%, ${barColor})`
+                return `background: linear-gradient(to left, rgba(255,255,255,0), rgba(255,255,255,0) ${stop}%, ${barColor}, ${stop}%, ${barColor})`;
             })
-            .on('click', d => 
-            {
+            .on('click', d => {
                 this.onClickLocation(d);
             });
 
-        const wraperSelection = listElement.append('div')
+        const wraperSelection = listElement
+            .append('div')
             .classed('frameListContainer', true);
 
         // getting the first one, they should all be the same
         const bbox = wraperSelection.node().getBoundingClientRect();
         const miniWidth = bbox.width;
 
-        const svgSelection = wraperSelection.append('svg')
+        const svgSelection = wraperSelection
+            .append('svg')
             .attr('width', miniWidth)
-            .attr('height', d => d === this.selectedLocationId ? this.frameHeightSelected : this.frameHeight)
+            .attr('height', d =>
+                d === this.selectedLocationId
+                    ? this.frameHeightSelected
+                    : this.frameHeight
+            )
             .attr('id', d => 'frameTicksViz-' + d)
             .attr('data-locId', d => d)
-            .on('mouseleave', () => 
-            {
+            .on('mouseleave', () => {
                 this._hoveredLocId = null;
                 this.hideFrameTooltip();
                 this.removeHoverDots(svgSelection);
                 this.changeHoveredLocation(null);
-            })
+            });
 
         const marginW = 4;
-        const frameExtent: [number, number] = this.fullData.getMinMax('Frame ID');
-        this._frameScaleX = d3.scaleLinear()
+        const frameExtent: [number, number] =
+            this.fullData.getMinMax('Frame ID');
+        this._frameScaleX = d3
+            .scaleLinear()
             .domain(frameExtent)
-            .range([marginW, miniWidth -  marginW]);
+            .range([marginW, miniWidth - marginW]);
 
         let domainMax: number;
-        if (this.data.brushApplied)
-        {
-            domainMax = d3.max(this.imageMetaData.locationList, imgLoc=> d3.max(imgLoc.frameList, frame => frame.inBrushCount));
-        }
-        else
-        {
-            domainMax = d3.max(this.imageMetaData.locationList, imgLoc=> d3.max(imgLoc.frameList, frame => frame.totalCount));
+        if (this.data.brushApplied) {
+            domainMax = d3.max(this.imageMetaData.locationList, imgLoc =>
+                d3.max(imgLoc.frameList, frame => frame.inBrushCount)
+            );
+        } else {
+            domainMax = d3.max(this.imageMetaData.locationList, imgLoc =>
+                d3.max(imgLoc.frameList, frame => frame.totalCount)
+            );
         }
 
-        const scaleLineWidth = d3.scaleLinear()
+        const scaleLineWidth = d3
+            .scaleLinear()
             .domain([0, domainMax])
             .range([1.0, 3.0]);
 
-        this._frameScaleHeight = d3.scaleLinear()
+        this._frameScaleHeight = d3
+            .scaleLinear()
             .domain([0, domainMax])
             .range([1, this.frameHeight - 2 * this.frameMarginTopBot]);
 
-        svgSelection.selectAll('line')
+        svgSelection
+            .selectAll('line')
             .data(d => this.getFrameList(d))
             .join('line')
             .attr('x1', d => this.frameScaleX(d.frameId))
             .attr('x2', d => this.frameScaleX(d.frameId))
-            .attr('y1', d => 
-                {
-                    let toScale = this.data.brushApplied ? d.inBrushCount : d.totalCount;
-                    return (this.frameHeight - this.frameScaleHeight(toScale)) / 2;
-                })
-            .attr('y2', d => 
-                {
-                    let toScale = this.data.brushApplied ? d.inBrushCount : d.totalCount;
-                    return this.frameHeight - (this.frameHeight - this.frameScaleHeight(toScale)) / 2
-                })
-            .attr('stroke-width', d => this.data.brushApplied ? scaleLineWidth(d.inBrushCount) : scaleLineWidth(d.totalCount))
-            .attr('stroke', d => d.inBrush ? 'firebrick' : 'black')
+            .attr('y1', d => {
+                let toScale = this.data.brushApplied
+                    ? d.inBrushCount
+                    : d.totalCount;
+                return (this.frameHeight - this.frameScaleHeight(toScale)) / 2;
+            })
+            .attr('y2', d => {
+                let toScale = this.data.brushApplied
+                    ? d.inBrushCount
+                    : d.totalCount;
+                return (
+                    this.frameHeight -
+                    (this.frameHeight - this.frameScaleHeight(toScale)) / 2
+                );
+            })
+            .attr('stroke-width', d =>
+                this.data.brushApplied
+                    ? scaleLineWidth(d.inBrushCount)
+                    : scaleLineWidth(d.totalCount)
+            )
+            .attr('stroke', d => (d.inBrush ? 'firebrick' : 'black'))
             .classed('tickMark', true);
-    
-
 
         let svgList = svgSelection.nodes();
-        for (let i = 0; i < svgList.length; i++)
-        {
+        for (let i = 0; i < svgList.length; i++) {
             const svgElement = svgList[i];
             const locId = +svgElement.dataset['locId'];
-            if (this.imageStackWidget.inCondensedMode)
-            {
-                this.drawExtractedDots(d3.select(svgElement), locId, this.imageStackWidget.exemplarFrames.get(locId));
+            if (this.imageStackWidget.inCondensedMode) {
+                this.drawExtractedDots(
+                    d3.select(svgElement),
+                    locId,
+                    this.imageStackWidget.exemplarFrames.get(locId)
+                );
             }
 
-            svgElement.addEventListener('mousemove', (event: MouseEvent) =>
-            {
+            svgElement.addEventListener('mousemove', (event: MouseEvent) => {
                 this._hoveredLocId = locId;
                 const mouseX = event.offsetX;
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
                 this.onHoverLocationFrame(locId, frameId, null, true);
             });
-            svgElement.addEventListener('click', (event: MouseEvent) =>
-            {
+            svgElement.addEventListener('click', (event: MouseEvent) => {
                 const mouseX = event.offsetX;
                 let frameId = this.frameScaleX.invert(mouseX);
                 frameId = DevlibMath.clamp(Math.round(frameId), frameExtent);
 
-                document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
-                    {
-                        locationId: locId,
-                        frameId: frameId
-                    }}));
+                document.dispatchEvent(
+                    new CustomEvent('locFrameClicked', {
+                        detail: {
+                            locationId: locId,
+                            frameId: frameId
+                        }
+                    })
+                );
             });
         }
     }
 
-	private handleKeyDown(event: KeyboardEvent): void
-	{
+    private handleKeyDown(event: KeyboardEvent): void {
         let newIndex: number;
         const [locId, frameId] = this.selectedLocFrame;
         const location = this.imageMetaData.locationLookup.get(locId);
         let nextFrameId: number;
-		switch (event.keyCode)
-		{
+        switch (event.keyCode) {
             case 37: // left
                 const minFrameId = location.frameList[0].frameId;
                 nextFrameId = Math.max(frameId - 1, minFrameId);
-                document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
-                    {
-                        locationId: locId,
-                        frameId: nextFrameId
-                    }}));
-				break;
-            case 39: // right
-                const maxFrameId = location.frameList[location.frameList.length - 1].frameId;
-                nextFrameId = Math.min(frameId + 1, maxFrameId);
-                
-                document.dispatchEvent(new CustomEvent('locFrameClicked', { detail:
-                    {
-                        locationId: locId,
-                        frameId: nextFrameId
-                    }}));
+                document.dispatchEvent(
+                    new CustomEvent('locFrameClicked', {
+                        detail: {
+                            locationId: locId,
+                            frameId: nextFrameId
+                        }
+                    })
+                );
                 break;
-		}
-	}
+            case 39: // right
+                const maxFrameId =
+                    location.frameList[location.frameList.length - 1].frameId;
+                nextFrameId = Math.min(frameId + 1, maxFrameId);
 
-    private onHoverLocationFrame(locationId: number, frameId: number | null, cellId: string | null, showTooltip: boolean): void
-    {
+                document.dispatchEvent(
+                    new CustomEvent('locFrameClicked', {
+                        detail: {
+                            locationId: locId,
+                            frameId: nextFrameId
+                        }
+                    })
+                );
+                break;
+        }
+    }
+
+    private onHoverLocationFrame(
+        locationId: number,
+        frameId: number | null,
+        cellId: string | null,
+        showTooltip: boolean
+    ): void {
         this._hoveredLocFrame = [locationId, frameId];
-        const lastSvgContainer = d3.select('#frameTicksViz-' + this.hoveredLocationId) as SvgSelection;
+        const lastSvgContainer = d3.select(
+            '#frameTicksViz-' + this.hoveredLocationId
+        ) as SvgSelection;
         this.removeHoverDots(lastSvgContainer);
         this.removeHoverBar(lastSvgContainer);
-        const svgContainer = d3.select('#frameTicksViz-' + locationId) as SvgSelection;
+        const svgContainer = d3.select(
+            '#frameTicksViz-' + locationId
+        ) as SvgSelection;
         this.changeHoveredLocation(locationId);
 
         this.frameTooltip.Hide();
-        if (frameId === null)
-        {
+        if (frameId === null) {
             return;
         }
-        if (showTooltip)
-        {
+        if (showTooltip) {
             const bbox = svgContainer.node().getBoundingClientRect();
             const xPos = bbox.right;
             const yPos = bbox.top + bbox.height / 2;
@@ -594,29 +695,35 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
         this.drawFrameRange(svgContainer, cellId);
     }
 
-    private drawFrameRange(svgContainer: SvgSelection, cellId: string | null): void
-    {
-        if (cellId === null)
-        {
+    private drawFrameRange(
+        svgContainer: SvgSelection,
+        cellId: string | null
+    ): void {
+        if (cellId === null) {
             this.removeHoverBar(svgContainer);
             return;
         }
         const curve = this.fullData.curveLookup.get(cellId);
-        const locId = curve.get('Location ID')
+        const locId = curve.get('Location ID');
         const firstPoint = curve.pointList[0];
-        const lowFrameId = firstPoint.get("Frame ID");
-        const location: ImageLocation = this.imageMetaData.locationLookup.get(locId);
+        const lowFrameId = firstPoint.get('Frame ID');
+        const location: ImageLocation =
+            this.imageMetaData.locationLookup.get(locId);
         const frameLow: ImageFrame = location.frameLookup.get(lowFrameId);
-        
-        const lastPoint = curve.pointList[curve.pointList.length - 1]
-        const highFrameId = lastPoint.get("Frame ID");
+
+        const lastPoint = curve.pointList[curve.pointList.length - 1];
+        const highFrameId = lastPoint.get('Frame ID');
         const frameHigh: ImageFrame = location.frameLookup.get(highFrameId);
 
         const xLow = this.frameScaleX(lowFrameId);
         const xHigh = this.frameScaleX(highFrameId);
 
-        const h1 = (this.frameScaleHeight(frameLow.inBrushCount) + this.frameHeight) / 2;
-        const h2 = (this.frameScaleHeight(frameHigh.inBrushCount) + this.frameHeight) / 2;
+        const h1 =
+            (this.frameScaleHeight(frameLow.inBrushCount) + this.frameHeight) /
+            2;
+        const h2 =
+            (this.frameScaleHeight(frameHigh.inBrushCount) + this.frameHeight) /
+            2;
 
         const betweenTickMargin = 2;
         const fromBottomMargin = 6;
@@ -632,41 +739,46 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             [xHigh, y3]
         ];
 
-        const lineFunction = d3.line<[number, number]>()
-                          .x(d => d[0])
-                          .y(d => d[1])
-                          .curve(d3.curveBasis);
+        const lineFunction = d3
+            .line<[number, number]>()
+            .x(d => d[0])
+            .y(d => d[1])
+            .curve(d3.curveBasis);
 
         const path: string = lineFunction(pointList);
-        
-        svgContainer.selectAll('.hoverBar')
+
+        svgContainer
+            .selectAll('.hoverBar')
             .data([path])
             .join('path')
             .attr('d', path)
             .classed('hoverBar', true);
     }
 
-    private removeHoverBar(svgContainer: SvgSelection): void
-    {
+    private removeHoverBar(svgContainer: SvgSelection): void {
         svgContainer.selectAll('.hoverBar').remove();
     }
 
-    private updateAllExtractedDots(): void
-    {
-        if (!this.imageStackWidget.inCondensedMode)
-        {
+    private updateAllExtractedDots(): void {
+        if (!this.imageStackWidget.inCondensedMode) {
             return;
         }
         // todo this should be more targeted.
         this.draw();
     }
 
-    private drawExtractedDots(svgContainer: SvgSelection, locationId: number, frameSet: Set<number>): void
-    {
+    private drawExtractedDots(
+        svgContainer: SvgSelection,
+        locationId: number,
+        frameSet: Set<number>
+    ): void {
         let frameList = Array.from(frameSet);
-        let xyList: [number, number][] = frameList.map(frame => this.getDotCenters(locationId, frame)[0]);
+        let xyList: [number, number][] = frameList.map(
+            frame => this.getDotCenters(locationId, frame)[0]
+        );
         const dotR = 2.5;
-        svgContainer.selectAll('.extractDot')
+        svgContainer
+            .selectAll('.extractDot')
             .data(xyList)
             .join('circle')
             .classed('extractDot', true)
@@ -679,11 +791,18 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('stroke-width', 1);
     }
 
-    private drawHoverDots(svgContainer: SvgSelection, locationId: number, frameId: number): void
-    {
-        const xyPositions: [number, number][] = this.getDotCenters(locationId, frameId);
+    private drawHoverDots(
+        svgContainer: SvgSelection,
+        locationId: number,
+        frameId: number
+    ): void {
+        const xyPositions: [number, number][] = this.getDotCenters(
+            locationId,
+            frameId
+        );
         const dotR = 2.5;
-        svgContainer.selectAll('.hoverDot')
+        svgContainer
+            .selectAll('.hoverDot')
             .data(xyPositions)
             .join('circle')
             .classed('hoverDot', true)
@@ -695,18 +814,22 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('stroke-width', 1);
     }
 
-    private drawSelectedDots(): void
-    {
-        if (!this.frameScaleX)
-        {
+    private drawSelectedDots(): void {
+        if (!this.frameScaleX) {
             return;
         }
         const [locationId, frameId] = this.selectedLocFrame;
-        const xyPositions: [number, number][] =this.getDotCenters(locationId, frameId);
+        const xyPositions: [number, number][] = this.getDotCenters(
+            locationId,
+            frameId
+        );
         const dotR = 3;
 
-        const svgContainer = d3.select('#frameTicksViz-' + locationId) as SvgSelection;
-        svgContainer.selectAll('.selectedDot')
+        const svgContainer = d3.select(
+            '#frameTicksViz-' + locationId
+        ) as SvgSelection;
+        svgContainer
+            .selectAll('.selectedDot')
             .data(xyPositions)
             .join('circle')
             .classed('selectedDot', true)
@@ -718,114 +841,125 @@ export class ImageSelectionWidget extends BaseWidget<CurveList, DatasetSpec> {
             .attr('stroke-width', 0.5);
     }
 
-    private getDotCenters(locationId: number, frameId: number): [number, number][]
-    {
-        const frame = this.imageMetaData.locationLookup.get(locationId).frameLookup.get(frameId);
+    private getDotCenters(
+        locationId: number,
+        frameId: number
+    ): [number, number][] {
+        const frame = this.imageMetaData.locationLookup
+            .get(locationId)
+            .frameLookup.get(frameId);
         const xPos = this.frameScaleX(frameId);
         const tickHeight = this.frameScaleHeight(frame.inBrushCount);
         const dotR = 2;
         const dotMargin = 3;
-        const margin = (this.frameHeight - tickHeight) / 2
+        const margin = (this.frameHeight - tickHeight) / 2;
         const yPos1 = margin - dotR - dotMargin;
         const yPos2 = margin + tickHeight + dotR + dotMargin;
-        return [[xPos, yPos1], [xPos, yPos2]];
+        return [
+            [xPos, yPos1],
+            [xPos, yPos2]
+        ];
     }
 
-    private removeHoverDots(svgContainer: SvgSelection): void
-    {
+    private removeHoverDots(svgContainer: SvgSelection): void {
         svgContainer.selectAll('.hoverDot').remove();
     }
-    
-    private removeCurrentSelectedDots(): void
-    {
-        const svgContainer = d3.select('#frameTicksViz-' + this.selectedLocFrame[0]) as SvgSelection;
+
+    private removeCurrentSelectedDots(): void {
+        const svgContainer = d3.select(
+            '#frameTicksViz-' + this.selectedLocFrame[0]
+        ) as SvgSelection;
         svgContainer.selectAll('.selectedDot').remove();
     }
 
-    private onClickLocation(locationId: number): void
-    {
+    private onClickLocation(locationId: number): void {
         this.changeLocationSelection(locationId);
         const skipImageTrackDraw = true;
         this.setImageStackWidget(skipImageTrackDraw);
     }
 
-    private onClickLocationFrame(locationId: number, frameId: number): void
-    {
+    private onClickLocationFrame(locationId: number, frameId: number): void {
         let [oldLocId, oldFrameId] = this.selectedLocFrame;
-        if (oldLocId === locationId && oldFrameId === frameId)
-        {
+        if (oldLocId === locationId && oldFrameId === frameId) {
             return;
         }
         this.updateSelectedDots(locationId, frameId);
         this.onClickLocation(locationId);
         this.imageStackWidget.changeSelectedImage(frameId - 1); // matlab
-        this.imageStackWidget.imageTrackWidget.updateCurrentFrameIndicator(frameId);
+        this.imageStackWidget.imageTrackWidget.updateCurrentFrameIndicator(
+            frameId
+        );
     }
-    
-    private updateSelectedDots(locationId: number, frameId: number): void
-    {
+
+    private updateSelectedDots(locationId: number, frameId: number): void {
         this.removeCurrentSelectedDots();
         this._selectedLocFrame = [locationId, frameId];
         this.drawSelectedDots();
     }
 
-    private createTooltipContent(locationId: number, frameId: number): string
-    {
+    private createTooltipContent(locationId: number, frameId: number): string {
         const labelValueList: [string, string][] = [
             ['Location', locationId.toString()],
-			['Frame', frameId.toString()],
+            ['Frame', frameId.toString()]
         ];
         return RichTooltip.createLabelValueListContent(labelValueList);
     }
 
-    private hideFrameTooltip(): void
-    {
+    private hideFrameTooltip(): void {
         this.frameTooltip.Hide();
     }
 
-    private getFrameList(locationId: number): ImageFrame[]
-    {
+    private getFrameList(locationId: number): ImageFrame[] {
         const imageLocation = this.imageMetaData.locationLookup.get(locationId);
         return imageLocation.frameList;
     }
 
-    private changeLocationSelection(newId: number): void
-    {
-        let lastSelected = d3.select("#imageLocation-" + this.selectedLocationId);
+    private changeLocationSelection(newId: number): void {
+        let lastSelected = d3.select(
+            '#imageLocation-' + this.selectedLocationId
+        );
         lastSelected.classed('selected', false);
-        let lastSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.selectedLocationId);
+        let lastSelectedFrameTickViz = d3.select(
+            '#frameTicksViz-' + this.selectedLocationId
+        );
         lastSelectedFrameTickViz.attr('height', this.frameHeight);
-
 
         this._selectedLocationId = newId;
 
-        let newSelected = d3.select("#imageLocation-" + this.selectedLocationId);
+        let newSelected = d3.select(
+            '#imageLocation-' + this.selectedLocationId
+        );
         newSelected.classed('selected', true);
-        let newSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.selectedLocationId);
+        let newSelectedFrameTickViz = d3.select(
+            '#frameTicksViz-' + this.selectedLocationId
+        );
         newSelectedFrameTickViz.attr('height', this.frameHeightSelected);
     }
 
-    private changeHoveredLocation(newId: number | null): void
-    {
-        if (this.hoveredLocationId !== null)
-        {
-
-            let lastSelected = d3.select("#imageLocation-" + this.hoveredLocationId);
+    private changeHoveredLocation(newId: number | null): void {
+        if (this.hoveredLocationId !== null) {
+            let lastSelected = d3.select(
+                '#imageLocation-' + this.hoveredLocationId
+            );
             lastSelected.classed('hovered', false);
-            if (this.hoveredLocationId !== this.selectedLocationId)
-            {
-                let lastSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.hoveredLocationId);
+            if (this.hoveredLocationId !== this.selectedLocationId) {
+                let lastSelectedFrameTickViz = d3.select(
+                    '#frameTicksViz-' + this.hoveredLocationId
+                );
                 lastSelectedFrameTickViz.attr('height', this.frameHeight);
             }
         }
 
         this._hoveredLocationId = newId;
 
-        if (this.hoveredLocationId !== null)
-        {
-            let newSelected = d3.select("#imageLocation-" + this.hoveredLocationId);
+        if (this.hoveredLocationId !== null) {
+            let newSelected = d3.select(
+                '#imageLocation-' + this.hoveredLocationId
+            );
             newSelected.classed('hovered', true);
-            let newSelectedFrameTickViz = d3.select('#frameTicksViz-' + this.hoveredLocationId);
+            let newSelectedFrameTickViz = d3.select(
+                '#frameTicksViz-' + this.hoveredLocationId
+            );
             newSelectedFrameTickViz.attr('height', this.frameHeightSelected);
         }
     }

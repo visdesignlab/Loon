@@ -130,6 +130,7 @@ export class ImageStackDataRequest {
     }
 
     public async getImage(
+        prefix: string,
         location: number,
         frameIndex: number,
         callback: (
@@ -141,14 +142,14 @@ export class ImageStackDataRequest {
     ): Promise<void> {
         let [top, left] = this.getTileTopLeft(frameIndex);
         let bundleIndex = Math.floor(frameIndex / this.tilesPerFile);
-        let key = [location, bundleIndex].join('-');
+        let key = [prefix, location, bundleIndex].join('-');
         this.clearCacheTimeout(this.clearBlobCacheTimerKeys, key);
 
         if (this.blobCache.has(key)) {
             this.runWithCachedImage(key, top, left, callback);
             return;
         }
-        const imgUrl = `/data/${this.driveId}/img_${location}_${bundleIndex}.jpg`;
+        const imgUrl = `/data/${this.driveId}/img_${prefix}_${location}_${bundleIndex}.jpg`;
         this.blobCache.set(key, { img: null, url: null });
         if (this.dataStore) {
             // try and get from data store
@@ -227,6 +228,7 @@ export class ImageStackDataRequest {
         return new Promise((resolve, reject) => {
             try {
                 this.getImage(
+                    'F',
                     location,
                     frameIndex,
                     (

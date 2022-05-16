@@ -324,11 +324,11 @@ def getImageStackMetaDataJson(folderId: str):
     f = getFileFromGoogleDrive(fileId, service)
     return flask.send_file(f, mimetype='application/json')
 
-@app.route('/data/<string:folderId>/img_<int:locationId>_<int:bundleIndex>.jpg')
+@app.route('/data/<string:folderId>/img_<string:prefix>_<int:locationId>_<int:bundleIndex>.jpg')
 @authRequired
-def getImageStackBundle(folderId: str, locationId: int, bundleIndex: int):
+def getImageStackBundle(folderId: str, prefix: str, locationId: int, bundleIndex: int):
     folder = '{}/data{}'.format(folderId, locationId)
-    filename = 'D{}.jpg'.format(bundleIndex)
+    filename = prefix + '{}.jpg'.format(bundleIndex)
     if isCached(folder, filename):
         return getCached(folder, filename)
 
