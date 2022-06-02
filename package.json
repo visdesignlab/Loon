@@ -13,7 +13,7 @@
     "gulp-typescript": "^6.0.0-alpha.1",
     "idb": "^6.0.0",
     "number-to-words": "^1.2.4",
-    "protobufjs": "^6.10.1",
+    "protobufjs": "^6.11.3",
     "quickselect.js": "^0.1.4",
     "tsc": "^1.20150623.0",
     "tsify": "^4.0.1",
